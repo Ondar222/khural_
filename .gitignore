@@ -1,0 +1,9 @@
+**/node_modules/
+**/dist/
+**/.vite/
+**/.turbo/
+**/.next/
+**/uploads/
+.env
+.env.*
+.DS_Store

@@ -1,0 +1,19 @@
+{
+  "sidebar": [
+    { "title": "План работы", "url": "https://khural.rtyva.ru/activity/plan/" },
+    { "title": "Депутатский контроль: национальные проекты", "url": "https://khural.rtyva.ru/activity/national-projects/" },
+    { "title": "Отчеты о деятельности", "url": "https://khural.rtyva.ru/activity/" },
+    { "title": "Заседания сессий Верховного Хурала", "url": "https://khural.rtyva.ru/activity/sessions/" },
+    { "title": "Статистика законотворчества", "url": "https://khural.rtyva.ru/activity/statistics/" },
+    { "title": "Счетная палата Республики Тыва", "url": "https://khural.rtyva.ru/activity/schet_palata/" }
+  ],
+  "reports": [
+    { "title": "Отчеты о деятельности Верховного Хурала (парламента) Республики Тыва", "url": "https://khural.rtyva.ru/activity/167/" },
+    { "title": "Отчеты о деятельности комитетов 3 созыва", "url": "https://khural.rtyva.ru/activity/313/" },
+    { "title": "Информация об исполнении плана законопроектной работы", "url": "https://khural.rtyva.ru/activity/286/" },
+    { "title": "Отчеты о работе сенатора Российской Федерации", "url": "https://khural.rtyva.ru/activity/408/" },
+    { "title": "Отчет о деятельности комитетов 4 созыва", "url": "https://khural.rtyva.ru/activity/445/" }
+  ]
+}
+
+
