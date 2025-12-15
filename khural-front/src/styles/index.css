@@ -2291,6 +2291,39 @@ body.hc-yb {
     align-items: start;
   }
 }
+
+/* Government page toolbar (title + selects in one row) */
+.gov-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 12px 0 20px;
+  flex-wrap: wrap;
+}
+.gov-toolbar__title {
+  margin: 0;
+}
+.gov-toolbar__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+@media (min-width: 960px) {
+  .gov-toolbar {
+    flex-wrap: nowrap;
+  }
+  .gov-toolbar__controls {
+    flex-wrap: nowrap;
+  }
+}
+@media (max-width: 560px) {
+  .gov-toolbar__controls > * {
+    width: 100%;
+  }
+}
 .sidenav {
   position: relative;
 }

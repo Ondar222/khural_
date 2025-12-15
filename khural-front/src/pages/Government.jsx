@@ -157,26 +157,68 @@ export default function Government() {
       <div className="container">
         <div className="page-grid">
           <div>
-            <h1>Парламент</h1>
-            {section !== "Структура" && (
-              <Space
-                className="filters"
-                size="middle"
-                style={{ margin: "12px 0 20px" }}
-                wrap
-              >
-                <Select
-                  value={section}
-                  onChange={setSection}
-                  dropdownMatchSelectWidth={false}
-                  options={[
-                    { value: "Парламент", label: "Парламент" },
-                    { value: "Депутаты", label: "Депутаты" },
-                  ]}
-                  style={{ minWidth: 220 }}
-                />
-              </Space>
-            )}
+            <div className="gov-toolbar">
+              <h1 className="gov-toolbar__title">Парламент</h1>
+              {section !== "Структура" ? (
+                <div className="gov-toolbar__controls">
+                  <Select
+                    value={section}
+                    onChange={setSection}
+                    dropdownMatchSelectWidth={false}
+                    options={[
+                      { value: "Парламент", label: "Парламент" },
+                      { value: "Депутаты", label: "Депутаты" },
+                    ]}
+                    style={{ minWidth: 220 }}
+                  />
+
+                  {section === "Депутаты" ? (
+                    <>
+                      <Select
+                        value={district}
+                        onChange={setDistrict}
+                        dropdownMatchSelectWidth={false}
+                        options={districts.map((x) => ({ value: x, label: x }))}
+                        style={{ minWidth: 220 }}
+                      />
+                      <Select
+                        value={convocation}
+                        onChange={setConvocation}
+                        dropdownMatchSelectWidth={false}
+                        options={convocations.map((x) => ({ value: x, label: x }))}
+                        style={{ minWidth: 220 }}
+                      />
+                      <Select
+                        value={faction}
+                        onChange={setFaction}
+                        dropdownMatchSelectWidth={false}
+                        options={factions.map((x) => ({ value: x, label: x }))}
+                        style={{ minWidth: 220 }}
+                      />
+                    </>
+                  ) : null}
+
+                  {section !== "Структура" && section !== "Депутаты" ? (
+                    <>
+                      <Select
+                        value={agency}
+                        onChange={setAgency}
+                        dropdownMatchSelectWidth={false}
+                        options={agencies.map((x) => ({ value: x, label: x }))}
+                        style={{ minWidth: 240 }}
+                      />
+                      <Select
+                        value={role}
+                        onChange={setRole}
+                        dropdownMatchSelectWidth={false}
+                        options={roles.map((x) => ({ value: x, label: x }))}
+                        style={{ minWidth: 240 }}
+                      />
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
 
             {section === "Структура" ? (
               <>
@@ -469,34 +511,6 @@ export default function Government() {
               </>
             ) : section === "Депутаты" ? (
               <>
-                <Space
-                  className="filters"
-                  size="middle"
-                  style={{ margin: "0 0 16px" }}
-                  wrap
-                >
-                  <Select
-                    value={district}
-                    onChange={setDistrict}
-                    dropdownMatchSelectWidth={false}
-                    options={districts.map((x) => ({ value: x, label: x }))}
-                    style={{ minWidth: 200 }}
-                  />
-                  <Select
-                    value={convocation}
-                    onChange={setConvocation}
-                    dropdownMatchSelectWidth={false}
-                    options={convocations.map((x) => ({ value: x, label: x }))}
-                    style={{ minWidth: 200 }}
-                  />
-                  <Select
-                    value={faction}
-                    onChange={setFaction}
-                    dropdownMatchSelectWidth={false}
-                    options={factions.map((x) => ({ value: x, label: x }))}
-                    style={{ minWidth: 200 }}
-                  />
-                </Space>
                 <div className="grid cols-2">
                   {filteredDeps.map((d) => (
                     <div key={d.id} className="gov-card">
@@ -573,27 +587,6 @@ export default function Government() {
               </>
             ) : (
               <>
-                <Space
-                  className="filters"
-                  size="middle"
-                  style={{ margin: "0 0 16px" }}
-                  wrap
-                >
-                  <Select
-                    value={agency}
-                    onChange={setAgency}
-                    dropdownMatchSelectWidth={false}
-                    options={agencies.map((x) => ({ value: x, label: x }))}
-                    style={{ minWidth: 220 }}
-                  />
-                  <Select
-                    value={role}
-                    onChange={setRole}
-                    dropdownMatchSelectWidth={false}
-                    options={roles.map((x) => ({ value: x, label: x }))}
-                    style={{ minWidth: 220 }}
-                  />
-                </Space>
                 <div className="grid cols-2">
                   {filtered.map((p) => (
                     <div key={p.id} className="gov-card">
