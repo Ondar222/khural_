@@ -155,8 +155,8 @@ export default function Government() {
   return (
     <section className="section">
       <div className="container">
-        <div className="page-grid">
-          <div>
+        <div className={`page-grid ${section === "Структура" ? "page-grid--structure" : ""}`}>
+          <div className="page-grid__main">
             <div className="gov-toolbar">
               <h1 className="gov-toolbar__title">Парламент</h1>
               {section !== "Структура" ? (

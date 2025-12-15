@@ -2285,8 +2285,19 @@ body.hc-yb {
   display: grid;
   gap: 20px;
 }
+.page-grid > * {
+  min-width: 0; /* prevent wide content from forcing layout collapse */
+}
 @media (min-width: 960px) {
   .page-grid {
+    grid-template-columns: 2fr 1fr;
+    align-items: start;
+  }
+}
+
+/* Structure page: keep content + nav side-by-side earlier */
+@media (min-width: 720px) {
+  .page-grid--structure {
     grid-template-columns: 2fr 1fr;
     align-items: start;
   }

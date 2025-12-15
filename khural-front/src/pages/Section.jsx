@@ -110,7 +110,7 @@ export default function SectionPage() {
     <section className="section">
       <div className="container">
         <div className="page-grid">
-          <div>
+          <div className="page-grid__main">
             <h1>Структура Верховного Хурала (парламента) Республики Тыва</h1>
             <div className="org org--khural">
               <div className="org__row org__row--center">
@@ -195,8 +195,8 @@ export default function SectionPage() {
                 </a>
               </div>
             </div>
-            <SideNav title="Разделы" />
           </div>
+          <SideNav title="Разделы" />
         </div>
       </div>
     </section>
