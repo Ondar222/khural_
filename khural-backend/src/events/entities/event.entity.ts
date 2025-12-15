@@ -24,3 +24,5 @@ export class EventEntity {
   @Column({ type: "text", nullable: true })
   desc?: string;
 }
+
+

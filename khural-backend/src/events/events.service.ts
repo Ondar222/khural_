@@ -38,3 +38,5 @@ export class EventsService {
     return await this.eventsRepo.remove(ev);
   }
 }
+
+

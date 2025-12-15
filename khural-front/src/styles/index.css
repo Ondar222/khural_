@@ -666,8 +666,19 @@ a {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+@media (min-width: 960px) {
+  .grid.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 @media (min-width: 720px) and (max-width: 959px) {
   .grid.cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 100%;
+  }
+}
+@media (min-width: 720px) and (max-width: 959px) {
+  .grid.cols-2 {
     grid-template-columns: repeat(2, 1fr);
     max-width: 100%;
   }

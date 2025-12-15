@@ -30,3 +30,5 @@ export class CreateEventDto {
   @IsString()
   externalId?: string;
 }
+
+

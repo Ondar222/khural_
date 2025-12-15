@@ -11,3 +11,5 @@ import { EventEntity } from "./entities/event.entity";
   exports: [EventsService],
 })
 export class EventsModule {}
+
+

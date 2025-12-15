@@ -1,7 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { Select, Card, Tag, Space, Button, Dropdown } from "antd";
+import { Select, Button, Dropdown } from "antd";
 
 export default function Deputies() {
   const {
@@ -163,58 +163,72 @@ export default function Deputies() {
         </div>
         <div className="grid cols-3">
           {filtered.map((d) => (
-            <Card
-              key={d.id}
-              title={
-                <div className="card-title">
-                  <img
-                    className="avatar"
-                    src={
-                      d.photo ||
-                      (d.image && d.image.link) ||
-                      "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                    }
-                    alt=""
-                    loading="lazy"
-                  />
-                  <span>{d.name}</span>
-                </div>
-              }
-              extra={<Tag color="gold">{d.convocation}</Tag>}
-            >
-              <div style={{ color: "#6b7280", marginBottom: 6 }}>
-                {d.district} · {d.faction}
+            <div key={d.id} className="gov-card">
+              <div className="gov-card__top">
+                <img
+                  className="gov-card__avatar"
+                  src={
+                    d.photo ||
+                    (d.image && d.image.link) ||
+                    "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
+                  }
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
-              <p>Приём граждан: {d.reception || "—"}</p>
-              <Space wrap size="middle" style={{ width: "100%" }}>
-                <Button
-                  className="btn--compact"
-                  size="small"
-                  href={`#/government?type=dep&id=${d.id}`}
-                >
+              <div className="gov-card__body">
+                <div className="gov-card__name">{d.name}</div>
+                {d.position ? (
+                  <div className="gov-card__role">{d.position}</div>
+                ) : (
+                  <div className="gov-card__role">Депутат</div>
+                )}
+                <ul className="gov-meta">
+                  {d.reception && (
+                    <li>
+                      <span>⏰</span>
+                      <span>Приём: {d.reception}</span>
+                    </li>
+                  )}
+                  {d.district && (
+                    <li>
+                      <span>🏛️</span>
+                      <span>{d.district}</span>
+                    </li>
+                  )}
+                  {d.faction && (
+                    <li>
+                      <span>👥</span>
+                      <span>{d.faction}</span>
+                    </li>
+                  )}
+                  {d.convocation && (
+                    <li>
+                      <span>🎖️</span>
+                      <span>Созыв: {d.convocation}</span>
+                    </li>
+                  )}
+                  {d.contacts?.phone && (
+                    <li>
+                      <span>📞</span>
+                      <span>{d.contacts.phone}</span>
+                    </li>
+                  )}
+                  {d.contacts?.email && (
+                    <li>
+                      <span>✉️</span>
+                      <span>{d.contacts.email}</span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+              <div className="gov-card__actions">
+                <a className="gov-card__btn" href={`#/government?type=dep&id=${d.id}`}>
                   Подробнее
-                </Button>
-                <Button
-                  className="btn--compact"
-                  size="small"
-                  href={
-                    d.contacts?.phone ? `tel:${d.contacts.phone}` : undefined
-                  }
-                >
-                  Позвонить
-                </Button>
-                <Button
-                  className="btn--compact"
-                  size="small"
-                  href={
-                    d.contacts?.email ? `mailto:${d.contacts.email}` : undefined
-                  }
-                  type="primary"
-                >
-                  Написать
-                </Button>
-              </Space>
-            </Card>
+                </a>
+              </div>
+            </div>
           ))}
         </div>
       </div>
