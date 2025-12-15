@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "framework": "vite",
+  "installCommand": "npm --prefix khural-front ci",
+  "buildCommand": "npm --prefix khural-front run build",
+  "devCommand": "npm --prefix khural-front run dev",
+  "outputDirectory": "khural-front/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
