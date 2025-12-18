@@ -17,9 +17,14 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{ user: User; token: string }> {
-    const { email, password, firstName, lastName } = registerDto;
+    const email = String(registerDto.email || "").trim().toLowerCase();
+    const password = String(registerDto.password || "");
+    const firstName = registerDto.firstName;
+    const lastName = registerDto.lastName;
 
-    const existingUser = await this.userRepository.findOne({ where: { email } });
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
     if (existingUser) {
       throw new UnauthorizedException('Email already exists');
     }
@@ -51,7 +56,8 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<{ user: User; token: string }> {
-    const { email, password } = loginDto;
+    const email = String(loginDto.email || "").trim().toLowerCase();
+    const password = String(loginDto.password || "");
 
     const user = await this.userRepository.findOneOrFail({ where: { email } }).catch((e) => {
       if (e instanceof EntityNotFoundError) {

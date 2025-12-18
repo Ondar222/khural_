@@ -22,6 +22,11 @@ export default function Government() {
     if (t === "org") return "Структура";
     return "Парламент";
   });
+  const [focus, setFocus] = React.useState(() => {
+    const h = window.location.hash;
+    const sp = new URLSearchParams(h.split("?")[1]);
+    return sp.get("focus");
+  });
 
   const [agency, setAgency] = React.useState("Все");
   const [role, setRole] = React.useState("Все");
@@ -41,14 +46,25 @@ export default function Government() {
       const sp = new URLSearchParams(h.split("?")[1]);
       const id = sp.get("id");
       const t = sp.get("type");
+      const f = sp.get("focus");
       if (t === "dep") setSection("Депутаты");
       else if (t === "org") setSection("Структура");
       else setSection("Парламент");
+      setFocus(f);
       setSelected(id || null);
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
+
+  // Scroll to a requested block on the structure page (e.g., #/government?type=org&focus=committees)
+  React.useEffect(() => {
+    if (section !== "Структура") return;
+    if (!focus) return;
+    const id = `focus-${String(focus)}`;
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [section, focus]);
 
   const agencies = React.useMemo(
     () => ["Все", ...Array.from(new Set(government.map((p) => p.agency)))],
@@ -222,7 +238,7 @@ export default function Government() {
 
             {section === "Структура" ? (
               <>
-                <h3>О Верховном Хурале Республики Тыва</h3>
+                <h3 id="focus-overview">О Верховном Хурале Республики Тыва</h3>
                 <div className="tabs" style={{ marginBottom: 10 }}>
                   <a className="pill" href="#/about">
                     Общие сведения
@@ -239,7 +255,7 @@ export default function Government() {
                       Тыва
                     </div>
                   </div>
-                  <div className="org__row org__row--factions">
+                  <div className="org__row org__row--factions" id="focus-factions">
                     {["Единая Россия", "КПРФ", "ЛДПР", "Новые люди"].map(
                       (f) => (
                         <a
@@ -255,7 +271,7 @@ export default function Government() {
                     )}
                   </div>
                   <div className="org__row org__row--cols4">
-                    <div className="org__col">
+                    <div className="org__col" id="focus-committees">
                       <a
                         className="org__item org__item--blue"
                         href={
@@ -301,7 +317,7 @@ export default function Government() {
                         общественными организациями
                       </a>
                     </div>
-                    <div className="org__col org__col--span2">
+                    <div className="org__col org__col--span2" id="focus-commissions">
                       {[
                         "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
                         "Комиссия Верховного Хурала (парламента) Республики Тыва контрольно за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
@@ -319,6 +335,7 @@ export default function Government() {
                       ))}
                     </div>
                   </div>
+                  <div id="focus-councils" style={{ height: 1 }} />
                   <div className="org__row org__row--center">
                     <a
                       className="org__item org__item--xl org__item--blue"
@@ -645,17 +662,7 @@ export default function Government() {
               </>
             )}
           </div>
-          <SideNav
-            title="Парламент"
-            links={[
-              { label: "Глава", href: "#/government" },
-              { label: "Депутаты", href: "#/deputies" },
-              { label: "Состав Правительства", href: "#/government" },
-              { label: "Исполнительные органы", href: "#/government" },
-              { label: "Структура", href: "#/government?type=org" },
-              { label: "Пресс‑служба", href: "#/government" },
-            ]}
-          />
+          <SideNav title="Разделы" />
         </div>
       </div>
     </section>

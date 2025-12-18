@@ -22,6 +22,7 @@ export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
   const { committees, factions, commissions, councils } = useData();
+  const focus = q.get("focus");
 
   // Detail stub when title is provided
   if (titleParam) {
@@ -105,12 +106,20 @@ export default function SectionPage() {
     );
   }
 
+  // Scroll to a requested block from URL (e.g., #/section?focus=committees)
+  React.useEffect(() => {
+    if (!focus) return;
+    const id = `focus-${String(focus)}`;
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [focus]);
+
   // Structure diagram view (as on the picture)
   return (
     <section className="section">
       <div className="container">
         <div className="page-grid">
-          <div className="page-grid__main">
+          <div className="page-grid__main" id="focus-overview">
             <h1>Структура Верховного Хурала (парламента) Республики Тыва</h1>
             <div className="org org--khural">
               <div className="org__row org__row--center">
@@ -119,7 +128,7 @@ export default function SectionPage() {
                 </div>
               </div>
               {/* Factions row */}
-              <div className="org__row org__row--factions">
+              <div className="org__row org__row--factions" id="focus-factions">
                 {["Единая Россия", "КПРФ", "ЛДПР", "Новые люди"].map((f) => (
                   <a
                     key={f}
@@ -134,7 +143,7 @@ export default function SectionPage() {
               </div>
               {/* Three column zone: committees on the left, commissions/councils on right */}
               <div className="org__row org__row--cols4">
-                <div className="org__col">
+                <div className="org__col" id="focus-committees">
                   <a
                     className="org__item org__item--blue"
                     href={"#/section?title=" + encodeURIComponent("Комитеты")}
@@ -168,7 +177,10 @@ export default function SectionPage() {
                     общественными организациями
                   </a>
                 </div>
-                <div className="org__col org__col--span2">
+                <div
+                  className="org__col org__col--span2"
+                  id="focus-commissions"
+                >
                   {[
                     { title: "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике", id: "reglament-etika" },
                     { title: "Комиссия Верховного Хурала (парламента) Республики Тыва контрольно за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва", id: "kontrol-dostovernost" },
@@ -186,6 +198,8 @@ export default function SectionPage() {
                   ))}
                 </div>
               </div>
+              {/* Councils anchor (same visual area for now) */}
+              <div id="focus-councils" style={{ height: 1 }} />
               <div className="org__row org__row--center">
                 <a
                   className="org__item org__item--xl org__item--blue"

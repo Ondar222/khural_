@@ -6,3 +6,4 @@ export class UpdateNewsDto extends PartialType(CreateNewsDto) {}
 
 
 
+

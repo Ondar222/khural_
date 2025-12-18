@@ -3,34 +3,29 @@ import React from "react";
 // Reusable right-side navigation with links to key subpages
 export default function SideNav({ title = "Разделы", links: overrideLinks }) {
   const defaultLinks = [
+    { label: "Общие сведения", href: "#/about" },
+    // canonical structure page is Government with type=org (it contains the diagram + tabs)
+    { label: "Структура парламента", href: "#/government?type=org&focus=overview" },
     { label: "Руководство", href: "#/government" },
-    { label: "Депутаты", href: "#/deputies" },
-    { label: "Депутаты всех созывов", href: "#/deputies" },
+    // "Депутаты" — по умолчанию показываем текущий созыв (если есть в данных)
+    { label: "Депутаты", href: "#/deputies?convocation=VIII" },
+    { label: "Депутаты всех созывов", href: "#/deputies?convocation=%D0%92%D1%81%D0%B5" },
     {
       label: "Представительство в Совете Федерации",
       href:
         "#/section?title=" +
         encodeURIComponent("Представительство в Совете Федерации"),
     },
-    {
-      label: "Депутатские фракции",
-      href: "#/section?title=" + encodeURIComponent("Депутатские фракции"),
-    },
-    { label: "Комитеты", href: "#/committee" },
-    {
-      label: "Комиссии",
-      href: "#/section?title=" + encodeURIComponent("Комиссии"),
-    },
+    { label: "Депутатские фракции", href: "#/government?type=org&focus=factions" },
+    { label: "Комитеты", href: "#/government?type=org&focus=committees" },
+    { label: "Комиссии", href: "#/government?type=org&focus=commissions" },
     {
       label:
         "Совет по взаимодействию с представительными органами муниципальных образований",
       href:
-        "#/section?title=" +
-        encodeURIComponent(
-          "Совет по взаимодействию с представительными органами муниципальных образований"
-        ),
+        "#/government?type=org&focus=councils",
     },
-    { label: "Аппарат", href: "#/apparatus" },
+    { label: "Структура Аппарата", href: "#/apparatus" },
     {
       label: "Молодежный Хурал",
       href: "#/section?title=" + encodeURIComponent("Молодежный Хурал"),

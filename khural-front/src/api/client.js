@@ -13,14 +13,14 @@ function resolveApiBaseUrl() {
   const fromEnv = import.meta?.env?.VITE_API_BASE_URL;
   if (fromEnv) return String(fromEnv);
   // 4) Safe defaults:
-  // - local dev: backend on :3000
+  // - local dev: use Vite proxy (/api -> http://localhost:3000)
   // - otherwise: same origin as frontend (reverse proxy / single domain deploy)
   if (typeof window !== "undefined" && window.location) {
     const host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") return "http://localhost:3000";
+    if (host === "localhost" || host === "127.0.0.1") return "/api";
     return window.location.origin;
   }
-  return "http://localhost:3000";
+  return "/api";
 }
 export const API_BASE_URL = resolveApiBaseUrl();
 const TOKEN_STORAGE_KEY =
@@ -143,9 +143,9 @@ export const PublicApi = {
       });
       return result;
     } catch (error) {
-      // Вариант 2: альтернативный формат
+      // Вариант 2: альтернативный формат (но тот же endpoint)
       try {
-        const result = await apiFetch("/api/translate", {
+        const result = await apiFetch("/translate", {
           method: "POST",
           body: { text, source: from, target: to },
           auth: false,
