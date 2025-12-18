@@ -1,5 +1,6 @@
 import React from "react";
 import UnitModal from "../components/UnitModal.jsx";
+import SideNav from "../components/SideNav.jsx";
 
 export default function Apparatus() {
   const [unitModal, setUnitModal] = React.useState(null);
@@ -71,79 +72,81 @@ export default function Apparatus() {
   return (
     <section className="section">
       <div className="container">
-        <div className="tabs" style={{ marginTop: 8, marginBottom: 12 }}>
-          <a className="pill" href="#/government?type=org">
-            ← Назад к структуре
-          </a>
-        </div>
-        <h1>Аппарат Верховного Хурала (парламента) Республики Тыва</h1>
+        <div className="page-grid">
+          <div className="page-grid__main">
+            <div className="tabs" style={{ marginTop: 8, marginBottom: 12 }}>
+              <a className="pill" href="#/about?tab=structure&focus=overview">
+                ← Назад к структуре
+              </a>
+            </div>
+            <h1>Аппарат Верховного Хурала (парламента) Республики Тыва</h1>
 
-        <div className="orgv2">
-          {/* Руководитель + заместитель */}
-          <div className="orgv2__chain">
-            <div className="orgv2__line" />
-            <div className="person-card person-card--round-xl">
-              <img
-                className="person-card__photo"
-                src={
-                  "https://khural.rtyva.ru/upload/iblock/c37/%D0%A3%D1%81%D0%BF%D1%83%D0%BD%20%D0%9C.%D0%98..jpg" ||
-                  "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                }
-                alt=""
-                loading="lazy"
-              />
-              <div className="person-card__body">
-                <div className="person-card__name">Успун Маадыр Иргитович</div>
-                <div className="person-card__role">
-                  Руководитель Аппарата Верховного Хурала (парламента)
-                  Республики Тыва
+            <div className="orgv2">
+              {/* Руководитель + заместитель */}
+              <div className="orgv2__chain">
+                <div className="orgv2__line" />
+                <div className="person-card person-card--round-xl">
+                  <img
+                    className="person-card__photo"
+                    src={
+                      "https://khural.rtyva.ru/upload/iblock/c37/%D0%A3%D1%81%D0%BF%D1%83%D0%BD%20%D0%9C.%D0%98..jpg" ||
+                      "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
+                    }
+                    alt=""
+                    loading="lazy"
+                  />
+                  <div className="person-card__body">
+                    <div className="person-card__name">Успун Маадыр Иргитович</div>
+                    <div className="person-card__role">
+                      Руководитель Аппарата Верховного Хурала (парламента)
+                      Республики Тыва
+                    </div>
+                    <ul className="person-card__meta">
+                      <li>+7 (959)123‑45‑67</li>
+                      <li>lol@mail.ru</li>
+                      <li>г. Кызыл, ул. Ленина, 40</li>
+                      <li>Фракция: «ЕДИНАЯ РОССИЯ»</li>
+                    </ul>
+                    <a
+                      className="btn btn--primary btn--compact"
+                      href="#/government?type=gov"
+                    >
+                      Подробнее
+                    </a>
+                  </div>
                 </div>
-                <ul className="person-card__meta">
-                  <li>+7 (959)123‑45‑67</li>
-                  <li>lol@mail.ru</li>
-                  <li>г. Кызыл, ул. Ленина, 40</li>
-                  <li>Фракция: «ЕДИНАЯ РОССИЯ»</li>
-                </ul>
-                <a
-                  className="btn btn--primary btn--compact"
-                  href="#/government?type=gov"
-                >
-                  Подробнее
-                </a>
+                <div className="person-card person-card--round-xl">
+                  <img
+                    className="person-card__photo"
+                    src={
+                      "https://khural.rtyva.ru/upload/iblock/2d3/IMG_1348.JPG" ||
+                      "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
+                    }
+                    alt=""
+                    loading="lazy"
+                  />
+                  <div className="person-card__body">
+                    <div className="person-card__name">
+                      Ананьина Ирина Викторовна
+                    </div>
+                    <div className="person-card__role">
+                      Заместитель руководителя Аппарата, начальник организационного
+                      управления
+                    </div>
+                    <ul className="person-card__meta">
+                      <li>+7 (959)123‑45‑67</li>
+                      <li>lol@mail.ru</li>
+                      <li>г. Кызыл, ул. Ленина, 40</li>
+                    </ul>
+                    <a
+                      className="btn btn--primary btn--compact"
+                      href="#/government?type=gov"
+                    >
+                      Подробнее
+                    </a>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="person-card person-card--round-xl">
-              <img
-                className="person-card__photo"
-                src={
-                  "https://khural.rtyva.ru/upload/iblock/2d3/IMG_1348.JPG" ||
-                  "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                }
-                alt=""
-                loading="lazy"
-              />
-              <div className="person-card__body">
-                <div className="person-card__name">
-                  Ананьина Ирина Викторовна
-                </div>
-                <div className="person-card__role">
-                  Заместитель руководителя Аппарата, начальник организационного
-                  управления
-                </div>
-                <ul className="person-card__meta">
-                  <li>+7 (959)123‑45‑67</li>
-                  <li>lol@mail.ru</li>
-                  <li>г. Кызыл, ул. Ленина, 40</li>
-                </ul>
-                <a
-                  className="btn btn--primary btn--compact"
-                  href="#/government?type=gov"
-                >
-                  Подробнее
-                </a>
-              </div>
-            </div>
-          </div>
 
           {/* Ветка организационного управления */}
           <div className="orgv2__strip" style={{ justifyContent: "center" }}>
@@ -311,14 +314,17 @@ export default function Apparatus() {
               </div>
             </div>
           </div>
+            </div>
+            <UnitModal
+              open={!!unitModal}
+              title={unitModal?.title}
+              description={unitModal?.description}
+              link={unitModal?.link}
+              onClose={() => setUnitModal(null)}
+            />
+          </div>
+          <SideNav />
         </div>
-        <UnitModal
-          open={!!unitModal}
-          title={unitModal?.title}
-          description={unitModal?.description}
-          link={unitModal?.link}
-          onClose={() => setUnitModal(null)}
-        />
       </div>
     </section>
   );

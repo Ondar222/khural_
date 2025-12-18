@@ -1,5 +1,6 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
+import SideNav from "../components/SideNav.jsx";
 
 export default function Committee() {
   const { committees, deputies } = useData();
@@ -29,8 +30,13 @@ export default function Committee() {
     return (
       <section className="section">
         <div className="container">
-          <h1>Комитет</h1>
-          <p>Комитет не найден.</p>
+          <div className="page-grid">
+            <div>
+              <h1>Комитет</h1>
+              <p>Комитет не найден.</p>
+            </div>
+            <SideNav />
+          </div>
         </div>
       </section>
     );
@@ -56,6 +62,10 @@ export default function Committee() {
       phone: d?.contacts?.phone || m.phone,
       email: d?.contacts?.email || m.email,
       address: d?.address || m.address,
+      faction: d?.faction,
+      district: d?.district,
+      convocation: d?.convocation,
+      position: d?.position,
     };
   };
 
@@ -67,89 +77,163 @@ export default function Committee() {
   return (
     <section className="section">
       <div className="container">
-        <h1>{committee.title}</h1>
-        {leader ? (
-          <>
-            <h2 style={{ marginTop: 12 }}>Председатель</h2>
-            <div className="orgv2__chain" style={{ marginTop: 8 }}>
-              <div className="orgv2__line" />
-              <div className="person-card person-card--committee">
-                <img
-                  className="person-card__photo"
-                  src={leader.photo}
-                  alt=""
-                  loading="lazy"
-                />
-                <div className="person-card__body">
-                  <div className="person-card__name">{leader.name}</div>
-                  <div className="person-card__role">{leader.role}</div>
-                  <ul className="person-card__meta">
-                    {leader.phone && <li>+ {leader.phone}</li>}
-                    {leader.email && <li>{leader.email}</li>}
-                    {leader.address && <li>{leader.address}</li>}
-                  </ul>
-                  <a
-                    className="btn btn--primary btn--compact"
-                    href={
-                      leader.id ? `#/government?type=dep&id=${leader.id}` : "#"
-                    }
-                  >
-                    Подробнее
-                  </a>
+        <div className="page-grid">
+          <div className="page-grid__main">
+            <h1>{committee.title}</h1>
+
+            {/* Visible deputies list (cards) */}
+            {members.length ? (
+              <>
+                <h2 style={{ marginTop: 12 }}>Состав комитета</h2>
+                <div className="grid cols-3" style={{ marginTop: 10 }}>
+                  {members.map((m, idx) => (
+                    <div key={m.id || idx} className="gov-card">
+                      <div className="gov-card__top">
+                        <img
+                          className="gov-card__avatar"
+                          src={m.photo}
+                          alt=""
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="gov-card__body">
+                        <div className="gov-card__name">{m.name}</div>
+                        <div className="gov-card__role">
+                          {m.role || m.position || "Член комитета"}
+                        </div>
+                        <ul className="gov-meta">
+                          {m.convocation && (
+                            <li>
+                              <span>🎖️</span>
+                              <span>Созыв: {m.convocation}</span>
+                            </li>
+                          )}
+                          {m.district && (
+                            <li>
+                              <span>🏛️</span>
+                              <span>{m.district}</span>
+                            </li>
+                          )}
+                          {m.faction && (
+                            <li>
+                              <span>👥</span>
+                              <span>{m.faction}</span>
+                            </li>
+                          )}
+                          {m.phone && (
+                            <li>
+                              <span>📞</span>
+                              <span>{m.phone}</span>
+                            </li>
+                          )}
+                          {m.email && (
+                            <li>
+                              <span>✉️</span>
+                              <span>{m.email}</span>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                      <div className="gov-card__actions">
+                        <a
+                          className="gov-card__btn"
+                          href={m.id ? `#/government?type=dep&id=${m.id}` : "#"}
+                        >
+                          Подробнее
+                        </a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </div>
-          </>
-        ) : null}
-        {rest.length ? (
-          <>
-            <h2 style={{ marginTop: 16 }}>Члены Комитета</h2>
-            <div className="orgv2__chain" style={{ marginTop: 8 }}>
-              <div className="orgv2__line" />
-              {rest.map((p, idx) => (
-                <div
-                  key={p.id || idx}
-                  className="person-card person-card--committee"
-                >
-                  <img
-                    className="person-card__photo"
-                    src={p.photo}
-                    alt=""
-                    loading="lazy"
-                  />
-                  <div className="person-card__body">
-                    <div className="person-card__name">{p.name}</div>
-                    <div className="person-card__role">{p.role}</div>
-                    <ul className="person-card__meta">
-                      {p.phone && <li>+ {p.phone}</li>}
-                      {p.email && <li>{p.email}</li>}
-                      {p.address && <li>{p.address}</li>}
-                    </ul>
-                    <a
-                      className="btn btn--primary btn--compact"
-                      href={p.id ? `#/government?type=dep&id=${p.id}` : "#"}
-                    >
-                      Подробнее
-                    </a>
+              </>
+            ) : null}
+
+            {/* Keep the chain view (optional, nice hierarchy) */}
+            {leader ? (
+              <>
+                <h2 style={{ marginTop: 18 }}>Председатель</h2>
+                <div className="orgv2__chain" style={{ marginTop: 8 }}>
+                  <div className="orgv2__line" />
+                  <div className="person-card person-card--committee">
+                    <img
+                      className="person-card__photo"
+                      src={leader.photo}
+                      alt=""
+                      loading="lazy"
+                    />
+                    <div className="person-card__body">
+                      <div className="person-card__name">{leader.name}</div>
+                      <div className="person-card__role">{leader.role}</div>
+                      <ul className="person-card__meta">
+                        {leader.phone && <li>+ {leader.phone}</li>}
+                        {leader.email && <li>{leader.email}</li>}
+                        {leader.address && <li>{leader.address}</li>}
+                      </ul>
+                      <a
+                        className="btn btn--primary btn--compact"
+                        href={
+                          leader.id ? `#/government?type=dep&id=${leader.id}` : "#"
+                        }
+                      >
+                        Подробнее
+                      </a>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </>
-        ) : null}
-        {staff.length ? (
-          <>
-            <h3 style={{ marginTop: 16 }}>Сотрудники комитета</h3>
-            <ul className="person-card__meta">
-              {staff.map((s, i) => (
-                <li key={i}>
-                  <strong>{s.name}</strong>
-                  {s.role ? ` — ${s.role}` : ""}
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : null}
+              </>
+            ) : null}
+            {rest.length ? (
+              <>
+                <h2 style={{ marginTop: 16 }}>Члены Комитета</h2>
+                <div className="orgv2__chain" style={{ marginTop: 8 }}>
+                  <div className="orgv2__line" />
+                  {rest.map((p, idx) => (
+                    <div
+                      key={p.id || idx}
+                      className="person-card person-card--committee"
+                    >
+                      <img
+                        className="person-card__photo"
+                        src={p.photo}
+                        alt=""
+                        loading="lazy"
+                      />
+                      <div className="person-card__body">
+                        <div className="person-card__name">{p.name}</div>
+                        <div className="person-card__role">{p.role}</div>
+                        <ul className="person-card__meta">
+                          {p.phone && <li>+ {p.phone}</li>}
+                          {p.email && <li>{p.email}</li>}
+                          {p.address && <li>{p.address}</li>}
+                        </ul>
+                        <a
+                          className="btn btn--primary btn--compact"
+                          href={p.id ? `#/government?type=dep&id=${p.id}` : "#"}
+                        >
+                          Подробнее
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
+            {staff.length ? (
+              <>
+                <h3 style={{ marginTop: 16 }}>Сотрудники комитета</h3>
+                <ul className="person-card__meta">
+                  {staff.map((s, i) => (
+                    <li key={i}>
+                      <strong>{s.name}</strong>
+                      {s.role ? ` — ${s.role}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </div>
+          <SideNav />
+        </div>
       </div>
     </section>
   );
