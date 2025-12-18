@@ -4,8 +4,7 @@ import React from "react";
 export default function SideNav({ title = "Разделы", links: overrideLinks }) {
   const defaultLinks = [
     { label: "Общие сведения", href: "#/about" },
-    // canonical structure page is Government with type=org (it contains the diagram + tabs)
-    { label: "Структура парламента", href: "#/government?type=org&focus=overview" },
+    { label: "Структура парламента", href: "#/about?tab=structure&focus=overview" },
     { label: "Руководство", href: "#/government" },
     // "Депутаты" — по умолчанию показываем текущий созыв (если есть в данных)
     { label: "Депутаты", href: "#/deputies?convocation=VIII" },
@@ -16,14 +15,14 @@ export default function SideNav({ title = "Разделы", links: overrideLinks
         "#/section?title=" +
         encodeURIComponent("Представительство в Совете Федерации"),
     },
-    { label: "Депутатские фракции", href: "#/government?type=org&focus=factions" },
-    { label: "Комитеты", href: "#/government?type=org&focus=committees" },
-    { label: "Комиссии", href: "#/government?type=org&focus=commissions" },
+    { label: "Депутатские фракции", href: "#/about?tab=structure&focus=factions" },
+    { label: "Комитеты", href: "#/about?tab=structure&focus=committees" },
+    { label: "Комиссии", href: "#/about?tab=structure&focus=commissions" },
     {
       label:
         "Совет по взаимодействию с представительными органами муниципальных образований",
       href:
-        "#/government?type=org&focus=councils",
+        "#/about?tab=structure&focus=councils",
     },
     { label: "Структура Аппарата", href: "#/apparatus" },
     {

@@ -25,6 +25,6 @@ export default function Router({ routes }) {
     // Always scroll to top on route change (desktop & mobile)
     if (typeof window !== "undefined")
       window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [route]);
+  }, [base]);
   return <Component />;
 }
