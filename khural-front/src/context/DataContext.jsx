@@ -32,6 +32,38 @@ export function useData() {
   return React.useContext(DataContext);
 }
 
+function pick(...vals) {
+  for (const v of vals) {
+    if (v === undefined || v === null) continue;
+    if (typeof v === "string" && v.trim() === "") continue;
+    return v;
+  }
+  return undefined;
+}
+
+function firstFileLink(maybeFile) {
+  if (!maybeFile) return "";
+  // Possible shapes:
+  // - { link }
+  // - { file: { link } }
+  // - { id } or { file: { id } } (backend may expose only id)
+  const link =
+    maybeFile?.link ||
+    maybeFile?.url ||
+    maybeFile?.file?.link ||
+    maybeFile?.file?.url ||
+    "";
+  if (link) return String(link);
+  const id = maybeFile?.id || maybeFile?.file?.id;
+  if (!id) return "";
+  return `/files/v2/${String(id)}`;
+}
+
+function firstImageLink(images) {
+  if (!Array.isArray(images) || !images.length) return "";
+  return firstFileLink(images[0]);
+}
+
 async function fetchJson(path) {
   try {
     const res = await fetch(path, { cache: "no-cache" });
@@ -71,15 +103,16 @@ export default function DataProvider({ children }) {
             (Array.isArray(n.content) ? n.content[0] : null) ||
             null;
           const desc = String(ru?.description || "");
-          const img =
-            (Array.isArray(n.images) &&
-              (n.images[0]?.file?.link || n.images[0]?.link)) ||
-            "";
+          const img = firstImageLink(n.images);
+          const date =
+            pick(n.publishedAt, n.published_at) ||
+            pick(n.createdAt, n.created_at) ||
+            new Date().toISOString();
           return {
             id: String(n.id ?? Math.random().toString(36).slice(2)),
             title: ru?.title || "",
-            category: n.category || "Новости",
-            date: n.publishedAt || n.createdAt || new Date().toISOString(),
+            category: pick(n.category, n.category_name) || "Новости",
+            date,
             excerpt: desc,
             content: desc
               ? desc.split(/\n{2,}/g).filter(Boolean)
@@ -99,11 +132,11 @@ export default function DataProvider({ children }) {
         setEvents(
           apiEvents.map((e) => ({
             id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
-            date: e.date,
-            title: e.title || "",
-            time: e.time || "",
-            place: e.place || "",
-            desc: e.desc || "",
+            date: pick(e.date, e.date_of_event) || "",
+            title: pick(e.title, e.event_title) || "",
+            time: pick(e.time, e.event_time) || "",
+            place: pick(e.place, e.event_place) || "",
+            desc: pick(e.desc, e.description) || "",
           }))
         );
       } else {
@@ -131,29 +164,32 @@ export default function DataProvider({ children }) {
             ...(local || {}),
             id,
             externalId: externalKey || (local?.id ? String(local.id) : undefined),
-            name: p.fullName || p.name || local?.name || "",
+            name: pick(p.fullName, p.full_name, p.name) || local?.name || "",
             // PersonDetail expects "position" field for deputy
-            position: local?.position || p.description || "",
+            position: local?.position || pick(p.description, p.role) || "",
             bio: local?.bio || "",
             district:
               local?.district ||
-              p.electoralDistrict ||
+              pick(p.electoralDistrict, p.electoral_district) ||
               p.city ||
               p.district ||
               "",
-            faction: local?.faction || p.faction || p.committee || "",
-            convocation: local?.convocation || p.convocation || "",
-            reception: local?.reception || p.receptionSchedule || "",
+            faction: local?.faction || pick(p.faction, p.committee) || "",
+            convocation: local?.convocation || pick(p.convocation) || "",
+            reception: local?.reception || pick(p.receptionSchedule, p.reception_schedule) || "",
             address: local?.address || "",
             // Prefer stored image link, fallback to seeded photoUrl or old JSON photo
             photo:
-              (p.image && (p.image.link || p.image.url)) ||
-              p.photoUrl ||
+              firstFileLink(p.image) ||
+              pick(p.photoUrl, p.photo_url) ||
               local?.photo ||
               p.photo ||
               "",
             contacts: {
-              phone: p.phoneNumber || local?.contacts?.phone || p.phone || "",
+              phone:
+                pick(p.phoneNumber, p.phone_number, p.phone) ||
+                local?.contacts?.phone ||
+                "",
               email: p.email || local?.contacts?.email || "",
             },
             laws: Array.isArray(local?.laws) ? local.laws : [],
@@ -182,11 +218,11 @@ export default function DataProvider({ children }) {
             id: d.id,
             title: d.title,
             desc: d.description || "",
-            date: d.date || d.createdAt || "",
+            date: pick(d.date, d.createdAt, d.created_at) || "",
             number: d.number || "",
             category: d.category || typeLabels[d.type] || d.type || "Документы",
             type: d.type || "other",
-            url: d.url || d.file?.link || "",
+            url: d.url || firstFileLink(d.file) || "",
           }))
         );
       } else {
@@ -202,19 +238,9 @@ export default function DataProvider({ children }) {
           tryApiFetch("/persons/categories/all", { auth: false }),
         ]);
       if (Array.isArray(apiFactions) && apiFactions.length) setFactions(apiFactions);
-      if (Array.isArray(apiDistricts) && apiDistricts.length)
-        setDistricts(apiDistricts);
-      if (Array.isArray(apiConvocations) && apiConvocations.length)
-        setConvocations(apiConvocations);
-      if (Array.isArray(apiCategories) && apiCategories.length) {
-        setCommittees(
-          apiCategories.map((c) => ({
-            id: c.id ?? c.value ?? c.name ?? String(c),
-            title: c.title || c.name || String(c),
-            members: [],
-          }))
-        );
-      }
+      if (Array.isArray(apiDistricts) && apiDistricts.length) setDistricts(apiDistricts);
+      if (Array.isArray(apiConvocations) && apiConvocations.length) setConvocations(apiConvocations);
+      // NOTE: apiCategories is not committees. Committees are loaded from /data/committees.json.
     })();
     // Structure-derived lists
     fetchJson("/data/structure.json").then((s) => {
@@ -226,9 +252,8 @@ export default function DataProvider({ children }) {
     });
     fetchJson("/data/government.json").then(setGovernment);
     fetchJson("/data/authorities.json").then(setAuthorities);
-    // documents are loaded above (API first, fallback), keep local as backup only
-    if (!committees.length)
-      fetchJson("/data/committees.json").then(setCommittees);
+    // Committees are a static structure file (with members/staff); always load them.
+    fetchJson("/data/committees.json").then(setCommittees);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = React.useMemo(

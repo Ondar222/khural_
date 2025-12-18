@@ -31,6 +31,44 @@ export default function SectionPage() {
       title = decodeURIComponent(titleParam);
     } catch {}
     
+    // Committees list page
+    if (title === "Комитеты") {
+      return (
+        <section className="section">
+          <div className="container">
+            <div className="page-grid">
+              <div>
+                <h1>Комитеты</h1>
+                <p style={{ marginTop: 0 }}>
+                  Выберите комитет, чтобы посмотреть состав и информацию.
+                </p>
+                <div className="grid cols-2" style={{ marginTop: 12 }}>
+                  {(committees || []).map((c) => (
+                    <a
+                      key={c.id}
+                      className="tile link"
+                      href={`#/committee?id=${encodeURIComponent(c.id)}`}
+                    >
+                      <span style={{ display: "grid", gap: 6 }}>
+                        <span style={{ fontWeight: 900, color: "#0a1f44" }}>
+                          {c.title}
+                        </span>
+                        <span style={{ color: "#6b7280", fontSize: 13 }}>
+                          {(Array.isArray(c.members) ? c.members.length : 0) ? `Состав: ${c.members.length}` : "Состав: —"}
+                        </span>
+                      </span>
+                      <span aria-hidden="true">›</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     // Special handling for Комиссии page
     if (title === "Комиссии") {
       const commissionsList = [
@@ -90,6 +128,60 @@ export default function SectionPage() {
         </section>
       );
     }
+
+    if (title === "Представительство в Совете Федерации") {
+      return (
+        <section className="section">
+          <div className="container">
+            <div className="page-grid">
+              <div>
+                <h1>{title}</h1>
+                <p>
+                  Раздел в разработке. Здесь будет информация о представителях
+                  Республики Тыва в Совете Федерации, контакты и биографии.
+                </p>
+                <div className="tabs">
+                  <a className="btn" href="#/contacts">
+                    Контакты →
+                  </a>
+                  <a className="btn" href="#/appeals">
+                    Прием обращений →
+                  </a>
+                </div>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (title === "Молодежный Хурал") {
+      return (
+        <section className="section">
+          <div className="container">
+            <div className="page-grid">
+              <div>
+                <h1>{title}</h1>
+                <p>
+                  Раздел в разработке. Здесь будет информация о составе,
+                  мероприятиях и документах Молодежного Хурала.
+                </p>
+                <div className="tabs">
+                  <a className="btn" href="#/news">
+                    Новости →
+                  </a>
+                  <a className="btn" href="#/calendar">
+                    Календарь →
+                  </a>
+                </div>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
     
     return (
       <section className="section">
@@ -97,7 +189,10 @@ export default function SectionPage() {
           <div className="page-grid">
             <div>
               <h1>{title}</h1>
-              <p>Здесь будет содержимое страницы «{title}».</p>
+              <p>
+                Раздел «{title}» пока не заполнен. Если это важный пункт меню —
+                скажи, и я добавлю содержимое/данные.
+              </p>
             </div>
             <SideNav title="Разделы" />
           </div>
