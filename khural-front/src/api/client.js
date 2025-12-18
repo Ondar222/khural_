@@ -93,6 +93,34 @@ export async function apiFetch(
   return unwrapApiPayload(data);
 }
 
+export async function apiFetchText(
+  path,
+  { method = "GET", headers, auth = true } = {}
+) {
+  if (!API_BASE_URL) {
+    throw new Error("VITE_API_BASE_URL is not configured");
+  }
+  const url =
+    API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
+  const finalHeaders = {
+    Accept: "text/plain,text/markdown,*/*",
+    ...(headers || {}),
+  };
+  if (auth) {
+    const token = getAuthToken();
+    if (token) finalHeaders.Authorization = `Bearer ${token}`;
+  }
+  const res = await fetch(url, { method, headers: finalHeaders });
+  const text = await res.text().catch(() => "");
+  if (!res.ok) {
+    const err = new Error(text || `Request failed: ${res.status}`);
+    err.status = res.status;
+    err.data = text;
+    throw err;
+  }
+  return text;
+}
+
 export async function tryApiFetch(path, options) {
   try {
     return await apiFetch(path, options);
@@ -103,16 +131,21 @@ export async function tryApiFetch(path, options) {
 
 export const AuthApi = {
   async register(user) {
-    // New backend uses POST /user/
+    // Backend supports both POST /user/ and POST /auth/register
+    // Try /auth/register first (preferred), fallback to /user/
     try {
-      return await apiFetch("/user", {
+      return await apiFetch("/auth/register", {
         method: "POST",
         body: user,
         auth: false,
       });
     } catch (e) {
-      // Compatibility fallback
-      return apiFetch("/auth/register", { method: "POST", body: user, auth: false });
+      // Fallback to /user/ endpoint
+      return await apiFetch("/user", {
+        method: "POST",
+        body: user,
+        auth: false,
+      });
     }
   },
   async loginWithPassword({ email, password }) {

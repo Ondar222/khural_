@@ -40,6 +40,8 @@ import {
   EAppScope,
   IAccountability,
 } from '../../lib/types';
+import { UserCreateDto } from '../../user/dto/create.dto';
+import { UserFactory } from '../../user/user.factory';
 
 @ApiTags('authorization')
 @Controller('auth')
@@ -51,6 +53,7 @@ export class AuthController implements IAuthController {
     private sessionService: SessionService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly userFactory: UserFactory,
   ) {}
 
   @ApiBody({ type: AuthLoginByPhoneDTO })
@@ -117,19 +120,26 @@ export class AuthController implements IAuthController {
     @Body() body: AuthLoginByEmailDTO
   ): Promise<ApiResponses<IUserCredentials>> {
     try {
-      // let credentials: IUserCredentials;
-      const { email, password } = body;
+      // Normalize email (trim + lowercase)
+      const normalizedEmail = String(body.email || '').trim().toLowerCase();
+      if (!normalizedEmail) {
+        throw new BadRequestException('Email is required');
+      }
 
       const user = await this.userService.checkUserLoginCredentials(
-        email,
-        password
+        normalizedEmail,
+        body.password
       );
+
+      if (!user || !user.role) {
+        throw new ForbiddenException('Invalid credentials');
+      }
 
       const credentials = this.authService.login({
         user: user.id,
-        admin: user.role.admin_access,
-        app: user.role.app_access,
-        role: user.role.id as EUserRole,
+        admin: user.role.admin_access || false,
+        app: user.role.app_access !== false,
+        role: (user.role.id || EUserRole.citizen) as EUserRole,
         scope: EAppScope.LANA_FOOD,
       });
 
@@ -242,6 +252,49 @@ export class AuthController implements IAuthController {
     const hashPassword = await PasswordHelper.hashPassword(password);
     await this.userService.updatePassword(email, hashPassword);
     return res.sendStatus(201);
+  }
+
+  @ApiBody({ type: UserCreateDto })
+  @Post('/register')
+  async register(
+    @Headers() headers: Express.Request['headers'],
+    @Ip() ip: string,
+    @Body() body: UserCreateDto,
+  ): Promise<ApiResponses<IUserCredentials & { id: string }>> {
+    try {
+      // Normalize email and phone
+      if (body.email) {
+        body.email = String(body.email).trim().toLowerCase();
+      }
+      if (body.phone) {
+        body.phone = genNormalizePhone(body.phone);
+      }
+
+      // Map role from frontend format to backend enum
+      // Frontend may send "user" but backend expects "citizen" or "admin"
+      if (!body.role || (body.role as any) === 'user') {
+        body.role = EUserRole.citizen;
+      }
+
+      // Create user via UserFactory
+      const newUser = await this.userFactory.create(body);
+
+      const accountability = await this.userService.createUserCredentials(newUser.id);
+      const data: IUserCredentials = this.authService.login(accountability);
+
+      await this.sessionService.create({
+        token: data.refresh_token,
+        user: accountability.user,
+        expires: DateFormatter.toTimestampWTZ(data.refresh_expire_date),
+        ip: ip,
+        user_agent: headers['user-agent'],
+        origin: headers['host'],
+      });
+
+      return { data: { ...data, id: newUser.id } };
+    } catch (e: unknown) {
+      throw e;
+    }
   }
 
 

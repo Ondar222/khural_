@@ -98,6 +98,7 @@ export default function App() {
                         "/admin/deputies": Admin,
                         "/admin/documents": Admin,
                         "/admin/events": Admin,
+                        "/admin/env": Admin,
                         "/feedback": Feedback,
                         "/press": Press,
                         "/activity": ActivityPage,

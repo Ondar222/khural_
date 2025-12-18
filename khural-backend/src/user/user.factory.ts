@@ -8,6 +8,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { PasswordHelper } from '../common/utils';
+import { genNormalizePhone } from '../common/utils/phone';
 import { RoleRepository } from '../role/role.repository';
 import { UserRepository } from './user.repository';
 
@@ -20,12 +21,21 @@ class UserFactory {
 
   async create(dto: UserCreateDto) {
     try {
+      // Normalize email and phone
+      const normalizedEmail = dto.email ? String(dto.email).trim().toLowerCase() : null;
+      const normalizedPhone = dto.phone ? genNormalizePhone(dto.phone) : null;
+
+      if (!normalizedEmail && !normalizedPhone) {
+        throw new BadRequestException('Email or phone is required');
+      }
+
+      // Check for existing user
+      const whereConditions: any[] = [];
+      if (normalizedEmail) whereConditions.push({ email: normalizedEmail });
+      if (normalizedPhone) whereConditions.push({ phone: normalizedPhone });
+
       const existingUser = await this.userRepository.findOne({
-        where: [
-          { email: dto.email },
-          { phone: dto.phone },
-          // { username: dto.username}  //Add user name checks
-        ],
+        where: whereConditions,
       });
 
       if (existingUser) {
@@ -44,8 +54,8 @@ class UserFactory {
       user.id = v4();
       user.surname = dto.surname;
       user.name = dto.name;
-      user.email = dto.email;
-      user.phone = dto.phone;
+      user.email = normalizedEmail || '';
+      user.phone = normalizedPhone || undefined;
       user.password = dto.password ? await PasswordHelper.hashPassword(dto.password) : '';
       user.status = 'active';
       user.role = role;

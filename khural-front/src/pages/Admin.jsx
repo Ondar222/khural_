@@ -17,6 +17,7 @@ import AdminNews from "./admin/AdminNews.jsx";
 import AdminDeputies from "./admin/AdminDeputies.jsx";
 import AdminDocuments from "./admin/AdminDocuments.jsx";
 import AdminEvents from "./admin/AdminEvents.jsx";
+import AdminEnvDocs from "./admin/AdminEnvDocs.jsx";
 import { readAdminTheme, writeAdminTheme } from "./admin/adminTheme.js";
 
 function toNewsFallback(items) {
@@ -433,6 +434,8 @@ export default function Admin() {
         busy={busy}
         canWrite={canWrite}
       />
+    ) : sub === "env" ? (
+      <AdminEnvDocs />
     ) : (
       <AdminDashboard stats={stats} />
     );
@@ -443,6 +446,7 @@ export default function Admin() {
     documents: "Документы",
     events: "События",
     news: "Новости",
+    env: "ENV документация",
   };
 
   return (

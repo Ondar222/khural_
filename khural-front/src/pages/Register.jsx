@@ -71,10 +71,10 @@ export default function Register() {
           >
             <Input.Password />
           </Form.Item>
-          <Form.Item label="Роль" name="role" initialValue="user">
+          <Form.Item label="Роль" name="role" initialValue="citizen">
             <Select
               options={[
-                { value: "user", label: "Пользователь" },
+                { value: "citizen", label: "Гражданин" },
                 { value: "admin", label: "Администратор" },
               ]}
             />

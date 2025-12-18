@@ -7,6 +7,7 @@ import { UserUpdateDto } from './dto/update.dto';
 import { Files } from '../files/files.entity';
 import { UserSearchDta } from './dta/find.dta';
 import { PasswordHelper } from '../common/utils';
+import { genNormalizePhone } from '../common/utils/phone';
 import { DataSource } from 'typeorm';
 import { NotificationService } from '../notification/notification.service';
 import { UserRepository } from './user.repository';
@@ -21,54 +22,74 @@ export class UserService implements IUserService {
 
   async findOne(user: Omit<UserSearchDta, 'many'>) {
     try {
-      const avatar = await this.userRepository
-        .createQueryBuilder('users')
-        .select('users.id', 'userId')
-        .addSelect(
-          `
-          CASE 
-            WHEN users.avatar IS NOT NULL THEN
-              jsonb_build_object(
-                'id', users.avatar,
-                'link', concat('${process.env.CDN}', users.avatar)
-              )
-            WHEN users.avatar IS NULL THEN NULL
-          END`,
-          'avatar',
-        )
-        .from(User, 'users')
-        .where('users.phone=:phone', { phone: user.phone })
-        .orWhere('users.email=:email', { email: user.email })
-        .orWhere('users.id=:id', { id: user.id });
+      // Build where conditions
+      const where: any = {};
+      if (user.id) where.id = user.id;
+      if (user.phone) {
+        const normalizedPhone = genNormalizePhone(user.phone);
+        if (normalizedPhone) where.phone = normalizedPhone;
+      }
+      if (user.email) {
+        const normalizedEmail = String(user.email).trim().toLowerCase();
+        if (normalizedEmail) where.email = normalizedEmail;
+      }
 
-      return await this.userRepository
-        .createQueryBuilder('users')
-        .select(['id', 'name', 'surname', 'email', 'avatar', 'status', 'phone'])
-        .addSelect(
-          `
-          jsonb_build_object(
-            'id', users.role
-          )
-        `,
-          'role',
-        )
-        .addSelect(
-          `
-          CASE 
-            WHEN users.avatar IS NOT NULL THEN
-              jsonb_build_object(
-                'id', users.avatar,
-                'link', concat('${process.env.CDN}', users.avatar)
-              )
-            WHEN users.avatar IS NULL THEN NULL
-          END`,
-          'avatar',
-        )
-        // .leftJoin(`(${avatar.getQuery()})`, 'avatar', 'users.id=avatar.userId')
-        .where('phone=:phone', { phone: user.phone })
-        .orWhere('email=:email', { email: user.email })
-        .orWhere('id=:id', { id: user.id })
-        .getRawOne();
+      if (Object.keys(where).length === 0) {
+        return undefined;
+      }
+
+      // Use findOne with relations for proper entity mapping
+      const found = await this.userRepository.findOne({
+        where,
+        relations: { role: true, avatar: true },
+        select: {
+          id: true,
+          name: true,
+          surname: true,
+          patronymic: true,
+          email: true,
+          phone: true,
+          status: true,
+          role: {
+            id: true,
+            admin_access: true,
+            app_access: true,
+          },
+          avatar: {
+            id: true,
+          },
+        },
+      });
+
+      if (!found) return undefined;
+
+      // Map to expected format with avatar link
+      const cdn = process.env.CDN || '';
+      const cdnBase = cdn.endsWith('/') ? cdn : `${cdn}/`;
+      const avatarLink = found.avatar?.id
+        ? `${cdnBase}${found.avatar.id}`
+        : null;
+
+      return {
+        id: found.id,
+        name: found.name,
+        surname: found.surname,
+        patronymic: found.patronymic,
+        email: found.email,
+        phone: found.phone,
+        status: found.status,
+        role: {
+          id: found.role?.id || 'citizen',
+          admin_access: found.role?.admin_access || false,
+          app_access: found.role?.app_access || true,
+        },
+        avatar: avatarLink
+          ? {
+              id: found.avatar.id,
+              link: avatarLink,
+            }
+          : null,
+      };
     } catch (e) {
       throw e;
     }
@@ -97,30 +118,34 @@ export class UserService implements IUserService {
   }
 
   async checkUserLoginCredentials(email: string, password: string) {
-    const user: User | undefined = await this.userRepository
-      .createQueryBuilder()
-      .select('user.id', 'id')
-      .addSelect('user.password', 'password')
-      .addSelect(
-        `JSONB_BUILD_OBJECT(
-					'id', user.role,
-					'admin_access', false,
-					'app_access', true
-				)`,
-        'role',
-      )
-      .from(User, 'user')
-      .where('user.email=:email', { email })
-      .getRawOne();
+    // Normalize email (trim + lowercase)
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!normalizedEmail) throw new ForbiddenException('Email is required');
 
-    if (!user) throw new ForbiddenException();
+    // Find user with role relation
+    const user = await this.userRepository.findOne({
+      where: { email: normalizedEmail },
+      relations: { role: true },
+      select: {
+        id: true,
+        password: true,
+        email: true,
+        role: {
+          id: true,
+          admin_access: true,
+          app_access: true,
+        },
+      },
+    });
+
+    if (!user) throw new ForbiddenException('Invalid credentials');
 
     const isCompare = await PasswordHelper.comparePassword(
       password,
       user.password,
     );
 
-    if (!isCompare) throw new ForbiddenException();
+    if (!isCompare) throw new ForbiddenException('Invalid credentials');
 
     return user;
   }

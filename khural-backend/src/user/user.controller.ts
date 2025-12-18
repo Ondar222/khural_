@@ -99,7 +99,7 @@ export class UserController {
     @Query() query: UserSearchDta
   ) {
     try {
-      let data: User | User[] | undefined;
+      let data: any;
 
       if (query.many === "true") {
         data = await this.userService.findMany(query);

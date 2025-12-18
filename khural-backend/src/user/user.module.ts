@@ -35,6 +35,6 @@ import { NotificationModule } from "../notification/notification.module";
     AuthService,
     UserFactory,
   ],
-  exports: [TypeOrmModule, UserService, UserRepository],
+  exports: [TypeOrmModule, UserService, UserRepository, UserFactory],
 })
 export class UserModule {}
