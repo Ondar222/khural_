@@ -20,19 +20,20 @@ export default function AuthProvider({ children }) {
   const isAuthenticated = Boolean(token);
 
   const saveAuth = React.useCallback((payload) => {
+    const p = payload?.data ? payload.data : payload;
     const newToken =
-      payload?.token || payload?.accessToken || payload?.access_token || "";
+      p?.token || p?.accessToken || p?.access_token || p?.access_token || "";
     setToken(newToken);
     setAuthToken(newToken);
-    if (payload?.user) {
-      const u = payload.user;
+    const u = p?.user;
+    if (u && typeof u === "object") {
       setUser({
         ...u,
         name:
           u?.name ||
           [u?.firstName, u?.lastName].filter(Boolean).join(" ") ||
           u?.email,
-        role: u?.role || "admin",
+        role: u?.role?.id || u?.role || "admin",
       });
     }
   }, []);

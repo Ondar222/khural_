@@ -1,27 +1,33 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { CacheModule } from '@nestjs/cache-manager';
 import { AuthService } from './auth.service';
-import { JwtAuthService } from './jwt.service';
-import { JwtStrategy } from './jwt.strategy';
-import { AuthController } from './auth.controller';
-import { NotificationModule } from '../notification/notification.module';
-import { AdminSeedService } from './admin-seed.service';
+import { AuthController } from './controllers/auth.controller';
+import { SessionService } from '../session/session.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Session } from '../session/session.entity';
+import { PassportModule } from '@nestjs/passport';
+import { VkStrategy } from './oauth/vk.strategy';
+import { HttpModule } from '@nestjs/axios';
+import { OauthController } from './controllers/oauth.controller';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User]),
-    PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-secret-key',
-      signOptions: { expiresIn: '1d' },
-    }),
-    NotificationModule,
-  ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtAuthService, JwtStrategy, AdminSeedService],
-  exports: [AuthService, JwtAuthService],
+	imports: [
+		TypeOrmModule.forFeature([Session]),
+		CacheModule.register(),
+		PassportModule.register({ defaultStrategy: "vkontakte" }),
+		HttpModule.register({
+			timeout: 5000,
+			maxRedirects: 5,
+		}),
+		UserModule,
+	],
+	providers: [
+		AuthService,
+		SessionService,
+		VkStrategy,
+	],
+	controllers: [AuthController, OauthController],
+	exports: [TypeOrmModule, AuthService],
 })
 export class AuthModule {}

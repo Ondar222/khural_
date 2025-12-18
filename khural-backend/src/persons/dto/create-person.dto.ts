@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsDate, IsEmail, IsPhoneNumber } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEmail, IsPhoneNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreatePersonDto {
@@ -7,10 +7,15 @@ export class CreatePersonDto {
   @IsString()
   fullName: string;
 
-  @ApiProperty({ required: false })
-  @IsString()
+  @ApiProperty({ 
+    type: 'array', 
+    items: { type: 'number' }, 
+    required: false,
+    description: 'Массив ID округов (можно получить через GET /persons/districts/all). Пример: [1, 2]',
+    example: [1, 2]
+  })
   @IsOptional()
-  district?: string;
+  districtIds?: string[];
 
   @ApiProperty({ required: false })
   @IsString()
@@ -22,10 +27,15 @@ export class CreatePersonDto {
   @IsOptional()
   electoralDistrict?: string;
 
-  @ApiProperty({ required: false })
-  @IsString()
+  @ApiProperty({ 
+    type: 'array', 
+    items: { type: 'number' }, 
+    required: false,
+    description: 'Массив ID фракций (можно получить через GET /persons/factions/all). Пример: [1, 2]',
+    example: [1, 2]
+  })
   @IsOptional()
-  faction?: string;
+  factionIds?: string[];
 
   @ApiProperty({ required: false })
   @IsString()
@@ -57,24 +67,49 @@ export class CreatePersonDto {
   @IsOptional()
   phoneNumber?: string;
 
-  @ApiProperty({ required: false })
-  @Type(() => Date)
-  @IsDate()
+  @ApiProperty({ required: false, description: 'Дата рождения в формате timestamp (число миллисекунд)', example: 1609459200000 })
+  @Type(() => Number)
+  @IsNumber()
   @IsOptional()
-  dateOfBirth?: Date;
+  dateOfBirth?: number;
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
   placeOfBirth?: string;
 
-  @ApiProperty({ required: false })
-  @Type(() => Date)
-  @IsDate()
+  @ApiProperty({ required: false, description: 'Дата начала полномочий в формате timestamp (число миллисекунд)', example: 1609459200000 })
+  @Type(() => Number)
+  @IsNumber()
   @IsOptional()
-  startDate?: Date;
+  startDate?: number;
 
-  @ApiProperty({ type: 'array', items: { type: 'number' }, required: false })
+  @ApiProperty({ 
+    type: 'array', 
+    items: { type: 'number' }, 
+    required: false,
+    description: 'Массив ID созывов (можно получить через GET /persons/convocations/all). Пример: [1, 2]',
+    example: [1, 2]
+  })
+  @IsOptional()
+  convocationIds?: string[];
+
+  @ApiProperty({ required: false, description: 'График приёма граждан' })
+  @IsOptional()
+  receptionSchedule?: {
+    dayOfWeek?: string;
+    time?: string;
+    location?: string;
+    notes?: string;
+  };
+
+  @ApiProperty({ 
+    type: 'array', 
+    items: { type: 'number' }, 
+    required: false,
+    description: 'Массив ID категорий (можно получить через GET /persons/categories/all). Пример: [1, 2]',
+    example: [1, 2]
+  })
   @IsOptional()
   categoryIds?: string[];
 

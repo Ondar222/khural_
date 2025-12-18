@@ -1,8 +1,9 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { Files } from "./files.entity";
 import { FilesRepository } from "./files.repository";
 import fs from "fs";
 import { UploadedFile } from "../common/interceptors";
+import { In } from "typeorm";
 
 @Injectable()
 export class FilesService {
@@ -11,6 +12,23 @@ export class FilesService {
   async getById(id: string) {
     return await this.filesRepository.findOneBy({
       id: id,
+    });
+  }
+
+  async findOne(id: string): Promise<Files> {
+    const file = await this.filesRepository.findOneBy({ id });
+    if (!file) {
+      throw new NotFoundException(`File with ID ${id} not found`);
+    }
+    return file;
+  }
+
+  async findMany(ids: string[]): Promise<Files[]> {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+    return this.filesRepository.find({
+      where: { id: In(ids) },
     });
   }
 
@@ -39,14 +57,10 @@ export class FilesService {
       const images: Array<Files> = [];
       for (const file of files) {
         const uploadedFile = await this.upload(file);
-        if (uploadedFile && uploadedFile.id) images.push(uploadedFile);
+        if (uploadedFile && uploadedFile.id) {
+          images.push(uploadedFile);
+        }
       }
-      // for (let i = 0; i < files.length; i++) {
-      //   const file = await this.upload(files[i]);
-      //   if (file && file.id) {
-      //     images.push(file);
-      //   }
-      // }
       return images;
     } catch (e) {
       console.log(e);

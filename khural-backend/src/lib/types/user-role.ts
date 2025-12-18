@@ -1,3 +1,4 @@
 export enum EUserRole {
-  admin = "admin"
+  admin = "admin",
+  citizen = "citizen"
 }

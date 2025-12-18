@@ -1,78 +1,103 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { EntityNotFoundError, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
-import * as bcrypt from 'bcrypt';
-import { JwtAuthService } from './jwt.service';
-import { NotificationService, NotificationType } from '../notification/notification.service';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { decode, JwtPayload, sign, verify } from 'jsonwebtoken';
+import { IAuthService, IUserCredentials } from './auth.interface';
+import { IAccountability } from '../lib/types';
+
+import { TIMEZONE_NAME } from '../common/utils';
+import { ConfigService } from '@nestjs/config';
+import { v4 } from 'uuid';
+import * as cache from 'cache-manager';
+import moment from 'moment';
+import 'moment-timezone';
+import { UserService } from '../user/user.service';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements IAuthService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly jwtService: JwtAuthService,
-    private readonly notificationService: NotificationService,
+    @Inject('CACHE_MANAGER') private cacheManager: cache.Cache,
+    private configService: ConfigService,
+    private readonly userRepository: UserService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ user: User; token: string }> {
-    const email = String(registerDto.email || "").trim().toLowerCase();
-    const password = String(registerDto.password || "");
-    const firstName = registerDto.firstName;
-    const lastName = registerDto.lastName;
+  SECRET = this.configService.getOrThrow<string>('SECRET');
+  ACCESS_TOKEN_TTL = Number(
+    this.configService.get<string>('ACCESS_TOKEN_TTL') || 60,
+  );
 
-    const existingUser = await this.userRepository.findOne({
-      where: { email },
-    });
-    if (existingUser) {
-      throw new UnauthorizedException('Email already exists');
-    }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+  login(accountability: IAccountability) {
+    const { user } = accountability;
+    const { refresh_token, refresh_expire_date } = this.createRefreshToken();
+    const { access_token, expires } = this.createAccessToken(accountability);
 
-    const user = this.userRepository.create({
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-    });
+    const data: IUserCredentials =
+      {
+      access_token,
+      expires,
+      refresh_token,
+      refresh_expire_date,
+        user
+    };
 
-    await this.userRepository.save(user);
-
-    // Send welcome notification
-    await this.notificationService.sendNotification({
-      type: NotificationType.EMAIL,
-      recipient: user.email,
-      data: {
-        template: 'welcome',
-        name: user.firstName,
-      },
-    });
-
-    const token = await this.jwtService.generateToken(user);
-
-    return { user, token };
+    return data;
   }
 
-  async login(loginDto: LoginDto): Promise<{ user: User; token: string }> {
-    const email = String(loginDto.email || "").trim().toLowerCase();
-    const password = String(loginDto.password || "");
+  createRefreshToken(): Pick<
+    IUserCredentials,
+    'refresh_token' | 'refresh_expire_date'
+  > {
+    const refresh_token = v4();
+    const now = Date.now();
+    const year = 31104000000;
+    const refresh_expire_date = moment(now + year)
+      .tz(TIMEZONE_NAME)
+      .unix();
 
-    const user = await this.userRepository.findOneOrFail({ where: { email } }).catch((e) => {
-      if (e instanceof EntityNotFoundError) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-      throw e;
+    return { refresh_token, refresh_expire_date };
+  }
+
+  createAccessToken(
+    accountability: IAccountability,
+  ): Pick<IUserCredentials, 'access_token' | 'expires'> {
+    const now = Date.now();
+    const duration = moment.duration(this.ACCESS_TOKEN_TTL, 'minutes');
+
+    const access_token: string = sign(
+      {
+        id: accountability.user,
+        role: accountability.role,
+        admin_access: accountability.admin,
+        app_access: accountability.app,
+        scope: accountability.scope,
+      },
+      this.SECRET,
+      {
+        expiresIn: duration.asSeconds(),
+        issuer: '',
+      },
+    );
+
+    const expires: number = now + duration.asMilliseconds();
+    return { access_token, expires };
+  }
+
+  verifyAccessToken(token: string) {
+    const verificationResult = verify(token, this.SECRET);
+    return typeof verificationResult === 'object';
+  }
+
+  decodeAccessToken(token: string): JwtPayload | null {
+    return decode(token, {
+      json: true,
     });
+  }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+  async resetPassword(email: string) {
+    const isEmailExists = await this.cacheManager.get(email);
+    const uuid = v4();
+    if (isEmailExists) {
+      await this.cacheManager.set(email, uuid, 300000);
     }
-
-    const token = await this.jwtService.generateToken(user);
-
-    return { user, token };
+    await this.cacheManager.set(email, uuid, 300000);
   }
 }

@@ -14,7 +14,7 @@ export class FilesController {
   // deprecated
   @Get("/:id")
   async getByID(@Param("id") id: string, @Res() res: Response) {
-    const uploadPath = this.configService.get<string>("UPLOAD_PATH") || "./uploads";
+    const uploadPath = this.configService.getOrThrow<string>("UPLOAD_PATH");
     const data = await this.filesService.getById(id);
     if (!data || !data.filename_disk) return res.sendStatus(400);
     else {

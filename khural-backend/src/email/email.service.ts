@@ -42,7 +42,7 @@ export class EmailService {
     await this.sendEmail(to, subject, html);
   }
 
-  private async sendEmail(to: string, subject: string, html: string): Promise<void> {
+  async sendEmail(to: string, subject: string, html: string): Promise<void> {
     try {
       await this.transporter.sendMail({
         from: this.configService.get<string>('SMTP_FROM'),
@@ -52,6 +52,12 @@ export class EmailService {
       });
     } catch (error) {
       console.error('Error sending email:', error);
+      // Проверяем, настроен ли SMTP (если переменные окружения не установлены, не выбрасываем ошибку)
+      const smtpHost = this.configService.get<string>('SMTP_HOST');
+      if (!smtpHost) {
+        console.warn('SMTP not configured, skipping email send');
+        return;
+      }
       throw new Error('Failed to send email');
     }
   }

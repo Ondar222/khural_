@@ -1,30 +1,29 @@
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
-  HttpException,
-  HttpStatus,
   NotFoundException,
   Param,
-  ParseFilePipeBuilder,
-  Patch,
+  ParseIntPipe,
   Post,
-  UploadedFile,
-  UploadedFiles,
-  UseInterceptors,
+  Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { NewsService } from './news.service';
-import { CreateNewsDto, CreatePersonFilesDto } from './dto/create-news.dto';
-import { UpdateNewsDto } from './dto/update-news.dto';
+import { CreateNewsDto } from './dto/create-news.dto';
 import { NewsEntity } from './entities/news.entity';
 import {
   AnyFilesInterceptor,
-  FileFieldsInterceptor,
-  FileInterceptor,
-  FilesInterceptor,
 } from '@nestjs/platform-express';
 import { FilesService } from '../files/files.service';
 import {
@@ -32,7 +31,10 @@ import {
   UploadedFile as UploadedFileType,
 } from '../common/interceptors';
 import { Files } from '../files/files.entity';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UploadedFiles } from '@nestjs/common';
+import { Accountability, BearerToken } from '../common/decorators';
+import { IAccountability } from '../lib/types';
+import { RolesHelper } from '../common/utils/roles';
 
 @ApiTags('news')
 @Controller('news')
@@ -42,76 +44,111 @@ export class NewsController {
     private readonly fileService: FilesService,
   ) {}
 
-  @Post()
-  @UseGuards(JwtAuthGuard)
-  async create(@Body() body: CreateNewsDto) {
-    try {
-      const data = await this.newsService.createNews(body);
-      return data;
-    } catch (error) {
-      console.error('Error creating news:', error);
-      throw 'Failed to create news';
+  private ensureAdmin(accountability?: IAccountability) {
+    // eslint-disable-next-line no-console
+    console.debug('[NewsController] accountability', accountability);
+    if (!accountability || !RolesHelper.isAdmin(accountability.role)) {
+      throw new ForbiddenException('Недостаточно прав');
     }
   }
 
-  @Post(":id/media")
-  @UseGuards(JwtAuthGuard)
-  @ApiConsumes("multipart/form-data")
-  @UseInterceptors(
-    AnyFilesInterceptor(),
-    MultipartFilesTransformingInterceptor,
-  )
-  async uploadMedia(
-    @Param('id') id: number,
-    @UploadedFiles()
-    files: {
-      images?: UploadedFileType | UploadedFileType[];
-    },
+  @Post("/")
+  @ApiOperation({ summary: 'Создать новую новость (только для администраторов)' })
+  @ApiBearerAuth()
+  async create(
+    @BearerToken() token: string,
+    @Accountability() accountability: IAccountability,
+    @Body() body: CreateNewsDto,
   ) {
+
+    this.ensureAdmin(accountability);
+    console.log(accountability);
+    return this.newsService.create(body);
+  }
+
+  @Post(':id/cover')
+  @ApiOperation({ summary: 'Загрузить обложку новости (только для администраторов)' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor(), MultipartFilesTransformingInterceptor)
+  async uploadCover(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() files: { cover?: UploadedFileType[] },
+    @Accountability() accountability: IAccountability,
+  ) {
+    this.ensureAdmin(accountability);
     const news = await this.newsService.findOne(id);
-    let uploadedImages: Files[] | undefined = undefined;
     if (!news) {
       throw new NotFoundException(`Новость с ID ${id} не найдена`);
     }
-    const images = files?.images
-      ? Array.isArray(files.images)
-        ? files.images
-        : [files.images]
-      : [];
-    if (images.length > 0) {
-      uploadedImages = await this.fileService.uploadMany(images);
+    if (files.cover && files.cover.length > 0) {
+      const uploadedFile = await this.fileService.upload(files.cover[0]);
+      return this.newsService.updateCoverImage(id, uploadedFile);
     }
-    console.log('Uploaded files:', files);
-    console.log(files);
+    throw new NotFoundException('Файл обложки не предоставлен');
+  }
 
-    return await this.newsService.setMediaById(news, {
-      images: uploadedImages,
+  @Post(':id/gallery')
+  @ApiOperation({ summary: 'Загрузить галерею для новости (только для администраторов)' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(AnyFilesInterceptor(), MultipartFilesTransformingInterceptor)
+  async uploadGallery(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() files: { gallery?: UploadedFileType[] },
+    @Accountability() accountability: IAccountability,
+  ) {
+    this.ensureAdmin(accountability);
+    if (files.gallery && files.gallery.length > 0) {
+      const uploadedFiles = await this.fileService.uploadMany(files.gallery);
+      return this.newsService.addToGallery(id, uploadedFiles);
+    }
+    throw new NotFoundException('Файлы галереи не предоставлены');
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Получить список новостей с фильтрацией' })
+  @ApiQuery({ name: 'categoryId', required: false, description: 'Фильтр по ID категории', type: Number })
+  @ApiQuery({ name: 'year', required: false, description: 'Фильтр по году публикации', type: Number })
+  async findAll(
+    @Query('categoryId') categoryId?: string,
+    @Query('year') year?: string,
+  ) {
+    return this.newsService.findAll({
+      categoryId: categoryId ? parseInt(categoryId) : undefined,
+      year: year ? parseInt(year) : undefined,
     });
   }
 
   @Get(':id')
-  async findNewsById(@Param('id') id: number): Promise<NewsEntity | null> {
-    const news = await this.newsService.findOne(id);
-    if (!news) {
-      throw new NotFoundException(`Новость с ID ${id} не найдена`);
-    }
-    return news;
-  }
-
-  @Get()
-  async findAll() {
-    return await this.newsService.findAll();
-  }
-
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  async update(@Param('id') id: number, @Body() body: UpdateNewsDto) {
-    return await this.newsService.update(id, body);
+  @ApiOperation({ summary: 'Получить детальную информацию о новости' })
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<NewsEntity> {
+    return this.newsService.findOne(id);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async delete(@Param('id') id: number) {
+  @ApiOperation({ summary: 'Удалить новость (только для администраторов)' })
+  @ApiBearerAuth()
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @Accountability() accountability: IAccountability,
+  ) {
+    this.ensureAdmin(accountability);
     await this.newsService.delete(id);
+  }
+
+  @Get('categories/all')
+  @ApiOperation({ summary: 'Получить все категории новостей' })
+  getAllCategories() {
+    return this.newsService.getAllCategories();
+  }
+
+  @Post('categories')
+  @ApiOperation({ summary: 'Создать новую категорию новостей (только для администраторов)' })
+  @ApiBearerAuth()
+  createCategory(
+    @Body() body: { name: string },
+    @Accountability() accountability: IAccountability,
+  ) {
+    this.ensureAdmin(accountability);
+    return this.newsService.createCategory(body.name);
   }
 }

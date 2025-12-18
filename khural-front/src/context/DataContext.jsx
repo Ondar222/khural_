@@ -1,5 +1,5 @@
 import React from "react";
-import { tryApiFetch } from "../api/client.js";
+import { tryApiFetch, SliderApi, AboutApi } from "../api/client.js";
 
 const DataContext = React.createContext({
   slides: [],
@@ -15,6 +15,8 @@ const DataContext = React.createContext({
   authorities: [],
   documents: [],
   committees: [],
+  aboutPages: [],
+  aboutStructure: [],
   // Setters for Admin (optional to use)
   setSlides: () => {},
   setNews: () => {},
@@ -27,6 +29,8 @@ const DataContext = React.createContext({
   setAuthorities: () => {},
   setDocuments: () => {},
   setCommittees: () => {},
+  setAboutPages: () => {},
+  setAboutStructure: () => {},
 });
 export function useData() {
   return React.useContext(DataContext);
@@ -89,29 +93,50 @@ export default function DataProvider({ children }) {
   const [authorities, setAuthorities] = React.useState([]);
   const [documents, setDocuments] = React.useState([]);
   const [committees, setCommittees] = React.useState([]);
+  const [aboutPages, setAboutPages] = React.useState([]);
+  const [aboutStructure, setAboutStructure] = React.useState([]);
 
   React.useEffect(() => {
-    fetchJson("/data/slides.json").then(setSlides);
+    // Try API for slider first, fallback to local JSON
+    (async () => {
+      const apiSlides = await SliderApi.list({ all: false }).catch(() => null);
+      if (Array.isArray(apiSlides) && apiSlides.length) {
+        setSlides(
+          apiSlides
+            .filter((s) => s && (s.isActive !== false))
+            .sort((a, b) => (Number(a.order || 0) - Number(b.order || 0)))
+            .map((s) => ({
+              title: s.title || "",
+              image: firstFileLink(s.image) || "",
+            }))
+            .filter((s) => s.title && s.image)
+        );
+      } else {
+        fetchJson("/data/slides.json").then(setSlides);
+      }
+    })();
     // Try API for news first, fallback to local JSON
     (async () => {
       const apiNews = await tryApiFetch("/news", { auth: false });
       if (Array.isArray(apiNews) && apiNews.length) {
         const mapped = apiNews.map((n) => {
+          // Backend may return either localized content array or flat strings.
           const ru =
             (Array.isArray(n.content) &&
               n.content.find((c) => c?.lang === "ru")) ||
             (Array.isArray(n.content) ? n.content[0] : null) ||
             null;
-          const desc = String(ru?.description || "");
-          const img = firstImageLink(n.images);
+          const title = ru?.title || n.title || "";
+          const desc = String(ru?.description || n.shortDescription || n.description || "");
+          const img = firstImageLink(n.images || n.gallery) || firstFileLink(n.coverImage);
           const date =
             pick(n.publishedAt, n.published_at) ||
             pick(n.createdAt, n.created_at) ||
             new Date().toISOString();
           return {
             id: String(n.id ?? Math.random().toString(36).slice(2)),
-            title: ru?.title || "",
-            category: pick(n.category, n.category_name) || "Новости",
+            title,
+            category: pick(n?.category?.name, n.category, n.category_name) || "Новости",
             date,
             excerpt: desc,
             content: desc
@@ -127,15 +152,30 @@ export default function DataProvider({ children }) {
     })();
     // Try API for events first, fallback to local JSON
     (async () => {
-      const apiEvents = await tryApiFetch("/events", { auth: false });
+      const apiEvents = await tryApiFetch("/calendar", { auth: false });
       if (Array.isArray(apiEvents) && apiEvents.length) {
         setEvents(
           apiEvents.map((e) => ({
             id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
-            date: pick(e.date, e.date_of_event) || "",
+            date: (() => {
+              const d = pick(e.date, e.date_of_event);
+              if (d) return String(d);
+              const start = pick(e.startDate, e.start_date);
+              if (!start) return "";
+              const dt = new Date(Number(start));
+              return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
+            })(),
             title: pick(e.title, e.event_title) || "",
-            time: pick(e.time, e.event_time) || "",
-            place: pick(e.place, e.event_place) || "",
+            time: (() => {
+              const t = pick(e.time, e.event_time);
+              if (t) return String(t);
+              const start = pick(e.startDate, e.start_date);
+              if (!start) return "";
+              const dt = new Date(Number(start));
+              if (isNaN(dt.getTime())) return "";
+              return dt.toISOString().slice(11, 16);
+            })(),
+            place: pick(e.place, e.event_place, e.location) || "",
             desc: pick(e.desc, e.description) || "",
           }))
         );
@@ -171,11 +211,20 @@ export default function DataProvider({ children }) {
             district:
               local?.district ||
               pick(p.electoralDistrict, p.electoral_district) ||
+              (Array.isArray(p.districts) && p.districts[0]?.name) ||
               p.city ||
               p.district ||
               "",
-            faction: local?.faction || pick(p.faction, p.committee) || "",
-            convocation: local?.convocation || pick(p.convocation) || "",
+            faction:
+              local?.faction ||
+              pick(p.faction, p.committee) ||
+              (Array.isArray(p.factions) && p.factions[0]?.name) ||
+              "",
+            convocation:
+              local?.convocation ||
+              pick(p.convocation) ||
+              (Array.isArray(p.convocations) && p.convocations[0]?.name) ||
+              "",
             reception: local?.reception || pick(p.receptionSchedule, p.reception_schedule) || "",
             address: local?.address || "",
             // Prefer stored image link, fallback to seeded photoUrl or old JSON photo
@@ -220,9 +269,9 @@ export default function DataProvider({ children }) {
             desc: d.description || "",
             date: pick(d.date, d.createdAt, d.created_at) || "",
             number: d.number || "",
-            category: d.category || typeLabels[d.type] || d.type || "Документы",
+            category: d?.category?.name || d.category || typeLabels[d.type] || d.type || "Документы",
             type: d.type || "other",
-            url: d.url || firstFileLink(d.file) || "",
+            url: d.url || firstFileLink(d.pdfFile) || firstFileLink(d.file) || "",
           }))
         );
       } else {
@@ -254,6 +303,16 @@ export default function DataProvider({ children }) {
     fetchJson("/data/authorities.json").then(setAuthorities);
     // Committees are a static structure file (with members/staff); always load them.
     fetchJson("/data/committees.json").then(setCommittees);
+
+    // About pages/structure are API-first (if backend filled), otherwise keep empty and use page fallbacks.
+    (async () => {
+      const [pages, structure] = await Promise.all([
+        AboutApi.listPages({ locale: "ru" }).catch(() => null),
+        AboutApi.listStructure().catch(() => null),
+      ]);
+      if (Array.isArray(pages)) setAboutPages(pages);
+      if (Array.isArray(structure)) setAboutStructure(structure);
+    })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = React.useMemo(
@@ -269,6 +328,8 @@ export default function DataProvider({ children }) {
       authorities,
       documents,
       committees,
+      aboutPages,
+      aboutStructure,
       // Setters (for Admin)
       setSlides,
       setNews,
@@ -281,6 +342,8 @@ export default function DataProvider({ children }) {
       setAuthorities,
       setDocuments,
       setCommittees,
+      setAboutPages,
+      setAboutStructure,
     }),
     [
       slides,
@@ -294,6 +357,8 @@ export default function DataProvider({ children }) {
       authorities,
       documents,
       committees,
+      aboutPages,
+      aboutStructure,
       setSlides,
       setNews,
       setEvents,
@@ -305,6 +370,8 @@ export default function DataProvider({ children }) {
       setAuthorities,
       setDocuments,
       setCommittees,
+      setAboutPages,
+      setAboutStructure,
     ]
   );
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

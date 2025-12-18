@@ -2,11 +2,14 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { SearchApi } from "../api/client.js";
 
 export default function SearchModal({ open, onClose }) {
   const { news, documents } = useData();
   const { t } = useI18n();
   const [query, setQuery] = React.useState("");
+  const [remote, setRemote] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
   const inputRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -17,12 +20,75 @@ export default function SearchModal({ open, onClose }) {
     return () => {
       document.body.style.overflow = "";
       setQuery("");
+      setRemote([]);
+      setLoading(false);
     };
   }, [open]);
 
   const q = query.trim().toLowerCase();
+
+  // Remote search (debounced)
+  React.useEffect(() => {
+    if (!open) return;
+    const qq = query.trim();
+    if (!qq || qq.length < 2) {
+      setRemote([]);
+      return;
+    }
+    let alive = true;
+    const id = setTimeout(async () => {
+      try {
+        setLoading(true);
+        const res = await SearchApi.search({ query: qq, contentType: "all", page: 1, limit: 20 });
+        if (!alive) return;
+        const results = Array.isArray(res?.results) ? res.results : [];
+        setRemote(
+          results.map((r) => {
+            const type = r.type;
+            const baseMeta = Array.isArray(r.highlights) && r.highlights.length ? r.highlights[0] : (r.description || "");
+            if (type === "persons") {
+              return {
+                id: `p-${r.id}`,
+                type: "person",
+                title: r.title,
+                meta: baseMeta,
+                href: `#/government?type=dep&id=${encodeURIComponent(r.id)}`,
+              };
+            }
+            if (type === "documents") {
+              return {
+                id: `d-${r.id}`,
+                type: "document",
+                title: r.title,
+                meta: baseMeta,
+                href: "#/documents",
+              };
+            }
+            // news
+            return {
+              id: `n-${r.id}`,
+              type: "news",
+              title: r.title,
+              meta: baseMeta,
+              href: "#/news",
+            };
+          })
+        );
+      } catch {
+        if (alive) setRemote([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }, 250);
+    return () => {
+      alive = false;
+      clearTimeout(id);
+    };
+  }, [open, query]);
+
   const results = React.useMemo(() => {
     if (!q) return [];
+    if (remote.length) return remote;
     const newsMatches = news
       .filter((n) =>
         [n.title, n.desc]
@@ -50,7 +116,7 @@ export default function SearchModal({ open, onClose }) {
         href: "#/documents",
       }));
     return [...newsMatches, ...docMatches].slice(0, 20);
-  }, [q, news, documents]);
+  }, [q, news, documents, remote]);
 
   if (!open) return null;
 
@@ -88,7 +154,10 @@ export default function SearchModal({ open, onClose }) {
             </button>
           </div>
           <div style={{ marginTop: 12 }}>
-            {q && results.length === 0 && (
+            {q && loading && (
+              <div className="text-muted">Поиск…</div>
+            )}
+            {q && !loading && results.length === 0 && (
               <div className="text-muted">Ничего не найдено</div>
             )}
             {results.length > 0 && (

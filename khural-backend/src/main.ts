@@ -1,59 +1,51 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-
-function parseCorsOrigins() {
-  const raw = (process.env.CORS_ORIGIN || '').trim();
-  const allowVercel = process.env.CORS_ALLOW_VERCEL === 'true';
-
-  // Defaults:
-  // - In dev: allow any origin (handy when switching ports / using tunneling)
-  // - In prod: be strict unless explicitly configured
-  const allowAllByDefault = process.env.NODE_ENV !== 'production' && !raw;
-
-  const allowed = raw
-    ? raw
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [
-        'http://localhost:5173', // Vite dev server
-        'http://localhost:3000', // same-origin prod / local reverse proxy
-      ];
-
-  return {
-    allowed,
-    allowAllByDefault,
-    allowVercel,
-  };
-}
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ExtractBearerTokenMiddleware } from './common/middlewares/ExtractBearerTokenMiddleware';
+import { AttachAccountabilityMiddleware } from './common/middlewares/AttachAccountabilityMiddleware';
+// TODO: Установить @nestjs/throttler для rate limiting
+// import { ThrottlerGuard } from '@nestjs/throttler';
+// import { APP_GUARD } from '@nestjs/core';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // TODO: Раскомментировать после установки @nestjs/throttler
+  // app.useGlobalGuards(new ThrottlerGuard());
+
+  const extractBearerTokenMiddleware = new ExtractBearerTokenMiddleware();
+  app.use(extractBearerTokenMiddleware.use.bind(extractBearerTokenMiddleware));
+
+  const attachAccountabilityMiddleware = new AttachAccountabilityMiddleware();
+  app.use(attachAccountabilityMiddleware.use.bind(attachAccountabilityMiddleware));
+
+  // Настройка Swagger документации
+  const config = new DocumentBuilder()
+    .setTitle('Khural Backend API')
+    .setDescription('API для управления депутатами, новостями и пользователями')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Введите JWT токен',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .build();
   
-  // Enable CORS for frontend
-  const cors = parseCorsOrigins();
-  app.enableCors({
-    origin: (origin, callback) => {
-      // Allow non-browser requests (curl/postman) without Origin header
-      if (!origin) return callback(null, true);
-
-      if (cors.allowAllByDefault) return callback(null, true);
-
-      if (cors.allowVercel && /^https:\/\/.+\.vercel\.app$/.test(origin)) {
-        return callback(null, true);
-      }
-
-      if (cors.allowed.includes(origin)) return callback(null, true);
-
-      // Don't throw hard errors on server side; just disable CORS for this origin.
-      return callback(null, false);
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
     },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`🚀 Backend server is running on http://localhost:${process.env.PORT ?? 3000}`);
+  await app.listen(process.env.PORT ?? 4000);
+  console.log(`Приложение запущено на http://localhost:${process.env.PORT ?? 4000}`);
+  console.log(`Swagger документация доступна на http://localhost:${process.env.PORT ?? 4000}/api`);
 }
 bootstrap();

@@ -57,6 +57,49 @@ function toDocumentsFallback(items) {
   }));
 }
 
+function toEventRow(e) {
+  const start = e?.startDate ? new Date(Number(e.startDate)) : null;
+  const date = start && !isNaN(start.getTime()) ? start.toISOString().slice(0, 10) : (e?.date || "");
+  const time = start && !isNaN(start.getTime()) ? start.toISOString().slice(11, 16) : (e?.time || "");
+  return {
+    id: e?.id ?? Math.random().toString(36).slice(2),
+    date,
+    time,
+    place: e?.location || e?.place || "",
+    title: e?.title || "",
+    desc: e?.description || e?.desc || "",
+    __raw: e,
+  };
+}
+
+function toCalendarDto(values) {
+  const date = String(values?.date || "");
+  const time = String(values?.time || "00:00");
+  const [hh, mm] = time.split(":").map((x) => parseInt(x, 10));
+  const dt = new Date(`${date}T00:00:00.000Z`);
+  if (!isNaN(hh)) dt.setUTCHours(hh);
+  if (!isNaN(mm)) dt.setUTCMinutes(mm);
+  return {
+    title: values?.title || "",
+    description: values?.desc || "",
+    location: values?.place || "",
+    startDate: dt.getTime(),
+    isPublic: true,
+  };
+}
+
+function mapDocType(type) {
+  // UI legacy -> backend enum
+  const t = String(type || "").toLowerCase();
+  if (t === "laws") return "law";
+  if (t === "resolutions") return "resolution";
+  if (t === "bills") return "decision";
+  if (t === "initiatives") return "order";
+  if (t === "civic") return "other";
+  if (t === "constitution") return "other";
+  return type || "other";
+}
+
 export default function Admin() {
   const { message } = App.useApp();
   const data = useData();
@@ -105,7 +148,11 @@ export default function Admin() {
         Array.isArray(apiDocs) ? apiDocs : toDocumentsFallback(data.documents)
       );
       const apiEvents = await EventsApi.list().catch(() => null);
-      setEvents(Array.isArray(apiEvents) ? apiEvents : (data.events || []));
+      setEvents(
+        Array.isArray(apiEvents)
+          ? apiEvents.map(toEventRow)
+          : (data.events || [])
+      );
     })();
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -125,7 +172,7 @@ export default function Admin() {
     if (Array.isArray(apiPersons)) setPersons(apiPersons);
     if (Array.isArray(apiDocs)) setDocuments(apiDocs);
     const apiEvents = await EventsApi.list().catch(() => null);
-    if (Array.isArray(apiEvents)) setEvents(apiEvents);
+    if (Array.isArray(apiEvents)) setEvents(apiEvents.map(toEventRow));
   };
 
   const createNews = async ({ titleRu, descRu, titleTu, descTu, imageFile }) => {
@@ -223,12 +270,14 @@ export default function Admin() {
     try {
       const created = await DocumentsApi.create({
         title,
-        description,
-        type,
-        category,
+        content: description || "",
+        type: mapDocType(type),
+        // backend expects categoryId; keep optional free-text in metadata
+        metadata: category ? { category } : undefined,
         number,
-        date,
-        url,
+        publishedAt: date ? Date.parse(date) : undefined,
+        // NOTE: backend doesn't have "url" in dto; keep in metadata so we don't lose it
+        ...(url ? { metadata: { ...(category ? { category } : {}), url } } : {}),
       });
       if (created?.id && file) await DocumentsApi.uploadFile(created.id, file);
       message.success("Документ создан");
@@ -243,12 +292,11 @@ export default function Admin() {
     try {
       await DocumentsApi.patch(id, {
         title,
-        description,
-        type,
-        category,
+        content: description || "",
+        type: mapDocType(type),
+        metadata: { ...(category ? { category } : {}), ...(url ? { url } : {}) },
         number,
-        date,
-        url,
+        publishedAt: date ? Date.parse(date) : undefined,
       });
       if (file) await DocumentsApi.uploadFile(id, file);
       message.success("Документ обновлён");
@@ -272,7 +320,7 @@ export default function Admin() {
   const createEvent = async (payload) => {
     setBusy(true);
     try {
-      await EventsApi.create(payload);
+      await EventsApi.create(toCalendarDto(payload));
       message.success("Событие создано");
       await reload();
     } finally {
@@ -283,7 +331,7 @@ export default function Admin() {
   const updateEvent = async (id, payload) => {
     setBusy(true);
     try {
-      await EventsApi.patch(id, payload);
+      await EventsApi.patch(id, toCalendarDto(payload));
       message.success("Событие обновлено");
       await reload();
     } finally {

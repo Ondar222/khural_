@@ -23,7 +23,24 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Backend API для системы управления депутатами, новостями и документами Верховного Хурала Республики Тыва.
+
+Построен на [NestJS](https://github.com/nestjs/nest) framework.
+
+## Документация API
+
+Для фронтенд-разработчиков доступна полная документация API:
+
+- **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** - Полная документация всех эндпоинтов API с примерами запросов и ответов
+- **[API_CONTRACTS.ts](./API_CONTRACTS.ts)** - TypeScript контракты для типизации запросов и ответов
+- **[FRONTEND_INTEGRATION.md](./FRONTEND_INTEGRATION.md)** - Руководство по интеграции фронтенда с бэкендом
+
+### Swagger документация
+
+При запущенном сервере интерактивная Swagger документация доступна по адресу:
+```
+http://localhost:4000/api
+```
 
 ## Project setup
 

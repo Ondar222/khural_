@@ -5,7 +5,7 @@ import {
   OneToMany,
   PrimaryColumn,
 } from "typeorm";
-import { UserEntity } from "../user/entity/user.entity";
+import { User } from "../user/user.entity";
 import { EUserRole } from "../lib/types/user-role";
 
 @Entity({ name: "roles" })
@@ -25,6 +25,6 @@ export class Role {
   })
   admin_access: boolean;
 
-  @OneToMany(() => UserEntity, (user) => user.role)
-  users: UserEntity[];
+  @OneToMany(() => User, (user) => user.role)
+  users: User[];
 }

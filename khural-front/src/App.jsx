@@ -42,22 +42,22 @@ export default function App() {
 
   return (
     <I18nProvider>
-      <A11yProvider>
-        <ConfigProvider
-          theme={{
-            algorithm: theme.defaultAlgorithm,
-            token: {
-              colorPrimary: "#003366",
-              colorInfo: "#003366",
-              colorWarning: "#FFD700",
-              colorTextBase: "#111827",
-              colorBgBase: "#ffffff",
-              borderRadius: 8,
-            },
-          }}
-        >
-          <AntApp>
-            <AuthProvider>
+      <ConfigProvider
+        theme={{
+          algorithm: theme.defaultAlgorithm,
+          token: {
+            colorPrimary: "#003366",
+            colorInfo: "#003366",
+            colorWarning: "#FFD700",
+            colorTextBase: "#111827",
+            colorBgBase: "#ffffff",
+            borderRadius: 8,
+          },
+        }}
+      >
+        <AntApp>
+          <AuthProvider>
+            <A11yProvider>
               <DataProvider>
                 <div className="layout">
                   {!isAdmin ? <Header /> : null}
@@ -97,7 +97,7 @@ export default function App() {
                         "/admin/news": Admin,
                         "/admin/deputies": Admin,
                         "/admin/documents": Admin,
-                      "/admin/events": Admin,
+                        "/admin/events": Admin,
                         "/feedback": Feedback,
                         "/press": Press,
                         "/activity": ActivityPage,
@@ -112,10 +112,10 @@ export default function App() {
                   {!isAdmin ? <CookieBanner /> : null}
                 </div>
               </DataProvider>
-            </AuthProvider>
-          </AntApp>
-        </ConfigProvider>
-      </A11yProvider>
+            </A11yProvider>
+          </AuthProvider>
+        </AntApp>
+      </ConfigProvider>
     </I18nProvider>
   );
 }

@@ -26,6 +26,15 @@ export const API_BASE_URL = resolveApiBaseUrl();
 const TOKEN_STORAGE_KEY =
   import.meta?.env?.VITE_API_TOKEN_STORAGE_KEY || "auth_token";
 
+function unwrapApiPayload(payload) {
+  // Many endpoints return plain JSON; some return { data, meta }.
+  // Normalize by returning `data` when present.
+  if (payload && typeof payload === "object" && Object.prototype.hasOwnProperty.call(payload, "data")) {
+    return payload.data;
+  }
+  return payload;
+}
+
 export function getAuthToken() {
   try {
     return localStorage.getItem(TOKEN_STORAGE_KEY) || "";
@@ -81,7 +90,7 @@ export async function apiFetch(
     err.data = data;
     throw err;
   }
-  return data;
+  return unwrapApiPayload(data);
 }
 
 export async function tryApiFetch(path, options) {
@@ -94,34 +103,41 @@ export async function tryApiFetch(path, options) {
 
 export const AuthApi = {
   async register(user) {
-    // Backend in this repo uses POST /auth/register
+    // New backend uses POST /user/
     try {
-      return await apiFetch("/auth/register", {
+      return await apiFetch("/user", {
         method: "POST",
         body: user,
         auth: false,
       });
     } catch (e) {
       // Compatibility fallback
-      return apiFetch("/user", { method: "POST", body: user, auth: false });
+      return apiFetch("/auth/register", { method: "POST", body: user, auth: false });
     }
   },
   async loginWithPassword({ email, password }) {
-    // Backend in this repo uses POST /auth/login
+    // New backend uses POST /auth/login/password
     try {
-      return await apiFetch("/auth/login", {
+      return await apiFetch("/auth/login/password", {
         method: "POST",
         body: { email, password },
         auth: false,
       });
     } catch (e) {
       // Compatibility fallback (older deployments)
-      return apiFetch("/auth/login/password", {
+      return apiFetch("/auth/login", {
         method: "POST",
         body: { email, password },
         auth: false,
       });
     }
+  },
+  async refresh(refresh) {
+    return apiFetch("/auth/refresh", {
+      method: "POST",
+      body: { refresh },
+      auth: true,
+    });
   },
 };
 
@@ -133,37 +149,137 @@ export const PublicApi = {
     return apiFetch("/news", { method: "GET", auth: false });
   },
   async translate(text, from, to) {
-    // Пробуем разные варианты формата запроса
+    // In this backend, translation endpoints require admin auth.
+    // We keep a safe fallback to avoid breaking the UI for guests.
     try {
-      // Вариант 1: стандартный формат
-      const result = await apiFetch("/translate", {
+      const result = await apiFetch("/translation/translate", {
         method: "POST",
         body: { text, from, to },
-        auth: false,
+        auth: true,
       });
       return result;
     } catch (error) {
-      // Вариант 2: альтернативный формат (но тот же endpoint)
       try {
-        const result = await apiFetch("/translate", {
+        const result = await apiFetch("/translation/translate-batch", {
           method: "POST",
-          body: { text, source: from, target: to },
-          auth: false,
+          body: { texts: [text], from, to },
+          auth: true,
         });
-        return result;
+        const translated = Array.isArray(result?.translated) ? result.translated[0] : text;
+        return { original: text, translated, from, to };
       } catch (error2) {
-        // Вариант 3: query параметры
-        try {
-          const result = await apiFetch(`/translate?text=${encodeURIComponent(text)}&from=${from}&to=${to}`, {
-            method: "GET",
-            auth: false,
-          });
-          return result;
-        } catch (error3) {
-          throw error;
-        }
+        return { original: text, translated: text, from, to };
       }
     }
+  },
+};
+
+export const SliderApi = {
+  async list({ all = false } = {}) {
+    const qs = new URLSearchParams();
+    if (all) qs.set("all", "true");
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/slider${suffix}`, { method: "GET", auth: false });
+  },
+  async getById(id) {
+    return apiFetch(`/slider/${id}`, { method: "GET", auth: false });
+  },
+  async create(body) {
+    return apiFetch("/slider", { method: "POST", body, auth: true });
+  },
+  async patch(id, body) {
+    return apiFetch(`/slider/${id}`, { method: "PATCH", body, auth: true });
+  },
+  async remove(id) {
+    return apiFetch(`/slider/${id}`, { method: "DELETE", auth: true });
+  },
+  async uploadImage(id, file) {
+    const fd = new FormData();
+    fd.append("image", file);
+    return apiFetchMultipart(`/slider/${id}/image`, {
+      method: "POST",
+      formData: fd,
+      auth: true,
+    });
+  },
+  async reorder(ids) {
+    return apiFetch("/slider/reorder", { method: "POST", body: { ids }, auth: true });
+  },
+};
+
+export const SearchApi = {
+  async search({ query, contentType, page, limit } = {}) {
+    const qs = new URLSearchParams();
+    if (query) qs.set("query", query);
+    if (contentType) qs.set("contentType", contentType);
+    if (page) qs.set("page", String(page));
+    if (limit) qs.set("limit", String(limit));
+    return apiFetch(`/search?${qs.toString()}`, { method: "GET", auth: false });
+  },
+};
+
+export const AppealsApi = {
+  async create({ subject, message, attachmentIds } = {}) {
+    return apiFetch("/appeals", {
+      method: "POST",
+      body: { subject, message, attachmentIds: attachmentIds || undefined },
+      auth: true,
+    });
+  },
+};
+
+export const AboutApi = {
+  async listPages({ locale } = {}) {
+    const qs = new URLSearchParams();
+    if (locale) qs.set("locale", locale);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/about/pages${suffix}`, { method: "GET", auth: false });
+  },
+  async getPageBySlug(slug, { locale } = {}) {
+    const qs = new URLSearchParams();
+    if (locale) qs.set("locale", locale);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/about/pages/${encodeURIComponent(slug)}${suffix}`, {
+      method: "GET",
+      auth: false,
+    });
+  },
+  async listStructure() {
+    return apiFetch("/about/structure", { method: "GET", auth: false });
+  },
+};
+
+export const CommentsApi = {
+  async list({ entityType, entityId, onlyApproved = true, includeReplies = true } = {}) {
+    const qs = new URLSearchParams();
+    qs.set("entityType", entityType);
+    qs.set("entityId", String(entityId));
+    qs.set("onlyApproved", onlyApproved ? "true" : "false");
+    qs.set("includeReplies", includeReplies ? "true" : "false");
+    return apiFetch(`/comments?${qs.toString()}`, { method: "GET", auth: false });
+  },
+  async create({ content, entityType, entityId, parentCommentId } = {}) {
+    return apiFetch("/comments", {
+      method: "POST",
+      body: { content, entityType, entityId, parentCommentId: parentCommentId || undefined },
+      auth: true,
+    });
+  },
+};
+
+export const AccessibilityApi = {
+  async getSettings({ sessionId } = {}) {
+    const qs = new URLSearchParams();
+    if (sessionId) qs.set("sessionId", sessionId);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/accessibility/settings${suffix}`, { method: "GET", auth: true });
+  },
+  async saveSettings({ sessionId, fontSize, colorScheme, contrast, disableAnimations } = {}) {
+    return apiFetch("/accessibility/settings", {
+      method: "POST",
+      body: { sessionId, fontSize, colorScheme, contrast, disableAnimations },
+      auth: true,
+    });
   },
 };
 
@@ -199,7 +315,7 @@ export async function apiFetchMultipart(
     err.data = data;
     throw err;
   }
-  return data;
+  return unwrapApiPayload(data);
 }
 
 // Persons-related endpoints (admin + public)
@@ -400,8 +516,8 @@ export const DocumentsApi = {
   },
   async uploadFile(id, file) {
     const fd = new FormData();
-    fd.append("file", file);
-    return apiFetchMultipart(`/documents/${id}/file`, {
+    fd.append("pdf", file);
+    return apiFetchMultipart(`/documents/${id}/pdf`, {
       method: "POST",
       formData: fd,
       auth: true,
@@ -409,21 +525,21 @@ export const DocumentsApi = {
   },
 };
 
-// Events-related endpoints
+// Calendar (events) endpoints
 export const EventsApi = {
   async list() {
-    return apiFetch("/events", { method: "GET", auth: false });
+    return apiFetch("/calendar", { method: "GET", auth: false });
   },
   async getById(id) {
-    return apiFetch(`/events/${id}`, { method: "GET", auth: false });
+    return apiFetch(`/calendar/${id}`, { method: "GET", auth: false });
   },
   async create(body) {
-    return apiFetch("/events", { method: "POST", body, auth: true });
+    return apiFetch("/calendar", { method: "POST", body, auth: true });
   },
   async patch(id, body) {
-    return apiFetch(`/events/${id}`, { method: "PATCH", body, auth: true });
+    return apiFetch(`/calendar/${id}`, { method: "PATCH", body, auth: true });
   },
   async remove(id) {
-    return apiFetch(`/events/${id}`, { method: "DELETE", auth: true });
+    return apiFetch(`/calendar/${id}`, { method: "DELETE", auth: true });
   },
 };

@@ -32,7 +32,7 @@ export class Files {
   @Column({ nullable: true })
   type?: string;
 
-  @Column("uuid")
+  @Column({ type: "uuid", nullable: true })
   uploaded_by?: string;
 
   @CreateDateColumn({ nullable: true })
@@ -53,16 +53,7 @@ export class Files {
   @OneToOne(() => PersonEntity, (insight) => insight.id)
   person?: PersonEntity;
 
-  @ManyToMany(() => NewsEntity, (news) => news.id)
-  @JoinTable({
-    name: "news_files",
-    joinColumn: {
-      name: "files_id",
-    },
-    inverseJoinColumn: {
-      name: "news_id",
-    },
-  })
+  @ManyToMany(() => NewsEntity, (news) => news.gallery)
   news?: NewsEntity[];
   link?: string;
 }

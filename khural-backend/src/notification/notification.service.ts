@@ -31,16 +31,21 @@ export class NotificationService {
   private async handleEmailNotification(options: NotificationOptions): Promise<void> {
     const { recipient, subject, data } = options;
 
-    switch (data.template) {
-      case 'welcome':
-        await this.emailService.sendWelcomeEmail(recipient, data.name);
-        break;
-      case 'password-reset':
-        await this.emailService.sendPasswordResetEmail(recipient, data.resetToken);
-        break;
-      // Add more email templates here
-      default:
-        throw new Error(`Unsupported email template: ${data.template}`);
+    try {
+      switch (data.template) {
+        case 'welcome':
+          await this.emailService.sendWelcomeEmail(recipient, data.name);
+          break;
+        case 'password-reset':
+          await this.emailService.sendPasswordResetEmail(recipient, data.resetToken);
+          break;
+        // Add more email templates here
+        default:
+          throw new Error(`Unsupported email template: ${data.template}`);
+      }
+    } catch (error) {
+      console.error(`Failed to send email notification to ${recipient}:`, error);
+      throw error;
     }
   }
 } 

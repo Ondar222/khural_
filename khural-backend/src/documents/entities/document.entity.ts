@@ -1,54 +1,102 @@
-import { AfterLoad, Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Files } from "../../files/files.entity";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  AfterLoad,
+  Index,
+} from 'typeorm';
+import { DocumentCategoryEntity } from './document-category.entity';
+import { Files } from '../../files/files.entity';
 
-@Entity("documents")
+export enum DocumentType {
+  LAW = 'law',
+  RESOLUTION = 'resolution',
+  DECISION = 'decision',
+  ORDER = 'order',
+  OTHER = 'other',
+}
+
+@Entity('documents')
+@Index(['number', 'type'], { unique: true })
+@Index(['publishedAt'])
 export class DocumentEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Column({ unique: true, nullable: true })
-  externalId?: string;
-
   @Column()
   title: string;
 
-  @Column({ type: "text", nullable: true })
-  description?: string;
+  @Column({ nullable: true, unique: true })
+  number: string;
 
-  // laws / resolutions / initiatives / etc.
-  @Column({ nullable: true })
-  type?: string;
+  @Column({
+    type: 'enum',
+    enum: DocumentType,
+    default: DocumentType.OTHER,
+  })
+  type: DocumentType;
 
-  @Column({ nullable: true })
-  category?: string;
+  @Column({ type: 'text', nullable: true })
+  content: string;
 
-  @Column({ nullable: true })
-  number?: string;
+  @ManyToOne(() => DocumentCategoryEntity, { nullable: true })
+  @JoinColumn({ name: 'category_id' })
+  category: DocumentCategoryEntity | null;
 
-  @Column({ nullable: true })
-  date?: string;
+  @OneToOne(() => Files, { nullable: true })
+  @JoinColumn({ name: 'pdf_file_id' })
+  pdfFile: Files | null;
 
-  // External link (e.g. khural.rtyva.ru) if no uploaded file
-  @Column({ nullable: true })
-  url?: string;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: {
+    author?: string;
+    department?: string;
+    keywords?: string[];
+    [key: string]: any;
+  } | null;
 
-  @OneToOne(() => Files, { nullable: true, eager: true })
-  @JoinColumn({ name: "file_id" })
-  file?: Files | null;
+  @Column({ type: 'timestamp', nullable: true })
+  publishedAt: Date | null;
+
+  @Column({ default: false })
+  isPublished: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   @AfterLoad()
   setCdnUrl() {
-    if (!this.file?.id) return;
-    const cdn = process.env.CDN || '/files/v2/';
-    const prefix = cdn.endsWith('/') ? cdn : `${cdn}/`;
-    (this.file as any).link = `${prefix}${this.file.id}`;
+    if (this.pdfFile?.id) {
+      const cdnUrl = process.env.CDN || '';
+      const cdnBase = cdnUrl.endsWith('/') ? cdnUrl : `${cdnUrl}/`;
+      this.pdfFile = {
+        id: this.pdfFile.id,
+        link: `${cdnBase}${this.pdfFile.id}`,
+      } as any;
+    } else if (this.pdfFile === null) {
+      this.pdfFile = null;
+    }
+
+    if (this.publishedAt instanceof Date) {
+      (this as any).publishedAt = this.publishedAt.toISOString();
+    } else if (this.publishedAt === null || this.publishedAt === undefined) {
+      (this as any).publishedAt = null;
+    }
+
+    if (this.createdAt instanceof Date) {
+      (this as any).createdAt = this.createdAt.toISOString();
+    }
+    if (this.updatedAt instanceof Date) {
+      (this as any).updatedAt = this.updatedAt.toISOString();
+    }
   }
 }
-
-
-
-
 

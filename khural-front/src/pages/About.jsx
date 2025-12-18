@@ -1,15 +1,35 @@
 import React from "react";
 import SideNav from "../components/SideNav.jsx";
 import { useData } from "../context/DataContext.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
+import { AboutApi } from "../api/client.js";
 
 export default function About() {
-  const { committees } = useData();
+  const { committees, aboutPages: cachedPages, aboutStructure: cachedStructure } = useData();
+  const { lang } = useI18n();
   const [activeTab, setActiveTab] = React.useState("general"); // general | structure
+  const [pages, setPages] = React.useState(() => (Array.isArray(cachedPages) ? cachedPages : []));
+  const [structure, setStructure] = React.useState(() =>
+    Array.isArray(cachedStructure) ? cachedStructure : []
+  );
 
   const scrollToBlock = React.useCallback((id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  // Keep About content in sync with API (locale-aware)
+  React.useEffect(() => {
+    const locale = lang === "ty" ? "tyv" : "ru";
+    (async () => {
+      const [apiPages, apiStructure] = await Promise.all([
+        AboutApi.listPages({ locale }).catch(() => null),
+        AboutApi.listStructure().catch(() => null),
+      ]);
+      if (Array.isArray(apiPages)) setPages(apiPages);
+      if (Array.isArray(apiStructure)) setStructure(apiStructure);
+    })();
+  }, [lang]);
 
   // If user arrives with #/about?tab=structure — scroll smoothly after mount
   React.useEffect(() => {
@@ -50,6 +70,33 @@ export default function About() {
     return () => observer.disconnect();
   }, []);
 
+  const generalPage = React.useMemo(() => {
+    const arr = Array.isArray(pages) ? pages : [];
+    // Try to pick a meaningful "about" page; otherwise show the first by order.
+    const bySlug =
+      arr.find((p) => String(p.slug).toLowerCase().includes("about")) ||
+      arr.find((p) => String(p.slug).toLowerCase().includes("about-us")) ||
+      arr[0] ||
+      null;
+    return bySlug;
+  }, [pages]);
+
+  const structureTree = React.useMemo(() => {
+    const items = Array.isArray(structure) ? structure : [];
+    const byId = new Map(items.map((x) => [String(x.id), x]));
+    const childrenByParent = new Map();
+    items.forEach((x) => {
+      const pid = x?.parent?.id ? String(x.parent.id) : "";
+      if (!childrenByParent.has(pid)) childrenByParent.set(pid, []);
+      childrenByParent.get(pid).push(x);
+    });
+    childrenByParent.forEach((arr) =>
+      arr.sort((a, b) => Number(a?.order || 0) - Number(b?.order || 0))
+    );
+    const roots = (childrenByParent.get("") || []).filter((x) => byId.has(String(x.id)));
+    return { roots, childrenByParent };
+  }, [structure]);
+
   return (
     <section className="section">
       <div className="container">
@@ -88,6 +135,13 @@ export default function About() {
 
             <div id="about-general" className="person-block">
               <h3>Общие сведения</h3>
+              {generalPage?.content ? (
+                <div
+                  className="tile"
+                  style={{ marginTop: 12 }}
+                  dangerouslySetInnerHTML={{ __html: String(generalPage.content) }}
+                />
+              ) : null}
             <p>
               8 сентября 2019 года состоялись очередные выборы в высший
               законодательный (представительный) орган государственной власти
@@ -203,6 +257,55 @@ export default function About() {
                 Ниже — схема структуры. Нажмите на фракции/комитеты, чтобы перейти
                 к соответствующим разделам.
               </p>
+
+              {structureTree.roots.length ? (
+                <div className="tile" style={{ marginBottom: 14 }}>
+                  <div style={{ fontWeight: 800, marginBottom: 10 }}>
+                    Структура (из API)
+                  </div>
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {structureTree.roots.map((r) => (
+                      <div key={r.id} className="tile" style={{ margin: 0 }}>
+                        <div style={{ fontWeight: 800 }}>{r.name}</div>
+                        {r.description ? (
+                          <div style={{ opacity: 0.8, marginTop: 6 }}>
+                            {r.description}
+                          </div>
+                        ) : null}
+                        {(structureTree.childrenByParent.get(String(r.id)) || []).length ? (
+                          <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+                            {(structureTree.childrenByParent.get(String(r.id)) || []).map((c) => (
+                              <a
+                                key={c.id}
+                                className="link"
+                                href={
+                                  c?.page?.slug
+                                    ? `#/about?tab=general&slug=${encodeURIComponent(c.page.slug)}`
+                                    : "#/about?tab=structure"
+                                }
+                                style={{
+                                  display: "block",
+                                  padding: "10px 12px",
+                                  borderRadius: 12,
+                                  border: "1px solid rgba(0,0,0,0.08)",
+                                  background: "rgba(255,255,255,0.7)",
+                                }}
+                              >
+                                <div style={{ fontWeight: 700 }}>{c.name}</div>
+                                {c.description ? (
+                                  <div style={{ opacity: 0.75, fontSize: 13, marginTop: 4 }}>
+                                    {c.description}
+                                  </div>
+                                ) : null}
+                              </a>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="org org--khural" id="focus-overview">
                 <div className="org__row org__row--center">

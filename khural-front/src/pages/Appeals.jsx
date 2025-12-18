@@ -1,15 +1,24 @@
 import React from "react";
-import { Form, Input, Button, Result } from "antd";
+import { Form, Input, Button, Result, Alert } from "antd";
+import { useAuth } from "../context/AuthContext.jsx";
+import { AppealsApi } from "../api/client.js";
 
 export default function Appeals() {
-  const [form, setForm] = React.useState({
-    name: "",
-    email: "",
-    phone: "",
-    text: "",
-  });
+  const { isAuthenticated } = useAuth();
+  const [form, setForm] = React.useState({ subject: "", message: "" });
   const [ok, setOk] = React.useState(false);
-  const onSubmit = () => setOk(true);
+  const [busy, setBusy] = React.useState(false);
+
+  const onSubmit = async () => {
+    if (!isAuthenticated) return;
+    setBusy(true);
+    try {
+      await AppealsApi.create({ subject: form.subject, message: form.message });
+      setOk(true);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <section className="section">
@@ -17,6 +26,20 @@ export default function Appeals() {
       <div className="container">
         <h1>Обращения граждан</h1>
         
+        {!isAuthenticated ? (
+          <Alert
+            type="info"
+            showIcon
+            message="Для отправки обращения требуется авторизация"
+            description={
+              <span>
+                Перейдите на страницу <a href="#/login">входа</a> или{" "}
+                <a href="#/register">регистрации</a>, затем вернитесь сюда.
+              </span>
+            }
+            style={{ marginBottom: 16 }}
+          />
+        ) : null}
 
         {ok ? (
           
@@ -28,50 +51,28 @@ export default function Appeals() {
         ) : (
           <Form layout="vertical" className="tile" onFinish={onSubmit}>
             <Form.Item
-              label="ФИО"
-              name="name"
-              rules={[{ required: true, message: "Укажите ФИО" }]}
+              label="Тема"
+              name="subject"
+              rules={[{ required: true, message: "Укажите тему" }]}
             >
               <Input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </Form.Item>
-            <Form.Item
-              label="Email"
-              name="email"
-              rules={[
-                {
-                  required: true,
-                  type: "email",
-                  message: "Укажите корректный Email",
-                },
-              ]}
-            >
-              <Input
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </Form.Item>
-            <Form.Item label="Телефон" name="phone">
-              <Input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                value={form.subject}
+                onChange={(e) => setForm({ ...form, subject: e.target.value })}
               />
             </Form.Item>
             <Form.Item
               label="Текст обращения"
-              name="text"
+              name="message"
               rules={[{ required: true, message: "Введите текст обращения" }]}
             >
               <Input.TextArea
                 rows={6}
-                value={form.text}
-                onChange={(e) => setForm({ ...form, text: e.target.value })}
+                value={form.message}
+                onChange={(e) => setForm({ ...form, message: e.target.value })}
               />
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" disabled={!isAuthenticated} loading={busy}>
                 Отправить
               </Button>
             </Form.Item>

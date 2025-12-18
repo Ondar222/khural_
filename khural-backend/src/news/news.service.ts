@@ -1,82 +1,218 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In } from 'typeorm';
 import { NewsEntity } from './entities/news.entity';
-import { CreateNewsDto, CreatePersonFilesDto} from './dto/create-news.dto';
-import { UpdateNewsDto } from './dto/update-news.dto';
-import { NewsRepository } from './news.repository';
-import { Files } from '../files/files.entity';
-import { last } from 'rxjs';
-import * as string_decoder from 'node:string_decoder';
-import { FilesRepository } from '../files/files.repository';
+import { NewsCategory } from './entities/news-category.entity';
+import { CreateNewsDto } from './dto/create-news.dto';
 import { FilesService } from '../files/files.service';
+import { Files } from '../files/files.entity';
+import { SocialExportService } from '../social-export/social-export.service';
 
 @Injectable()
 export class NewsService {
-  constructor(private readonly newsRepository: NewsRepository,
-              private readonly filesRepository: FilesRepository,
-              private readonly fileService: FilesService,) {}
+  constructor(
+    @InjectRepository(NewsEntity)
+    private readonly newsRepository: Repository<NewsEntity>,
+    @InjectRepository(NewsCategory)
+    private readonly categoryRepository: Repository<NewsCategory>,
+    private readonly filesService: FilesService,
+    @Optional()
+    private readonly socialExportService?: SocialExportService,
+  ) {}
 
-  async createNews(dto: CreateNewsDto) {
-    try {
-      const news = this.newsRepository.create({
-        content: dto.content,
-        category: dto.category,
-        publishedAt: dto.publishedAt,
-        externalId: dto.externalId,
-      });
-      return await this.newsRepository.save(news);
-    } catch (error) {
-      console.error('Не создалось', error);
-      throw error;
-    }
+  private generateSlug(title: string): string {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
   }
 
-  async update(id: number, dto: UpdateNewsDto) {
-    const news = await this.newsRepository.findOne({ where: { id } });
-    if (!news) throw new NotFoundException(`Новость с ID ${id} не найдена`);
-    Object.assign(news, dto);
-    return await this.newsRepository.save(news);
-  }
-
-  async setMediaById(
-    news: NewsEntity | null,
-    { images }: { images?: Files[] },
-  ) {
-    const updateResultCount: { images: number } = {
-      images: 0,
-    };
-    if (!news) {
-      throw new NotFoundException('Новость не найдена');
+  async create(dto: CreateNewsDto): Promise<NewsEntity> {
+    const category = await this.categoryRepository.findOne({
+      where: { id: dto.categoryId },
+    });
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${dto.categoryId} not found`);
     }
-    if (images && images.length > 0) {
-      const imageUploadResult = await this.newsRepository
-          .createQueryBuilder("news")
-          .relation(NewsEntity, "images")
-          .of(news)
-          .add(images);
 
-        updateResultCount.images = images.length;
+    const slug = dto.slug || this.generateSlug(dto.title);
+
+    const existingNews = await this.newsRepository.findOne({
+      where: { slug },
+    });
+    if (existingNews) {
+      throw new NotFoundException(`News with slug "${slug}" already exists`);
     }
-    return updateResultCount;
-  }
 
-  async findAll() {
-    const content =  this.newsRepository.find({
-      relations: {
-        content: true,
-        images: true,
-      },
+    let publishedAt: Date | null = null;
+    if (dto.publishedAt) {
+      publishedAt = new Date(dto.publishedAt);
+    } else {
+      publishedAt = new Date(); // По умолчанию текущая дата
+    }
+
+    let coverImage: Files | null = null;
+    if (dto.coverImageId) {
+      try {
+        coverImage = await this.filesService.findOne(dto.coverImageId);
+      } catch (error) {
+        throw new NotFoundException(`Cover image with ID ${dto.coverImageId} not found`);
+      }
+    }
+
+    let gallery: Files[] = [];
+    if (dto.galleryIds?.length) {
+      gallery = await this.filesService.findMany(dto.galleryIds);
+      if (gallery.length !== dto.galleryIds.length) {
+        throw new NotFoundException('Some gallery files not found');
+      }
+    }
+
+    const news = this.newsRepository.create({
+      title: dto.title,
+      slug,
+      shortDescription: dto.shortDescription,
+      content: dto.content,
+      category,
+      publishedAt,
+      coverImage,
+      gallery,
+      isPublished: dto.isPublished ?? false,
     });
 
-    return await content;
+    const savedNews = await this.newsRepository.save(news);
+
+    // Автоматический экспорт в соцсети, если новость опубликована и включен экспорт
+    if (savedNews.isPublished && this.socialExportService) {
+      const autoExport = process.env.AUTO_EXPORT_NEWS === 'true';
+      if (autoExport) {
+        // Экспортируем асинхронно, не блокируя ответ
+        this.socialExportService.exportToAll(savedNews.id).catch((error) => {
+          console.error('Failed to auto-export news to social networks:', error);
+        });
+      }
+    }
+
+    return this.findOne(savedNews.id);
   }
 
-  async findOne(id: number): Promise<NewsEntity | null> {
-    return await this.newsRepository.findOne({
+  async findAll(filters?: {
+    categoryId?: number;
+    year?: number;
+  }) {
+    const queryBuilder = this.newsRepository
+      .createQueryBuilder('news')
+      .leftJoinAndSelect('news.category', 'category')
+      .leftJoinAndSelect('news.coverImage', 'coverImage')
+      .leftJoinAndSelect('news.gallery', 'gallery');
+
+    if (filters?.categoryId) {
+      queryBuilder.andWhere('category.id = :categoryId', { categoryId: filters.categoryId });
+    }
+
+    if (filters?.year) {
+      queryBuilder.andWhere('EXTRACT(YEAR FROM news.publishedAt) = :year', { year: filters.year });
+    }
+
+    queryBuilder.orderBy('news.publishedAt', 'DESC');
+
+    return queryBuilder.getMany();
+  }
+
+  async findOne(id: number): Promise<NewsEntity> {
+    const news = await this.newsRepository.findOne({
       where: { id },
+      relations: ['category', 'coverImage', 'gallery'],
     });
+
+    if (!news) {
+      throw new NotFoundException(`News with ID ${id} not found`);
+    }
+
+    news.viewsCount += 1;
+    await this.newsRepository.save(news);
+
+    return news;
   }
 
-  async delete(id: number) {
-    return await this.newsRepository.delete(id);
+  async delete(id: number): Promise<void> {
+    const news = await this.findOne(id);
+
+    if (news.coverImage?.id) {
+      await this.filesService.delete(news.coverImage.id);
+    }
+    
+    if (news.gallery?.length) {
+      for (const file of news.gallery) {
+        await this.filesService.delete(file.id);
+      }
+    }
+
+    await this.newsRepository.remove(news);
+  }
+
+  async updateCoverImage(id: number, coverImage: Files): Promise<NewsEntity> {
+    const news = await this.findOne(id);
+    news.coverImage = coverImage;
+    const savedNews = await this.newsRepository.save(news);
+    return this.findOne(savedNews.id);
+  }
+
+  async addToGallery(id: number, files: Files[]): Promise<NewsEntity> {
+    console.log('addToGallery called with files:', files.map(f => ({ id: f.id, filename: f.filename_disk })));
+    
+    const news = await this.newsRepository.findOne({
+      where: { id },
+      relations: ['category', 'coverImage', 'gallery'],
+    });
+
+    if (!news) {
+      throw new NotFoundException(`News with ID ${id} not found`);
+    }
+
+    console.log('Current gallery before update:', news.gallery?.map(f => f.id) || []);
+    
+    // Проверяем, что все файлы сохранены в БД
+    const existingFiles = await this.filesService.findMany(files.map(f => f.id));
+    console.log('Existing files in DB:', existingFiles.map(f => f.id));
+    
+    if (existingFiles.length !== files.length) {
+      throw new NotFoundException('Some files were not saved to database');
+    }
+
+    // Объединяем существующую галерею с новыми файлами
+    const currentGalleryIds = (news.gallery || []).map(f => f.id);
+    const newFilesIds = files.map(f => f.id);
+    const allFileIds = [...new Set([...currentGalleryIds, ...newFilesIds])];
+    
+    const allFiles = await this.filesService.findMany(allFileIds);
+    
+    news.gallery = allFiles;
+    const savedNews = await this.newsRepository.save(news);
+    
+    const updatedNews = await this.newsRepository.findOne({
+      where: { id: savedNews.id },
+      relations: ['category', 'coverImage', 'gallery'],
+    });
+
+    if (!updatedNews) {
+      throw new NotFoundException(`News with ID ${savedNews.id} not found`);
+    }
+
+    console.log('Gallery after save:', updatedNews.gallery?.map(f => f.id) || []);
+    
+    return updatedNews;
+  }
+
+  // CRUD для категорий новостей
+  async getAllCategories(): Promise<NewsCategory[]> {
+    return this.categoryRepository.find();
+  }
+
+  async createCategory(name: string): Promise<NewsCategory> {
+    const category = this.categoryRepository.create({ name });
+    return this.categoryRepository.save(category);
   }
 }
