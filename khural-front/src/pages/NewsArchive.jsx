@@ -74,12 +74,18 @@ export default function NewsArchive() {
     return (
       <section className="section">
         <div className="container">
-          <a className="btn" href="#/news" style={{ marginBottom: 12 }}>
-            {t("back")}
-          </a>
-          <h1 style={{ marginBottom: 8 }}>{item.title}</h1>
-          <div style={{ color: "#6b7280", marginBottom: 16 }}>
-            {new Date(item.date).toLocaleDateString("ru-RU")} · {item.category}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
+              <a className="btn btn-back" href="#/news" style={{ marginBottom: 16, display: "inline-block" }}>
+                {t("back")}
+              </a>
+              <div>
+                <h1 style={{ marginBottom: 8, display: "block" }}>{item.title}</h1>
+                <div style={{ color: "#6b7280", marginBottom: 16 }}>
+                  {new Date(item.date).toLocaleDateString("ru-RU")} · {item.category}
+                </div>
+              </div>
+            </div>
           </div>
           <div className="news-detail">
             <article className="card" style={{ padding: 16 }}>
@@ -150,7 +156,7 @@ export default function NewsArchive() {
           <div>
             <h1>{t("news")}</h1>
             <div className="filters">
-              <Space size="middle" style={{ margin: "12px 0 20px" }} wrap>
+              <Space size={8} style={{ margin: "12px 0 20px", width: "100%", display: "flex" }} wrap={false}>
                 <Select
                   value={category}
                   onChange={(newCategory) => {
@@ -167,16 +173,14 @@ export default function NewsArchive() {
                       : h;
                     window.location.hash = newHash;
                   }}
-                  dropdownMatchSelectWidth={false}
+                  popupMatchSelectWidth={false}
                   options={categories.map((c) => ({ value: c, label: c }))}
-                  style={{ minWidth: 200 }}
                 />
                 <Select
                   value={month}
                   onChange={setMonth}
-                  dropdownMatchSelectWidth={false}
+                  popupMatchSelectWidth={false}
                   options={months.map((m) => ({ value: m, label: m }))}
-                  style={{ minWidth: 200 }}
                 />
               </Space>
             </div>

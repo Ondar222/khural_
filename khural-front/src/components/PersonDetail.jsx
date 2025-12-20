@@ -74,7 +74,7 @@ export default function PersonDetail({ item, type, backHref }) {
     <section className="section">
       <div className="container">
         {backHref && (
-          <a className="btn" href={backHref} style={{ marginBottom: 12 }}>
+          <a className="btn btn-back" href={backHref} style={{ marginBottom: 24, display: "inline-block" }}>
             {t("back")}
           </a>
         )}

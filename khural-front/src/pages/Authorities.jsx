@@ -42,12 +42,18 @@ export default function Authorities() {
     return (
       <section className="section">
         <div className="container">
-          <a className="btn" href="#/authorities" style={{ marginBottom: 12 }}>
-            ← К списку
-          </a>
-          <h1 style={{ marginBottom: 8 }}>{item.title}</h1>
-          <div style={{ color: "#6b7280", marginBottom: 16 }}>
-            {typeToCategory(item.type) || item.type}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+            <div style={{ flex: "1 1 auto" }}>
+              <a className="btn btn-back" href="#/authorities" style={{ marginBottom: 16, display: "inline-block" }}>
+                ← К списку
+              </a>
+              <div>
+                <h1 style={{ marginBottom: 8, display: "block" }}>{item.title}</h1>
+                <div style={{ color: "#6b7280", marginBottom: 16 }}>
+                  {typeToCategory(item.type) || item.type}
+                </div>
+              </div>
+            </div>
           </div>
           <div className="card" style={{ padding: 16 }}>
             <p>{item.desc}</p>
