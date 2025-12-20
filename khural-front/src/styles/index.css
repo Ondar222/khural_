@@ -1084,16 +1084,18 @@ a {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid #eef2f7;
+  border: 1px solid #dbe1ea;
   border-radius: 12px;
-  background: #fff;
+  background: #f8fafc;
 }
 .contact-ico {
   font-size: 18px;
+  color: #0a3b72;
 }
 .contact-title {
   font-weight: 700;
   margin-bottom: 4px;
+  color: #0a1f44;
 }
 
 /* Law list */

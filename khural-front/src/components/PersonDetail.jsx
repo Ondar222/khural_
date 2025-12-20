@@ -1,5 +1,6 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
+import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 
 export default function PersonDetail({ item, type, backHref }) {
   const { t } = useI18n();
@@ -32,6 +33,7 @@ export default function PersonDetail({ item, type, backHref }) {
         ];
 
   const [active, setActive] = React.useState("bio");
+  const phoneIconStyle = { transform: "scaleX(-1)" };
 
   // Smooth-scroll to section without breaking hash-based routing
   const scrollToSection = React.useCallback((id) => {
@@ -190,7 +192,7 @@ export default function PersonDetail({ item, type, backHref }) {
           <h2>Контакты</h2>
           <div className="tile contact-card">
             <div className="contact-row">
-              <div className="contact-ico">📞</div>
+              <PhoneOutlined className="contact-ico" style={phoneIconStyle} aria-hidden="true" />
               <div className="contact-text">
                 <div className="contact-title">Телефон</div>
                 <a className="link" href={phone ? `tel:${phone}` : "#"}>
@@ -199,7 +201,7 @@ export default function PersonDetail({ item, type, backHref }) {
               </div>
             </div>
             <div className="contact-row">
-              <div className="contact-ico">✉️</div>
+              <MailOutlined className="contact-ico" aria-hidden="true" />
               <div className="contact-text">
                 <div className="contact-title">Email</div>
                 <a className="link" href={email ? `mailto:${email}` : "#"}>
@@ -208,7 +210,7 @@ export default function PersonDetail({ item, type, backHref }) {
               </div>
             </div>
             <div className="contact-row">
-              <div className="contact-ico">📍</div>
+              <EnvironmentOutlined className="contact-ico" aria-hidden="true" />
               <div className="contact-text">
                 <div className="contact-title">Адрес</div>
                 <div>{address}</div>
