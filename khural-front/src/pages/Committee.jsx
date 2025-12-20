@@ -132,7 +132,7 @@ export default function Committee() {
                       <div className="gov-card__actions">
                         <a
                           className="gov-card__btn"
-                          href={m.id ? `#/government?type=dep&id=${m.id}` : "#"}
+                          href={m.id ? `/government?type=dep&id=${m.id}` : "#"}
                         >
                           Подробнее
                         </a>
@@ -161,7 +161,7 @@ export default function Committee() {
                       </ul>
                       <a
                         className="btn btn--primary btn--compact"
-                        href={leader.id ? `#/government?type=dep&id=${leader.id}` : "#"}
+                        href={leader.id ? `/government?type=dep&id=${leader.id}` : "#"}
                       >
                         Подробнее
                       </a>
@@ -188,7 +188,7 @@ export default function Committee() {
                         </ul>
                         <a
                           className="btn btn--primary btn--compact"
-                          href={p.id ? `#/government?type=dep&id=${p.id}` : "#"}
+                          href={p.id ? `/government?type=dep&id=${p.id}` : "#"}
                         >
                           Подробнее
                         </a>

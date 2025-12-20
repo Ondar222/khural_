@@ -13,7 +13,7 @@ export default function CalendarPreview() {
       <div className="container">
         <div className="section-head">
           <h2>Календарь</h2>
-          <a className="link" href="#/calendar">
+          <a className="link" href="/calendar">
             Открыть календарь →
           </a>
         </div>

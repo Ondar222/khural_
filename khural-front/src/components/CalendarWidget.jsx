@@ -46,7 +46,7 @@ export default function CalendarWidget() {
       <div className="container">
         <div className="section-head">
           <h2>{t("calendar")}</h2>
-          <a className="link" href="#/calendar">
+          <a className="link" href="/calendar">
             {t("calendarOpen")} →
           </a>
         </div>

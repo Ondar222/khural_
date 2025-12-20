@@ -68,13 +68,13 @@ export default function Header() {
     <>
       <header className="site-header">
         <div className="container topbar">
-          <a href="#/feedback">{t("feedback")}</a>
-          <a href="#/press">{t("press")}</a>
-          <a href="#/activity">{t("activity")}</a>
+          <a href="/feedback">{t("feedback")}</a>
+          <a href="/press">{t("press")}</a>
+          <a href="/activity">{t("activity")}</a>
 
           <span style={{ marginLeft: "auto", display: "flex", gap: 12 }}>
-            <a href="#/login">{t("login")}</a>
-            <a href="#/register">{t("register")}</a>
+            <a href="/login">{t("login")}</a>
+            <a href="/register">{t("register")}</a>
           </span>
         </div>
         <div className="container row">
@@ -117,25 +117,25 @@ export default function Header() {
             >
               <Link to="/about">{t("aboutVH")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("vh")}>
-                <a href="#/about">{t("aboutVH")}</a>
-                <a href="#/section">{t("structure")}</a>
-                <a href="#/committee">{t("committees")}</a>
-                <a href={`#/news?category=${encodeURIComponent("Комитеты")}`}>
+                <a href="/about">{t("aboutVH")}</a>
+                <a href="/section">{t("structure")}</a>
+                <a href="/committee">{t("committees")}</a>
+                <a href={`/news?category=${encodeURIComponent("Комитеты")}`}>
                   {t("committees")} ({t("news")})
                 </a>
-                <a href={"#/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
-                <a href={"#/section?title=" + encodeURIComponent("Депутатские фракции")}>
+                <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
+                <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
                   {t("factions")}
                 </a>
                 <a
                   href={
-                    "#/section?title=" + encodeURIComponent("Представительство в Совете Федерации")
+                    "/section?title=" + encodeURIComponent("Представительство в Совете Федерации")
                   }
                 >
                   {t("senateRep")}
                 </a>
-                <a href="#/apparatus">{t("apparatus")}</a>
-                <a href="#/contacts">{t("contacts")}</a>
+                <a href="/apparatus">{t("apparatus")}</a>
+                <a href="/contacts">{t("contacts")}</a>
               </div>
             </div>
             <div>
@@ -148,17 +148,17 @@ export default function Header() {
             >
               <Link to="/docs/laws">{t("documents")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("docs")}>
-                <a href="#/docs/laws">
+                <a href="/docs/laws">
                   {t("docs")}: {t("legislation")}
                 </a>
-                <a href={`#/news?category=${encodeURIComponent("Законодательство")}`}>
+                <a href={`/news?category=${encodeURIComponent("Законодательство")}`}>
                   {t("legislation")} ({t("news")})
                 </a>
-                <a href="#/docs/resolutions">{t("docsResolutions")}</a>
-                <a href="#/docs/initiatives">{t("docsInitiatives")}</a>
-                <a href="#/docs/civic">{t("docsCivic")}</a>
-                <a href="#/docs/constitution">{t("docsConstitution")}</a>
-                <a href="#/docs/bills">{t("docsBills")}</a>
+                <a href="/docs/resolutions">{t("docsResolutions")}</a>
+                <a href="/docs/initiatives">{t("docsInitiatives")}</a>
+                <a href="/docs/civic">{t("docsCivic")}</a>
+                <a href="/docs/constitution">{t("docsConstitution")}</a>
+                <a href="/docs/bills">{t("docsBills")}</a>
               </div>
             </div>
             <div
@@ -176,8 +176,8 @@ export default function Header() {
                       key={c}
                       href={
                         c === "Актуальные новости" || c === "Все новости" || c === "Медиа"
-                          ? "#/news"
-                          : `#/news?category=${encodeURIComponent(c)}`
+                          ? "/news"
+                          : `/news?category=${encodeURIComponent(c)}`
                       }
                     >
                       {lang === "ty"
@@ -410,41 +410,41 @@ export default function Header() {
         <div className="sheet-grid container">
           <div className="sheet-col">
             <h3>{t("aboutVH")}</h3>
-            <a href="#/about">{t("aboutVH")}</a>
-            <a href="#/section">{t("structure")}</a>
-            <a href="#/committee">{t("committees")}</a>
-            <a href={`#/news?category=${encodeURIComponent("Комитеты")}`}>
+            <a href="/about">{t("aboutVH")}</a>
+            <a href="/section">{t("structure")}</a>
+            <a href="/committee">{t("committees")}</a>
+            <a href={`/news?category=${encodeURIComponent("Комитеты")}`}>
               {t("committees")} ({t("news")})
             </a>
-            <a href={"#/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
-            <a href={"#/section?title=" + encodeURIComponent("Депутатские фракции")}>
+            <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
+            <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
               {t("factions")}
             </a>
             <a
-              href={"#/section?title=" + encodeURIComponent("Представительство в Совете Федерации")}
+              href={"/section?title=" + encodeURIComponent("Представительство в Совете Федерации")}
             >
               {t("senateRep")}
             </a>
-            <a href="#/apparatus">{t("apparatus")}</a>
-            <a href="#/contacts">{t("contacts")}</a>
+            <a href="/apparatus">{t("apparatus")}</a>
+            <a href="/contacts">{t("contacts")}</a>
           </div>
           <div className="sheet-col">
             <h3>{t("deputies")}</h3>
-            <a href="#/deputies">{t("deputies")}</a>
-            <a href="#/deputies">{t("deputiesAll")}</a>
+            <a href="/deputies">{t("deputies")}</a>
+            <a href="/deputies">{t("deputiesAll")}</a>
           </div>
           <div className="sheet-col">
             <h3>{t("news")}</h3>
-            <a href="#/news">{t("hotNews")}</a>
-            <a href="#/news">{t("allNews")}</a>
-            <a href="#/news">{t("media")}</a>
+            <a href="/news">{t("hotNews")}</a>
+            <a href="/news">{t("allNews")}</a>
+            <a href="/news">{t("media")}</a>
             {newsCategories
               .filter(
                 (c) =>
                   c !== "—" && c !== "Актуальные новости" && c !== "Все новости" && c !== "Медиа"
               )
               .map((c) => (
-                <a key={c} href={`#/news?category=${encodeURIComponent(c)}`}>
+                <a key={c} href={`/news?category=${encodeURIComponent(c)}`}>
                   {lang === "ty"
                     ? {
                         Сессии: t("sessions"),
@@ -459,22 +459,22 @@ export default function Header() {
           </div>
           <div className="sheet-col">
             <h3>{t("documents")}</h3>
-            <a href="#/docs/laws">{t("docsLaws")}</a>
-            <a href={`#/news?category=${encodeURIComponent("Законодательство")}`}>
+            <a href="/docs/laws">{t("docsLaws")}</a>
+            <a href={`/news?category=${encodeURIComponent("Законодательство")}`}>
               {t("legislation")} ({t("news")})
             </a>
-            <a href="#/docs/resolutions">{t("docsResolutions")}</a>
-            <a href="#/docs/initiatives">{t("docsInitiatives")}</a>
-            <a href="#/docs/civic">{t("docsCivic")}</a>
-            <a href="#/docs/constitution">{t("docsConstitution")}</a>
-            <a href="#/docs/bills">{t("docsBills")}</a>
+            <a href="/docs/resolutions">{t("docsResolutions")}</a>
+            <a href="/docs/initiatives">{t("docsInitiatives")}</a>
+            <a href="/docs/civic">{t("docsCivic")}</a>
+            <a href="/docs/constitution">{t("docsConstitution")}</a>
+            <a href="/docs/bills">{t("docsBills")}</a>
           </div>
           <div className="sheet-col">
             <h3>{t("appeals")}</h3>
-            <a href="#/appeals">{t("feedback")}</a>
-            <a href="#/contacts">{t("contacts")}</a>
-            <a href="#/wifi">{t("wifiMap")}</a>
-            <a href="#/map">{t("map")}</a>
+            <a href="/appeals">{t("feedback")}</a>
+            <a href="/contacts">{t("contacts")}</a>
+            <a href="/wifi">{t("wifiMap")}</a>
+            <a href="/map">{t("map")}</a>
           </div>
         </div>
       </div>
@@ -509,26 +509,7 @@ export default function Header() {
           <button className="icon-btn" aria-label="Версия для слабовидящих" onClick={cycleMode}>
             👁️
           </button>
-          {/* <button
-            className="icon-btn"
-            aria-label={t("login")}
-            onClick={() => {
-              setMobileOpen(false);
-              window.location.hash = "/login";
-            }}
-          >
-            🔐
-          </button> */}
-          {/* <button
-            className="icon-btn"
-            aria-label={t("register")}
-            onClick={() => {
-              setMobileOpen(false);
-              window.location.hash = "/register";
-            }}
-          >
-            ➕
-          </button> */}
+          {/* auth quick actions removed */}
           <button
             className="icon-btn"
             aria-label="Сменить язык"
@@ -549,7 +530,7 @@ export default function Header() {
             <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
               <a
                 className="btn"
-                href="#/login"
+                href="/login"
                 onClick={() => setMobileOpen(false)}
                 style={{
                   flex: 1,
@@ -565,7 +546,7 @@ export default function Header() {
               </a>
               <a
                 className="btn"
-                href="#/register"
+                href="/register"
                 onClick={() => setMobileOpen(false)}
                 style={{
                   flex: 1,
@@ -672,47 +653,47 @@ export default function Header() {
               {t("back")}
             </button>
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("aboutVH")}</div>
-            <a className="tile link" href="#/about" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/about" onClick={() => setMobileOpen(false)}>
               {t("aboutVH")}
             </a>
-            <a className="tile link" href="#/section" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/section" onClick={() => setMobileOpen(false)}>
               {t("structure")}
             </a>
-            <a className="tile link" href="#/committee" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/committee" onClick={() => setMobileOpen(false)}>
               {t("committees")}
             </a>
             <a
               className="tile link"
-              href={`#/news?category=${encodeURIComponent("Комитеты")}`}
+              href={`/news?category=${encodeURIComponent("Комитеты")}`}
               onClick={() => setMobileOpen(false)}
             >
               {t("committees")} ({t("news")})
             </a>
             <a
               className="tile link"
-              href={"#/section?title=" + encodeURIComponent("Комиссии")}
+              href={"/section?title=" + encodeURIComponent("Комиссии")}
               onClick={() => setMobileOpen(false)}
             >
               {t("commissions")}
             </a>
             <a
               className="tile link"
-              href={"#/section?title=" + encodeURIComponent("Депутатские фракции")}
+              href={"/section?title=" + encodeURIComponent("Депутатские фракции")}
               onClick={() => setMobileOpen(false)}
             >
               {t("factions")}
             </a>
             <a
               className="tile link"
-              href={"#/section?title=" + encodeURIComponent("Представительство в Совете Федерации")}
+              href={"/section?title=" + encodeURIComponent("Представительство в Совете Федерации")}
               onClick={() => setMobileOpen(false)}
             >
               {t("senateRep")}
             </a>
-            <a className="tile link" href="#/apparatus" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/apparatus" onClick={() => setMobileOpen(false)}>
               {t("apparatus")}
             </a>
-            <a className="tile link" href="#/contacts" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/contacts" onClick={() => setMobileOpen(false)}>
               {t("contacts")}
             </a>
           </>
@@ -723,16 +704,16 @@ export default function Header() {
               {t("back")}
             </button>
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("authorities")}</div>
-            <a className="tile link" href="#/authorities" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/authorities" onClick={() => setMobileOpen(false)}>
               {t("localSelfGovernment")}
             </a>
-            <a className="tile link" href="#/authorities" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/authorities" onClick={() => setMobileOpen(false)}>
               {t("legislativeAssembly")}
             </a>
-            <a className="tile link" href="#/authorities" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/authorities" onClick={() => setMobileOpen(false)}>
               {t("territorialDepartments")}
             </a>
-            <a className="tile link" href="#/authorities" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/authorities" onClick={() => setMobileOpen(false)}>
               {t("headsOfBodies")}
             </a>
           </>
@@ -743,16 +724,16 @@ export default function Header() {
               {t("back")}
             </button>
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("activity")}</div>
-            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               {t("strategy")}
             </a>
-            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               {t("plansAndForecasts")}
             </a>
-            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               {t("resultsAndReports")}
             </a>
-            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               {t("announcements")}
             </a>
           </>
@@ -763,13 +744,13 @@ export default function Header() {
               {t("back")}
             </button>
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("news")}</div>
-            <a className="tile link" href="#/news" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
               {t("hotNews")}
             </a>
-            <a className="tile link" href="#/news" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
               {t("allNews")}
             </a>
-            <a className="tile link" href="#/news" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
               {t("media")}
             </a>
             {newsCategories
@@ -781,7 +762,7 @@ export default function Header() {
                 <a
                   key={c}
                   className="tile link"
-                  href={`#/news?category=${encodeURIComponent(c)}`}
+                  href={`/news?category=${encodeURIComponent(c)}`}
                   onClick={() => setMobileOpen(false)}
                 >
                   {lang === "ty"
@@ -803,26 +784,26 @@ export default function Header() {
               {t("back")}
             </button>
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("government")}</div>
-            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               {t("head") || "Глава"}
             </a>
-            <a className="tile link" href="#/deputies" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/deputies" onClick={() => setMobileOpen(false)}>
               {t("deputies")}
             </a>
-            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               {t("governmentComposition")}
             </a>
-            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               {t("executiveBodies")}
             </a>
             <a
               className="tile link"
-              href="#/government?type=org"
+              href="/government?type=org"
               onClick={() => setMobileOpen(false)}
             >
               {t("structure")}
             </a>
-            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               {t("press")}
             </a>
           </>
@@ -833,33 +814,29 @@ export default function Header() {
               {t("back")}
             </button>
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("documents")}</div>
-            <a className="tile link" href="#/docs/laws" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/docs/laws" onClick={() => setMobileOpen(false)}>
               {t("docsLaws")}
             </a>
             <a
               className="tile link"
-              href={`#/news?category=${encodeURIComponent("Законодательство")}`}
+              href={`/news?category=${encodeURIComponent("Законодательство")}`}
               onClick={() => setMobileOpen(false)}
             >
               {t("legislation")} ({t("news")})
             </a>
-            <a className="tile link" href="#/docs/resolutions" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/docs/resolutions" onClick={() => setMobileOpen(false)}>
               {t("docsResolutions")}
             </a>
-            <a className="tile link" href="#/docs/initiatives" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/docs/initiatives" onClick={() => setMobileOpen(false)}>
               {t("docsInitiatives")}
             </a>
-            <a className="tile link" href="#/docs/civic" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/docs/civic" onClick={() => setMobileOpen(false)}>
               {t("docsCivic")}
             </a>
-            <a
-              className="tile link"
-              href="#/docs/constitution"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="/docs/constitution" onClick={() => setMobileOpen(false)}>
               {t("docsConstitution")}
             </a>
-            <a className="tile link" href="#/docs/bills" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/docs/bills" onClick={() => setMobileOpen(false)}>
               {t("docsBills")}
             </a>
           </>

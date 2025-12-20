@@ -24,7 +24,7 @@ export default function SectionPage() {
   const { committees } = useData();
   const focus = q.get("focus");
 
-  // Scroll to a requested block from URL (e.g., #/section?focus=committees)
+  // Scroll to a requested block from URL (e.g., /section?focus=committees)
   React.useEffect(() => {
     if (!focus) return;
     const id = `focus-${String(focus)}`;
@@ -57,7 +57,7 @@ export default function SectionPage() {
                     <a
                       key={c.id}
                       className="tile link"
-                      href={`#/committee?id=${encodeURIComponent(c.id)}`}
+                      href={`/committee?id=${encodeURIComponent(c.id)}`}
                     >
                       <span style={{ display: "grid", gap: 6 }}>
                         <span style={{ fontWeight: 900, color: "#0a1f44" }}>{c.title}</span>
@@ -125,7 +125,7 @@ export default function SectionPage() {
                 <ul>
                   {commissionsList.map((item) => (
                     <li key={item.id}>
-                      <a href={`#/commission?id=${item.id}`}>{item.name}</a>
+                      <a href={`/commission?id=${item.id}`}>{item.name}</a>
                     </li>
                   ))}
                 </ul>
@@ -149,10 +149,10 @@ export default function SectionPage() {
                   Совете Федерации, контакты и биографии.
                 </p>
                 <div className="tabs">
-                  <a className="btn" href="#/contacts">
+                  <a className="btn" href="/contacts">
                     Контакты →
                   </a>
-                  <a className="btn" href="#/appeals">
+                  <a className="btn" href="/appeals">
                     Прием обращений →
                   </a>
                 </div>
@@ -176,10 +176,10 @@ export default function SectionPage() {
                   Молодежного Хурала.
                 </p>
                 <div className="tabs">
-                  <a className="btn" href="#/news">
+                  <a className="btn" href="/news">
                     Новости →
                   </a>
-                  <a className="btn" href="#/calendar">
+                  <a className="btn" href="/calendar">
                     Календарь →
                   </a>
                 </div>
@@ -228,7 +228,7 @@ export default function SectionPage() {
                   <a
                     key={f}
                     className="org__item org__item--blue"
-                    href={`#/deputies?faction=${encodeURIComponent(f)}`}
+                    href={`/deputies?faction=${encodeURIComponent(f)}`}
                   >
                     Фракция
                     <br />
@@ -241,7 +241,7 @@ export default function SectionPage() {
                 <div className="org__col" id="focus-committees">
                   <a
                     className="org__item org__item--blue"
-                    href={"#/section?title=" + encodeURIComponent("Комитеты")}
+                    href={"/section?title=" + encodeURIComponent("Комитеты")}
                   >
                     Комитеты Верховного Хурала (парламента) Республики Тыва
                   </a>
@@ -249,7 +249,7 @@ export default function SectionPage() {
                     <a
                       key={c.id}
                       className="org__item org__item--green"
-                      href={`#/committee?id=${encodeURIComponent(c.id)}`}
+                      href={`/committee?id=${encodeURIComponent(c.id)}`}
                     >
                       {c.title}
                     </a>
@@ -258,11 +258,11 @@ export default function SectionPage() {
                 <div className="org__col">
                   <a
                     className="org__item org__item--blue"
-                    href="#/commission?id=mezhregionalnye-svyazi"
+                    href="/commission?id=mezhregionalnye-svyazi"
                   >
                     Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям
                   </a>
-                  <a className="org__item org__item--blue" href="#/commission?id=smi-obshestvo">
+                  <a className="org__item org__item--blue" href="/commission?id=smi-obshestvo">
                     Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со
                     средствами массовой информации и общественными организациями
                   </a>
@@ -296,7 +296,7 @@ export default function SectionPage() {
                     <a
                       key={`wide-${i}`}
                       className="org__item org__item--blue"
-                      href={`#/commission?id=${item.id}`}
+                      href={`/commission?id=${item.id}`}
                     >
                       {item.title}
                     </a>
@@ -306,7 +306,7 @@ export default function SectionPage() {
               {/* Councils anchor (same visual area for now) */}
               <div id="focus-councils" style={{ height: 1 }} />
               <div className="org__row org__row--center">
-                <a className="org__item org__item--xl org__item--blue" href="#/apparatus">
+                <a className="org__item org__item--xl org__item--blue" href="/apparatus">
                   Аппарат Верховного Хурала (парламента) Республики Тыва
                 </a>
               </div>

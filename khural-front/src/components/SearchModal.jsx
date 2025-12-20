@@ -55,7 +55,7 @@ export default function SearchModal({ open, onClose }) {
                 type: "person",
                 title: r.title,
                 meta: baseMeta,
-                href: `#/government?type=dep&id=${encodeURIComponent(r.id)}`,
+                href: `/government?type=dep&id=${encodeURIComponent(r.id)}`,
               };
             }
             if (type === "documents") {
@@ -64,7 +64,7 @@ export default function SearchModal({ open, onClose }) {
                 type: "document",
                 title: r.title,
                 meta: baseMeta,
-                href: "#/documents",
+                href: "/documents",
               };
             }
             // news
@@ -73,7 +73,7 @@ export default function SearchModal({ open, onClose }) {
               type: "news",
               title: r.title,
               meta: baseMeta,
-              href: "#/news",
+              href: "/news",
             };
           })
         );
@@ -101,7 +101,7 @@ export default function SearchModal({ open, onClose }) {
         type: "news",
         title: n.title,
         meta: new Date(n.date).toLocaleDateString("ru-RU"),
-        href: "#/news",
+        href: "/news",
       }));
     const docMatches = documents
       .filter((d) =>
@@ -112,7 +112,7 @@ export default function SearchModal({ open, onClose }) {
         type: "document",
         title: d.title,
         meta: d.category || "",
-        href: "#/documents",
+        href: "/documents",
       }));
     return [...newsMatches, ...docMatches].slice(0, 20);
   }, [q, news, documents, remote]);

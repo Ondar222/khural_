@@ -263,8 +263,8 @@ export default function About() {
                                 className="link"
                                 href={
                                   c?.page?.slug
-                                    ? `#/about?tab=general&slug=${encodeURIComponent(c.page.slug)}`
-                                    : "#/about?tab=structure"
+                                    ? `/about?tab=general&slug=${encodeURIComponent(c.page.slug)}`
+                                    : "/about?tab=structure"
                                 }
                                 style={{
                                   display: "block",
@@ -302,7 +302,7 @@ export default function About() {
                     <a
                       key={f}
                       className="org__item org__item--blue"
-                      href={`#/deputies?faction=${encodeURIComponent(f)}`}
+                      href={`/deputies?faction=${encodeURIComponent(f)}`}
                     >
                       Фракция
                       <br />
@@ -315,7 +315,7 @@ export default function About() {
                   <div className="org__col" id="focus-committees">
                     <a
                       className="org__item org__item--blue"
-                      href="#/about?tab=structure&focus=committees"
+                      href="/about?tab=structure&focus=committees"
                     >
                       Комитеты Верховного Хурала (парламента) Республики Тыва
                     </a>
@@ -323,7 +323,7 @@ export default function About() {
                       <a
                         key={c.id}
                         className="org__item org__item--green"
-                        href={`#/committee?id=${encodeURIComponent(c.id)}`}
+                        href={`/committee?id=${encodeURIComponent(c.id)}`}
                       >
                         {c.title}
                       </a>
@@ -333,11 +333,11 @@ export default function About() {
                   <div className="org__col">
                     <a
                       className="org__item org__item--blue"
-                      href="#/commission?id=mezhregionalnye-svyazi"
+                      href="/commission?id=mezhregionalnye-svyazi"
                     >
                       Комитет ВХ РТ по межрегиональным связям
                     </a>
-                    <a className="org__item org__item--blue" href="#/commission?id=smi-obshestvo">
+                    <a className="org__item org__item--blue" href="/commission?id=smi-obshestvo">
                       Комитет ВХ РТ по взаимодействию со СМИ и общественными организациями
                     </a>
                   </div>
@@ -362,7 +362,7 @@ export default function About() {
                       <a
                         key={item.id}
                         className="org__item org__item--blue"
-                        href={`#/commission?id=${item.id}`}
+                        href={`/commission?id=${item.id}`}
                       >
                         {item.title}
                       </a>
@@ -374,14 +374,14 @@ export default function About() {
                 <div id="focus-councils" style={{ height: 1 }} />
 
                 <div className="org__row org__row--center">
-                  <a className="org__item org__item--xl org__item--blue" href="#/apparatus">
+                  <a className="org__item org__item--xl org__item--blue" href="/apparatus">
                     Аппарат Верховного Хурала (парламента) Республики Тыва
                   </a>
                 </div>
               </div>
 
               <div style={{ marginTop: 14 }}>
-                <a className="btn" href="#/about?tab=structure">
+                <a className="btn" href="/about?tab=structure">
                   Ссылка на структуру (без перерисовки) →
                 </a>
               </div>

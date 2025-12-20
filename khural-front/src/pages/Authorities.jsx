@@ -55,7 +55,7 @@ export default function Authorities() {
             <div style={{ flex: "1 1 auto" }}>
               <a
                 className="btn btn-back"
-                href="#/authorities"
+                href="/authorities"
                 style={{ marginBottom: 16, display: "inline-block" }}
               >
                 ← К списку
@@ -101,7 +101,7 @@ export default function Authorities() {
                   <a
                     key={c}
                     className="pill"
-                    href={`#/authorities?cat=${encodeURIComponent(c)}`}
+                    href={`/authorities?cat=${encodeURIComponent(c)}`}
                     onClick={() => {
                       // update state immediately for snappy UI
                       setCategory(c);
@@ -119,7 +119,7 @@ export default function Authorities() {
                   <a
                     key={a.id}
                     className="tile"
-                    href={`#/authorities?cat=${encodeURIComponent(
+                    href={`/authorities?cat=${encodeURIComponent(
                       category
                     )}&id=${encodeURIComponent(a.id)}`}
                   >
@@ -135,10 +135,10 @@ export default function Authorities() {
           <SideNav
             title="Органы власти"
             links={[
-              { label: "Местное самоуправление", href: "#/authorities" },
-              { label: "Законодательное Собрание", href: "#/authorities" },
-              { label: "Территориальные отделения", href: "#/authorities" },
-              { label: "Руководители органов", href: "#/authorities" },
+              { label: "Местное самоуправление", href: "/authorities" },
+              { label: "Законодательное Собрание", href: "/authorities" },
+              { label: "Территориальные отделения", href: "/authorities" },
+              { label: "Руководители органов", href: "/authorities" },
             ]}
           />
         </div>

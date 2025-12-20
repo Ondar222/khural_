@@ -39,16 +39,16 @@ export default function Footer() {
             <div className="footer-col">
               <h4>{t("region")}</h4>
               <nav>
-                <a href="#/government">{t("government")}</a>
-                <a href="#/feedback">{t("feedback")}</a>
+                <a href="/government">{t("government")}</a>
+                <a href="/feedback">{t("feedback")}</a>
                 <a href="#">{t("sitemap")}</a>
               </nav>
             </div>
             <div className="footer-col">
               <h4>{t("news")}</h4>
               <nav>
-                <a href="#/news">{t("hotNews")}</a>
-                <a href="#/news">{t("allNews")}</a>
+                <a href="/news">{t("hotNews")}</a>
+                <a href="/news">{t("allNews")}</a>
               </nav>
             </div>
             <div className="footer-col">

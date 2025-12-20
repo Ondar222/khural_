@@ -64,10 +64,10 @@ export default function Region() {
           <SideNav
             title="О регионе"
             links={[
-              { label: "Республика Тыва", href: "#/region" },
-              { label: "Карта области", href: "#/region" },
-              { label: "Летопись", href: "#/region" },
-              { label: "Официальные символы", href: "#/region" },
+              { label: "Республика Тыва", href: "/region" },
+              { label: "Карта области", href: "/region" },
+              { label: "Летопись", href: "/region" },
+              { label: "Официальные символы", href: "/region" },
             ]}
           />
         </div>

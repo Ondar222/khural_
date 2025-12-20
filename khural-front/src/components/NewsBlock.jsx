@@ -32,11 +32,11 @@ export default function NewsBlock() {
       <div className="container">
         <div className="section-head">
           <h2>
-            <a className="link" href="#/news" style={{ textDecoration: "none" }}>
+            <a className="link" href="/news" style={{ textDecoration: "none" }}>
               {t("news")}
             </a>
           </h2>
-          <a className="link" href="#/news">
+          <a className="link" href="/news">
             {t("news")} →
           </a>
         </div>
@@ -71,7 +71,7 @@ export default function NewsBlock() {
               <a
                 key={n.id}
                 className="tile"
-                href={`#/news?id=${n.id}`}
+                href={`/news?id=${n.id}`}
                 style={{ overflow: "hidden", padding: 0 }}
               >
                 <div style={{ height: 180, overflow: "hidden" }}>

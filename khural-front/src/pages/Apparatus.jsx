@@ -45,7 +45,7 @@ export default function Apparatus() {
             </ul>
             <a
               className="btn btn--primary btn--compact"
-              href={"#/section?title=" + encodeURIComponent(`Подробнее о: ${title}`)}
+              href={"/section?title=" + encodeURIComponent(`Подробнее о: ${title}`)}
             >
               Подробнее
             </a>
@@ -53,7 +53,7 @@ export default function Apparatus() {
         </div>
         <div className="orgv2__actions">
           <a
-            href={"#/section?title=" + encodeURIComponent(`Подробнее о: ${title}`)}
+            href={"/section?title=" + encodeURIComponent(`Подробнее о: ${title}`)}
             className="btn btn--primary"
           >
             Подробнее о подразделении
@@ -69,7 +69,7 @@ export default function Apparatus() {
         <div className="page-grid">
           <div className="page-grid__main">
             <div className="tabs" style={{ marginTop: 8, marginBottom: 12 }}>
-              <a className="pill" href="#/about?tab=structure&focus=overview">
+              <a className="pill" href="/about?tab=structure&focus=overview">
                 ← Назад к структуре
               </a>
             </div>
@@ -99,7 +99,7 @@ export default function Apparatus() {
                       <li>г. Кызыл, ул. Ленина, 40</li>
                       <li>Фракция: «ЕДИНАЯ РОССИЯ»</li>
                     </ul>
-                    <a className="btn btn--primary btn--compact" href="#/government?type=gov">
+                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
                       Подробнее
                     </a>
                   </div>
@@ -121,7 +121,7 @@ export default function Apparatus() {
                       <li>lol@mail.ru</li>
                       <li>г. Кызыл, ул. Ленина, 40</li>
                     </ul>
-                    <a className="btn btn--primary btn--compact" href="#/government?type=gov">
+                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
                       Подробнее
                     </a>
                   </div>
@@ -137,12 +137,12 @@ export default function Apparatus() {
                   onClick={() =>
                     setUnitModal({
                       title: "Организационное управление аппарата",
-                      link: "#/apparatus?unit=org",
+                      link: "/apparatus?unit=org",
                     })
                   }
                 >
                   <div className="orgv2__unit_title">Организационное управление аппарата</div>
-                  <a className="btn btn--primary btn--compact" href="#/government?type=gov">
+                  <a className="btn btn--primary btn--compact" href="/government?type=gov">
                     Подробнее
                   </a>
                 </div>
@@ -167,7 +167,7 @@ export default function Apparatus() {
                       <li>lol@mail.ru</li>
                       <li>г. Кызыл, ул. Ленина, 40</li>
                     </ul>
-                    <a className="btn btn--primary btn--compact" href="#/government?type=gov">
+                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
                       Подробнее
                     </a>
                   </div>
@@ -215,7 +215,7 @@ export default function Apparatus() {
                       <li>lol@mail.ru</li>
                       <li>г. Кызыл, ул. Ленина, 40</li>
                     </ul>
-                    <a className="btn btn--primary btn--compact" href="#/government?type=gov">
+                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
                       Подробнее
                     </a>
                   </div>
@@ -236,7 +236,7 @@ export default function Apparatus() {
                       <li>lol@mail.ru</li>
                       <li>г. Кызыл, ул. Ленина, 40</li>
                     </ul>
-                    <a className="btn btn--primary btn--compact" href="#/government?type=gov">
+                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
                       Подробнее
                     </a>
                   </div>
@@ -257,7 +257,7 @@ export default function Apparatus() {
                       <li>lol@mail.ru</li>
                       <li>г. Кызыл, ул. Ленина, 40</li>
                     </ul>
-                    <a className="btn btn--primary btn--compact" href="#/government?type=gov">
+                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
                       Подробнее
                     </a>
                   </div>

@@ -39,13 +39,64 @@ export function useHashRoute() {
       }
     };
 
+    const onDocumentClick = (e) => {
+      // Intercept plain left-clicks on internal links to avoid full page reloads.
+      if (e.defaultPrevented) return;
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const a = e.target?.closest ? e.target.closest("a") : null;
+      if (!a) return;
+      if (a.target && a.target !== "_self") return;
+      if (a.hasAttribute("download")) return;
+      if (a.getAttribute("rel")?.includes("external")) return;
+      if (a.dataset && a.dataset.noSpa === "1") return;
+
+      const href = a.getAttribute("href") || "";
+      if (!href) return;
+      // Allow in-page anchors
+      if (href.startsWith("#") && !href.startsWith("#/")) return;
+
+      // Convert old hash routes to history routes
+      if (href.startsWith("#/")) {
+        e.preventDefault();
+        const target = href.slice(1); // "/path?x=1"
+        window.history.pushState({}, "", target);
+        window.dispatchEvent(new Event("app:navigate"));
+        return;
+      }
+
+      // Only intercept same-origin relative/absolute paths
+      if (href.startsWith("/")) {
+        e.preventDefault();
+        window.history.pushState({}, "", href);
+        window.dispatchEvent(new Event("app:navigate"));
+        return;
+      }
+
+      // Absolute URL: intercept only if same origin
+      if (href.startsWith("http://") || href.startsWith("https://")) {
+        try {
+          const url = new URL(href);
+          if (url.origin !== window.location.origin) return;
+          e.preventDefault();
+          window.history.pushState({}, "", url.pathname + url.search + url.hash);
+          window.dispatchEvent(new Event("app:navigate"));
+        } catch {
+          // ignore
+        }
+      }
+    };
+
     window.addEventListener("popstate", onPopState);
     window.addEventListener("app:navigate", onNavigate);
     window.addEventListener("hashchange", onHashChange);
+    document.addEventListener("click", onDocumentClick, true);
     return () => {
       window.removeEventListener("popstate", onPopState);
       window.removeEventListener("app:navigate", onNavigate);
       window.removeEventListener("hashchange", onHashChange);
+      document.removeEventListener("click", onDocumentClick, true);
     };
   }, []);
 

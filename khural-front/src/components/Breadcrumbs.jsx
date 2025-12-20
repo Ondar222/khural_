@@ -37,17 +37,17 @@ export default function Breadcrumbs() {
 
   // Build hierarchical trail
   const trail = React.useMemo(() => {
-    const crumbs = [{ label: "Главная", href: "#/" }];
+    const crumbs = [{ label: "Главная", href: "/" }];
     // Optional intermediate for certain sections
     if (base === "/committee") {
-      crumbs.push({ label: "Структура", href: "#/section" });
+      crumbs.push({ label: "Структура", href: "/section" });
       // append selected committee title when possible
       try {
         const sp = new URLSearchParams((route || "").split("?")[1]);
         const id = sp.get("id");
         const c = (committees || []).find((x) => x.id === id);
         if (c?.title) {
-          crumbs.push({ label: "Комитеты", href: "#/committee" });
+          crumbs.push({ label: "Комитеты", href: "/committee" });
           crumbs.push({ label: c.title });
           return crumbs;
         }
@@ -56,13 +56,13 @@ export default function Breadcrumbs() {
       return crumbs;
     }
     if (base === "/deputies") {
-      crumbs.push({ label: "Структура", href: "#/section" });
+      crumbs.push({ label: "Структура", href: "/section" });
       crumbs.push({ label: "Депутаты" });
       return crumbs;
     }
     // Handle commission pages
     if (base === "/commission") {
-      crumbs.push({ label: "Структура", href: "#/section" });
+      crumbs.push({ label: "Структура", href: "/section" });
       try {
         const sp = new URLSearchParams((route || "").split("?")[1]);
         const id = sp.get("id");
@@ -86,13 +86,13 @@ export default function Breadcrumbs() {
         if (id && COMMISSION_IDS[id]) {
           crumbs.push({
             label: "Комиссии",
-            href: "#/section?title=" + encodeURIComponent("Комиссии"),
+            href: "/section?title=" + encodeURIComponent("Комиссии"),
           });
           crumbs.push({ label: COMMISSION_IDS[id] });
           return crumbs;
         }
       } catch {}
-      crumbs.push({ label: "Комиссии", href: "#/section?title=" + encodeURIComponent("Комиссии") });
+      crumbs.push({ label: "Комиссии", href: "/section?title=" + encodeURIComponent("Комиссии") });
       crumbs.push({ label: "Комиссия" });
       return crumbs;
     }
@@ -103,7 +103,7 @@ export default function Breadcrumbs() {
         const sectionTitle = sp.get("title");
         if (sectionTitle) {
           const decodedTitle = decodeURIComponent(sectionTitle);
-          crumbs.push({ label: "Структура", href: "#/section" });
+          crumbs.push({ label: "Структура", href: "/section" });
           crumbs.push({ label: decodedTitle });
           return crumbs;
         }

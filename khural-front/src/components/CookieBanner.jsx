@@ -22,7 +22,7 @@ export default function CookieBanner() {
       <div className="cookie-banner__text">
         Мы используем файлы cookies для улучшения работы сайта. Продолжая пользоваться сайтом, вы
         соглашаетесь с использованием cookies.
-        <a className="link" href="#/about" style={{ marginLeft: 8 }}>
+        <a className="link" href="/about" style={{ marginLeft: 8 }}>
           Подробнее
         </a>
       </div>

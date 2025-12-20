@@ -254,7 +254,7 @@ export default function Deputies() {
                         </ul>
                       </div>
                       <div className="gov-card__actions">
-                        <a className="gov-card__btn" href={`#/government?type=dep&id=${d.id}`}>
+                        <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
                           Подробнее
                         </a>
                       </div>

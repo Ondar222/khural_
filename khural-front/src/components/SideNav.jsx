@@ -3,27 +3,27 @@ import React from "react";
 // Reusable right-side navigation with links to key subpages
 export default function SideNav({ title = "Разделы", links: overrideLinks }) {
   const defaultLinks = [
-    { label: "Общие сведения", href: "#/about" },
-    { label: "Структура парламента", href: "#/about?tab=structure&focus=overview" },
-    { label: "Руководство", href: "#/government" },
+    { label: "Общие сведения", href: "/about" },
+    { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
+    { label: "Руководство", href: "/government" },
     // "Депутаты" — по умолчанию показываем текущий созыв (если есть в данных)
-    { label: "Депутаты", href: "#/deputies?convocation=VIII" },
-    { label: "Депутаты всех созывов", href: "#/deputies?convocation=%D0%92%D1%81%D0%B5" },
+    { label: "Депутаты", href: "/deputies?convocation=VIII" },
+    { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
     {
       label: "Представительство в Совете Федерации",
-      href: "#/section?title=" + encodeURIComponent("Представительство в Совете Федерации"),
+      href: "/section?title=" + encodeURIComponent("Представительство в Совете Федерации"),
     },
-    { label: "Депутатские фракции", href: "#/about?tab=structure&focus=factions" },
-    { label: "Комитеты", href: "#/about?tab=structure&focus=committees" },
-    { label: "Комиссии", href: "#/about?tab=structure&focus=commissions" },
+    { label: "Депутатские фракции", href: "/about?tab=structure&focus=factions" },
+    { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
+    { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
     {
       label: "Совет по взаимодействию с представительными органами муниципальных образований",
-      href: "#/about?tab=structure&focus=councils",
+      href: "/about?tab=structure&focus=councils",
     },
-    { label: "Структура Аппарата", href: "#/apparatus" },
+    { label: "Структура Аппарата", href: "/apparatus" },
     {
       label: "Молодежный Хурал",
-      href: "#/section?title=" + encodeURIComponent("Молодежный Хурал"),
+      href: "/section?title=" + encodeURIComponent("Молодежный Хурал"),
     },
   ];
 

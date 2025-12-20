@@ -78,7 +78,7 @@ export default function NewsArchive() {
           <div className="container">
             <a
               className="btn btn-back"
-              href="#/news"
+              href="/news"
               style={{ marginBottom: 16, display: "inline-block" }}
             >
               {t("back")}
@@ -109,7 +109,7 @@ export default function NewsArchive() {
             <div style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
               <a
                 className="btn btn-back"
-                href="#/news"
+                href="/news"
                 style={{ marginBottom: 16, display: "inline-block" }}
               >
                 {t("back")}
@@ -164,7 +164,7 @@ export default function NewsArchive() {
                     <a
                       key={n.id}
                       className="tile link"
-                      href={`#/news?id=${n.id}`}
+                      href={`/news?id=${n.id}`}
                       style={{ display: "block", padding: 12 }}
                     >
                       <div style={{ fontSize: 14, color: "#6b7280" }}>
@@ -237,7 +237,7 @@ export default function NewsArchive() {
                     <a
                       key={n.id}
                       className="tile"
-                      href={`#/news?id=${n.id}`}
+                      href={`/news?id=${n.id}`}
                       style={{ overflow: "hidden", padding: 0 }}
                     >
                       <div style={{ height: 180, overflow: "hidden" }}>
@@ -283,9 +283,9 @@ export default function NewsArchive() {
           <SideNav
             title="Новости"
             links={[
-              { label: "Актуальные новости", href: "#/news" },
-              { label: "Все новости", href: "#/news" },
-              { label: "Медиа", href: "#/news" },
+              { label: "Актуальные новости", href: "/news" },
+              { label: "Все новости", href: "/news" },
+              { label: "Медиа", href: "/news" },
             ]}
           />
         </div>

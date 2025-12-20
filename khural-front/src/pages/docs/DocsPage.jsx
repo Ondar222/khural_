@@ -108,21 +108,21 @@ export default function DocsPage() {
           <SideNav
             title="Документы"
             links={[
-              { label: "Законы Республики Тыва", href: "#/docs/laws" },
-              { label: "Постановления ВХ РТ", href: "#/docs/resolutions" },
+              { label: "Законы Республики Тыва", href: "/docs/laws" },
+              { label: "Постановления ВХ РТ", href: "/docs/resolutions" },
               {
                 label: "Законодательные инициативы",
-                href: "#/docs/initiatives",
+                href: "/docs/initiatives",
               },
               {
                 label: "Законодательная инициатива гражданами",
-                href: "#/docs/civic",
+                href: "/docs/civic",
               },
               {
                 label: "Реализация поправок в Конституцию РФ",
-                href: "#/docs/constitution",
+                href: "/docs/constitution",
               },
-              { label: "Законопроекты", href: "#/docs/bills" },
+              { label: "Законопроекты", href: "/docs/bills" },
             ]}
           />
         </div>

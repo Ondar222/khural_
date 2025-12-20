@@ -34,22 +34,22 @@ export default function AdminDashboard({ stats }) {
         <QuickAction
           title="Добавить новость"
           description="Создайте новость и загрузите обложку"
-          href="#/admin/news"
+          href="/admin/news"
         />
         <QuickAction
           title="Добавить депутата"
           description="Создайте карточку депутата и загрузите фото"
-          href="#/admin/deputies"
+          href="/admin/deputies"
         />
         <QuickAction
           title="Загрузить документ"
           description="Законы, постановления, инициативы и т.д."
-          href="#/admin/documents"
+          href="/admin/documents"
         />
         <QuickAction
           title="Добавить событие"
           description="Событие появится в календаре на сайте"
-          href="#/admin/events"
+          href="/admin/events"
         />
       </div>
 
@@ -59,7 +59,7 @@ export default function AdminDashboard({ stats }) {
           Если API недоступен, админка продолжит работать в режиме предпросмотра (данные будут
           только локально в браузере).
         </div>
-        <Button href="#/admin/news" type="primary">
+        <Button href="/admin/news" type="primary">
           Начать
         </Button>
       </div>

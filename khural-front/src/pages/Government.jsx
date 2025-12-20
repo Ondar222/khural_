@@ -50,7 +50,7 @@ export default function Government() {
     };
   }, []);
 
-  // Scroll to a requested block on the structure page (e.g., #/government?type=org&focus=committees)
+  // Scroll to a requested block on the structure page (e.g., /government?type=org&focus=committees)
   React.useEffect(() => {
     if (section !== "Структура") return;
     if (!focus) return;
@@ -125,13 +125,13 @@ export default function Government() {
               {leader.email && <li>{leader.email}</li>}
               {leader.address && <li>{leader.address}</li>}
             </ul>
-            <a className="btn btn--primary btn--compact" href={`#/committee?id=${id}`}>
+            <a className="btn btn--primary btn--compact" href={`/committee?id=${id}`}>
               Подробнее
             </a>
           </div>
         </div>
         <div className="orgv2__actions">
-          <a href={`#/committee?id=${id}`} className="btn btn--primary">
+          <a href={`/committee?id=${id}`} className="btn btn--primary">
             Подробнее о комитете
           </a>
         </div>
@@ -146,8 +146,8 @@ export default function Government() {
     // Для депутатов ведем на страницу списка депутатов, для остальных - на government
     const backHref =
       section === "Депутаты"
-        ? "#/deputies"
-        : `#/government?type=${section === "Парламент" ? "gov" : "org"}`;
+        ? "/deputies"
+        : `/government?type=${section === "Парламент" ? "gov" : "org"}`;
     return (
       <PersonDetail item={item} type={section === "Депутаты" ? "dep" : "gov"} backHref={backHref} />
     );
@@ -225,7 +225,7 @@ export default function Government() {
               <>
                 <h3 id="focus-overview">О Верховном Хурале Республики Тыва</h3>
                 <div className="tabs" style={{ marginBottom: 10 }}>
-                  <a className="pill" href="#/about">
+                  <a className="pill" href="/about">
                     Общие сведения
                   </a>
                   <span className="pill pill--solid" aria-current="page">
@@ -244,7 +244,7 @@ export default function Government() {
                       <a
                         key={f}
                         className="org__item org__item--blue"
-                        href={`#/deputies?faction=${encodeURIComponent(f)}`}
+                        href={`/deputies?faction=${encodeURIComponent(f)}`}
                       >
                         Фракция
                         <br />
@@ -256,7 +256,7 @@ export default function Government() {
                     <div className="org__col" id="focus-committees">
                       <a
                         className="org__item org__item--blue"
-                        href={"#/section?title=" + encodeURIComponent("Комитеты")}
+                        href={"/section?title=" + encodeURIComponent("Комитеты")}
                       >
                         Комитеты Верховного Хурала (парламента) Республики Тыва
                       </a>
@@ -264,7 +264,7 @@ export default function Government() {
                         <a
                           key={c.id}
                           className="org__item org__item--green"
-                          href={`#/committee?id=${encodeURIComponent(c.id)}`}
+                          href={`/committee?id=${encodeURIComponent(c.id)}`}
                         >
                           {c.title}
                         </a>
@@ -274,7 +274,7 @@ export default function Government() {
                       <a
                         className="org__item org__item--blue"
                         href={
-                          "#/section?title=" +
+                          "/section?title=" +
                           encodeURIComponent(
                             "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям"
                           )
@@ -286,7 +286,7 @@ export default function Government() {
                       <a
                         className="org__item org__item--blue"
                         href={
-                          "#/section?title=" +
+                          "/section?title=" +
                           encodeURIComponent(
                             "Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями"
                           )
@@ -307,7 +307,7 @@ export default function Government() {
                         <a
                           key={`wide-${i}`}
                           className="org__item org__item--blue"
-                          href={`#/section?title=${encodeURIComponent(title)}`}
+                          href={`/section?title=${encodeURIComponent(title)}`}
                         >
                           {title}
                         </a>
@@ -316,7 +316,7 @@ export default function Government() {
                   </div>
                   <div id="focus-councils" style={{ height: 1 }} />
                   <div className="org__row org__row--center">
-                    <a className="org__item org__item--xl org__item--blue" href="#/apparatus">
+                    <a className="org__item org__item--xl org__item--blue" href="/apparatus">
                       Аппарат Верховного Хурала (парламента) Республики Тыва
                     </a>
                   </div>
@@ -348,7 +348,7 @@ export default function Government() {
                           </ul>
                           <a
                             className="btn btn--primary btn--compact"
-                            href={`#/government?type=gov&id=${p.id}`}
+                            href={`/government?type=gov&id=${p.id}`}
                           >
                             Подробнее
                           </a>
@@ -361,7 +361,7 @@ export default function Government() {
                     <span className="pill pill--solid">Фракция ЛДПР</span>
                     <span className="pill pill--solid">Фракция КПРФ</span>
                     <span className="pill pill--solid">Фракция «Новые люди»</span>
-                    <a href="#/committee?id=agro" className="btn btn--primary orgv2__strip_btn">
+                    <a href="/committee?id=agro" className="btn btn--primary orgv2__strip_btn">
                       Подробнее о комитете
                     </a>
                   </div>
@@ -511,7 +511,7 @@ export default function Government() {
                         </ul>
                       </div>
                       <div className="gov-card__actions">
-                        <a className="gov-card__btn" href={`#/government?type=dep&id=${d.id}`}>
+                        <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
                           Подробнее
                         </a>
                       </div>
@@ -564,7 +564,7 @@ export default function Government() {
                         </ul>
                       </div>
                       <div className="gov-card__actions">
-                        <a className="gov-card__btn" href={`#/government?type=gov&id=${p.id}`}>
+                        <a className="gov-card__btn" href={`/government?type=gov&id=${p.id}`}>
                           Подробнее
                         </a>
                       </div>

@@ -32,8 +32,8 @@ export default function Appeals() {
             message="Для отправки обращения требуется авторизация"
             description={
               <span>
-                Перейдите на страницу <a href="#/login">входа</a> или{" "}
-                <a href="#/register">регистрации</a>, затем вернитесь сюда.
+                Перейдите на страницу <a href="/login">входа</a> или{" "}
+                <a href="/register">регистрации</a>, затем вернитесь сюда.
               </span>
             }
             style={{ marginBottom: 16 }}
@@ -76,7 +76,7 @@ export default function Appeals() {
             </Form.Item>
           </Form>
         )}
-        <a href="/deputies#/feedback">Правила о приеме обращений граждан</a>
+        <a href="/feedback">Правила о приеме обращений граждан</a>
       </div>
     </section>
   );

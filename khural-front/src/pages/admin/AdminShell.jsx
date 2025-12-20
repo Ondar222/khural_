@@ -5,12 +5,12 @@ const BRAND_LOGO_SRC =
   "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg";
 
 const NAV = [
-  { key: "dashboard", label: "Панель управления", href: "#/admin" },
-  { key: "deputies", label: "Депутаты", href: "#/admin/deputies" },
-  { key: "documents", label: "Документы", href: "#/admin/documents" },
-  { key: "events", label: "События", href: "#/admin/events" },
-  { key: "news", label: "Новости", href: "#/admin/news" },
-  { key: "env", label: "ENV доки", href: "#/admin/env" },
+  { key: "dashboard", label: "Панель управления", href: "/admin" },
+  { key: "deputies", label: "Депутаты", href: "/admin/deputies" },
+  { key: "documents", label: "Документы", href: "/admin/documents" },
+  { key: "events", label: "События", href: "/admin/events" },
+  { key: "news", label: "Новости", href: "/admin/news" },
+  { key: "env", label: "ENV доки", href: "/admin/env" },
 ];
 
 function NavItem({ href, label, active, onClick }) {

@@ -19,20 +19,20 @@ export default function ActivityPage() {
   }, []);
 
   const sidebarLinks = [
-    { label: "План работы", href: "#/activity/plan" },
+    { label: "План работы", href: "/activity/plan" },
     {
       label: "Депутатский контроль: национальные проекты",
-      href: "#/activity/national-projects",
+      href: "/activity/national-projects",
     },
-    { label: "Отчёты о деятельности", href: "#/activity/reports" },
+    { label: "Отчёты о деятельности", href: "/activity/reports" },
     {
       label: "Заседания сессий Верховного Хурала",
-      href: "#/activity/sessions",
+      href: "/activity/sessions",
     },
-    { label: "Статистика законотворчества", href: "#/activity/statistics" },
+    { label: "Статистика законотворчества", href: "/activity/statistics" },
     {
       label: "Счётная палата Республики Тыва",
-      href: "#/activity/schet_palata",
+      href: "/activity/schet_palata",
     },
   ];
 
@@ -44,7 +44,7 @@ export default function ActivityPage() {
             <h1>Деятельность</h1>
             <div className="grid">
               {(data.reports || []).map((item) => (
-                <a key={item.url} className="tile link" href="#/activity/reports">
+                <a key={item.url} className="tile link" href="/activity/reports">
                   <div style={{ fontWeight: 800 }}>{item.title}</div>
                   <div className="link" style={{ marginTop: 8 }}>
                     Открыть →
