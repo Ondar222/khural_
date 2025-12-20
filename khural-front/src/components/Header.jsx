@@ -128,6 +128,9 @@ export default function Header() {
                 <a href="#/about">{t("aboutVH")}</a>
                 <a href="#/section">{t("structure")}</a>
                 <a href="#/committee">{t("committees")}</a>
+                <a href={`#/news?category=${encodeURIComponent("Комитеты")}`}>
+                  {t("committees")} ({t("news")})
+                </a>
                 <a href={"#/section?title=" + encodeURIComponent("Комиссии")}>
                   {t("commissions")}
                 </a>
@@ -167,6 +170,9 @@ export default function Header() {
                 <a href="#/docs/laws">
                   {t("docs")}: {t("legislation")}
                 </a>
+                <a href={`#/news?category=${encodeURIComponent("Законодательство")}`}>
+                  {t("legislation")} ({t("news")})
+                </a>
                 <a href="#/docs/resolutions">{t("docsResolutions")}</a>
                 <a href="#/docs/initiatives">{t("docsInitiatives")}</a>
                 <a href="#/docs/civic">{t("docsCivic")}</a>
@@ -190,7 +196,14 @@ export default function Header() {
                   c === "—" ? (
                     <hr key={`hr-${i}`} />
                   ) : (
-                    <a key={c} href="#/news">
+                    <a 
+                      key={c} 
+                      href={
+                        c === "Актуальные новости" || c === "Все новости" || c === "Медиа"
+                          ? "#/news"
+                          : `#/news?category=${encodeURIComponent(c)}`
+                      }
+                    >
                       {lang === "ty"
                         ? {
                             "Актуальные новости": t("hotNews"),
@@ -466,6 +479,9 @@ export default function Header() {
             <a href="#/about">{t("aboutVH")}</a>
             <a href="#/section">{t("structure")}</a>
             <a href="#/committee">{t("committees")}</a>
+            <a href={`#/news?category=${encodeURIComponent("Комитеты")}`}>
+              {t("committees")} ({t("news")})
+            </a>
             <a href={"#/section?title=" + encodeURIComponent("Комиссии")}>
               {t("commissions")}
             </a>
@@ -497,10 +513,28 @@ export default function Header() {
             <a href="#/news">{t("hotNews")}</a>
             <a href="#/news">{t("allNews")}</a>
             <a href="#/news">{t("media")}</a>
+            {newsCategories
+              .filter((c) => c !== "—" && c !== "Актуальные новости" && c !== "Все новости" && c !== "Медиа")
+              .map((c) => (
+                <a key={c} href={`#/news?category=${encodeURIComponent(c)}`}>
+                  {lang === "ty"
+                    ? {
+                        Сессии: t("sessions"),
+                        Законодательство: t("legislation"),
+                        "Общественные мероприятия": t("publicEvents"),
+                        Комитеты: t("committees"),
+                        "Работа с гражданами": t("workWithCitizens"),
+                      }[c] || c
+                    : c}
+                </a>
+              ))}
           </div>
           <div className="sheet-col">
             <h3>{t("documents")}</h3>
             <a href="#/docs/laws">{t("docsLaws")}</a>
+            <a href={`#/news?category=${encodeURIComponent("Законодательство")}`}>
+              {t("legislation")} ({t("news")})
+            </a>
             <a href="#/docs/resolutions">{t("docsResolutions")}</a>
             <a href="#/docs/initiatives">{t("docsInitiatives")}</a>
             <a href="#/docs/civic">{t("docsCivic")}</a>
@@ -776,6 +810,13 @@ export default function Header() {
             </a>
             <a
               className="tile link"
+              href={`#/news?category=${encodeURIComponent("Комитеты")}`}
+              onClick={() => setMobileOpen(false)}
+            >
+              {t("committees")} ({t("news")})
+            </a>
+            <a
+              className="tile link"
               href={"#/section?title=" + encodeURIComponent("Комиссии")}
               onClick={() => setMobileOpen(false)}
             >
@@ -919,6 +960,26 @@ export default function Header() {
             >
               {t("media")}
             </a>
+            {newsCategories
+              .filter((c) => c !== "—" && c !== "Актуальные новости" && c !== "Все новости" && c !== "Медиа")
+              .map((c) => (
+                <a
+                  key={c}
+                  className="tile link"
+                  href={`#/news?category=${encodeURIComponent(c)}`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {lang === "ty"
+                    ? {
+                        Сессии: t("sessions"),
+                        Законодательство: t("legislation"),
+                        "Общественные мероприятия": t("publicEvents"),
+                        Комитеты: t("committees"),
+                        "Работа с гражданами": t("workWithCitizens"),
+                      }[c] || c
+                    : c}
+                </a>
+              ))}
           </>
         )}
         {mobileSection === "gov" && (
@@ -987,6 +1048,13 @@ export default function Header() {
               onClick={() => setMobileOpen(false)}
             >
               {t("docsLaws")}
+            </a>
+            <a
+              className="tile link"
+              href={`#/news?category=${encodeURIComponent("Законодательство")}`}
+              onClick={() => setMobileOpen(false)}
+            >
+              {t("legislation")} ({t("news")})
             </a>
             <a
               className="tile link"

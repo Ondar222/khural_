@@ -8,7 +8,12 @@ import CommentsBlock from "../components/CommentsBlock.jsx";
 export default function NewsArchive() {
   const { news } = useData();
   const { t } = useI18n();
-  const [category, setCategory] = React.useState("Все");
+  const getInitialCategory = () => {
+    const h = window.location.hash;
+    const categoryParam = new URLSearchParams(h.split("?")[1]).get("category");
+    return categoryParam || "Все";
+  };
+  const [category, setCategory] = React.useState(getInitialCategory);
   const [month, setMonth] = React.useState("Все");
   const [selected, setSelected] = React.useState(() => {
     const h = window.location.hash;
@@ -18,8 +23,15 @@ export default function NewsArchive() {
   React.useEffect(() => {
     const onHash = () => {
       const h = window.location.hash;
-      const id = new URLSearchParams(h.split("?")[1]).get("id");
+      const params = new URLSearchParams(h.split("?")[1]);
+      const id = params.get("id");
+      const categoryParam = params.get("category");
       setSelected(id || null);
+      if (categoryParam && !id) {
+        setCategory(categoryParam);
+      } else if (!categoryParam && !id) {
+        setCategory("Все");
+      }
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -141,7 +153,20 @@ export default function NewsArchive() {
               <Space size="middle" style={{ margin: "12px 0 20px" }} wrap>
                 <Select
                   value={category}
-                  onChange={setCategory}
+                  onChange={(newCategory) => {
+                    setCategory(newCategory);
+                    const h = window.location.hash.split("?")[0];
+                    const params = new URLSearchParams(window.location.hash.split("?")[1] || "");
+                    if (newCategory === "Все") {
+                      params.delete("category");
+                    } else {
+                      params.set("category", newCategory);
+                    }
+                    const newHash = params.toString() 
+                      ? `${h}?${params.toString()}` 
+                      : h;
+                    window.location.hash = newHash;
+                  }}
                   dropdownMatchSelectWidth={false}
                   options={categories.map((c) => ({ value: c, label: c }))}
                   style={{ minWidth: 200 }}
