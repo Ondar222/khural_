@@ -100,6 +100,37 @@ export function Press() {
       <div className="container">
         <h1>Пресс-служба</h1>
         <p>Контакты и релизы пресс-службы.</p>
+        <div className="card" style={{ padding: 20, marginTop: 24 }}>
+          <h2 style={{ marginTop: 0 }}>Контактная информация</h2>
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
+              Адрес
+            </div>
+            <div style={{ color: "#b91c1c" }}>
+              667000, г. Кызыл, ул. Чульдум, д. 18
+            </div>
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
+              Телефон
+            </div>
+            <div>+7 (39422) 9-72-95</div>
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
+              Факс
+            </div>
+            <div>+7 (39422) 9-72-95, 9-72-96</div>
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
+              E-mail
+            </div>
+            <div>
+              <a href="mailto:ods@tuva.ru">ods@tuva.ru</a>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
