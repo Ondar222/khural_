@@ -776,6 +776,23 @@ a {
     font-size: 14px !important;
   }
 }
+/* Desktop filters: make selects wider (do not touch adaptive) */
+@media (min-width: 960px) {
+  .filters .ant-space {
+    width: auto;
+  }
+  .filters .ant-space-item {
+    flex: 0 0 auto;
+  }
+  .filters .ant-space .ant-select,
+  .filters .ant-space .ant-input,
+  .filters .ant-space .ant-input-search {
+    min-width: 220px;
+  }
+  .filters .ant-space .ant-select .ant-select-selector {
+    min-height: 44px;
+  }
+}
 /* Show full text inside filter selects (wrap instead of truncate) */
 .filters .ant-select-selector {
   white-space: normal !important;

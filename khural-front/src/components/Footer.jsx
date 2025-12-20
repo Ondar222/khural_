@@ -1,8 +1,10 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
+import { EnvironmentOutlined, MailOutlined, PhoneOutlined, PrinterOutlined } from "@ant-design/icons";
 
 export default function Footer() {
   const { t } = useI18n();
+  const phoneIconStyle = { transform: "scaleX(-1)" };
   return (
     <footer className="site-footer">
       <div className="container">
@@ -72,28 +74,28 @@ export default function Footer() {
           <div className="footer-contacts">
             <h4>Контакты</h4>
             <div className="contact-item">
-              <span className="contact-icon">📍</span>
+              <EnvironmentOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
                 <strong>Адрес:</strong>
                 <span>667000, г. Кызыл, ул. Чульдум, д. 18</span>
               </div>
             </div>
             <div className="contact-item">
-              <span className="contact-icon">📞</span>
+              <PhoneOutlined className="contact-icon" style={phoneIconStyle} aria-hidden="true" />
               <div className="contact-text">
                 <strong>Телефон:</strong>
                 <a href="tel:+73942297295">+7 (39422) 9-72-95</a>
               </div>
             </div>
             <div className="contact-item">
-              <span className="contact-icon">📠</span>
+              <PrinterOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
                 <strong>Факс:</strong>
                 <span>+7 (39422) 9-72-95, 9-72-96</span>
               </div>
             </div>
             <div className="contact-item">
-              <span className="contact-icon">✉️</span>
+              <MailOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
                 <strong>E-mail:</strong>
                 <a href="mailto:ods@tuva.ru">ods@tuva.ru</a>
