@@ -1,0 +1,3 @@
+[submodule "khural-backend"]
+	path = khural-backend
+	url = https://github.com/YurtaApp/khural-backend.git
