@@ -44,11 +44,7 @@ export default function ActivityPage() {
             <h1>Деятельность</h1>
             <div className="grid">
               {(data.reports || []).map((item) => (
-                <a
-                  key={item.url}
-                  className="tile link"
-                  href="#/activity/reports"
-                >
+                <a key={item.url} className="tile link" href="#/activity/reports">
                   <div style={{ fontWeight: 800 }}>{item.title}</div>
                   <div className="link" style={{ marginTop: 8 }}>
                     Открыть →

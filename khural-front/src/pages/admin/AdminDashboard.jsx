@@ -56,8 +56,8 @@ export default function AdminDashboard({ stats }) {
       <div className="admin-card admin-note">
         <div className="admin-note__title">Подсказка</div>
         <div className="admin-note__text">
-          Если API недоступен, админка продолжит работать в режиме предпросмотра
-          (данные будут только локально в браузере).
+          Если API недоступен, админка продолжит работать в режиме предпросмотра (данные будут
+          только локально в браузере).
         </div>
         <Button href="#/admin/news" type="primary">
           Начать
@@ -66,9 +66,3 @@ export default function AdminDashboard({ stats }) {
     </div>
   );
 }
-
-
-
-
-
-

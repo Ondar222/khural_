@@ -22,8 +22,7 @@ export default function CalendarPreview() {
             <div key={e.id} className="tile">
               <div style={{ fontWeight: 700 }}>{e.title}</div>
               <div style={{ color: "#6b7280" }}>
-                {new Date(e.date).toLocaleDateString("ru-RU")} · {e.time} ·{" "}
-                {e.place}
+                {new Date(e.date).toLocaleDateString("ru-RU")} · {e.time} · {e.place}
               </div>
               <p>{e.desc}</p>
             </div>

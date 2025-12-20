@@ -1,5 +1,5 @@
 import React from "react";
-import { Form, Input, Button, Alert, Select } from "antd";
+import { Form, Input, Button, Alert } from "antd";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 
@@ -29,9 +29,7 @@ export default function Register() {
     <section className="section">
       <div className="container" style={{ maxWidth: 640 }}>
         <h1>Регистрация</h1>
-        {error ? (
-          <Alert type="error" message={error} style={{ marginBottom: 12 }} />
-        ) : null}
+        {error ? <Alert type="error" message={error} style={{ marginBottom: 12 }} /> : null}
         {success ? (
           <Alert
             type="success"
@@ -39,7 +37,7 @@ export default function Register() {
             style={{ marginBottom: 12 }}
           />
         ) : null}
-        <Form layout="vertical" onFinish={onFinish}>
+        <Form layout="vertical" onFinish={onFinish} initialValues={{ role: "citizen" }}>
           <Form.Item
             label="Фамилия"
             name="surname"
@@ -47,11 +45,7 @@ export default function Register() {
           >
             <Input />
           </Form.Item>
-          <Form.Item
-            label="Имя"
-            name="name"
-            rules={[{ required: true, message: "Введите имя" }]}
-          >
+          <Form.Item label="Имя" name="name" rules={[{ required: true, message: "Введите имя" }]}>
             <Input />
           </Form.Item>
           <Form.Item label="Телефон" name="phone">
@@ -71,23 +65,15 @@ export default function Register() {
           >
             <Input.Password />
           </Form.Item>
-          <Form.Item label="Роль" name="role" initialValue="citizen">
-            <Select
-              options={[
-                { value: "citizen", label: "Гражданин" },
-                { value: "admin", label: "Администратор" },
-              ]}
-            />
+          <Form.Item name="role" hidden>
+            <Input />
           </Form.Item>
           <Form.Item>
             <div className="container_submit">
               <Button type="primary" htmlType="submit" loading={loading}>
                 Создать аккаунт
               </Button>
-              <Button
-                style={{ marginLeft: 12 }}
-                onClick={() => navigate("/login")}
-              >
+              <Button style={{ marginLeft: 12 }} onClick={() => navigate("/login")}>
                 Уже есть аккаунт
               </Button>
             </div>

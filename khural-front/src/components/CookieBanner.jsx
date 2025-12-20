@@ -18,14 +18,10 @@ export default function CookieBanner() {
 
   if (!visible) return null;
   return (
-    <div
-      className="cookie-banner"
-      role="region"
-      aria-label="Уведомление о cookies"
-    >
+    <div className="cookie-banner" role="region" aria-label="Уведомление о cookies">
       <div className="cookie-banner__text">
-        Мы используем файлы cookies для улучшения работы сайта. Продолжая
-        пользоваться сайтом, вы соглашаетесь с использованием cookies.
+        Мы используем файлы cookies для улучшения работы сайта. Продолжая пользоваться сайтом, вы
+        соглашаетесь с использованием cookies.
         <a className="link" href="#/about" style={{ marginLeft: 8 }}>
           Подробнее
         </a>

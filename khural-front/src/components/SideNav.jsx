@@ -11,18 +11,14 @@ export default function SideNav({ title = "Разделы", links: overrideLinks
     { label: "Депутаты всех созывов", href: "#/deputies?convocation=%D0%92%D1%81%D0%B5" },
     {
       label: "Представительство в Совете Федерации",
-      href:
-        "#/section?title=" +
-        encodeURIComponent("Представительство в Совете Федерации"),
+      href: "#/section?title=" + encodeURIComponent("Представительство в Совете Федерации"),
     },
     { label: "Депутатские фракции", href: "#/about?tab=structure&focus=factions" },
     { label: "Комитеты", href: "#/about?tab=structure&focus=committees" },
     { label: "Комиссии", href: "#/about?tab=structure&focus=commissions" },
     {
-      label:
-        "Совет по взаимодействию с представительными органами муниципальных образований",
-      href:
-        "#/about?tab=structure&focus=councils",
+      label: "Совет по взаимодействию с представительными органами муниципальных образований",
+      href: "#/about?tab=structure&focus=councils",
     },
     { label: "Структура Аппарата", href: "#/apparatus" },
     {
@@ -31,10 +27,7 @@ export default function SideNav({ title = "Разделы", links: overrideLinks
     },
   ];
 
-  const links =
-    Array.isArray(overrideLinks) && overrideLinks.length
-      ? overrideLinks
-      : defaultLinks;
+  const links = Array.isArray(overrideLinks) && overrideLinks.length ? overrideLinks : defaultLinks;
 
   return (
     <aside className="sidenav" aria-label="Ссылки раздела">
@@ -42,9 +35,7 @@ export default function SideNav({ title = "Разделы", links: overrideLinks
       <div className="sidenav__list">
         {links.map((l, i) => (
           <a key={i} className="tile link" href={l.href}>
-            <span
-              style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-            >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
               <span aria-hidden="true">‹</span>
               {l.label}
             </span>

@@ -7,23 +7,25 @@ export default function Committee() {
   const [committee, setCommittee] = React.useState(null);
 
   React.useEffect(() => {
-    const h = window.location.hash;
-    const sp = new URLSearchParams(h.split("?")[1]);
+    const sp = new URLSearchParams(window.location.search || "");
     const id = sp.get("id") || "agro";
     const c = (committees || []).find((x) => x.id === id);
     setCommittee(c || null);
   }, [committees]);
 
   React.useEffect(() => {
-    const onHash = () => {
-      const h = window.location.hash;
-      const sp = new URLSearchParams(h.split("?")[1]);
+    const onNav = () => {
+      const sp = new URLSearchParams(window.location.search || "");
       const id = sp.get("id") || "agro";
       const c = (committees || []).find((x) => x.id === id);
       setCommittee(c || null);
     };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onNav);
+    window.addEventListener("app:navigate", onNav);
+    return () => {
+      window.removeEventListener("popstate", onNav);
+      window.removeEventListener("app:navigate", onNav);
+    };
   }, [committees]);
 
   if (!committee) {
@@ -48,9 +50,7 @@ export default function Committee() {
     let d = m.id ? (deputies || []).find((x) => x.id === m.id) : null;
     if (!d && m.name) {
       const target = m.name.trim().toLowerCase();
-      d = (deputies || []).find(
-        (x) => (x.name || "").trim().toLowerCase() === target
-      );
+      d = (deputies || []).find((x) => (x.name || "").trim().toLowerCase() === target);
     }
     const PLACEHOLDER =
       "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg";
@@ -89,12 +89,7 @@ export default function Committee() {
                   {members.map((m, idx) => (
                     <div key={m.id || idx} className="gov-card">
                       <div className="gov-card__top">
-                        <img
-                          className="gov-card__avatar"
-                          src={m.photo}
-                          alt=""
-                          loading="lazy"
-                        />
+                        <img className="gov-card__avatar" src={m.photo} alt="" loading="lazy" />
                       </div>
                       <div className="gov-card__body">
                         <div className="gov-card__name">{m.name}</div>
@@ -155,12 +150,7 @@ export default function Committee() {
                 <div className="orgv2__chain" style={{ marginTop: 8 }}>
                   <div className="orgv2__line" />
                   <div className="person-card person-card--committee">
-                    <img
-                      className="person-card__photo"
-                      src={leader.photo}
-                      alt=""
-                      loading="lazy"
-                    />
+                    <img className="person-card__photo" src={leader.photo} alt="" loading="lazy" />
                     <div className="person-card__body">
                       <div className="person-card__name">{leader.name}</div>
                       <div className="person-card__role">{leader.role}</div>
@@ -171,9 +161,7 @@ export default function Committee() {
                       </ul>
                       <a
                         className="btn btn--primary btn--compact"
-                        href={
-                          leader.id ? `#/government?type=dep&id=${leader.id}` : "#"
-                        }
+                        href={leader.id ? `#/government?type=dep&id=${leader.id}` : "#"}
                       >
                         Подробнее
                       </a>
@@ -188,16 +176,8 @@ export default function Committee() {
                 <div className="orgv2__chain" style={{ marginTop: 8 }}>
                   <div className="orgv2__line" />
                   {rest.map((p, idx) => (
-                    <div
-                      key={p.id || idx}
-                      className="person-card person-card--committee"
-                    >
-                      <img
-                        className="person-card__photo"
-                        src={p.photo}
-                        alt=""
-                        loading="lazy"
-                      />
+                    <div key={p.id || idx} className="person-card person-card--committee">
+                      <img className="person-card__photo" src={p.photo} alt="" loading="lazy" />
                       <div className="person-card__body">
                         <div className="person-card__name">{p.name}</div>
                         <div className="person-card__role">{p.role}</div>

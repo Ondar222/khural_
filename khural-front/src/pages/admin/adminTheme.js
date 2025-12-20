@@ -16,9 +16,3 @@ export function writeAdminTheme(mode) {
     // ignore
   }
 }
-
-
-
-
-
-

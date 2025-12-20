@@ -1,11 +1,6 @@
 import React from "react";
 
-export default function GosWidget({
-  src,
-  id,
-  variant = 1,
-  fallbackImg = "/img/banner.svg",
-}) {
+export default function GosWidget({ src, id, variant = 1, fallbackImg = "/img/banner.svg" }) {
   const ref = React.useRef(null);
   React.useEffect(() => {
     if (!ref.current) return;
@@ -38,12 +33,5 @@ export default function GosWidget({
     }
   }, [src, variant, fallbackImg]);
 
-  return (
-    <div
-      id={id}
-      ref={ref}
-      className="tile"
-      style={{ padding: 0, overflow: "hidden" }}
-    />
-  );
+  return <div id={id} ref={ref} className="tile" style={{ padding: 0, overflow: "hidden" }} />;
 }

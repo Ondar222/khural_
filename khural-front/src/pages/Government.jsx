@@ -1,30 +1,21 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
-import { Select, Card, Tag, Space, Button } from "antd";
+import { Select } from "antd";
 import PersonDetail from "../components/PersonDetail.jsx";
 import SideNav from "../components/SideNav.jsx";
 
 export default function Government() {
-  const {
-    government,
-    deputies,
-    committees,
-    factions: structureFactions,
-    commissions: structureCommissions,
-    councils: structureCouncils,
-  } = useData();
+  const { government, deputies, committees } = useData();
 
   const [section, setSection] = React.useState(() => {
-    const h = window.location.hash;
-    const sp = new URLSearchParams(h.split("?")[1]);
+    const sp = new URLSearchParams(window.location.search || "");
     const t = sp.get("type");
     if (t === "dep") return "Депутаты";
     if (t === "org") return "Структура";
     return "Парламент";
   });
   const [focus, setFocus] = React.useState(() => {
-    const h = window.location.hash;
-    const sp = new URLSearchParams(h.split("?")[1]);
+    const sp = new URLSearchParams(window.location.search || "");
     return sp.get("focus");
   });
 
@@ -35,15 +26,13 @@ export default function Government() {
   const [faction, setFaction] = React.useState("Все");
 
   const [selected, setSelected] = React.useState(() => {
-    const h = window.location.hash;
-    const sp = new URLSearchParams(h.split("?")[1]);
+    const sp = new URLSearchParams(window.location.search || "");
     const id = sp.get("id");
     return id || null;
   });
   React.useEffect(() => {
-    const onHash = () => {
-      const h = window.location.hash;
-      const sp = new URLSearchParams(h.split("?")[1]);
+    const onNav = () => {
+      const sp = new URLSearchParams(window.location.search || "");
       const id = sp.get("id");
       const t = sp.get("type");
       const f = sp.get("focus");
@@ -53,8 +42,12 @@ export default function Government() {
       setFocus(f);
       setSelected(id || null);
     };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onNav);
+    window.addEventListener("app:navigate", onNav);
+    return () => {
+      window.removeEventListener("popstate", onNav);
+      window.removeEventListener("app:navigate", onNav);
+    };
   }, []);
 
   // Scroll to a requested block on the structure page (e.g., #/government?type=org&focus=committees)
@@ -78,9 +71,7 @@ export default function Government() {
   const filtered = React.useMemo(
     () =>
       government.filter(
-        (p) =>
-          (agency === "Все" || p.agency === agency) &&
-          (role === "Все" || p.role === role)
+        (p) => (agency === "Все" || p.agency === agency) && (role === "Все" || p.role === role)
       ),
     [government, agency, role]
   );
@@ -128,18 +119,13 @@ export default function Government() {
           />
           <div className="person-card__body">
             <div className="person-card__name">{leader.name}</div>
-            <div className="person-card__role">
-              {leader.role || "Представитель Комитета"}
-            </div>
+            <div className="person-card__role">{leader.role || "Представитель Комитета"}</div>
             <ul className="person-card__meta">
               {leader.phone && <li>+ {leader.phone}</li>}
               {leader.email && <li>{leader.email}</li>}
               {leader.address && <li>{leader.address}</li>}
             </ul>
-            <a
-              className="btn btn--primary btn--compact"
-              href={`#/committee?id=${id}`}
-            >
+            <a className="btn btn--primary btn--compact" href={`#/committee?id=${id}`}>
               Подробнее
             </a>
           </div>
@@ -158,13 +144,12 @@ export default function Government() {
     const item = dataset.find((p) => p.id === selected);
     if (!item) return null;
     // Для депутатов ведем на страницу списка депутатов, для остальных - на government
-    const backHref = section === "Депутаты" ? "#/deputies" : `#/government?type=${section === "Парламент" ? "gov" : "org"}`;
+    const backHref =
+      section === "Депутаты"
+        ? "#/deputies"
+        : `#/government?type=${section === "Парламент" ? "gov" : "org"}`;
     return (
-      <PersonDetail
-        item={item}
-        type={section === "Депутаты" ? "dep" : "gov"}
-        backHref={backHref}
-      />
+      <PersonDetail item={item} type={section === "Депутаты" ? "dep" : "gov"} backHref={backHref} />
     );
   }
 
@@ -251,32 +236,27 @@ export default function Government() {
                 <div className="org org--khural">
                   <div className="org__row org__row--center">
                     <div className="org__item org__item--blue org__item--xl">
-                      Председатель Верховного Хурала (парламента) Республики
-                      Тыва
+                      Председатель Верховного Хурала (парламента) Республики Тыва
                     </div>
                   </div>
                   <div className="org__row org__row--factions" id="focus-factions">
-                    {["Единая Россия", "КПРФ", "ЛДПР", "Новые люди"].map(
-                      (f) => (
-                        <a
-                          key={f}
-                          className="org__item org__item--blue"
-                          href={`#/deputies?faction=${encodeURIComponent(f)}`}
-                        >
-                          Фракция
-                          <br />
-                          {f}
-                        </a>
-                      )
-                    )}
+                    {["Единая Россия", "КПРФ", "ЛДПР", "Новые люди"].map((f) => (
+                      <a
+                        key={f}
+                        className="org__item org__item--blue"
+                        href={`#/deputies?faction=${encodeURIComponent(f)}`}
+                      >
+                        Фракция
+                        <br />
+                        {f}
+                      </a>
+                    ))}
                   </div>
                   <div className="org__row org__row--cols4">
                     <div className="org__col" id="focus-committees">
                       <a
                         className="org__item org__item--blue"
-                        href={
-                          "#/section?title=" + encodeURIComponent("Комитеты")
-                        }
+                        href={"#/section?title=" + encodeURIComponent("Комитеты")}
                       >
                         Комитеты Верховного Хурала (парламента) Республики Тыва
                       </a>
@@ -300,8 +280,8 @@ export default function Government() {
                           )
                         }
                       >
-                        Комитет Верховного Хурала (парламента) Республики Тыва
-                        по межрегиональным связям
+                        Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным
+                        связям
                       </a>
                       <a
                         className="org__item org__item--blue"
@@ -312,9 +292,8 @@ export default function Government() {
                           )
                         }
                       >
-                        Комитет Верховного Хурала (парламента) Республики Тыва
-                        по взаимодействию со средствами массовой информации и
-                        общественными организациями
+                        Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со
+                        средствами массовой информации и общественными организациями
                       </a>
                     </div>
                     <div className="org__col org__col--span2" id="focus-commissions">
@@ -337,10 +316,7 @@ export default function Government() {
                   </div>
                   <div id="focus-councils" style={{ height: 1 }} />
                   <div className="org__row org__row--center">
-                    <a
-                      className="org__item org__item--xl org__item--blue"
-                      href="#/apparatus"
-                    >
+                    <a className="org__item org__item--xl org__item--blue" href="#/apparatus">
                       Аппарат Верховного Хурала (парламента) Республики Тыва
                     </a>
                   </div>
@@ -351,53 +327,41 @@ export default function Government() {
                 <div className="orgv2">
                   <div className="orgv2__chain">
                     <div className="orgv2__line" />
-                    {[government[0], government[1]]
-                      .filter(Boolean)
-                      .map((p, idx) => (
-                        <div
-                          key={p.id}
-                          className="person-card person-card--round-xl"
-                        >
-                          <img
-                            className="person-card__photo"
-                            src={
-                              p.photo ||
-                              "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                            }
-                            alt=""
-                            loading="lazy"
-                          />
-                          <div className="person-card__body">
-                            <div className="person-card__name">{p.name}</div>
-                            <div className="person-card__role">{p.role}</div>
-                            <ul className="person-card__meta">
-                              {p.phone && <li>+ {p.phone}</li>}
-                              {p.email && <li>{p.email}</li>}
-                              {p.address && <li>{p.address}</li>}
-                            </ul>
-                            <a
-                              className="btn btn--primary btn--compact"
-                              href={`#/government?type=gov&id=${p.id}`}
-                            >
-                              Подробнее
-                            </a>
-                          </div>
+                    {[government[0], government[1]].filter(Boolean).map((p) => (
+                      <div key={p.id} className="person-card person-card--round-xl">
+                        <img
+                          className="person-card__photo"
+                          src={
+                            p.photo ||
+                            "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
+                          }
+                          alt=""
+                          loading="lazy"
+                        />
+                        <div className="person-card__body">
+                          <div className="person-card__name">{p.name}</div>
+                          <div className="person-card__role">{p.role}</div>
+                          <ul className="person-card__meta">
+                            {p.phone && <li>+ {p.phone}</li>}
+                            {p.email && <li>{p.email}</li>}
+                            {p.address && <li>{p.address}</li>}
+                          </ul>
+                          <a
+                            className="btn btn--primary btn--compact"
+                            href={`#/government?type=gov&id=${p.id}`}
+                          >
+                            Подробнее
+                          </a>
                         </div>
-                      ))}
+                      </div>
+                    ))}
                   </div>
                   <div className="orgv2__strip">
-                    <span className="pill pill--solid">
-                      Фракция «Единая Россия»
-                    </span>
+                    <span className="pill pill--solid">Фракция «Единая Россия»</span>
                     <span className="pill pill--solid">Фракция ЛДПР</span>
                     <span className="pill pill--solid">Фракция КПРФ</span>
-                    <span className="pill pill--solid">
-                      Фракция «Новые люди»
-                    </span>
-                    <a
-                      href="#/committee?id=agro"
-                      className="btn btn--primary orgv2__strip_btn"
-                    >
+                    <span className="pill pill--solid">Фракция «Новые люди»</span>
+                    <a href="#/committee?id=agro" className="btn btn--primary orgv2__strip_btn">
                       Подробнее о комитете
                     </a>
                   </div>
@@ -406,121 +370,77 @@ export default function Government() {
                       className={`orgv2__pill orgv2__pill--outline orgv2__pill--button ${
                         openCommittee === "agro" ? "orgv2__pill--open" : ""
                       }`}
-                      onClick={() =>
-                        setOpenCommittee(
-                          openCommittee === "agro" ? null : "agro"
-                        )
-                      }
+                      onClick={() => setOpenCommittee(openCommittee === "agro" ? null : "agro")}
                     >
-                      Комитет по аграрной политике, земельным отношениям,
-                      природопользованию, экологии и делам коренных
-                      малочисленных народов
+                      Комитет по аграрной политике, земельным отношениям, природопользованию,
+                      экологии и делам коренных малочисленных народов
                     </div>
                     {openCommittee === "agro" ? renderCommittee("agro") : null}
                     <div
                       className={`orgv2__pill orgv2__pill--outline orgv2__pill--button ${
                         openCommittee === "infra" ? "orgv2__pill--open" : ""
                       }`}
-                      onClick={() =>
-                        setOpenCommittee(
-                          openCommittee === "infra" ? null : "infra"
-                        )
-                      }
+                      onClick={() => setOpenCommittee(openCommittee === "infra" ? null : "infra")}
                     >
                       Комитет по развитию инфраструктуры и промышленной политике
                     </div>
-                    {openCommittee === "infra"
-                      ? renderCommittee("infra")
-                      : null}
+                    {openCommittee === "infra" ? renderCommittee("infra") : null}
                     <div
                       className={`orgv2__pill orgv2__pill--outline orgv2__pill--button ${
                         openCommittee === "youth" ? "orgv2__pill--open" : ""
                       }`}
-                      onClick={() =>
-                        setOpenCommittee(
-                          openCommittee === "youth" ? null : "youth"
-                        )
-                      }
+                      onClick={() => setOpenCommittee(openCommittee === "youth" ? null : "youth")}
                     >
-                      Комитет по молодежной, информационной политике, физической
-                      культуре и спорту, развитию институтов гражданского
-                      общества
+                      Комитет по молодежной, информационной политике, физической культуре и спорту,
+                      развитию институтов гражданского общества
                     </div>
-                    {openCommittee === "youth"
-                      ? renderCommittee("youth")
-                      : null}
+                    {openCommittee === "youth" ? renderCommittee("youth") : null}
                     <div
                       className={`orgv2__pill orgv2__pill--outline orgv2__pill--button ${
                         openCommittee === "security" ? "orgv2__pill--open" : ""
                       }`}
                       onClick={() =>
-                        setOpenCommittee(
-                          openCommittee === "security" ? null : "security"
-                        )
+                        setOpenCommittee(openCommittee === "security" ? null : "security")
                       }
                     >
                       Комитет по безопасности и правопорядку
                     </div>
-                    {openCommittee === "security"
-                      ? renderCommittee("security")
-                      : null}
+                    {openCommittee === "security" ? renderCommittee("security") : null}
                     <div
                       className={`orgv2__pill orgv2__pill--outline orgv2__pill--button ${
                         openCommittee === "health" ? "orgv2__pill--open" : ""
                       }`}
-                      onClick={() =>
-                        setOpenCommittee(
-                          openCommittee === "health" ? null : "health"
-                        )
-                      }
+                      onClick={() => setOpenCommittee(openCommittee === "health" ? null : "health")}
                     >
-                      Комитет по охране здоровья, занятости населения и
-                      социальной политике
+                      Комитет по охране здоровья, занятости населения и социальной политике
                     </div>
-                    {openCommittee === "health"
-                      ? renderCommittee("health")
-                      : null}
+                    {openCommittee === "health" ? renderCommittee("health") : null}
                     <div
                       className={`orgv2__pill orgv2__pill--outline orgv2__pill--button ${
                         openCommittee === "const" ? "orgv2__pill--open" : ""
                       }`}
-                      onClick={() =>
-                        setOpenCommittee(
-                          openCommittee === "const" ? null : "const"
-                        )
-                      }
+                      onClick={() => setOpenCommittee(openCommittee === "const" ? null : "const")}
                     >
-                      Комитет по конституционно‑правовой политике и местному
-                      самоуправлению
+                      Комитет по конституционно‑правовой политике и местному самоуправлению
                     </div>
-                    {openCommittee === "const"
-                      ? renderCommittee("const")
-                      : null}
+                    {openCommittee === "const" ? renderCommittee("const") : null}
                     <div
                       className={`orgv2__pill orgv2__pill--outline orgv2__pill--button ${
                         openCommittee === "econ" ? "orgv2__pill--open" : ""
                       }`}
-                      onClick={() =>
-                        setOpenCommittee(
-                          openCommittee === "econ" ? null : "econ"
-                        )
-                      }
+                      onClick={() => setOpenCommittee(openCommittee === "econ" ? null : "econ")}
                     >
-                      Комитет по экономической, финансово‑бюджетной и налоговой
-                      политике, предпринимательству, туризму и государственной
-                      собственности
+                      Комитет по экономической, финансово‑бюджетной и налоговой политике,
+                      предпринимательству, туризму и государственной собственности
                     </div>
                     {openCommittee === "econ" ? renderCommittee("econ") : null}
                     <div
                       className={`orgv2__pill orgv2__pill--outline orgv2__pill--button ${
                         openCommittee === "edu" ? "orgv2__pill--open" : ""
                       }`}
-                      onClick={() =>
-                        setOpenCommittee(openCommittee === "edu" ? null : "edu")
-                      }
+                      onClick={() => setOpenCommittee(openCommittee === "edu" ? null : "edu")}
                     >
-                      Комитет по образованию, культуре, науке и национальной
-                      политике
+                      Комитет по образованию, культуре, науке и национальной политике
                     </div>
                     {openCommittee === "edu" ? renderCommittee("edu") : null}
                   </div>
@@ -591,10 +511,7 @@ export default function Government() {
                         </ul>
                       </div>
                       <div className="gov-card__actions">
-                        <a
-                          className="gov-card__btn"
-                          href={`#/government?type=dep&id=${d.id}`}
-                        >
+                        <a className="gov-card__btn" href={`#/government?type=dep&id=${d.id}`}>
                           Подробнее
                         </a>
                       </div>
@@ -618,9 +535,7 @@ export default function Government() {
                       </div>
                       <div className="gov-card__body">
                         <div className="gov-card__name">{p.name}</div>
-                        {p.role && (
-                          <div className="gov-card__role">{p.role}</div>
-                        )}
+                        {p.role && <div className="gov-card__role">{p.role}</div>}
                         <ul className="gov-meta">
                           {p.agency && (
                             <li>
@@ -649,10 +564,7 @@ export default function Government() {
                         </ul>
                       </div>
                       <div className="gov-card__actions">
-                        <a
-                          className="gov-card__btn"
-                          href={`#/government?type=gov&id=${p.id}`}
-                        >
+                        <a className="gov-card__btn" href={`#/government?type=gov&id=${p.id}`}>
                           Подробнее
                         </a>
                       </div>

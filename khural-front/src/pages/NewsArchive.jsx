@@ -4,26 +4,24 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { Select, Space } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import CommentsBlock from "../components/CommentsBlock.jsx";
+import DataState from "../components/DataState.jsx";
 
 export default function NewsArchive() {
-  const { news } = useData();
+  const { news, loading, errors, reload } = useData();
   const { t } = useI18n();
   const getInitialCategory = () => {
-    const h = window.location.hash;
-    const categoryParam = new URLSearchParams(h.split("?")[1]).get("category");
+    const categoryParam = new URLSearchParams(window.location.search || "").get("category");
     return categoryParam || "Все";
   };
   const [category, setCategory] = React.useState(getInitialCategory);
   const [month, setMonth] = React.useState("Все");
   const [selected, setSelected] = React.useState(() => {
-    const h = window.location.hash;
-    const id = new URLSearchParams(h.split("?")[1]).get("id");
+    const id = new URLSearchParams(window.location.search || "").get("id");
     return id || null;
   });
   React.useEffect(() => {
-    const onHash = () => {
-      const h = window.location.hash;
-      const params = new URLSearchParams(h.split("?")[1]);
+    const onNav = () => {
+      const params = new URLSearchParams(window.location.search || "");
       const id = params.get("id");
       const categoryParam = params.get("category");
       setSelected(id || null);
@@ -33,8 +31,12 @@ export default function NewsArchive() {
         setCategory("Все");
       }
     };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onNav);
+    window.addEventListener("app:navigate", onNav);
+    return () => {
+      window.removeEventListener("popstate", onNav);
+      window.removeEventListener("app:navigate", onNav);
+    };
   }, []);
 
   const categories = React.useMemo(
@@ -70,13 +72,46 @@ export default function NewsArchive() {
   if (selected) {
     const idx = news.findIndex((n) => n.id === selected);
     const item = idx >= 0 ? news[idx] : null;
-    if (!item) return null;
+    if (!item) {
+      return (
+        <section className="section">
+          <div className="container">
+            <a
+              className="btn btn-back"
+              href="#/news"
+              style={{ marginBottom: 16, display: "inline-block" }}
+            >
+              {t("back")}
+            </a>
+            <DataState
+              loading={Boolean(loading?.news) && (!news || news.length === 0)}
+              error={errors?.news}
+              onRetry={reload}
+              empty={!loading?.news}
+              emptyDescription="Новость не найдена"
+            />
+          </div>
+        </section>
+      );
+    }
     return (
       <section className="section">
         <div className="container">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
             <div style={{ flex: "1 1 auto", minWidth: 0, width: "100%" }}>
-              <a className="btn btn-back" href="#/news" style={{ marginBottom: 16, display: "inline-block" }}>
+              <a
+                className="btn btn-back"
+                href="#/news"
+                style={{ marginBottom: 16, display: "inline-block" }}
+              >
                 {t("back")}
               </a>
               <div>
@@ -89,9 +124,7 @@ export default function NewsArchive() {
           </div>
           <div className="news-detail">
             <article className="card" style={{ padding: 16 }}>
-              <div
-                style={{ height: 340, overflow: "hidden", borderRadius: 12 }}
-              >
+              <div style={{ height: 340, overflow: "hidden", borderRadius: 12 }}>
                 <img
                   src={getImage(Math.max(0, idx))}
                   alt=""
@@ -107,14 +140,13 @@ export default function NewsArchive() {
                 ) : (
                   <>
                     <p>
-                      Полный текст новости будет дополнен. Сейчас отображается
-                      расширенное описание на основе краткой выжимки.
+                      Полный текст новости будет дополнен. Сейчас отображается расширенное описание
+                      на основе краткой выжимки.
                     </p>
                     <p>
                       При необходимости вы можете добавить поле
-                      <strong> content</strong> и <strong> image</strong> в
-                      файле данных, чтобы вывести официальный текст и фотографию
-                      события.
+                      <strong> content</strong> и <strong> image</strong> в файле данных, чтобы
+                      вывести официальный текст и фотографию события.
                     </p>
                   </>
                 )}
@@ -128,7 +160,7 @@ export default function NewsArchive() {
                 {news
                   .filter((n) => n.id !== item.id)
                   .slice(0, 6)
-                  .map((n, i) => (
+                  .map((n) => (
                     <a
                       key={n.id}
                       className="tile link"
@@ -155,82 +187,98 @@ export default function NewsArchive() {
         <div className="page-grid">
           <div>
             <h1>{t("news")}</h1>
-            <div className="filters">
-              <Space size={8} style={{ margin: "12px 0 20px", width: "100%", display: "flex" }} wrap={false}>
-                <Select
-                  value={category}
-                  onChange={(newCategory) => {
-                    setCategory(newCategory);
-                    const h = window.location.hash.split("?")[0];
-                    const params = new URLSearchParams(window.location.hash.split("?")[1] || "");
-                    if (newCategory === "Все") {
-                      params.delete("category");
-                    } else {
-                      params.set("category", newCategory);
-                    }
-                    const newHash = params.toString() 
-                      ? `${h}?${params.toString()}` 
-                      : h;
-                    window.location.hash = newHash;
-                  }}
-                  popupMatchSelectWidth={false}
-                  options={categories.map((c) => ({ value: c, label: c }))}
-                />
-                <Select
-                  value={month}
-                  onChange={setMonth}
-                  popupMatchSelectWidth={false}
-                  options={months.map((m) => ({ value: m, label: m }))}
-                />
-              </Space>
-            </div>
-            <div className="grid cols-3">
-              {filtered.map((n, i) => (
-                <a
-                  key={n.id}
-                  className="tile"
-                  href={`#/news?id=${n.id}`}
-                  style={{ overflow: "hidden", padding: 0 }}
+            <DataState
+              loading={Boolean(loading?.news) && (!news || news.length === 0)}
+              error={errors?.news}
+              onRetry={reload}
+              empty={!loading?.news && (!news || news.length === 0)}
+              emptyDescription="Новостей пока нет"
+            >
+              <div className="filters">
+                <Space
+                  size={8}
+                  style={{ margin: "12px 0 20px", width: "100%", display: "flex" }}
+                  wrap={false}
                 >
-                  <div style={{ height: 180, overflow: "hidden" }}>
-                    <img
-                      src={n.image || getImage(i)}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </div>
-                  <div style={{ padding: 16 }}>
-                    <div
-                      style={{
-                        display: "inline-block",
-                        background: "#eef2ff",
-                        color: "#3730a3",
-                        borderRadius: 8,
-                        padding: "4px 10px",
-                        fontSize: 12,
-                        fontWeight: 700,
-                      }}
+                  <Select
+                    value={category}
+                    onChange={(newCategory) => {
+                      setCategory(newCategory);
+                      const h = window.location.pathname;
+                      const params = new URLSearchParams(window.location.search || "");
+                      if (newCategory === "Все") {
+                        params.delete("category");
+                      } else {
+                        params.set("category", newCategory);
+                      }
+                      const newHash = params.toString() ? `${h}?${params.toString()}` : h;
+                      window.history.pushState({}, "", newHash);
+                      window.dispatchEvent(new Event("app:navigate"));
+                    }}
+                    popupMatchSelectWidth={false}
+                    options={categories.map((c) => ({ value: c, label: c }))}
+                  />
+                  <Select
+                    value={month}
+                    onChange={setMonth}
+                    popupMatchSelectWidth={false}
+                    options={months.map((m) => ({ value: m, label: m }))}
+                  />
+                </Space>
+              </div>
+              <DataState
+                loading={false}
+                error={null}
+                empty={filtered.length === 0}
+                emptyDescription="По выбранным фильтрам ничего не найдено"
+              >
+                <div className="grid cols-3">
+                  {filtered.map((n, i) => (
+                    <a
+                      key={n.id}
+                      className="tile"
+                      href={`#/news?id=${n.id}`}
+                      style={{ overflow: "hidden", padding: 0 }}
                     >
-                      {n.category}
-                    </div>
-                    <div
-                      style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}
-                    >
-                      {n.title}
-                    </div>
-                    <div style={{ color: "#6b7280", marginTop: 6 }}>
-                      {new Date(n.date).toLocaleDateString("ru-RU")}
-                    </div>
-                  </div>
-                </a>
-              ))}
-            </div>
+                      <div style={{ height: 180, overflow: "hidden" }}>
+                        <img
+                          src={n.image || getImage(i)}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </div>
+                      <div style={{ padding: 16 }}>
+                        <div
+                          style={{
+                            display: "inline-block",
+                            background: "#eef2ff",
+                            color: "#3730a3",
+                            borderRadius: 8,
+                            padding: "4px 10px",
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {n.category}
+                        </div>
+                        <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>
+                          {n.title}
+                        </div>
+                        <div style={{ color: "#6b7280", marginTop: 6 }}>
+                          {new Date(n.date).toLocaleDateString("ru-RU")}
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </DataState>
+            </DataState>
           </div>
           <SideNav
             title="Новости"

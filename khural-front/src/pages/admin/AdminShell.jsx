@@ -15,11 +15,7 @@ const NAV = [
 
 function NavItem({ href, label, active, onClick }) {
   return (
-    <a
-      href={href}
-      className={"admin-nav__item" + (active ? " is-active" : "")}
-      onClick={onClick}
-    >
+    <a href={href} className={"admin-nav__item" + (active ? " is-active" : "")} onClick={onClick}>
       <span className="admin-nav__label">{label}</span>
     </a>
   );
@@ -81,9 +77,7 @@ export default function AdminShell({
           <div className="admin-user">
             <div className="admin-user__avatar">A</div>
             <div className="admin-user__meta">
-              <div className="admin-user__name">
-                {user?.name || user?.email || "Администратор"}
-              </div>
+              <div className="admin-user__name">{user?.name || user?.email || "Администратор"}</div>
               <div className="admin-user__role">{user?.role || "admin"}</div>
             </div>
           </div>
@@ -102,9 +96,7 @@ export default function AdminShell({
             </a>
             <div className="admin-heading">
               <div className="admin-heading__title">{title}</div>
-              {subtitle ? (
-                <div className="admin-heading__subtitle">{subtitle}</div>
-              ) : null}
+              {subtitle ? <div className="admin-heading__subtitle">{subtitle}</div> : null}
             </div>
           </div>
 
@@ -117,11 +109,7 @@ export default function AdminShell({
             >
               <span className="admin-burger" />
             </button>
-            <button
-              className="admin-pillbtn"
-              type="button"
-              onClick={onToggleTheme}
-            >
+            <button className="admin-pillbtn" type="button" onClick={onToggleTheme}>
               {themeMode === "light" ? "Тёмная" : "Светлая"}
             </button>
           </div>
@@ -132,9 +120,3 @@ export default function AdminShell({
     </div>
   );
 }
-
-
-
-
-
-

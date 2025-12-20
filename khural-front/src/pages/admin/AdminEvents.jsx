@@ -113,7 +113,12 @@ export default function AdminEvents({ items, onCreate, onUpdate, onDelete, busy,
       </div>
 
       <div className="admin-card admin-table">
-        <Table rowKey={(r) => String(r.id)} columns={columns} dataSource={filtered} pagination={{ pageSize: 10 }} />
+        <Table
+          rowKey={(r) => String(r.id)}
+          columns={columns}
+          dataSource={filtered}
+          pagination={{ pageSize: 10 }}
+        />
       </div>
 
       <Modal
@@ -125,7 +130,11 @@ export default function AdminEvents({ items, onCreate, onUpdate, onDelete, busy,
         confirmLoading={busy}
         okButtonProps={{ disabled: !canWrite }}
       >
-        <Form layout="vertical" form={form} initialValues={{ date: new Date().toISOString().slice(0, 10) }}>
+        <Form
+          layout="vertical"
+          form={form}
+          initialValues={{ date: new Date().toISOString().slice(0, 10) }}
+        >
           <Form.Item label="Дата" name="date" rules={[{ required: true, message: "Укажите дату" }]}>
             <Input type="date" />
           </Form.Item>
@@ -137,7 +146,11 @@ export default function AdminEvents({ items, onCreate, onUpdate, onDelete, busy,
               <Input placeholder="Зал заседаний" />
             </Form.Item>
           </div>
-          <Form.Item label="Название" name="title" rules={[{ required: true, message: "Укажите название" }]}>
+          <Form.Item
+            label="Название"
+            name="title"
+            rules={[{ required: true, message: "Укажите название" }]}
+          >
             <Input />
           </Form.Item>
           <Form.Item label="Описание" name="desc">
@@ -170,7 +183,11 @@ export default function AdminEvents({ items, onCreate, onUpdate, onDelete, busy,
               <Input />
             </Form.Item>
           </div>
-          <Form.Item label="Название" name="title" rules={[{ required: true, message: "Укажите название" }]}>
+          <Form.Item
+            label="Название"
+            name="title"
+            rules={[{ required: true, message: "Укажите название" }]}
+          >
             <Input />
           </Form.Item>
           <Form.Item label="Описание" name="desc">
@@ -181,8 +198,3 @@ export default function AdminEvents({ items, onCreate, onUpdate, onDelete, busy,
     </div>
   );
 }
-
-
-
-
-

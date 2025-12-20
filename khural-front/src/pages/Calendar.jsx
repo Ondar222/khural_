@@ -53,19 +53,11 @@ export default function CalendarPage() {
             marginBottom: 12,
           }}
         >
-          <button
-            className="btn"
-            onClick={() => setCursor(new Date(y, m - 1, 1))}
-          >
+          <button className="btn" onClick={() => setCursor(new Date(y, m - 1, 1))}>
             ←
           </button>
-          <strong>
-            {cursor.toLocaleString("ru-RU", { month: "long", year: "numeric" })}
-          </strong>
-          <button
-            className="btn"
-            onClick={() => setCursor(new Date(y, m + 1, 1))}
-          >
+          <strong>{cursor.toLocaleString("ru-RU", { month: "long", year: "numeric" })}</strong>
+          <button className="btn" onClick={() => setCursor(new Date(y, m + 1, 1))}>
             →
           </button>
         </div>
@@ -109,9 +101,7 @@ export default function CalendarPage() {
                 <button
                   key={i}
                   type="button"
-                  className={`calendar__day ${!inMonth ? "_empty" : ""} ${
-                    has ? "_has" : ""
-                  }`}
+                  className={`calendar__day ${!inMonth ? "_empty" : ""} ${has ? "_has" : ""}`}
                   onClick={() => has && setOpenedDayEvents(evs)}
                 >
                   <div className="calendar__daynum">{d.getDate()}</div>

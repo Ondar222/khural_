@@ -30,12 +30,7 @@ export default function NewsPreview() {
         </div>
         <div className="grid cols-3">
           {NEWS.map((n, i) => (
-            <a
-              key={i}
-              className="tile"
-              href="#"
-              style={{ overflow: "hidden", padding: 0 }}
-            >
+            <a key={i} className="tile" href="#" style={{ overflow: "hidden", padding: 0 }}>
               <div style={{ height: 180, overflow: "hidden" }}>
                 <img
                   src={n.image}
@@ -59,9 +54,7 @@ export default function NewsPreview() {
                 >
                   {n.tag}
                 </div>
-                <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>
-                  {n.title}
-                </div>
+                <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>{n.title}</div>
               </div>
             </a>
           ))}

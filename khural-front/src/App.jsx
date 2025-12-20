@@ -3,7 +3,6 @@ import Header from "./components/Header.jsx";
 import Router, { useHashRoute } from "./Router.jsx";
 import Home from "./pages/Home.jsx";
 import Region from "./pages/Region.jsx";
-import News from "./pages/News.jsx";
 import NewsArchive from "./pages/NewsArchive.jsx";
 import Government from "./pages/Government.jsx";
 import Authorities from "./pages/Authorities.jsx";
@@ -34,11 +33,21 @@ import ActivitySectionPage from "./pages/activity/ActivitySection.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Admin from "./pages/Admin.jsx";
+import NotFound from "./pages/NotFound.jsx";
+import RequireAuth from "./components/RequireAuth.jsx";
+import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
   const base = (route || "/").split("?")[0];
   const isAdmin = base === "/admin" || base.startsWith("/admin/");
+  const AdminProtected = React.useCallback(() => {
+    return (
+      <RequireAuth>
+        <Admin />
+      </RequireAuth>
+    );
+  }, []);
 
   return (
     <I18nProvider>
@@ -63,51 +72,54 @@ export default function App() {
                   {!isAdmin ? <Header /> : null}
                   <main className="main-content">
                     {!isAdmin ? <Breadcrumbs /> : null}
-                    <Router
-                      routes={{
-                        "/": Home,
-                        "/region": Region,
-                        "/about": About,
-                        "/news": NewsArchive,
-                        "/calendar": CalendarPage,
-                        "/documents": Documents,
-                        "/docs/laws": DocsPage,
-                        "/docs/resolutions": DocsPage,
-                        "/docs/initiatives": DocsPage,
-                        "/docs/civic": DocsPage,
-                        "/docs/constitution": DocsPage,
-                        "/docs/bills": DocsPage,
-                        "/activity/plan": ActivitySectionPage,
-                        "/activity/national-projects": ActivitySectionPage,
-                        "/activity/reports": ActivitySectionPage,
-                        "/activity/sessions": ActivitySectionPage,
-                        "/activity/statistics": ActivitySectionPage,
-                        "/activity/schet_palata": ActivitySectionPage,
-                        "/committee": Committee,
-                        "/commission": Commission,
-                        "/apparatus": Apparatus,
-                        "/section": SectionPage,
-                        "/deputies": Deputies,
-                        "/appeals": Appeals,
-                        "/government": Government,
-                        "/authorities": Authorities,
-                        "/wifi": Wifi,
-                        "/map": MapPage,
-                        "/admin": Admin,
-                        "/admin/news": Admin,
-                        "/admin/deputies": Admin,
-                        "/admin/documents": Admin,
-                        "/admin/events": Admin,
-                        "/admin/env": Admin,
-                        "/feedback": Feedback,
-                        "/press": Press,
-                        "/activity": ActivityPage,
-                        "/docs": Docs,
-                        "/contacts": Contacts,
-                        "/login": Login,
-                        "/register": Register,
-                      }}
-                    />
+                    <AppErrorBoundary>
+                      <Router
+                        routes={{
+                          "/": Home,
+                          "/region": Region,
+                          "/about": About,
+                          "/news": NewsArchive,
+                          "/calendar": CalendarPage,
+                          "/documents": Documents,
+                          "/docs/laws": DocsPage,
+                          "/docs/resolutions": DocsPage,
+                          "/docs/initiatives": DocsPage,
+                          "/docs/civic": DocsPage,
+                          "/docs/constitution": DocsPage,
+                          "/docs/bills": DocsPage,
+                          "/activity/plan": ActivitySectionPage,
+                          "/activity/national-projects": ActivitySectionPage,
+                          "/activity/reports": ActivitySectionPage,
+                          "/activity/sessions": ActivitySectionPage,
+                          "/activity/statistics": ActivitySectionPage,
+                          "/activity/schet_palata": ActivitySectionPage,
+                          "/committee": Committee,
+                          "/commission": Commission,
+                          "/apparatus": Apparatus,
+                          "/section": SectionPage,
+                          "/deputies": Deputies,
+                          "/appeals": Appeals,
+                          "/government": Government,
+                          "/authorities": Authorities,
+                          "/wifi": Wifi,
+                          "/map": MapPage,
+                          "/admin": AdminProtected,
+                          "/admin/news": AdminProtected,
+                          "/admin/deputies": AdminProtected,
+                          "/admin/documents": AdminProtected,
+                          "/admin/events": AdminProtected,
+                          "/admin/env": AdminProtected,
+                          "/feedback": Feedback,
+                          "/press": Press,
+                          "/activity": ActivityPage,
+                          "/docs": Docs,
+                          "/contacts": Contacts,
+                          "/login": Login,
+                          "/register": Register,
+                          "*": NotFound,
+                        }}
+                      />
+                    </AppErrorBoundary>
                   </main>
                   {!isAdmin ? <Footer /> : null}
                   {!isAdmin ? <CookieBanner /> : null}

@@ -39,33 +39,23 @@ export default function Contacts() {
           <div className="card" style={{ padding: 20 }}>
             <h2 style={{ marginTop: 0 }}>Контактная информация</h2>
             <div style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-                Адрес
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Адрес</div>
               <div style={{ color: "#b91c1c" }}>{address}</div>
             </div>
             <div style={{ marginTop: 20 }}>
-              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-                Приемная
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Приемная</div>
               <p>Телефон/Факс</p>
               <div style={{ marginBottom: "10px" }}>8 (39422) 2-16-32</div>
-              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-                Канцелярия
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Канцелярия</div>
               <p>Телефон/Факс</p>
               <div style={{ marginBottom: "10px" }}> 8 (39422) 2-10-43</div>
             </div>
             <div style={{ marginTop: 20 }}>
-              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-                Email
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Email</div>
               <div>khural@inbox.ru </div>
             </div>
             <div style={{ marginTop: 20 }}>
-              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-                Режим работы
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Режим работы</div>
               <div>Пн‑Пт: 08:30 – 17:30</div>
               <div>Перерыв на обед: 13:00 – 14:00</div>
             </div>

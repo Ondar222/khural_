@@ -1,5 +1,6 @@
 import React from "react";
 import SideNav from "../../components/SideNav.jsx";
+import { useHashRoute } from "../../Router.jsx";
 
 const SECTIONS = [
   { slug: "plan", title: "План работы", data: "/data/activity_plan.json" },
@@ -30,9 +31,9 @@ const SECTIONS = [
   },
 ];
 
-function getSlugFromHash() {
-  const h = window.location.hash.replace(/^#/, "");
-  const parts = h.split("/").filter(Boolean);
+function getSlugFromRoute(route) {
+  const base = String(route || "/").split("?")[0];
+  const parts = base.split("/").filter(Boolean);
   // expected: ["activity", "<slug>"]
   return parts[1] || "reports";
 }
@@ -49,35 +50,34 @@ async function fetchJson(path) {
 }
 
 export default function ActivitySectionPage() {
-  const [slug, setSlug] = React.useState(getSlugFromHash());
+  const { route } = useHashRoute();
+  const [slug, setSlug] = React.useState(() => getSlugFromRoute(route));
   const section = SECTIONS.find((s) => s.slug === slug) || SECTIONS[0];
   const [data, setData] = React.useState({ items: [] });
 
   React.useEffect(() => {
-    const onHash = () => setSlug(getSlugFromHash());
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
+    setSlug(getSlugFromRoute(route));
+  }, [route]);
 
   React.useEffect(() => {
     fetchJson(section.data).then(setData);
   }, [section.data]);
 
   const sidebarLinks = [
-    { label: "План работы", href: "#/activity/plan" },
+    { label: "План работы", href: "/activity/plan" },
     {
       label: "Депутатский контроль: национальные проекты",
-      href: "#/activity/national-projects",
+      href: "/activity/national-projects",
     },
-    { label: "Отчёты о деятельности", href: "#/activity/reports" },
+    { label: "Отчёты о деятельности", href: "/activity/reports" },
     {
       label: "Заседания сессий Верховного Хурала",
-      href: "#/activity/sessions",
+      href: "/activity/sessions",
     },
-    { label: "Статистика законотворчества", href: "#/activity/statistics" },
+    { label: "Статистика законотворчества", href: "/activity/statistics" },
     {
       label: "Счётная палата Республики Тыва",
-      href: "#/activity/schet_palata",
+      href: "/activity/schet_palata",
     },
   ];
 
@@ -96,14 +96,8 @@ export default function ActivitySectionPage() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {it.date && (
-                    <div style={{ color: "#6b7280", fontSize: 13 }}>
-                      {it.date}
-                    </div>
-                  )}
-                  <div style={{ fontWeight: 800, marginTop: 4 }}>
-                    {it.title}
-                  </div>
+                  {it.date && <div style={{ color: "#6b7280", fontSize: 13 }}>{it.date}</div>}
+                  <div style={{ fontWeight: 800, marginTop: 4 }}>{it.title}</div>
                   {it.desc && <div style={{ marginTop: 8 }}>{it.desc}</div>}
                   <div className="link" style={{ marginTop: 8 }}>
                     Открыть →

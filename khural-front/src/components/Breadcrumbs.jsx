@@ -2,6 +2,29 @@ import React from "react";
 import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
 
+// Static titles for base pages
+const TITLES = {
+  "/": "Главная",
+  "/region": "Регион",
+  "/about": "О парламенте",
+  "/news": "Новости",
+  "/calendar": "Календарь",
+  "/documents": "Документы",
+  "/committee": "Комитеты",
+  "/apparatus": "Аппарат",
+  "/section": "Структура",
+  "/deputies": "Депутаты",
+  "/appeals": "Прием обращений",
+  "/government": "Персоны",
+  "/authorities": "Органы власти",
+  "/wifi": "Гостевой Wi‑Fi",
+  "/feedback": "Обращения",
+  "/press": "Пресс‑служба",
+  "/activity": "Деятельность",
+  "/docs": "Документы",
+  "/contacts": "Контакты",
+};
+
 function getRouteBase(route) {
   if (!route) return "/";
   return route.split("?")[0] || "/";
@@ -11,29 +34,6 @@ export default function Breadcrumbs() {
   const { route } = useHashRoute();
   const base = getRouteBase(route);
   const { committees } = useData();
-
-  // Static titles for base pages
-  const titles = {
-    "/": "Главная",
-    "/region": "Регион",
-    "/about": "О парламенте",
-    "/news": "Новости",
-    "/calendar": "Календарь",
-    "/documents": "Документы",
-    "/committee": "Комитеты",
-    "/apparatus": "Аппарат",
-    "/section": "Структура",
-    "/deputies": "Депутаты",
-    "/appeals": "Прием обращений",
-    "/government": "Персоны",
-    "/authorities": "Органы власти",
-    "/wifi": "Гостевой Wi‑Fi",
-    "/feedback": "Обращения",
-    "/press": "Пресс‑служба",
-    "/activity": "Деятельность",
-    "/docs": "Документы",
-    "/contacts": "Контакты",
-  };
 
   // Build hierarchical trail
   const trail = React.useMemo(() => {
@@ -68,17 +68,26 @@ export default function Breadcrumbs() {
         const id = sp.get("id");
         // Import commission titles mapping
         const COMMISSION_IDS = {
-          "nagradnaya": "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
-          "kontrol-dostovernost": "Комиссия Верховного Хурала (парламента) Республики Тыва по контролю за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
-          "schetnaya": "Счетная комиссия Верховного Хурала",
-          "reglament-etika": "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
-          "reabilitatsiya": "Республиканская комиссия по восстановлению прав реабилитированных жертв политических репрессий",
-          "svo-podderzhka": "Комиссия Верховного Хурала (парламента) Республики Тыва по поддержке участников специальной военной операции и их семей",
-          "smi-obshestvo": "Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями",
-          "mezhregionalnye-svyazi": "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным и международным связям",
+          nagradnaya: "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
+          "kontrol-dostovernost":
+            "Комиссия Верховного Хурала (парламента) Республики Тыва по контролю за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
+          schetnaya: "Счетная комиссия Верховного Хурала",
+          "reglament-etika":
+            "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
+          reabilitatsiya:
+            "Республиканская комиссия по восстановлению прав реабилитированных жертв политических репрессий",
+          "svo-podderzhka":
+            "Комиссия Верховного Хурала (парламента) Республики Тыва по поддержке участников специальной военной операции и их семей",
+          "smi-obshestvo":
+            "Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями",
+          "mezhregionalnye-svyazi":
+            "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным и международным связям",
         };
         if (id && COMMISSION_IDS[id]) {
-          crumbs.push({ label: "Комиссии", href: "#/section?title=" + encodeURIComponent("Комиссии") });
+          crumbs.push({
+            label: "Комиссии",
+            href: "#/section?title=" + encodeURIComponent("Комиссии"),
+          });
           crumbs.push({ label: COMMISSION_IDS[id] });
           return crumbs;
         }
@@ -101,7 +110,7 @@ export default function Breadcrumbs() {
       } catch {}
     }
     // Default: show just page title
-    const title = titles[base];
+    const title = TITLES[base];
     if (title && base !== "/") {
       crumbs.push({ label: title });
     }

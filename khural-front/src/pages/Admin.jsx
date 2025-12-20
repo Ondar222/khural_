@@ -3,13 +3,7 @@ import { App, Button, Input } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
-import {
-  API_BASE_URL,
-  NewsApi,
-  PersonsApi,
-  DocumentsApi,
-  EventsApi,
-} from "../api/client.js";
+import { API_BASE_URL, NewsApi, PersonsApi, DocumentsApi, EventsApi } from "../api/client.js";
 
 import AdminShell from "./admin/AdminShell.jsx";
 import AdminDashboard from "./admin/AdminDashboard.jsx";
@@ -60,8 +54,8 @@ function toDocumentsFallback(items) {
 
 function toEventRow(e) {
   const start = e?.startDate ? new Date(Number(e.startDate)) : null;
-  const date = start && !isNaN(start.getTime()) ? start.toISOString().slice(0, 10) : (e?.date || "");
-  const time = start && !isNaN(start.getTime()) ? start.toISOString().slice(11, 16) : (e?.time || "");
+  const date = start && !isNaN(start.getTime()) ? start.toISOString().slice(0, 10) : e?.date || "";
+  const time = start && !isNaN(start.getTime()) ? start.toISOString().slice(11, 16) : e?.time || "";
   return {
     id: e?.id ?? Math.random().toString(36).slice(2),
     date,
@@ -142,20 +136,12 @@ export default function Admin() {
         DocumentsApi.list().catch(() => null),
       ]);
       setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(data.news));
-      setPersons(
-        Array.isArray(apiPersons) ? apiPersons : toPersonsFallback(data.deputies)
-      );
-      setDocuments(
-        Array.isArray(apiDocs) ? apiDocs : toDocumentsFallback(data.documents)
-      );
+      setPersons(Array.isArray(apiPersons) ? apiPersons : toPersonsFallback(data.deputies));
+      setDocuments(Array.isArray(apiDocs) ? apiDocs : toDocumentsFallback(data.documents));
       const apiEvents = await EventsApi.list().catch(() => null);
-      setEvents(
-        Array.isArray(apiEvents)
-          ? apiEvents.map(toEventRow)
-          : (data.events || [])
-      );
+      setEvents(Array.isArray(apiEvents) ? apiEvents.map(toEventRow) : data.events || []);
     })();
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const toggleTheme = () => {
     const next = themeMode === "light" ? "dark" : "light";
@@ -266,7 +252,16 @@ export default function Admin() {
     }
   };
 
-  const createDocument = async ({ title, description, type, category, number, date, url, file }) => {
+  const createDocument = async ({
+    title,
+    description,
+    type,
+    category,
+    number,
+    date,
+    url,
+    file,
+  }) => {
     setBusy(true);
     try {
       const created = await DocumentsApi.create({
@@ -288,7 +283,10 @@ export default function Admin() {
     }
   };
 
-  const updateDocument = async (id, { title, description, type, category, number, date, url, file }) => {
+  const updateDocument = async (
+    id,
+    { title, description, type, category, number, date, url, file }
+  ) => {
     setBusy(true);
     try {
       await DocumentsApi.patch(id, {
@@ -358,44 +356,39 @@ export default function Admin() {
     events: Array.isArray(events) ? events.length : 0,
   };
 
-  const loginCard =
-    !isAuthenticated ? (
-      <div className="admin-card" style={{ marginBottom: 16 }}>
-        <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
-          <div style={{ fontWeight: 900, fontSize: 16 }}>Вход в админку</div>
-          <div style={{ opacity: 0.8, fontSize: 13, lineHeight: 1.45 }}>
-            Чтобы редактировать, добавлять и удалять записи, выполните вход.
-          </div>
-          <Input
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Input.Password
-            placeholder="Пароль"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button
-            type="primary"
-            loading={loginBusy}
-            onClick={async () => {
-              setLoginBusy(true);
-              try {
-                await login({ email, password });
-                message.success("Вход выполнен");
-              } catch (e) {
-                message.error(e?.message || "Ошибка входа");
-              } finally {
-                setLoginBusy(false);
-              }
-            }}
-          >
-            Войти
-          </Button>
+  const loginCard = !isAuthenticated ? (
+    <div className="admin-card" style={{ marginBottom: 16 }}>
+      <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
+        <div style={{ fontWeight: 900, fontSize: 16 }}>Вход в админку</div>
+        <div style={{ opacity: 0.8, fontSize: 13, lineHeight: 1.45 }}>
+          Чтобы редактировать, добавлять и удалять записи, выполните вход.
         </div>
+        <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input.Password
+          placeholder="Пароль"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <Button
+          type="primary"
+          loading={loginBusy}
+          onClick={async () => {
+            setLoginBusy(true);
+            try {
+              await login({ email, password });
+              message.success("Вход выполнен");
+            } catch (e) {
+              message.error(e?.message || "Ошибка входа");
+            } finally {
+              setLoginBusy(false);
+            }
+          }}
+        >
+          Войти
+        </Button>
       </div>
-    ) : null;
+    </div>
+  ) : null;
 
   const page =
     sub === "news" ? (

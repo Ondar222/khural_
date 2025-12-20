@@ -10,10 +10,7 @@ export default function Footer() {
           {/* Brand and Copyright Section */}
           <div className="footer-brand">
             <div className="brand" style={{ color: "#fff" }}>
-              <div
-                className="logo"
-                style={{ borderColor: "#fff", color: "#fff" }}
-              >
+              <div className="logo" style={{ borderColor: "#fff", color: "#fff" }}>
                 <img
                   src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
                   alt=""

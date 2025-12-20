@@ -5,20 +5,29 @@ import { useHashRoute } from "../Router.jsx";
 
 export default function Login() {
   const { login, isAuthenticated } = useAuth();
-  const { navigate } = useHashRoute();
+  const { route, navigate } = useHashRoute();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
+  const nextPath = React.useMemo(() => {
+    const q = String(route || "").split("?")[1] || "";
+    const params = new URLSearchParams(q);
+    const next = params.get("next") || "/";
+    // Only allow in-app paths
+    if (!next.startsWith("/") || next.startsWith("//")) return "/";
+    return next;
+  }, [route]);
+
   React.useEffect(() => {
-    if (isAuthenticated) navigate("/");
-  }, [isAuthenticated, navigate]);
+    if (isAuthenticated) navigate(nextPath);
+  }, [isAuthenticated, navigate, nextPath]);
 
   const onFinish = async (values) => {
     setError("");
     setLoading(true);
     try {
       await login(values);
-      navigate("/");
+      navigate(nextPath);
     } catch (e) {
       setError(e?.message || "Ошибка входа");
     } finally {
@@ -30,9 +39,7 @@ export default function Login() {
     <section className="section">
       <div className="container" style={{ maxWidth: 520 }}>
         <h1>Вход</h1>
-        {error ? (
-          <Alert type="error" message={error} style={{ marginBottom: 12 }} />
-        ) : null}
+        {error ? <Alert type="error" message={error} style={{ marginBottom: 12 }} /> : null}
         <Form layout="vertical" onFinish={onFinish}>
           <Form.Item
             label="Email"
@@ -52,10 +59,7 @@ export default function Login() {
             <Button type="primary" htmlType="submit" loading={loading}>
               Войти
             </Button>
-            <Button
-              style={{ marginLeft: 12 }}
-              onClick={() => navigate("/register")}
-            >
+            <Button style={{ marginLeft: 12 }} onClick={() => navigate("/register")}>
               Регистрация
             </Button>
           </Form.Item>

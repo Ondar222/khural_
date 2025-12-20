@@ -4,18 +4,9 @@ import SideNav from "../components/SideNav.jsx";
 function RegionModal({ open, onClose, item }) {
   if (!open || !item) return null;
   return (
-    <div
-      className="modal-overlay"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button
-          className="modal__close icon-btn"
-          onClick={onClose}
-          aria-label="Закрыть"
-        >
+        <button className="modal__close icon-btn" onClick={onClose} aria-label="Закрыть">
           ✕
         </button>
         <div className="modal__content">
@@ -68,11 +59,7 @@ export default function Region() {
                 </button>
               ))}
             </div>
-            <RegionModal
-              open={!!open}
-              onClose={() => setOpen(null)}
-              item={open}
-            />
+            <RegionModal open={!!open} onClose={() => setOpen(null)} item={open} />
           </div>
           <SideNav
             title="О регионе"

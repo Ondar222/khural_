@@ -2,38 +2,40 @@ import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 
-export default function Authorities() {
-  const { authorities } = useData();
-  const CATEGORIES = ["Министерства", "Службы", "Агентства"];
-  const typeToCategory = (t) =>
-    t === "Министерство"
-      ? "Министерства"
-      : t === "Служба"
+const CATEGORIES = ["Министерства", "Службы", "Агентства"];
+const typeToCategory = (t) =>
+  t === "Министерство"
+    ? "Министерства"
+    : t === "Служба"
       ? "Службы"
       : t === "Агентство"
-      ? "Агентства"
-      : "";
+        ? "Агентства"
+        : "";
+
+export default function Authorities() {
+  const { authorities } = useData();
   const [category, setCategory] = React.useState(() => {
-    const h = window.location.hash;
-    const cat = new URLSearchParams(h.split("?")[1]).get("cat");
+    const cat = new URLSearchParams(window.location.search || "").get("cat");
     return CATEGORIES.includes(cat) ? cat : "Министерства";
   });
   const [selected, setSelected] = React.useState(() => {
-    const h = window.location.hash;
-    const id = new URLSearchParams(h.split("?")[1]).get("id");
+    const id = new URLSearchParams(window.location.search || "").get("id");
     return id || null;
   });
   React.useEffect(() => {
-    const onHash = () => {
-      const h = window.location.hash;
-      const sp = new URLSearchParams(h.split("?")[1]);
+    const onNav = () => {
+      const sp = new URLSearchParams(window.location.search || "");
       const id = sp.get("id");
       const cat = sp.get("cat");
       if (cat && CATEGORIES.includes(cat)) setCategory(cat);
       setSelected(id || null);
     };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onNav);
+    window.addEventListener("app:navigate", onNav);
+    return () => {
+      window.removeEventListener("popstate", onNav);
+      window.removeEventListener("app:navigate", onNav);
+    };
   }, []);
 
   if (selected) {
@@ -42,9 +44,20 @@ export default function Authorities() {
     return (
       <section className="section">
         <div className="container">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 16,
+            }}
+          >
             <div style={{ flex: "1 1 auto" }}>
-              <a className="btn btn-back" href="#/authorities" style={{ marginBottom: 16, display: "inline-block" }}>
+              <a
+                className="btn btn-back"
+                href="#/authorities"
+                style={{ marginBottom: 16, display: "inline-block" }}
+              >
                 ← К списку
               </a>
               <div>
@@ -60,12 +73,7 @@ export default function Authorities() {
             {item.site ? (
               <p>
                 Официальный сайт:{" "}
-                <a
-                  className="link"
-                  href={item.site}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a className="link" href={item.site} target="_blank" rel="noreferrer">
                   {item.site}
                 </a>
               </p>
@@ -86,11 +94,7 @@ export default function Authorities() {
               {CATEGORIES.map((c) => {
                 const isActive = c === category;
                 return isActive ? (
-                  <span
-                    key={c}
-                    className="pill pill--solid"
-                    aria-current="page"
-                  >
+                  <span key={c} className="pill pill--solid" aria-current="page">
                     {c}
                   </span>
                 ) : (
@@ -98,7 +102,7 @@ export default function Authorities() {
                     key={c}
                     className="pill"
                     href={`#/authorities?cat=${encodeURIComponent(c)}`}
-                    onClick={(e) => {
+                    onClick={() => {
                       // update state immediately for snappy UI
                       setCategory(c);
                     }}
@@ -119,12 +123,8 @@ export default function Authorities() {
                       category
                     )}&id=${encodeURIComponent(a.id)}`}
                   >
-                    <div style={{ color: "#6b7280", fontSize: 13 }}>
-                      {typeToCategory(a.type)}
-                    </div>
-                    <div style={{ fontWeight: 800, marginTop: 6 }}>
-                      {a.title}
-                    </div>
+                    <div style={{ color: "#6b7280", fontSize: 13 }}>{typeToCategory(a.type)}</div>
+                    <div style={{ fontWeight: 800, marginTop: 6 }}>{a.title}</div>
                     <div className="link" style={{ marginTop: 10 }}>
                       Подробнее →
                     </div>

@@ -17,6 +17,31 @@ const DataContext = React.createContext({
   committees: [],
   aboutPages: [],
   aboutStructure: [],
+  loading: {
+    slides: false,
+    news: false,
+    events: false,
+    deputies: false,
+    documents: false,
+    structure: false,
+    government: false,
+    authorities: false,
+    committees: false,
+    about: false,
+  },
+  errors: {
+    slides: null,
+    news: null,
+    events: null,
+    deputies: null,
+    documents: null,
+    structure: null,
+    government: null,
+    authorities: null,
+    committees: null,
+    about: null,
+  },
+  reload: () => {},
   // Setters for Admin (optional to use)
   setSlides: () => {},
   setNews: () => {},
@@ -25,6 +50,8 @@ const DataContext = React.createContext({
   setFactions: () => {},
   setDistricts: () => {},
   setConvocations: () => {},
+  setCommissions: () => {},
+  setCouncils: () => {},
   setGovernment: () => {},
   setAuthorities: () => {},
   setDocuments: () => {},
@@ -52,11 +79,7 @@ function firstFileLink(maybeFile) {
   // - { file: { link } }
   // - { id } or { file: { id } } (backend may expose only id)
   const link =
-    maybeFile?.link ||
-    maybeFile?.url ||
-    maybeFile?.file?.link ||
-    maybeFile?.file?.url ||
-    "";
+    maybeFile?.link || maybeFile?.url || maybeFile?.file?.link || maybeFile?.file?.url || "";
   if (link) return String(link);
   const id = maybeFile?.id || maybeFile?.file?.id;
   if (!id) return "";
@@ -95,16 +118,54 @@ export default function DataProvider({ children }) {
   const [committees, setCommittees] = React.useState([]);
   const [aboutPages, setAboutPages] = React.useState([]);
   const [aboutStructure, setAboutStructure] = React.useState([]);
+  const [loading, setLoading] = React.useState({
+    slides: false,
+    news: false,
+    events: false,
+    deputies: false,
+    documents: false,
+    structure: false,
+    government: false,
+    authorities: false,
+    committees: false,
+    about: false,
+  });
+  const [errors, setErrors] = React.useState({
+    slides: null,
+    news: null,
+    events: null,
+    deputies: null,
+    documents: null,
+    structure: null,
+    government: null,
+    authorities: null,
+    committees: null,
+    about: null,
+  });
+  const [reloadSeq, setReloadSeq] = React.useState(0);
+
+  const markLoading = React.useCallback((key, value) => {
+    setLoading((s) => ({ ...s, [key]: Boolean(value) }));
+  }, []);
+  const markError = React.useCallback((key, error) => {
+    setErrors((s) => ({ ...s, [key]: error || null }));
+  }, []);
+
+  const reload = React.useCallback(() => {
+    setReloadSeq((x) => x + 1);
+  }, []);
 
   React.useEffect(() => {
     // Try API for slider first, fallback to local JSON
     (async () => {
+      markLoading("slides", true);
+      markError("slides", null);
       const apiSlides = await SliderApi.list({ all: false }).catch(() => null);
       if (Array.isArray(apiSlides) && apiSlides.length) {
         setSlides(
           apiSlides
-            .filter((s) => s && (s.isActive !== false))
-            .sort((a, b) => (Number(a.order || 0) - Number(b.order || 0)))
+            .filter((s) => s && s.isActive !== false)
+            .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
             .map((s) => ({
               title: s.title || "",
               image: firstFileLink(s.image) || "",
@@ -112,18 +173,22 @@ export default function DataProvider({ children }) {
             .filter((s) => s.title && s.image)
         );
       } else {
-        fetchJson("/data/slides.json").then(setSlides);
+        fetchJson("/data/slides.json")
+          .then(setSlides)
+          .catch((e) => markError("slides", e));
       }
+      markLoading("slides", false);
     })();
     // Try API for news first, fallback to local JSON
     (async () => {
+      markLoading("news", true);
+      markError("news", null);
       const apiNews = await tryApiFetch("/news", { auth: false });
       if (Array.isArray(apiNews) && apiNews.length) {
         const mapped = apiNews.map((n) => {
           // Backend may return either localized content array or flat strings.
           const ru =
-            (Array.isArray(n.content) &&
-              n.content.find((c) => c?.lang === "ru")) ||
+            (Array.isArray(n.content) && n.content.find((c) => c?.lang === "ru")) ||
             (Array.isArray(n.content) ? n.content[0] : null) ||
             null;
           const title = ru?.title || n.title || "";
@@ -139,19 +204,22 @@ export default function DataProvider({ children }) {
             category: pick(n?.category?.name, n.category, n.category_name) || "Новости",
             date,
             excerpt: desc,
-            content: desc
-              ? desc.split(/\n{2,}/g).filter(Boolean)
-              : [],
+            content: desc ? desc.split(/\n{2,}/g).filter(Boolean) : [],
             image: img,
           };
         });
         setNews(mapped);
       } else {
-        fetchJson("/data/news.json").then(setNews);
+        fetchJson("/data/news.json")
+          .then(setNews)
+          .catch((e) => markError("news", e));
       }
+      markLoading("news", false);
     })();
     // Try API for events first, fallback to local JSON
     (async () => {
+      markLoading("events", true);
+      markError("events", null);
       const apiEvents = await tryApiFetch("/calendar", { auth: false });
       if (Array.isArray(apiEvents) && apiEvents.length) {
         setEvents(
@@ -180,18 +248,21 @@ export default function DataProvider({ children }) {
           }))
         );
       } else {
-        fetchJson("/data/events.json").then(setEvents);
+        fetchJson("/data/events.json")
+          .then(setEvents)
+          .catch((e) => markError("events", e));
       }
+      markLoading("events", false);
     })();
     // Try API for persons first, fallback to local JSON
     (async () => {
+      markLoading("deputies", true);
+      markError("deputies", null);
       const apiPersons = await tryApiFetch("/persons", { auth: false });
       if (Array.isArray(apiPersons) && apiPersons.length) {
         // Merge rich profile fields from local JSON (bio/laws/schedule/etc)
         const localDeps = await fetchJson("/data/deputies.json");
-        const localByExternalId = new Map(
-          (localDeps || []).map((d) => [String(d.id ?? ""), d])
-        );
+        const localByExternalId = new Map((localDeps || []).map((d) => [String(d.id ?? ""), d]));
 
         const mapped = apiPersons.map((p) => {
           const externalKey = p?.externalId ? String(p.externalId) : "";
@@ -235,10 +306,7 @@ export default function DataProvider({ children }) {
               p.photo ||
               "",
             contacts: {
-              phone:
-                pick(p.phoneNumber, p.phone_number, p.phone) ||
-                local?.contacts?.phone ||
-                "",
+              phone: pick(p.phoneNumber, p.phone_number, p.phone) || local?.contacts?.phone || "",
               email: p.email || local?.contacts?.email || "",
             },
             laws: Array.isArray(local?.laws) ? local.laws : [],
@@ -248,10 +316,14 @@ export default function DataProvider({ children }) {
         });
         setDeputies(mapped);
       } else {
-        fetchJson("/data/deputies.json").then(setDeputies);
+        fetchJson("/data/deputies.json")
+          .then(setDeputies)
+          .catch((e) => markError("deputies", e));
       }
 
       // Documents from API (laws, resolutions, etc) - fallback to local JSON
+      markLoading("documents", true);
+      markError("documents", null);
       const apiDocs = await tryApiFetch("/documents", { auth: false });
       if (Array.isArray(apiDocs) && apiDocs.length) {
         const typeLabels = {
@@ -269,51 +341,77 @@ export default function DataProvider({ children }) {
             desc: d.description || "",
             date: pick(d.date, d.createdAt, d.created_at) || "",
             number: d.number || "",
-            category: d?.category?.name || d.category || typeLabels[d.type] || d.type || "Документы",
+            category:
+              d?.category?.name || d.category || typeLabels[d.type] || d.type || "Документы",
             type: d.type || "other",
             url: d.url || firstFileLink(d.pdfFile) || firstFileLink(d.file) || "",
           }))
         );
       } else {
-        fetchJson("/data/documents.json").then(setDocuments);
+        fetchJson("/data/documents.json")
+          .then(setDocuments)
+          .catch((e) => markError("documents", e));
       }
 
       // Fetch filters from API if available
-      const [apiFactions, apiDistricts, apiConvocations, apiCategories] =
-        await Promise.all([
-          tryApiFetch("/persons/factions/all", { auth: false }),
-          tryApiFetch("/persons/districts/all", { auth: false }),
-          tryApiFetch("/persons/convocations/all", { auth: false }),
-          tryApiFetch("/persons/categories/all", { auth: false }),
-        ]);
+      const [apiFactions, apiDistricts, apiConvocations] = await Promise.all([
+        tryApiFetch("/persons/factions/all", { auth: false }),
+        tryApiFetch("/persons/districts/all", { auth: false }),
+        tryApiFetch("/persons/convocations/all", { auth: false }),
+      ]);
       if (Array.isArray(apiFactions) && apiFactions.length) setFactions(apiFactions);
       if (Array.isArray(apiDistricts) && apiDistricts.length) setDistricts(apiDistricts);
-      if (Array.isArray(apiConvocations) && apiConvocations.length) setConvocations(apiConvocations);
-      // NOTE: apiCategories is not committees. Committees are loaded from /data/committees.json.
+      if (Array.isArray(apiConvocations) && apiConvocations.length)
+        setConvocations(apiConvocations);
+
+      markLoading("documents", false);
+      markLoading("deputies", false);
     })();
     // Structure-derived lists
-    fetchJson("/data/structure.json").then((s) => {
-      if (!factions.length) setFactions(s.factions || []);
-      if (!districts.length) setDistricts(s.districts || []);
-      if (!convocations.length) setConvocations(s.convocations || []);
-      setCommissions(s.commissions || []);
-      setCouncils(s.councils || []);
-    });
-    fetchJson("/data/government.json").then(setGovernment);
-    fetchJson("/data/authorities.json").then(setAuthorities);
+    markLoading("structure", true);
+    fetchJson("/data/structure.json")
+      .then((s) => {
+        if (!factions.length) setFactions(s.factions || []);
+        if (!districts.length) setDistricts(s.districts || []);
+        if (!convocations.length) setConvocations(s.convocations || []);
+        setCommissions(s.commissions || []);
+        setCouncils(s.councils || []);
+      })
+      .catch((e) => markError("structure", e))
+      .finally(() => markLoading("structure", false));
+
+    markLoading("government", true);
+    fetchJson("/data/government.json")
+      .then(setGovernment)
+      .catch((e) => markError("government", e))
+      .finally(() => markLoading("government", false));
+
+    markLoading("authorities", true);
+    fetchJson("/data/authorities.json")
+      .then(setAuthorities)
+      .catch((e) => markError("authorities", e))
+      .finally(() => markLoading("authorities", false));
+
     // Committees are a static structure file (with members/staff); always load them.
-    fetchJson("/data/committees.json").then(setCommittees);
+    markLoading("committees", true);
+    fetchJson("/data/committees.json")
+      .then(setCommittees)
+      .catch((e) => markError("committees", e))
+      .finally(() => markLoading("committees", false));
 
     // About pages/structure are API-first (if backend filled), otherwise keep empty and use page fallbacks.
     (async () => {
+      markLoading("about", true);
+      markError("about", null);
       const [pages, structure] = await Promise.all([
         AboutApi.listPages({ locale: "ru" }).catch(() => null),
         AboutApi.listStructure().catch(() => null),
       ]);
       if (Array.isArray(pages)) setAboutPages(pages);
       if (Array.isArray(structure)) setAboutStructure(structure);
+      markLoading("about", false);
     })();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = React.useMemo(
     () => ({
@@ -324,12 +422,17 @@ export default function DataProvider({ children }) {
       factions,
       districts,
       convocations,
+      commissions,
+      councils,
       government,
       authorities,
       documents,
       committees,
       aboutPages,
       aboutStructure,
+      loading,
+      errors,
+      reload,
       // Setters (for Admin)
       setSlides,
       setNews,
@@ -338,6 +441,8 @@ export default function DataProvider({ children }) {
       setFactions,
       setDistricts,
       setConvocations,
+      setCommissions,
+      setCouncils,
       setGovernment,
       setAuthorities,
       setDocuments,
@@ -353,12 +458,17 @@ export default function DataProvider({ children }) {
       factions,
       districts,
       convocations,
+      commissions,
+      councils,
       government,
       authorities,
       documents,
       committees,
       aboutPages,
       aboutStructure,
+      loading,
+      errors,
+      reload,
       setSlides,
       setNews,
       setEvents,
@@ -366,6 +476,8 @@ export default function DataProvider({ children }) {
       setFactions,
       setDistricts,
       setConvocations,
+      setCommissions,
+      setCouncils,
       setGovernment,
       setAuthorities,
       setDocuments,

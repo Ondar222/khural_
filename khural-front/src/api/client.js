@@ -23,13 +23,19 @@ function resolveApiBaseUrl() {
   return "/api";
 }
 export const API_BASE_URL = resolveApiBaseUrl();
-const TOKEN_STORAGE_KEY =
-  import.meta?.env?.VITE_API_TOKEN_STORAGE_KEY || "auth_token";
+const ACCESS_TOKEN_STORAGE_KEY = import.meta?.env?.VITE_API_TOKEN_STORAGE_KEY || "access_token";
+const LEGACY_ACCESS_TOKEN_KEYS = ["auth_token"];
+const REFRESH_TOKEN_STORAGE_KEY =
+  import.meta?.env?.VITE_API_REFRESH_TOKEN_STORAGE_KEY || "refresh_token";
 
 function unwrapApiPayload(payload) {
   // Many endpoints return plain JSON; some return { data, meta }.
   // Normalize by returning `data` when present.
-  if (payload && typeof payload === "object" && Object.prototype.hasOwnProperty.call(payload, "data")) {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    Object.prototype.hasOwnProperty.call(payload, "data")
+  ) {
     return payload.data;
   }
   return payload;
@@ -37,7 +43,13 @@ function unwrapApiPayload(payload) {
 
 export function getAuthToken() {
   try {
-    return localStorage.getItem(TOKEN_STORAGE_KEY) || "";
+    const direct = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (direct) return direct;
+    for (const k of LEGACY_ACCESS_TOKEN_KEYS) {
+      const v = localStorage.getItem(k);
+      if (v) return v;
+    }
+    return "";
   } catch {
     return "";
   }
@@ -46,24 +58,91 @@ export function getAuthToken() {
 export function setAuthToken(token) {
   try {
     if (token) {
-      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+      // keep legacy key in sync for backward compatibility
+      for (const k of LEGACY_ACCESS_TOKEN_KEYS) localStorage.setItem(k, token);
     } else {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+      for (const k of LEGACY_ACCESS_TOKEN_KEYS) localStorage.removeItem(k);
     }
   } catch {
     // ignore storage errors
   }
 }
 
+export function getRefreshToken() {
+  try {
+    return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setRefreshToken(token) {
+  try {
+    if (token) {
+      localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token);
+    } else {
+      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
+
+let refreshInFlight = null;
+
+async function refreshAccessToken() {
+  const refresh = getRefreshToken();
+  if (!refresh) return null;
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    const url = API_BASE_URL.replace(/\/+$/, "") + "/" + "auth/refresh";
+    const headers = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+    const access = getAuthToken();
+    if (access) headers.Authorization = `Bearer ${access}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ refresh }),
+    });
+    const isJson = (res.headers.get("content-type") || "").includes("application/json");
+    const data = isJson ? await res.json().catch(() => null) : null;
+    if (!res.ok) {
+      const err = new Error(
+        (data && (data.message || data.error)) || `Request failed: ${res.status}`
+      );
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    return unwrapApiPayload(data);
+  })();
+
+  try {
+    const creds = await refreshInFlight;
+    const access = creds?.access_token || creds?.accessToken || creds?.token || "";
+    const nextRefresh = creds?.refresh_token || creds?.refreshToken || "";
+    if (access) setAuthToken(access);
+    if (nextRefresh) setRefreshToken(nextRefresh);
+    return creds;
+  } finally {
+    refreshInFlight = null;
+  }
+}
+
 export async function apiFetch(
   path,
-  { method = "GET", body, headers, auth = true } = {}
+  { method = "GET", body, headers, auth = true, retry = true } = {}
 ) {
   if (!API_BASE_URL) {
     throw new Error("VITE_API_BASE_URL is not configured");
   }
-  const url =
-    API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
+  const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
   const finalHeaders = {
     Accept: "application/json",
     ...(body ? { "Content-Type": "application/json" } : {}),
@@ -78,11 +157,20 @@ export async function apiFetch(
     headers: finalHeaders,
     body: body ? JSON.stringify(body) : undefined,
   });
-  const isJson = (res.headers.get("content-type") || "").includes(
-    "application/json"
-  );
+  const isJson = (res.headers.get("content-type") || "").includes("application/json");
   const data = isJson ? await res.json().catch(() => null) : null;
   if (!res.ok) {
+    if (res.status === 401 && auth && retry) {
+      const refreshed = await refreshAccessToken().catch(() => null);
+      const nextAccess =
+        refreshed?.access_token || refreshed?.accessToken || refreshed?.token || "";
+      if (nextAccess) {
+        return apiFetch(path, { method, body, headers, auth, retry: false });
+      }
+      // refresh failed => clear tokens
+      setAuthToken("");
+      setRefreshToken("");
+    }
     const err = new Error(
       (data && (data.message || data.error)) || `Request failed: ${res.status}`
     );
@@ -93,15 +181,11 @@ export async function apiFetch(
   return unwrapApiPayload(data);
 }
 
-export async function apiFetchText(
-  path,
-  { method = "GET", headers, auth = true } = {}
-) {
+export async function apiFetchText(path, { method = "GET", headers, auth = true } = {}) {
   if (!API_BASE_URL) {
     throw new Error("VITE_API_BASE_URL is not configured");
   }
-  const url =
-    API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
+  const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
   const finalHeaders = {
     Accept: "text/plain,text/markdown,*/*",
     ...(headers || {}),
@@ -139,7 +223,7 @@ export const AuthApi = {
         body: user,
         auth: false,
       });
-    } catch (e) {
+    } catch {
       // Fallback to /user/ endpoint
       return await apiFetch("/user", {
         method: "POST",
@@ -156,7 +240,7 @@ export const AuthApi = {
         body: { email, password },
         auth: false,
       });
-    } catch (e) {
+    } catch {
       // Compatibility fallback (older deployments)
       return apiFetch("/auth/login", {
         method: "POST",
@@ -171,6 +255,9 @@ export const AuthApi = {
       body: { refresh },
       auth: true,
     });
+  },
+  async me() {
+    return apiFetch("/user/me", { method: "GET", auth: true });
   },
 };
 
@@ -191,7 +278,7 @@ export const PublicApi = {
         auth: true,
       });
       return result;
-    } catch (error) {
+    } catch {
       try {
         const result = await apiFetch("/translation/translate-batch", {
           method: "POST",
@@ -200,7 +287,7 @@ export const PublicApi = {
         });
         const translated = Array.isArray(result?.translated) ? result.translated[0] : text;
         return { original: text, translated, from, to };
-      } catch (error2) {
+      } catch {
         return { original: text, translated: text, from, to };
       }
     }
@@ -324,8 +411,7 @@ export async function apiFetchMultipart(
   if (!(formData instanceof FormData)) {
     throw new Error("formData must be FormData");
   }
-  const url =
-    API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
+  const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
   const finalHeaders = { ...(headers || {}) };
   if (auth) {
     const token = getAuthToken();
@@ -336,9 +422,7 @@ export async function apiFetchMultipart(
     headers: finalHeaders,
     body: formData,
   });
-  const isJson = (res.headers.get("content-type") || "").includes(
-    "application/json"
-  );
+  const isJson = (res.headers.get("content-type") || "").includes("application/json");
   const data = isJson ? await res.json().catch(() => null) : null;
   if (!res.ok) {
     const err = new Error(

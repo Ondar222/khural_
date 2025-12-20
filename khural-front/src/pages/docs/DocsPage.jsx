@@ -2,6 +2,7 @@ import React from "react";
 import PdfPreviewModal from "../../components/PdfPreviewModal.jsx";
 import SideNav from "../../components/SideNav.jsx";
 import { useData } from "../../context/DataContext.jsx";
+import { useHashRoute } from "../../Router.jsx";
 
 const CATEGORIES = [
   {
@@ -44,15 +45,15 @@ async function fetchJson(path) {
 
 export default function DocsPage() {
   const { documents } = useData();
+  const { route } = useHashRoute();
   const [docs, setDocs] = React.useState([]);
   const [preview, setPreview] = React.useState(null); // {url, title}
 
   const slug = React.useMemo(() => {
-    const h = window.location.hash;
-    const base = h.replace(/^#/, "").split("?")[0];
-    const parts = base.split("/").filter(Boolean);
+    const base = (route || "/").split("?")[0];
+    const parts = base.split("/").filter(Boolean); // ["docs", "<slug>"]
     return parts[1] || "laws";
-  }, []);
+  }, [route]);
 
   const cat = CATEGORIES.find((c) => c.slug === slug) || CATEGORIES[0];
 
@@ -87,9 +88,7 @@ export default function DocsPage() {
                     <div>
                       <div className="law-title">{d.title}</div>
                       {d.desc && <div className="law-desc">{d.desc}</div>}
-                      {d.number && (
-                        <div className="law-status">№ {d.number}</div>
-                      )}
+                      {d.number && <div className="law-status">№ {d.number}</div>}
                     </div>
                   </div>
                   <a

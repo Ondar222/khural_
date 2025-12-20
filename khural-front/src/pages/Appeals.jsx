@@ -22,10 +22,9 @@ export default function Appeals() {
 
   return (
     <section className="section">
-      
       <div className="container">
         <h1>Обращения граждан</h1>
-        
+
         {!isAuthenticated ? (
           <Alert
             type="info"
@@ -42,7 +41,6 @@ export default function Appeals() {
         ) : null}
 
         {ok ? (
-          
           <Result
             status="success"
             title="Спасибо! Ваше обращение отправлено"
@@ -78,7 +76,7 @@ export default function Appeals() {
             </Form.Item>
           </Form>
         )}
-          <a href="/deputies#/feedback">Правила о приеме обращений граждан</a>
+        <a href="/deputies#/feedback">Правила о приеме обращений граждан</a>
       </div>
     </section>
   );

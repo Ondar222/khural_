@@ -3,6 +3,9 @@ import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { Select, Button, Dropdown } from "antd";
 import SideNav from "../components/SideNav.jsx";
+import DataState from "../components/DataState.jsx";
+
+const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
 
 export default function Deputies() {
   const {
@@ -11,6 +14,9 @@ export default function Deputies() {
     factions: structureFactions,
     districts: structureDistricts,
     convocations: structureConvocations,
+    loading,
+    errors,
+    reload,
   } = useData();
   const { t } = useI18n();
   // Filters per structure
@@ -37,14 +43,10 @@ export default function Deputies() {
     () => ["Все", ...(structureConvocations || [])],
     [structureConvocations]
   );
-  const factions = React.useMemo(
-    () => ["Все", ...(structureFactions || [])],
-    [structureFactions]
-  );
-  const convOrder = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
+  const factions = React.useMemo(() => ["Все", ...(structureFactions || [])], [structureFactions]);
   const convMenuItems = React.useMemo(() => {
     const av = Array.from(new Set(convocations));
-    const ordered = convOrder.filter((x) => av.includes(x));
+    const ordered = CONVOCATION_ORDER.filter((x) => av.includes(x));
     return ordered.map((c) => ({
       key: c,
       label: c === "Все" ? "Все созывы" : `${c} созыв`,
@@ -90,8 +92,7 @@ export default function Deputies() {
   // Accept initial filters from URL, keep in sync on hash changes
   React.useEffect(() => {
     const applyFromHash = () => {
-      const h = window.location.hash;
-      const sp = new URLSearchParams(h.split("?")[1]);
+      const sp = new URLSearchParams(window.location.search || "");
       const f = sp.get("faction");
       const d = sp.get("district");
       const cv = sp.get("convocation");
@@ -102,8 +103,12 @@ export default function Deputies() {
       if (cm) setCommitteeId(decodeURIComponent(cm));
     };
     applyFromHash();
-    window.addEventListener("hashchange", applyFromHash);
-    return () => window.removeEventListener("hashchange", applyFromHash);
+    window.addEventListener("popstate", applyFromHash);
+    window.addEventListener("app:navigate", applyFromHash);
+    return () => {
+      window.removeEventListener("popstate", applyFromHash);
+      window.removeEventListener("app:navigate", applyFromHash);
+    };
   }, []);
 
   return (
@@ -112,141 +117,152 @@ export default function Deputies() {
         <div className="page-grid">
           <div className="page-grid__main">
             <h1>{t("deputies")}</h1>
-            {/* Single-row filters from Structure */}
-            <div
-              className="filters"
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                flexWrap: "wrap",
-                margin: "12px 0 18px",
-              }}
+            <DataState
+              loading={Boolean(loading?.deputies) && (!deputies || deputies.length === 0)}
+              error={errors?.deputies}
+              onRetry={reload}
+              empty={!loading?.deputies && (!deputies || deputies.length === 0)}
+              emptyDescription="Список депутатов пуст"
             >
-              <Dropdown
-                open={openConv}
-                onOpenChange={setOpenConv}
-                menu={{ items: convMenuItems }}
+              {/* Single-row filters from Structure */}
+              <div
+                className="filters"
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  margin: "12px 0 18px",
+                }}
               >
-                <Button size="large">
-                  {convocation === "Все" ? "Все созывы" : `${convocation} созыв`}{" "}
-                  <span style={{ marginLeft: 8 }}>▾</span>
-                </Button>
-              </Dropdown>
-              <Select
-                value={committeeId}
-                onChange={setCommitteeId}
-                dropdownMatchSelectWidth={false}
-                options={committeeOptions.map((id) =>
-                  id === "Все"
-                    ? { value: "Все", label: "По комитетам: Все" }
-                    : {
-                        value: id,
-                        label:
-                          `По комитетам: ` +
-                          ((committees || []).find((c) => c.id === id)?.title ||
-                            id),
-                      }
-                )}
-                style={{ minWidth: 280 }}
-              />
-              <Select
-                value={faction}
-                onChange={setFaction}
-                dropdownMatchSelectWidth={false}
-                options={factions.map((x) => ({
-                  value: x,
-                  label: x === "Все" ? "По фракциям: Все" : `По фракциям: ${x}`,
-                }))}
-                style={{ minWidth: 220 }}
-                placeholder="Фракция"
-              />
-              <Select
-                value={district}
-                onChange={setDistrict}
-                dropdownMatchSelectWidth={false}
-                options={districts.map((x) => ({
-                  value: x,
-                  label: x === "Все" ? "По округам: Все" : `По округам: ${x}`,
-                }))}
-                style={{ minWidth: 220 }}
-                placeholder="Округ"
-              />
-            </div>
+                <Dropdown
+                  open={openConv}
+                  onOpenChange={setOpenConv}
+                  menu={{ items: convMenuItems }}
+                >
+                  <Button size="large">
+                    {convocation === "Все" ? "Все созывы" : `${convocation} созыв`}{" "}
+                    <span style={{ marginLeft: 8 }}>▾</span>
+                  </Button>
+                </Dropdown>
+                <Select
+                  value={committeeId}
+                  onChange={setCommitteeId}
+                  dropdownMatchSelectWidth={false}
+                  options={committeeOptions.map((id) =>
+                    id === "Все"
+                      ? { value: "Все", label: "По комитетам: Все" }
+                      : {
+                          value: id,
+                          label:
+                            `По комитетам: ` +
+                            ((committees || []).find((c) => c.id === id)?.title || id),
+                        }
+                  )}
+                  style={{ minWidth: 280 }}
+                />
+                <Select
+                  value={faction}
+                  onChange={setFaction}
+                  dropdownMatchSelectWidth={false}
+                  options={factions.map((x) => ({
+                    value: x,
+                    label: x === "Все" ? "По фракциям: Все" : `По фракциям: ${x}`,
+                  }))}
+                  style={{ minWidth: 220 }}
+                  placeholder="Фракция"
+                />
+                <Select
+                  value={district}
+                  onChange={setDistrict}
+                  dropdownMatchSelectWidth={false}
+                  options={districts.map((x) => ({
+                    value: x,
+                    label: x === "Все" ? "По округам: Все" : `По округам: ${x}`,
+                  }))}
+                  style={{ minWidth: 220 }}
+                  placeholder="Округ"
+                />
+              </div>
 
-            <div className="grid cols-3">
-              {filtered.map((d) => (
-                <div key={d.id} className="gov-card">
-                  <div className="gov-card__top">
-                    <img
-                      className="gov-card__avatar"
-                      src={
-                        d.photo ||
-                        (d.image && d.image.link) ||
-                        "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                      }
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                  <div className="gov-card__body">
-                    <div className="gov-card__name">{d.name}</div>
-                    {d.position ? (
-                      <div className="gov-card__role">{d.position}</div>
-                    ) : (
-                      <div className="gov-card__role">Депутат</div>
-                    )}
-                    <ul className="gov-meta">
-                      {d.reception && (
-                        <li>
-                          <span>⏰</span>
-                          <span>Приём: {d.reception}</span>
-                        </li>
-                      )}
-                      {d.district && (
-                        <li>
-                          <span>🏛️</span>
-                          <span>{d.district}</span>
-                        </li>
-                      )}
-                      {d.faction && (
-                        <li>
-                          <span>👥</span>
-                          <span>{d.faction}</span>
-                        </li>
-                      )}
-                      {d.convocation && (
-                        <li>
-                          <span>🎖️</span>
-                          <span>Созыв: {d.convocation}</span>
-                        </li>
-                      )}
-                      {d.contacts?.phone && (
-                        <li>
-                          <span>📞</span>
-                          <span>{d.contacts.phone}</span>
-                        </li>
-                      )}
-                      {d.contacts?.email && (
-                        <li>
-                          <span>✉️</span>
-                          <span>{d.contacts.email}</span>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                  <div className="gov-card__actions">
-                    <a
-                      className="gov-card__btn"
-                      href={`#/government?type=dep&id=${d.id}`}
-                    >
-                      Подробнее
-                    </a>
-                  </div>
+              <DataState
+                loading={false}
+                error={null}
+                empty={filtered.length === 0}
+                emptyDescription="По выбранным фильтрам ничего не найдено"
+              >
+                <div className="grid cols-3">
+                  {filtered.map((d) => (
+                    <div key={d.id} className="gov-card">
+                      <div className="gov-card__top">
+                        <img
+                          className="gov-card__avatar"
+                          src={
+                            d.photo ||
+                            (d.image && d.image.link) ||
+                            "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
+                          }
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </div>
+                      <div className="gov-card__body">
+                        <div className="gov-card__name">{d.name}</div>
+                        {d.position ? (
+                          <div className="gov-card__role">{d.position}</div>
+                        ) : (
+                          <div className="gov-card__role">Депутат</div>
+                        )}
+                        <ul className="gov-meta">
+                          {d.reception && (
+                            <li>
+                              <span>⏰</span>
+                              <span>Приём: {d.reception}</span>
+                            </li>
+                          )}
+                          {d.district && (
+                            <li>
+                              <span>🏛️</span>
+                              <span>{d.district}</span>
+                            </li>
+                          )}
+                          {d.faction && (
+                            <li>
+                              <span>👥</span>
+                              <span>{d.faction}</span>
+                            </li>
+                          )}
+                          {d.convocation && (
+                            <li>
+                              <span>🎖️</span>
+                              <span>Созыв: {d.convocation}</span>
+                            </li>
+                          )}
+                          {d.contacts?.phone && (
+                            <li>
+                              <span>📞</span>
+                              <span>{d.contacts.phone}</span>
+                            </li>
+                          )}
+                          {d.contacts?.email && (
+                            <li>
+                              <span>✉️</span>
+                              <span>{d.contacts.email}</span>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                      <div className="gov-card__actions">
+                        <a className="gov-card__btn" href={`#/government?type=dep&id=${d.id}`}>
+                          Подробнее
+                        </a>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </DataState>
+            </DataState>
           </div>
           <SideNav />
         </div>

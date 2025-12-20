@@ -167,12 +167,10 @@ export default function I18nProvider({ children }) {
       if (saved === "ru" || saved === "ty" || saved === "tyv")
         return saved === "tyv" ? "ty" : saved;
     } catch {}
-    const docLang =
-      typeof document !== "undefined" ? document.documentElement.lang : "";
+    const docLang = typeof document !== "undefined" ? document.documentElement.lang : "";
     if (docLang === "ty" || docLang === "ru" || docLang === "tyv")
       return docLang === "tyv" ? "ty" : docLang;
-    const nav =
-      (typeof navigator !== "undefined" && navigator.language) || "ru";
+    const nav = (typeof navigator !== "undefined" && navigator.language) || "ru";
     return nav.startsWith("ty") ? "ty" : "ru";
   });
 
@@ -200,12 +198,12 @@ export default function I18nProvider({ children }) {
         staticTranslations[key] = dict.ty && dict.ty[key] ? dict.ty[key] : dict.ru[key];
       });
       setApiTranslations(staticTranslations);
-      
+
       // Затем загружаем переводы через API для обновления
       const loadTranslations = async () => {
         const newTranslations = { ...staticTranslations };
         const keys = Object.keys(dict.ru);
-        
+
         // Загружаем переводы батчами для производительности
         const batchSize = 5;
         for (let i = 0; i < keys.length; i += batchSize) {
@@ -217,19 +215,19 @@ export default function I18nProvider({ children }) {
                 newTranslations[key] = translationCache.current.get(cacheKey);
                 return;
               }
-              
+
               try {
                 const result = await PublicApi.translate(dict.ru[key], "ru", "ty");
                 // Пробуем разные форматы ответа API
                 let translated = null;
-                
-                if (typeof result === 'string') {
+
+                if (typeof result === "string") {
                   translated = result;
                 } else if (result) {
-                  translated = 
-                    result?.translated || 
-                    result?.text || 
-                    result?.result || 
+                  translated =
+                    result?.translated ||
+                    result?.text ||
+                    result?.result ||
                     result?.translation ||
                     result?.target ||
                     result?.data?.translated ||
@@ -237,23 +235,23 @@ export default function I18nProvider({ children }) {
                     result?.data?.result ||
                     null;
                 }
-                
+
                 if (translated && translated !== dict.ru[key] && translated.trim()) {
                   translationCache.current.set(cacheKey, translated);
                   newTranslations[key] = translated;
                 }
-              } catch (error) {
+              } catch {
                 // Оставляем статический перевод, не логируем ошибки для каждого ключа
                 // console.warn(`Translation error for key ${key}:`, error);
               }
             })
           );
-          
+
           // Обновляем состояние после каждого батча для постепенного обновления
           setApiTranslations({ ...newTranslations });
         }
       };
-      
+
       loadTranslations();
     } else {
       setApiTranslations({});
@@ -275,21 +273,18 @@ export default function I18nProvider({ children }) {
         // Fallback на русский
         return dict.ru && dict.ru[key] ? dict.ru[key] : key;
       }
-      
+
       // Для русского языка используем статический словарь
       if (dict[lang] && dict[lang][key]) {
         return dict[lang][key];
       }
-      
+
       // Fallback на русский или ключ
       return dict.ru && dict.ru[key] ? dict.ru[key] : key;
     },
     [lang, apiTranslations]
   );
 
-  const value = React.useMemo(
-    () => ({ lang, setLang, t }),
-    [lang, t]
-  );
+  const value = React.useMemo(() => ({ lang, setLang, t }), [lang, t]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

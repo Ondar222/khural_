@@ -9,7 +9,7 @@ const LINKS = [
   },
   {
     label: "ПАРЛАМЕНТ РЕСПУБЛИКИ ТЫВА",
-    href: "http://gov.tuva.ru/", 
+    href: "http://gov.tuva.ru/",
   },
   {
     label: "ОФИЦИАЛЬНЫЙ ИНТЕРНЕТ-ПОРТАЛ ПРАВОВОЙ ИНФОРМАЦИИ",

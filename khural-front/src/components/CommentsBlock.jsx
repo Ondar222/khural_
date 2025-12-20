@@ -56,7 +56,14 @@ export default function CommentsBlock({ entityType, entityId }) {
 
   return (
     <div className="tile" style={{ marginTop: 14 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
         <div style={{ fontWeight: 900 }}>Комментарии</div>
         <Button onClick={load} loading={loading}>
           Обновить
@@ -66,7 +73,9 @@ export default function CommentsBlock({ entityType, entityId }) {
       <div style={{ marginTop: 12 }}>
         <Space.Compact style={{ width: "100%" }}>
           <Input
-            placeholder={isAuthenticated ? "Напишите комментарий…" : "Войдите, чтобы комментировать"}
+            placeholder={
+              isAuthenticated ? "Напишите комментарий…" : "Войдите, чтобы комментировать"
+            }
             value={text}
             disabled={!isAuthenticated}
             onChange={(e) => setText(e.target.value)}
@@ -95,7 +104,10 @@ export default function CommentsBlock({ entityType, entityId }) {
             {Array.isArray(c.replies) && c.replies.length ? (
               <div style={{ marginTop: 10, paddingLeft: 14, display: "grid", gap: 10 }}>
                 {c.replies.map((r) => (
-                  <div key={r.id} style={{ borderLeft: "3px solid rgba(0,0,0,0.08)", paddingLeft: 10 }}>
+                  <div
+                    key={r.id}
+                    style={{ borderLeft: "3px solid rgba(0,0,0,0.08)", paddingLeft: 10 }}
+                  >
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                       <div style={{ fontWeight: 800 }}>{pickAuthorName(r)}</div>
                       <div style={{ opacity: 0.65, fontSize: 12 }}>
@@ -113,5 +125,3 @@ export default function CommentsBlock({ entityType, entityId }) {
     </div>
   );
 }
-
-

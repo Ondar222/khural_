@@ -11,9 +11,8 @@ import MezhregionalnyeSvyazi from "./commissions/MezhregionalnyeSvyazi.jsx";
 
 // Mapping id -> title/component for each commission
 const COMMISSIONS = {
-  "nagradnaya": {
-    title:
-      "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
+  nagradnaya: {
+    title: "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
     Component: Nagradnaya,
   },
   "kontrol-dostovernost": {
@@ -21,7 +20,7 @@ const COMMISSIONS = {
       "Комиссия Верховного Хурала (парламента) Республики Тыва по контролю за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
     Component: KontrolDostovernost,
   },
-  "schetnaya": {
+  schetnaya: {
     title: "Счетная комиссия Верховного Хурала",
     Component: Schetnaya,
   },
@@ -30,7 +29,7 @@ const COMMISSIONS = {
       "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
     Component: ReglamentEtika,
   },
-  "reabilitatsiya": {
+  reabilitatsiya: {
     title:
       "Республиканская комиссия по восстановлению прав реабилитированных жертв политических репрессий",
     Component: Reabilitatsiya,
@@ -56,21 +55,23 @@ export default function Commission() {
   const [commission, setCommission] = React.useState(null);
 
   React.useEffect(() => {
-    const h = window.location.hash;
-    const sp = new URLSearchParams(h.split("?")[1]);
+    const sp = new URLSearchParams(window.location.search || "");
     const id = sp.get("id");
     setCommission(id && COMMISSIONS[id] ? { id, ...COMMISSIONS[id] } : null);
   }, []);
 
   React.useEffect(() => {
-    const onHash = () => {
-      const h = window.location.hash;
-      const sp = new URLSearchParams(h.split("?")[1]);
+    const onNav = () => {
+      const sp = new URLSearchParams(window.location.search || "");
       const id = sp.get("id");
       setCommission(id && COMMISSIONS[id] ? { id, ...COMMISSIONS[id] } : null);
     };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onNav);
+    window.addEventListener("app:navigate", onNav);
+    return () => {
+      window.removeEventListener("popstate", onNav);
+      window.removeEventListener("app:navigate", onNav);
+    };
   }, []);
 
   if (!commission) {
@@ -97,11 +98,7 @@ export default function Commission() {
         <div className="page-grid">
           <div>
             <h3>{commission.title}</h3>
-            {Page ? (
-              <Page />
-            ) : (
-              <p>Здесь будет содержимое страницы «{commission.title}».</p>
-            )}
+            {Page ? <Page /> : <p>Здесь будет содержимое страницы «{commission.title}».</p>}
           </div>
           <SideNav title="Разделы" />
         </div>

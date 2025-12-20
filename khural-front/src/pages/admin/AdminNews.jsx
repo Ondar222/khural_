@@ -1,29 +1,12 @@
 import React from "react";
-import {
-  App,
-  Button,
-  Input,
-  Modal,
-  Form,
-  Upload,
-  Space,
-  Table,
-  Tag,
-} from "antd";
+import { App, Button, Input, Modal, Form, Upload, Space, Table, Tag } from "antd";
 
 function pickRu(content) {
   const arr = Array.isArray(content) ? content : [];
   return arr.find((x) => x?.lang === "ru") || arr[0] || null;
 }
 
-export default function AdminNews({
-  items,
-  onCreate,
-  onUpdate,
-  onDelete,
-  busy,
-  canWrite,
-}) {
+export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, canWrite }) {
   const { message } = App.useApp();
   const [open, setOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
@@ -73,8 +56,7 @@ export default function AdminNews({
       title: "Медиа",
       dataIndex: "images",
       width: 120,
-      render: (v) =>
-        Array.isArray(v) && v.length ? <Tag color="blue">есть</Tag> : "—",
+      render: (v) => (Array.isArray(v) && v.length ? <Tag color="blue">есть</Tag> : "—"),
     },
     {
       title: "Действия",
@@ -85,9 +67,7 @@ export default function AdminNews({
           <Button
             onClick={() => {
               const ru = pickRu(row.content);
-              const tu =
-                Array.isArray(row.content) &&
-                row.content.find((x) => x?.lang === "tu");
+              const tu = Array.isArray(row.content) && row.content.find((x) => x?.lang === "tu");
               setEditing(row);
               editForm.setFieldsValue({
                 titleRu: ru?.title || "",
@@ -159,12 +139,7 @@ export default function AdminNews({
           className="admin-input"
         />
         <Space wrap>
-          <Button
-            type="primary"
-            onClick={() => setOpen(true)}
-            disabled={!canWrite}
-            loading={busy}
-          >
+          <Button type="primary" onClick={() => setOpen(true)} disabled={!canWrite} loading={busy}>
             + Добавить новость
           </Button>
         </Space>
@@ -228,9 +203,7 @@ export default function AdminNews({
           </Form.Item>
         </Form>
         {!canWrite ? (
-          <div className="admin-hint">
-            Для записи в API войдите (или настройте API базу).
-          </div>
+          <div className="admin-hint">Для записи в API войдите (или настройте API базу).</div>
         ) : null}
       </Modal>
 
@@ -290,9 +263,3 @@ export default function AdminNews({
     </div>
   );
 }
-
-
-
-
-
-

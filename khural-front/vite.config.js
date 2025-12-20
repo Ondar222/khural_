@@ -3,15 +3,15 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  server: { 
-    port: 5173, 
+  server: {
+    port: 5173,
     open: false,
     proxy: {
-      '/api': {
+      "/api": {
         // khural-backend now listens on 4000 by default
-        target: 'http://localhost:4000',
+        target: "http://localhost:4000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },

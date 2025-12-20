@@ -4,16 +4,16 @@ import SideNav from "../components/SideNav.jsx";
 
 function useQuery() {
   const [q, setQ] = React.useState(() => {
-    const h = window.location.hash;
-    return new URLSearchParams(h.split("?")[1]);
+    return new URLSearchParams(window.location.search || "");
   });
   React.useEffect(() => {
-    const onHash = () => {
-      const h = window.location.hash;
-      setQ(new URLSearchParams(h.split("?")[1]));
+    const onNav = () => setQ(new URLSearchParams(window.location.search || ""));
+    window.addEventListener("popstate", onNav);
+    window.addEventListener("app:navigate", onNav);
+    return () => {
+      window.removeEventListener("popstate", onNav);
+      window.removeEventListener("app:navigate", onNav);
     };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
   }, []);
   return q;
 }
@@ -21,16 +21,26 @@ function useQuery() {
 export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
-  const { committees, factions, commissions, councils } = useData();
+  const { committees } = useData();
   const focus = q.get("focus");
+
+  // Scroll to a requested block from URL (e.g., #/section?focus=committees)
+  React.useEffect(() => {
+    if (!focus) return;
+    const id = `focus-${String(focus)}`;
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [focus]);
 
   // Detail stub when title is provided
   if (titleParam) {
     let title = titleParam;
     try {
       title = decodeURIComponent(titleParam);
-    } catch {}
-    
+    } catch {
+      // ignore invalid URI encoding
+    }
+
     // Committees list page
     if (title === "Комитеты") {
       return (
@@ -50,11 +60,11 @@ export default function SectionPage() {
                       href={`#/committee?id=${encodeURIComponent(c.id)}`}
                     >
                       <span style={{ display: "grid", gap: 6 }}>
-                        <span style={{ fontWeight: 900, color: "#0a1f44" }}>
-                          {c.title}
-                        </span>
+                        <span style={{ fontWeight: 900, color: "#0a1f44" }}>{c.title}</span>
                         <span style={{ color: "#6b7280", fontSize: 13 }}>
-                          {(Array.isArray(c.members) ? c.members.length : 0) ? `Состав: ${c.members.length}` : "Состав: —"}
+                          {(Array.isArray(c.members) ? c.members.length : 0)
+                            ? `Состав: ${c.members.length}`
+                            : "Состав: —"}
                         </span>
                       </span>
                       <span aria-hidden="true">›</span>
@@ -105,7 +115,7 @@ export default function SectionPage() {
           name: "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным и международным связям",
         },
       ];
-      
+
       return (
         <section className="section">
           <div className="container">
@@ -115,9 +125,7 @@ export default function SectionPage() {
                 <ul>
                   {commissionsList.map((item) => (
                     <li key={item.id}>
-                      <a href={`#/commission?id=${item.id}`}>
-                        {item.name}
-                      </a>
+                      <a href={`#/commission?id=${item.id}`}>{item.name}</a>
                     </li>
                   ))}
                 </ul>
@@ -137,8 +145,8 @@ export default function SectionPage() {
               <div>
                 <h1>{title}</h1>
                 <p>
-                  Раздел в разработке. Здесь будет информация о представителях
-                  Республики Тыва в Совете Федерации, контакты и биографии.
+                  Раздел в разработке. Здесь будет информация о представителях Республики Тыва в
+                  Совете Федерации, контакты и биографии.
                 </p>
                 <div className="tabs">
                   <a className="btn" href="#/contacts">
@@ -164,8 +172,8 @@ export default function SectionPage() {
               <div>
                 <h1>{title}</h1>
                 <p>
-                  Раздел в разработке. Здесь будет информация о составе,
-                  мероприятиях и документах Молодежного Хурала.
+                  Раздел в разработке. Здесь будет информация о составе, мероприятиях и документах
+                  Молодежного Хурала.
                 </p>
                 <div className="tabs">
                   <a className="btn" href="#/news">
@@ -182,7 +190,7 @@ export default function SectionPage() {
         </section>
       );
     }
-    
+
     return (
       <section className="section">
         <div className="container">
@@ -190,8 +198,8 @@ export default function SectionPage() {
             <div>
               <h1>{title}</h1>
               <p>
-                Раздел «{title}» пока не заполнен. Если это важный пункт меню —
-                скажи, и я добавлю содержимое/данные.
+                Раздел «{title}» пока не заполнен. Если это важный пункт меню — скажи, и я добавлю
+                содержимое/данные.
               </p>
             </div>
             <SideNav title="Разделы" />
@@ -200,14 +208,6 @@ export default function SectionPage() {
       </section>
     );
   }
-
-  // Scroll to a requested block from URL (e.g., #/section?focus=committees)
-  React.useEffect(() => {
-    if (!focus) return;
-    const id = `focus-${String(focus)}`;
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [focus]);
 
   // Structure diagram view (as on the picture)
   return (
@@ -260,28 +260,38 @@ export default function SectionPage() {
                     className="org__item org__item--blue"
                     href="#/commission?id=mezhregionalnye-svyazi"
                   >
-                    Комитет Верховного Хурала (парламента) Республики Тыва по
-                    межрегиональным связям
+                    Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям
                   </a>
-                  <a
-                    className="org__item org__item--blue"
-                    href="#/commission?id=smi-obshestvo"
-                  >
-                    Комитет Верховного Хурала (парламента) Республики Тыва по
-                    взаимодействию со средствами массовой информации и
-                    общественными организациями
+                  <a className="org__item org__item--blue" href="#/commission?id=smi-obshestvo">
+                    Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со
+                    средствами массовой информации и общественными организациями
                   </a>
                 </div>
-                <div
-                  className="org__col org__col--span2"
-                  id="focus-commissions"
-                >
+                <div className="org__col org__col--span2" id="focus-commissions">
                   {[
-                    { title: "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике", id: "reglament-etika" },
-                    { title: "Комиссия Верховного Хурала (парламента) Республики Тыва контрольно за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва", id: "kontrol-dostovernost" },
-                    { title: "Наградная комиссия Верховного Хурала (парламента) Республики Тыва", id: "nagradnaya" },
-                    { title: "Комиссия Верховного Хурала (парламента) Республики Тыва по поддержке участников специальной военной операции и их семей", id: "svo-podderzhka" },
-                    { title: "Счетная комиссия Верховного Хурала (парламента) Республики Тыва", id: "schetnaya" },
+                    {
+                      title:
+                        "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
+                      id: "reglament-etika",
+                    },
+                    {
+                      title:
+                        "Комиссия Верховного Хурала (парламента) Республики Тыва контрольно за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
+                      id: "kontrol-dostovernost",
+                    },
+                    {
+                      title: "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
+                      id: "nagradnaya",
+                    },
+                    {
+                      title:
+                        "Комиссия Верховного Хурала (парламента) Республики Тыва по поддержке участников специальной военной операции и их семей",
+                      id: "svo-podderzhka",
+                    },
+                    {
+                      title: "Счетная комиссия Верховного Хурала (парламента) Республики Тыва",
+                      id: "schetnaya",
+                    },
                   ].map((item, i) => (
                     <a
                       key={`wide-${i}`}
@@ -296,10 +306,7 @@ export default function SectionPage() {
               {/* Councils anchor (same visual area for now) */}
               <div id="focus-councils" style={{ height: 1 }} />
               <div className="org__row org__row--center">
-                <a
-                  className="org__item org__item--xl org__item--blue"
-                  href="#/apparatus"
-                >
+                <a className="org__item org__item--xl org__item--blue" href="#/apparatus">
                   Аппарат Верховного Хурала (парламента) Республики Тыва
                 </a>
               </div>

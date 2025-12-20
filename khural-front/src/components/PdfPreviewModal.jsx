@@ -7,15 +7,8 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
   )}#zoom=page-width`;
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
-      <div
-        className="modal"
-        style={{ width: "min(1100px, 96vw)", height: "86vh" }}
-      >
-        <button
-          className="icon-btn modal__close"
-          aria-label="Закрыть"
-          onClick={onClose}
-        >
+      <div className="modal" style={{ width: "min(1100px, 96vw)", height: "86vh" }}>
+        <button className="icon-btn modal__close" aria-label="Закрыть" onClick={onClose}>
           ✕
         </button>
         <div className="modal__content" style={{ height: "calc(86vh - 48px)" }}>

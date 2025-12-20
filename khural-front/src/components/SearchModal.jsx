@@ -45,7 +45,10 @@ export default function SearchModal({ open, onClose }) {
         setRemote(
           results.map((r) => {
             const type = r.type;
-            const baseMeta = Array.isArray(r.highlights) && r.highlights.length ? r.highlights[0] : (r.description || "");
+            const baseMeta =
+              Array.isArray(r.highlights) && r.highlights.length
+                ? r.highlights[0]
+                : r.description || "";
             if (type === "persons") {
               return {
                 id: `p-${r.id}`,
@@ -91,9 +94,7 @@ export default function SearchModal({ open, onClose }) {
     if (remote.length) return remote;
     const newsMatches = news
       .filter((n) =>
-        [n.title, n.desc]
-          .filter(Boolean)
-          .some((s) => String(s).toLowerCase().includes(q))
+        [n.title, n.desc].filter(Boolean).some((s) => String(s).toLowerCase().includes(q))
       )
       .map((n) => ({
         id: `news-${n.id}`,
@@ -104,9 +105,7 @@ export default function SearchModal({ open, onClose }) {
       }));
     const docMatches = documents
       .filter((d) =>
-        [d.title, d.summary]
-          .filter(Boolean)
-          .some((s) => String(s).toLowerCase().includes(q))
+        [d.title, d.summary].filter(Boolean).some((s) => String(s).toLowerCase().includes(q))
       )
       .map((d) => ({
         id: `doc-${d.id || d.title}`,
@@ -121,18 +120,9 @@ export default function SearchModal({ open, onClose }) {
   if (!open) return null;
 
   return createPortal(
-    <div
-      className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      onClick={onClose}
-    >
+    <div className="modal-overlay" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button
-          className="icon-btn modal__close"
-          onClick={onClose}
-          aria-label="Закрыть"
-        >
+        <button className="icon-btn modal__close" onClick={onClose} aria-label="Закрыть">
           ×
         </button>
         <div className="modal__content">
@@ -146,17 +136,12 @@ export default function SearchModal({ open, onClose }) {
               className="search-input"
               aria-label={t("search")}
             />
-            <button
-              className="btn"
-              onClick={() => inputRef.current && inputRef.current.focus()}
-            >
+            <button className="btn" onClick={() => inputRef.current && inputRef.current.focus()}>
               🔍
             </button>
           </div>
           <div style={{ marginTop: 12 }}>
-            {q && loading && (
-              <div className="text-muted">Поиск…</div>
-            )}
+            {q && loading && <div className="text-muted">Поиск…</div>}
             {q && !loading && results.length === 0 && (
               <div className="text-muted">Ничего не найдено</div>
             )}

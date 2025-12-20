@@ -3,9 +3,10 @@ import { useData } from "../context/DataContext.jsx";
 // import { useI18n } from "../i18n.js";
 import EventModal from "./EventModal.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import DataState from "./DataState.jsx";
 
 export default function CalendarWidget() {
-  const { events } = useData();
+  const { events, loading, errors, reload } = useData();
   const { t } = useI18n();
   const [viewDate, setViewDate] = useState(() => new Date());
   const [openedDayEvents, setOpenedDayEvents] = useState(null);
@@ -50,61 +51,69 @@ export default function CalendarWidget() {
           </a>
         </div>
 
-        <div className="calendar">
-          <div className="calendar__header">
-            <button
-              type="button"
-              className="icon-btn"
-              aria-label={t("prevMonth")}
-              onClick={() => setViewDate(new Date(year, month - 1, 1))}
-            >
-              ‹
-            </button>
-            <div className="calendar__title">{monthName}</div>
-            <button
-              type="button"
-              className="icon-btn"
-              aria-label={t("nextMonth")}
-              onClick={() => setViewDate(new Date(year, month + 1, 1))}
-            >
-              ›
-            </button>
+        <DataState
+          loading={Boolean(loading?.events) && (!events || events.length === 0)}
+          error={errors?.events}
+          onRetry={reload}
+          empty={!loading?.events && (!events || events.length === 0)}
+          emptyDescription="Событий пока нет"
+        >
+          <div className="calendar">
+            <div className="calendar__header">
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label={t("prevMonth")}
+                onClick={() => setViewDate(new Date(year, month - 1, 1))}
+              >
+                ‹
+              </button>
+              <div className="calendar__title">{monthName}</div>
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label={t("nextMonth")}
+                onClick={() => setViewDate(new Date(year, month + 1, 1))}
+              >
+                ›
+              </button>
+            </div>
+
+            <div className="calendar__grid">
+              {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((w) => (
+                <div key={w} className="calendar__weekday">
+                  {w}
+                </div>
+              ))}
+
+              {cells.map((d, i) => {
+                if (!d) return <div key={i} className="calendar__day _empty" />;
+
+                const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                const evs = eventsByDateKey.get(k) || [];
+                const has = evs.length > 0;
+
+                return (
+                  <button
+                    key={i}
+                    className={`calendar__day ${has ? "_has" : ""}`}
+                    onClick={() => has && setOpenedDayEvents(evs)}
+                    type="button"
+                  >
+                    <div className="calendar__daynum">{d.getDate()}</div>
+                    {has ? (
+                      <div className="calendar__dots">
+                        {evs.slice(0, 3).map((_, j) => (
+                          <span key={j} className="calendar__dot" />
+                        ))}
+                      </div>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-
-          <div className="calendar__grid">
-            {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((w) => (
-              <div key={w} className="calendar__weekday">
-                {w}
-              </div>
-            ))}
-
-            {cells.map((d, i) => {
-              if (!d) return <div key={i} className="calendar__day _empty" />;
-
-              const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-              const evs = eventsByDateKey.get(k) || [];
-              const has = evs.length > 0;
-
-              return (
-                <button
-                  key={i}
-                  className={`calendar__day ${has ? "_has" : ""}`}
-                  onClick={() => has && setOpenedDayEvents(evs)}
-                  type="button"
-                >
-                  <div className="calendar__daynum">{d.getDate()}</div>
-                  {has ? (
-                    <div className="calendar__dots">
-                      {evs.slice(0, 3).map((_, j) => (
-                        <span key={j} className="calendar__dot" />
-                      ))}
-                    </div>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        </DataState>
 
         <EventModal
           open={!!openedDayEvents}

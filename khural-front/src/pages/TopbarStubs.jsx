@@ -9,17 +9,14 @@ export function Feedback() {
           {" "}
           <h3>Обращения граждан и юридических лиц</h3>
           <p>
-            Обращения граждан в адрес Верховного Хурала (парламента) Республики
-            Тыва могут быть:
+            Обращения граждан в адрес Верховного Хурала (парламента) Республики Тыва могут быть:
           </p>
           <ul>
             <li>
               <a href="">переданы лично</a>
             </li>
             <li>
-              <a href="https://khural.rtyva.ru/internet-priemnaya/letter/">
-                отправлены по почте
-              </a>
+              <a href="https://khural.rtyva.ru/internet-priemnaya/letter/">отправлены по почте</a>
             </li>
             <li>
               <a href="https://khural.rtyva.ru/internet-priemnaya/send/">
@@ -36,35 +33,28 @@ export function Feedback() {
               и следующей информацией:
             </p>
             <ul>
+              <li>Обращения граждан рассматриваются в течение 30 дней со дня их регистрации.</li>
               <li>
-                Обращения граждан рассматриваются в течение 30 дней со дня их
-                регистрации.
-              </li>
-              <li>
-                По просьбе обратившегося, если обращение передано лично в
-                письменной форме, ему выдается расписка с указанием даты приема
-                обращения, количества принятых листов и сообщается телефон для
-                справок. Никаких отметок на копиях или вторых экземплярах
+                По просьбе обратившегося, если обращение передано лично в письменной форме, ему
+                выдается расписка с указанием даты приема обращения, количества принятых листов и
+                сообщается телефон для справок. Никаких отметок на копиях или вторых экземплярах
                 принятых обращений не делается.
               </li>
               <li>
-                Не принимаются к регистрации анонимные обращения и обращения,
-                оформленные с нарушением требований, описанных в{" "}
+                Не принимаются к регистрации анонимные обращения и обращения, оформленные с
+                нарушением требований, описанных в{" "}
                 <a href="https://khural.rtyva.ru/internet-priemnaya/consideration/">
                   порядке рассмотрения обращений.
                 </a>
               </li>
               <li>
-                Обращения, в которых содержатся нецензурные либо оскорбительные
-                выражения, угрозы жизни, здоровью и имуществу должностного лица,
-                а также членов его семьи, остаются без рассмотрения по существу
-                поставленных вопросов.
+                Обращения, в которых содержатся нецензурные либо оскорбительные выражения, угрозы
+                жизни, здоровью и имуществу должностного лица, а также членов его семьи, остаются
+                без рассмотрения по существу поставленных вопросов.
               </li>
               <li>
                 Обращения в электронном виде, направляемые минуя предлагаемую{" "}
-                <a href="https://khural.rtyva.ru/internet-priemnaya/send/">
-                  форму ввода
-                </a>
+                <a href="https://khural.rtyva.ru/internet-priemnaya/send/">форму ввода</a>
                 ,либо на иные электронные адреса к рассмотрению не принимаются.
               </li>
             </ul>
@@ -79,14 +69,10 @@ export function Feedback() {
             </a>
           </li>
           <li>
-            <a href="https://khural.rtyva.ru/internet-priemnaya/appeal/">
-              Порядок обжалования
-            </a>
+            <a href="https://khural.rtyva.ru/internet-priemnaya/appeal/">Порядок обжалования</a>
           </li>
           <li>
-            <a href="http://khural.org/internet-priemnaya/legal/">
-              Правовое регулирование
-            </a>
+            <a href="http://khural.org/internet-priemnaya/legal/">Правовое регулирование</a>
           </li>
         </ul>
       </div>
@@ -103,29 +89,19 @@ export function Press() {
         <div className="card" style={{ padding: 20, marginTop: 24 }}>
           <h2 style={{ marginTop: 0 }}>Контактная информация</h2>
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-              Адрес
-            </div>
-            <div style={{ color: "#b91c1c" }}>
-              667000, г. Кызыл, ул. Чульдум, д. 18
-            </div>
+            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Адрес</div>
+            <div style={{ color: "#b91c1c" }}>667000, г. Кызыл, ул. Чульдум, д. 18</div>
           </div>
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-              Телефон
-            </div>
+            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Телефон</div>
             <div>+7 (39422) 9-72-95</div>
           </div>
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-              Факс
-            </div>
+            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Факс</div>
             <div>+7 (39422) 9-72-95, 9-72-96</div>
           </div>
           <div style={{ marginTop: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>
-              E-mail
-            </div>
+            <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>E-mail</div>
             <div>
               <a href="mailto:ods@tuva.ru">ods@tuva.ru</a>
             </div>

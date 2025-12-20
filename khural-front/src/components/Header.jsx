@@ -30,17 +30,17 @@ export default function Header() {
     }
   };
 
-  const onNavOpen = React.useCallback((e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setSheetOpen(true);
-  }, []);
   const { cycleMode } = useA11y();
   const { lang, setLang, t } = useI18n();
 
   React.useEffect(() => {
-    const onHash = () => setSheetOpen(false);
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    const onNav = () => setSheetOpen(false);
+    window.addEventListener("popstate", onNav);
+    window.addEventListener("app:navigate", onNav);
+    return () => {
+      window.removeEventListener("popstate", onNav);
+      window.removeEventListener("app:navigate", onNav);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -71,8 +71,7 @@ export default function Header() {
           <a href="#/feedback">{t("feedback")}</a>
           <a href="#/press">{t("press")}</a>
           <a href="#/activity">{t("activity")}</a>
-          
-          
+
           <span style={{ marginLeft: "auto", display: "flex", gap: 12 }}>
             <a href="#/login">{t("login")}</a>
             <a href="#/register">{t("register")}</a>
@@ -96,14 +95,10 @@ export default function Header() {
               </a>
               <div className="brand-text">
                 <a href="/" style={{ textDecoration: "none" }}>
-                  <div
-                    style={{ fontSize: 16, lineHeight: 1, color: "#6b7280" }}
-                  >
+                  <div style={{ fontSize: 16, lineHeight: 1, color: "#6b7280" }}>
                     {t("brandTop")} <br /> {t("brandParliament")}
                   </div>
-                  <div
-                    style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800 }}
-                  >
+                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800 }}>
                     {t("brandBottom")}
                   </div>
                 </a>
@@ -121,31 +116,20 @@ export default function Header() {
               onMouseLeave={() => setOpenMenu(null)}
             >
               <Link to="/about">{t("aboutVH")} ▾</Link>
-              <div
-                className="dropdown__menu"
-                onMouseEnter={() => setOpenMenu("vh")}
-              >
+              <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("vh")}>
                 <a href="#/about">{t("aboutVH")}</a>
                 <a href="#/section">{t("structure")}</a>
                 <a href="#/committee">{t("committees")}</a>
                 <a href={`#/news?category=${encodeURIComponent("Комитеты")}`}>
                   {t("committees")} ({t("news")})
                 </a>
-                <a href={"#/section?title=" + encodeURIComponent("Комиссии")}>
-                  {t("commissions")}
-                </a>
-                <a
-                  href={
-                    "#/section?title=" +
-                    encodeURIComponent("Депутатские фракции")
-                  }
-                >
+                <a href={"#/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
+                <a href={"#/section?title=" + encodeURIComponent("Депутатские фракции")}>
                   {t("factions")}
                 </a>
                 <a
                   href={
-                    "#/section?title=" +
-                    encodeURIComponent("Представительство в Совете Федерации")
+                    "#/section?title=" + encodeURIComponent("Представительство в Совете Федерации")
                   }
                 >
                   {t("senateRep")}
@@ -163,10 +147,7 @@ export default function Header() {
               onMouseLeave={() => setOpenMenu(null)}
             >
               <Link to="/docs/laws">{t("documents")} ▾</Link>
-              <div
-                className="dropdown__menu"
-                onMouseEnter={() => setOpenMenu("docs")}
-              >
+              <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("docs")}>
                 <a href="#/docs/laws">
                   {t("docs")}: {t("legislation")}
                 </a>
@@ -176,9 +157,7 @@ export default function Header() {
                 <a href="#/docs/resolutions">{t("docsResolutions")}</a>
                 <a href="#/docs/initiatives">{t("docsInitiatives")}</a>
                 <a href="#/docs/civic">{t("docsCivic")}</a>
-                <a href="#/docs/constitution">
-                  {t("docsConstitution")}
-                </a>
+                <a href="#/docs/constitution">{t("docsConstitution")}</a>
                 <a href="#/docs/bills">{t("docsBills")}</a>
               </div>
             </div>
@@ -188,16 +167,13 @@ export default function Header() {
               onMouseLeave={() => setOpenMenu(null)}
             >
               <Link to="/news">{t("news")} ▾</Link>
-              <div
-                className="dropdown__menu"
-                onMouseEnter={() => setOpenMenu("news")}
-              >
+              <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("news")}>
                 {newsCategories.map((c, i) =>
                   c === "—" ? (
                     <hr key={`hr-${i}`} />
                   ) : (
-                    <a 
-                      key={c} 
+                    <a
+                      key={c}
                       href={
                         c === "Актуальные новости" || c === "Все новости" || c === "Медиа"
                           ? "#/news"
@@ -227,11 +203,7 @@ export default function Header() {
           </nav>
 
           <div className="header-actions">
-            <button
-              className="icon-btn"
-              aria-label={t("accessibilityVersion")}
-              onClick={cycleMode}
-            >
+            <button className="icon-btn" aria-label={t("accessibilityVersion")} onClick={cycleMode}>
               👁️
             </button>
             <button
@@ -240,23 +212,12 @@ export default function Header() {
               onClick={() => {
                 const newLang = lang === "ru" ? "ty" : "ru";
                 setLang(newLang);
-                // Сохраняем текущий маршрут при смене языка
-                const currentRoute = window.location.hash;
-                if (currentRoute) {
-                  // Небольшая задержка для обновления состояния языка
-                  setTimeout(() => {
-                    window.location.hash = currentRoute;
-                  }, 0);
-                }
+                // Language switch doesn't require route mutation in history mode.
               }}
             >
               {lang.toUpperCase()}
             </button>
-            <button
-              className="icon-btn"
-              aria-label={t("menu")}
-              onClick={handleBurger}
-            >
+            <button className="icon-btn" aria-label={t("menu")} onClick={handleBurger}>
               <span className="burger">
                 <span></span>
                 <span></span>
@@ -272,11 +233,7 @@ export default function Header() {
         className={`sheet-backdrop ${sheetOpen ? "open" : ""}`}
         onClick={() => setSheetOpen(false)}
       ></div>
-      <div
-        className={`mega-sheet ${sheetOpen ? "open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-      >
+      <div className={`mega-sheet ${sheetOpen ? "open" : ""}`} role="dialog" aria-modal="true">
         <div className="sheet-header">
           <a
             href="/"
@@ -295,11 +252,7 @@ export default function Header() {
               height={44}
             />
           </a>
-          <button
-            className="icon-btn"
-            aria-label={t("accessibilityVersion")}
-            onClick={cycleMode}
-          >
+          <button className="icon-btn" aria-label={t("accessibilityVersion")} onClick={cycleMode}>
             👁️
           </button>
           <button
@@ -308,22 +261,12 @@ export default function Header() {
             onClick={() => {
               const newLang = lang === "ru" ? "ty" : "ru";
               setLang(newLang);
-              // Сохраняем текущий маршрут при смене языка
-              const currentRoute = window.location.hash;
-              if (currentRoute) {
-                setTimeout(() => {
-                  window.location.hash = currentRoute;
-                }, 0);
-              }
+              // Language switch doesn't require route mutation in history mode.
             }}
           >
             {lang.toUpperCase()}
           </button>
-          <button
-            className="icon-btn"
-            onClick={() => setSheetOpen(false)}
-            aria-label={t("close")}
-          >
+          <button className="icon-btn" onClick={() => setSheetOpen(false)} aria-label={t("close")}>
             ✕
           </button>
         </div>
@@ -359,10 +302,7 @@ export default function Header() {
               >
                 {t("Социальные сети")}
               </div>
-              <div
-                className="social-card__subtitle"
-                style={{ fontSize: "14px", opacity: 0.9 }}
-              >
+              <div className="social-card__subtitle" style={{ fontSize: "14px", opacity: 0.9 }}>
                 {t("Подписывайтесь")}
               </div>
             </div>
@@ -408,10 +348,7 @@ export default function Header() {
                   viewBox="0 0 48 48"
                   style={{ width: "24px", height: "24px" }}
                 >
-                  <path
-                    fill="#1976d2"
-                    d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"
-                  ></path>
+                  <path fill="#1976d2" d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"></path>
                   <path
                     fill="#fff"
                     d="M35.937,18.041c0.046-0.151,0.068-0.291,0.062-0.416C35.984,17.263,35.735,17,35.149,17h-2.618 c-0.661,0-0.966,0.4-1.144,0.801c0,0-1.632,3.359-3.513,5.574c-0.61,0.641-0.92,0.625-1.25,0.625C26.447,24,26,23.786,26,23.199 v-5.185C26,17.32,25.827,17,25.268,17h-4.649C20.212,17,20,17.32,20,17.641c0,0.667,0.898,0.827,1,2.696v3.623 C21,24.84,20.847,25,20.517,25c-0.89,0-2.642-3-3.815-6.932C16.448,17.294,16.194,17,15.533,17h-2.643 C12.127,17,12,17.374,12,17.774c0,0.721,0.6,4.619,3.875,9.101C18.25,30.125,21.379,32,24.149,32c1.678,0,1.85-0.427,1.85-1.094 v-2.972C26,27.133,26.183,27,26.717,27c0.381,0,1.158,0.25,2.658,2c1.73,2.018,2.044,3,3.036,3h2.618 c0.608,0,0.957-0.255,0.971-0.75c0.003-0.126-0.015-0.267-0.056-0.424c-0.194-0.576-1.084-1.984-2.194-3.326 c-0.615-0.743-1.222-1.479-1.501-1.879C32.062,25.36,31.991,25.176,32,25c0.009-0.185,0.105-0.361,0.249-0.607 C32.223,24.393,35.607,19.642,35.937,18.041z"
@@ -452,10 +389,7 @@ export default function Header() {
                   viewBox="0 0 48 48"
                   style={{ width: "24px", height: "24px" }}
                 >
-                  <path
-                    fill="#29b6f6"
-                    d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"
-                  ></path>
+                  <path fill="#29b6f6" d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"></path>
                   <path
                     fill="#fff"
                     d="M33.95,15l-3.746,19.126c0,0-0.161,0.874-1.245,0.874c-0.576,0-0.873-0.274-0.873-0.274l-8.114-6.733 l-3.97-2.001l-5.095-1.355c0,0-0.907-0.262-0.907-1.012c0-0.625,0.933-0.923,0.933-0.923l21.316-8.468 c-0.001-0.001,0.651-0.235,1.126-0.234C33.667,14,34,14.125,34,14.5C34,14.75,33.95,15,33.95,15z"
@@ -482,21 +416,12 @@ export default function Header() {
             <a href={`#/news?category=${encodeURIComponent("Комитеты")}`}>
               {t("committees")} ({t("news")})
             </a>
-            <a href={"#/section?title=" + encodeURIComponent("Комиссии")}>
-              {t("commissions")}
-            </a>
-            <a
-              href={
-                "#/section?title=" + encodeURIComponent("Депутатские фракции")
-              }
-            >
+            <a href={"#/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
+            <a href={"#/section?title=" + encodeURIComponent("Депутатские фракции")}>
               {t("factions")}
             </a>
             <a
-              href={
-                "#/section?title=" +
-                encodeURIComponent("Представительство в Совете Федерации")
-              }
+              href={"#/section?title=" + encodeURIComponent("Представительство в Совете Федерации")}
             >
               {t("senateRep")}
             </a>
@@ -514,7 +439,10 @@ export default function Header() {
             <a href="#/news">{t("allNews")}</a>
             <a href="#/news">{t("media")}</a>
             {newsCategories
-              .filter((c) => c !== "—" && c !== "Актуальные новости" && c !== "Все новости" && c !== "Медиа")
+              .filter(
+                (c) =>
+                  c !== "—" && c !== "Актуальные новости" && c !== "Все новости" && c !== "Медиа"
+              )
               .map((c) => (
                 <a key={c} href={`#/news?category=${encodeURIComponent(c)}`}>
                   {lang === "ty"
@@ -578,11 +506,7 @@ export default function Header() {
               height={36}
             />
           </a>
-          <button
-            className="icon-btn"
-            aria-label="Версия для слабовидящих"
-            onClick={cycleMode}
-          >
+          <button className="icon-btn" aria-label="Версия для слабовидящих" onClick={cycleMode}>
             👁️
           </button>
           {/* <button
@@ -611,22 +535,12 @@ export default function Header() {
             onClick={() => {
               const newLang = lang === "ru" ? "ty" : "ru";
               setLang(newLang);
-              // Сохраняем текущий маршрут при смене языка
-              const currentRoute = window.location.hash;
-              if (currentRoute) {
-                setTimeout(() => {
-                  window.location.hash = currentRoute;
-                }, 0);
-              }
+              // Language switch doesn't require route mutation in history mode.
             }}
           >
             {lang.toUpperCase()}
           </button>
-          <button
-            className="icon-btn"
-            onClick={() => setMobileOpen(false)}
-            aria-label={t("close")}
-          >
+          <button className="icon-btn" onClick={() => setMobileOpen(false)} aria-label={t("close")}>
             ✕
           </button>
         </div>
@@ -667,43 +581,22 @@ export default function Header() {
                 {t("register")}
               </a>
             </div>
-            <Link
-              to="/"
-              onClick={() => setMobileOpen(false)}
-              className="tile link"
-            >
+            <Link to="/" onClick={() => setMobileOpen(false)} className="tile link">
               {t("home")}
             </Link>
-            <button
-              className="tile link"
-              onClick={() => setMobileSection("vh")}
-            >
+            <button className="tile link" onClick={() => setMobileSection("vh")}>
               {t("aboutVH")} →
             </button>
-            <Link
-              to="/deputies"
-              onClick={() => setMobileOpen(false)}
-              className="tile link"
-            >
+            <Link to="/deputies" onClick={() => setMobileOpen(false)} className="tile link">
               {t("deputies")}
             </Link>
-            <Link
-              to="/appeals"
-              onClick={() => setMobileOpen(false)}
-              className="tile link"
-            >
+            <Link to="/appeals" onClick={() => setMobileOpen(false)} className="tile link">
               {t("appeals")}
             </Link>
-            <button
-              className="tile link"
-              onClick={() => setMobileSection("docs")}
-            >
+            <button className="tile link" onClick={() => setMobileSection("docs")}>
               {t("docs")} →
             </button>
-            <button
-              className="tile link"
-              onClick={() => setMobileSection("news")}
-            >
+            <button className="tile link" onClick={() => setMobileSection("news")}>
               {t("news")} →
             </button>
             <div className="sheet-card social-card" style={{ marginTop: 12 }}>
@@ -731,10 +624,7 @@ export default function Header() {
                     height="100"
                     viewBox="0 0 48 48"
                   >
-                    <path
-                      fill="#1976d2"
-                      d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"
-                    ></path>
+                    <path fill="#1976d2" d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"></path>
                     <path
                       fill="#fff"
                       d="M35.937,18.041c0.046-0.151,0.068-0.291,0.062-0.416C35.984,17.263,35.735,17,35.149,17h-2.618 c-0.661,0-0.966,0.4-1.144,0.801c0,0-1.632,3.359-3.513,5.574c-0.61,0.641-0.92,0.625-1.25,0.625C26.447,24,26,23.786,26,23.199 v-5.185C26,17.32,25.827,17,25.268,17h-4.649C20.212,17,20,17.32,20,17.641c0,0.667,0.898,0.827,1,2.696v3.623 C21,24.84,20.847,25,20.517,25c-0.89,0-2.642-3-3.815-6.932C16.448,17.294,16.194,17,15.533,17h-2.643 C12.127,17,12,17.374,12,17.774c0,0.721,0.6,4.619,3.875,9.101C18.25,30.125,21.379,32,24.149,32c1.678,0,1.85-0.427,1.85-1.094 v-2.972C26,27.133,26.183,27,26.717,27c0.381,0,1.158,0.25,2.658,2c1.73,2.018,2.044,3,3.036,3h2.618 c0.608,0,0.957-0.255,0.971-0.75c0.003-0.126-0.015-0.267-0.056-0.424c-0.194-0.576-1.084-1.984-2.194-3.326 c-0.615-0.743-1.222-1.479-1.501-1.879C32.062,25.36,31.991,25.176,32,25c0.009-0.185,0.105-0.361,0.249-0.607 C32.223,24.393,35.607,19.642,35.937,18.041z"
@@ -757,10 +647,7 @@ export default function Header() {
                     height="100"
                     viewBox="0 0 48 48"
                   >
-                    <path
-                      fill="#29b6f6"
-                      d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"
-                    ></path>
+                    <path fill="#29b6f6" d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"></path>
                     <path
                       fill="#fff"
                       d="M33.95,15l-3.746,19.126c0,0-0.161,0.874-1.245,0.874c-0.576,0-0.873-0.274-0.873-0.274l-8.114-6.733 l-3.97-2.001l-5.095-1.355c0,0-0.907-0.262-0.907-1.012c0-0.625,0.933-0.923,0.933-0.923l21.316-8.468 c-0.001-0.001,0.651-0.235,1.126-0.234C33.667,14,34,14.125,34,14.5C34,14.75,33.95,15,33.95,15z"
@@ -784,28 +671,14 @@ export default function Header() {
             <button className="btn" onClick={() => setMobileSection(null)}>
               {t("back")}
             </button>
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>
-              {t("aboutVH")}
-            </div>
-            <a
-              className="tile link"
-              href="#/about"
-              onClick={() => setMobileOpen(false)}
-            >
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("aboutVH")}</div>
+            <a className="tile link" href="#/about" onClick={() => setMobileOpen(false)}>
               {t("aboutVH")}
             </a>
-            <a
-              className="tile link"
-              href="#/section"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/section" onClick={() => setMobileOpen(false)}>
               {t("structure")}
             </a>
-            <a
-              className="tile link"
-              href="#/committee"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/committee" onClick={() => setMobileOpen(false)}>
               {t("committees")}
             </a>
             <a
@@ -824,35 +697,22 @@ export default function Header() {
             </a>
             <a
               className="tile link"
-              href={
-                "#/section?title=" + encodeURIComponent("Депутатские фракции")
-              }
+              href={"#/section?title=" + encodeURIComponent("Депутатские фракции")}
               onClick={() => setMobileOpen(false)}
             >
               {t("factions")}
             </a>
             <a
               className="tile link"
-              href={
-                "#/section?title=" +
-                encodeURIComponent("Представительство в Совете Федерации")
-              }
+              href={"#/section?title=" + encodeURIComponent("Представительство в Совете Федерации")}
               onClick={() => setMobileOpen(false)}
             >
               {t("senateRep")}
             </a>
-            <a
-              className="tile link"
-              href="#/apparatus"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/apparatus" onClick={() => setMobileOpen(false)}>
               {t("apparatus")}
             </a>
-            <a
-              className="tile link"
-              href="#/contacts"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/contacts" onClick={() => setMobileOpen(false)}>
               {t("contacts")}
             </a>
           </>
@@ -862,35 +722,17 @@ export default function Header() {
             <button className="btn" onClick={() => setMobileSection(null)}>
               {t("back")}
             </button>
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>
-              {t("authorities")}
-            </div>
-            <a
-              className="tile link"
-              href="#/authorities"
-              onClick={() => setMobileOpen(false)}
-            >
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("authorities")}</div>
+            <a className="tile link" href="#/authorities" onClick={() => setMobileOpen(false)}>
               {t("localSelfGovernment")}
             </a>
-            <a
-              className="tile link"
-              href="#/authorities"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/authorities" onClick={() => setMobileOpen(false)}>
               {t("legislativeAssembly")}
             </a>
-            <a
-              className="tile link"
-              href="#/authorities"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/authorities" onClick={() => setMobileOpen(false)}>
               {t("territorialDepartments")}
             </a>
-            <a
-              className="tile link"
-              href="#/authorities"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/authorities" onClick={() => setMobileOpen(false)}>
               {t("headsOfBodies")}
             </a>
           </>
@@ -900,35 +742,17 @@ export default function Header() {
             <button className="btn" onClick={() => setMobileSection(null)}>
               {t("back")}
             </button>
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>
-              {t("activity")}
-            </div>
-            <a
-              className="tile link"
-              href="#/government"
-              onClick={() => setMobileOpen(false)}
-            >
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("activity")}</div>
+            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
               {t("strategy")}
             </a>
-            <a
-              className="tile link"
-              href="#/government"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
               {t("plansAndForecasts")}
             </a>
-            <a
-              className="tile link"
-              href="#/government"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
               {t("resultsAndReports")}
             </a>
-            <a
-              className="tile link"
-              href="#/government"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
               {t("announcements")}
             </a>
           </>
@@ -939,29 +763,20 @@ export default function Header() {
               {t("back")}
             </button>
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("news")}</div>
-            <a
-              className="tile link"
-              href="#/news"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/news" onClick={() => setMobileOpen(false)}>
               {t("hotNews")}
             </a>
-            <a
-              className="tile link"
-              href="#/news"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/news" onClick={() => setMobileOpen(false)}>
               {t("allNews")}
             </a>
-            <a
-              className="tile link"
-              href="#/news"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/news" onClick={() => setMobileOpen(false)}>
               {t("media")}
             </a>
             {newsCategories
-              .filter((c) => c !== "—" && c !== "Актуальные новости" && c !== "Все новости" && c !== "Медиа")
+              .filter(
+                (c) =>
+                  c !== "—" && c !== "Актуальные новости" && c !== "Все новости" && c !== "Медиа"
+              )
               .map((c) => (
                 <a
                   key={c}
@@ -987,35 +802,17 @@ export default function Header() {
             <button className="btn" onClick={() => setMobileSection(null)}>
               {t("back")}
             </button>
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>
-              {t("government")}
-            </div>
-            <a
-              className="tile link"
-              href="#/government"
-              onClick={() => setMobileOpen(false)}
-            >
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("government")}</div>
+            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
               {t("head") || "Глава"}
             </a>
-            <a
-              className="tile link"
-              href="#/deputies"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/deputies" onClick={() => setMobileOpen(false)}>
               {t("deputies")}
             </a>
-            <a
-              className="tile link"
-              href="#/government"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
               {t("governmentComposition")}
             </a>
-            <a
-              className="tile link"
-              href="#/government"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
               {t("executiveBodies")}
             </a>
             <a
@@ -1025,11 +822,7 @@ export default function Header() {
             >
               {t("structure")}
             </a>
-            <a
-              className="tile link"
-              href="#/government"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/government" onClick={() => setMobileOpen(false)}>
               {t("press")}
             </a>
           </>
@@ -1039,14 +832,8 @@ export default function Header() {
             <button className="btn" onClick={() => setMobileSection(null)}>
               {t("back")}
             </button>
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>
-              {t("documents")}
-            </div>
-            <a
-              className="tile link"
-              href="#/docs/laws"
-              onClick={() => setMobileOpen(false)}
-            >
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("documents")}</div>
+            <a className="tile link" href="#/docs/laws" onClick={() => setMobileOpen(false)}>
               {t("docsLaws")}
             </a>
             <a
@@ -1056,25 +843,13 @@ export default function Header() {
             >
               {t("legislation")} ({t("news")})
             </a>
-            <a
-              className="tile link"
-              href="#/docs/resolutions"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/docs/resolutions" onClick={() => setMobileOpen(false)}>
               {t("docsResolutions")}
             </a>
-            <a
-              className="tile link"
-              href="#/docs/initiatives"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/docs/initiatives" onClick={() => setMobileOpen(false)}>
               {t("docsInitiatives")}
             </a>
-            <a
-              className="tile link"
-              href="#/docs/civic"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/docs/civic" onClick={() => setMobileOpen(false)}>
               {t("docsCivic")}
             </a>
             <a
@@ -1084,11 +859,7 @@ export default function Header() {
             >
               {t("docsConstitution")}
             </a>
-            <a
-              className="tile link"
-              href="#/docs/bills"
-              onClick={() => setMobileOpen(false)}
-            >
+            <a className="tile link" href="#/docs/bills" onClick={() => setMobileOpen(false)}>
               {t("docsBills")}
             </a>
           </>

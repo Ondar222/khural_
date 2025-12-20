@@ -12,26 +12,15 @@ export default function EventModal({ open, onClose, events }) {
   if (!open) return null;
 
   return createPortal(
-    <div
-      className="modal-overlay"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button
-          className="modal__close icon-btn"
-          onClick={onClose}
-          aria-label="Закрыть"
-        >
+        <button className="modal__close icon-btn" onClick={onClose} aria-label="Закрыть">
           ✕
         </button>
         <div className="modal__content">
           <h3 style={{ margin: 0 }}>
             {events && events.length > 0
-              ? `События ${new Date(events[0].date).toLocaleDateString(
-                  "ru-RU"
-                )}`
+              ? `События ${new Date(events[0].date).toLocaleDateString("ru-RU")}`
               : "События"}
           </h3>
           <div className="grid" style={{ marginTop: 12 }}>

@@ -45,9 +45,7 @@ export default function PersonDetail({ item, type, backHref }) {
   // Observe sections to highlight the current pill while scrolling
   React.useEffect(() => {
     const ids = ["bio", "contacts", "laws", "income", "schedule"];
-    const elements = ids
-      .map((id) => document.getElementById(id))
-      .filter(Boolean);
+    const elements = ids.map((id) => document.getElementById(id)).filter(Boolean);
     if (!elements.length) return;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -74,18 +72,17 @@ export default function PersonDetail({ item, type, backHref }) {
     <section className="section">
       <div className="container">
         {backHref && (
-          <a className="btn btn-back" href={backHref} style={{ marginBottom: 24, display: "inline-block" }}>
+          <a
+            className="btn btn-back"
+            href={backHref}
+            style={{ marginBottom: 24, display: "inline-block" }}
+          >
             {t("back")}
           </a>
         )}
 
         <div className="card person-hero">
-          <img
-            className="person-portrait"
-            src={avatarSrc}
-            alt={title}
-            loading="lazy"
-          />
+          <img className="person-portrait" src={avatarSrc} alt={title} loading="lazy" />
           <div className="person-hero__body">
             <h1 className="person-name">{title}</h1>
             <div className="person-meta">
@@ -93,9 +90,7 @@ export default function PersonDetail({ item, type, backHref }) {
                 <>
                   {item.position && <div>{item.position}</div>}
                   {item.convocation && <div>созыв {item.convocation}</div>}
-                  {item.district && (
-                    <div>Избирательный округ: {item.district}</div>
-                  )}
+                  {item.district && <div>Избирательный округ: {item.district}</div>}
                   {item.faction && <div>Фракция: «{item.faction}»</div>}
                 </>
               ) : (
@@ -106,10 +101,7 @@ export default function PersonDetail({ item, type, backHref }) {
               )}
             </div>
             <div style={{ marginTop: 12 }}>
-              <a
-                className="btn btn--primary"
-                href={email ? `mailto:${email}` : "#"}
-              >
+              <a className="btn btn--primary" href={email ? `mailto:${email}` : "#"}>
                 Обратиться к депутату
               </a>
             </div>
@@ -182,13 +174,12 @@ export default function PersonDetail({ item, type, backHref }) {
             ) : (
               <>
                 <p>
-                  Родился в с. Суг‑Бажы Каа‑Хемского района Республики Тыва.
-                  Окончил институт по специальности «Лечебное дело».
+                  Родился в с. Суг‑Бажы Каа‑Хемского района Республики Тыва. Окончил институт по
+                  специальности «Лечебное дело».
                 </p>
                 <p>
-                  Работал врачом и руководителем медицинских учреждений.
-                  Зарекомендовал себя компетентным, грамотным и опытным
-                  специалистом.
+                  Работал врачом и руководителем медицинских учреждений. Зарекомендовал себя
+                  компетентным, грамотным и опытным специалистом.
                 </p>
               </>
             )}
@@ -234,24 +225,16 @@ export default function PersonDetail({ item, type, backHref }) {
                 <div className="law-left">
                   <div className="law-ico">📄</div>
                   <div className="law-text">
-                    <div className="law-title">
-                      {laws ? entry.title : `№ 1056580-${i + 1}`}
-                    </div>
+                    <div className="law-title">{laws ? entry.title : `№ 1056580-${i + 1}`}</div>
                     <div className="law-desc">
                       {laws
                         ? entry.desc
                         : "О внесении изменений в Федеральный закон «О государственной регистрации транспортных средств в РФ»"}
                     </div>
-                    <div className="law-status">
-                      {laws ? entry.status : "На рассмотрении"}
-                    </div>
+                    <div className="law-status">{laws ? entry.status : "На рассмотрении"}</div>
                   </div>
                 </div>
-                <a
-                  className="law-link"
-                  href={laws ? entry.url : "#"}
-                  aria-label="Перейти"
-                >
+                <a className="law-link" href={laws ? entry.url : "#"} aria-label="Перейти">
                   ↗
                 </a>
               </div>
@@ -265,8 +248,8 @@ export default function PersonDetail({ item, type, backHref }) {
         <div id="income" className="person-block">
           <h2>Сведения о доходах</h2>
           <p>
-            Скачать информацию о доходах, расходах, об имуществе и
-            обязательствах имущественного характера:
+            Скачать информацию о доходах, расходах, об имуществе и обязательствах имущественного
+            характера:
           </p>
           <div className="grid docs-grid">
             {incomeDocs.map((doc) => (
@@ -274,12 +257,8 @@ export default function PersonDetail({ item, type, backHref }) {
                 <div className="doc-header">
                   <div className="doc-ico">🗂</div>
                   <div>
-                    <div className="doc-title">
-                      Декларация за {doc.year} год
-                    </div>
-                    <div className="doc-meta">
-                      PDF{doc.size ? `, ${doc.size}` : ""}
-                    </div>
+                    <div className="doc-title">Декларация за {doc.year} год</div>
+                    <div className="doc-meta">PDF{doc.size ? `, ${doc.size}` : ""}</div>
                   </div>
                 </div>
                 <div>
@@ -295,15 +274,14 @@ export default function PersonDetail({ item, type, backHref }) {
         <div id="schedule" className="person-block">
           <h2>График приема граждан</h2>
           <div className="sched-grid">
-            {(Array.isArray(schedule[0])
-              ? schedule
-              : schedule.map((s) => [s.day, s.time])
-            ).map(([day, time]) => (
-              <React.Fragment key={day}>
-                <div className="sched-cell tile">{day}</div>
-                <div className="sched-cell tile">{time}</div>
-              </React.Fragment>
-            ))}
+            {(Array.isArray(schedule[0]) ? schedule : schedule.map((s) => [s.day, s.time])).map(
+              ([day, time]) => (
+                <React.Fragment key={day}>
+                  <div className="sched-cell tile">{day}</div>
+                  <div className="sched-cell tile">{time}</div>
+                </React.Fragment>
+              )
+            )}
           </div>
         </div>
       </div>

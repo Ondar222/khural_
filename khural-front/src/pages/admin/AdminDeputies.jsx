@@ -1,23 +1,7 @@
 import React from "react";
-import {
-  App,
-  Button,
-  Input,
-  Modal,
-  Form,
-  Upload,
-  Space,
-  Table,
-} from "antd";
+import { App, Button, Input, Modal, Form, Upload, Space, Table } from "antd";
 
-export default function AdminDeputies({
-  items,
-  onCreate,
-  onUpdate,
-  onDelete,
-  busy,
-  canWrite,
-}) {
+export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, busy, canWrite }) {
   const { message } = App.useApp();
   const [open, setOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
@@ -125,12 +109,7 @@ export default function AdminDeputies({
           className="admin-input"
         />
         <Space wrap>
-          <Button
-            type="primary"
-            onClick={() => setOpen(true)}
-            disabled={!canWrite}
-            loading={busy}
-          >
+          <Button type="primary" onClick={() => setOpen(true)} disabled={!canWrite} loading={busy}>
             + Добавить депутата
           </Button>
         </Space>
@@ -201,9 +180,7 @@ export default function AdminDeputies({
         </Form>
 
         {!canWrite ? (
-          <div className="admin-hint">
-            Для записи в API войдите (или настройте API базу).
-          </div>
+          <div className="admin-hint">Для записи в API войдите (или настройте API базу).</div>
         ) : null}
       </Modal>
 
@@ -269,9 +246,3 @@ export default function AdminDeputies({
     </div>
   );
 }
-
-
-
-
-
-

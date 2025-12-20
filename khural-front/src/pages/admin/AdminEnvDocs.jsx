@@ -26,7 +26,10 @@ export default function AdminEnvDocs() {
 
   return (
     <div className="admin-grid">
-      <div className="admin-card admin-toolbar" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      <div
+        className="admin-card admin-toolbar"
+        style={{ display: "flex", gap: 12, alignItems: "center" }}
+      >
         <div style={{ fontWeight: 900 }}>ENV_VARIABLES.md</div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <Button onClick={load} loading={loading}>
@@ -66,5 +69,3 @@ export default function AdminEnvDocs() {
     </div>
   );
 }
-
-
