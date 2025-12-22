@@ -7,13 +7,36 @@ export default function NewsBlock() {
   const { news, loading, errors, reload } = useData();
   const { t } = useI18n();
   const [category, setCategory] = React.useState("Все");
+  const normalizeCategoryKey = React.useCallback((v) => {
+    return String(v ?? "")
+      .replace(/\u00A0/g, " ") // NBSP
+      .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g, "-") // unicode dashes -> '-'
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }, []);
   const categories = React.useMemo(
-    () => ["Все", ...Array.from(new Set(news.map((n) => n.category)))],
-    [news]
+    () => {
+      const byKey = new Map();
+      (news || []).forEach((n) => {
+        const raw = String(n?.category ?? "").trim();
+        const key = normalizeCategoryKey(raw);
+        if (!key || key === "все") return;
+        if (!byKey.has(key)) byKey.set(key, raw);
+      });
+      return ["Все", ...Array.from(byKey.values())];
+    },
+    [news, normalizeCategoryKey]
   );
   const filtered = React.useMemo(
-    () => (category === "Все" ? news : news.filter((n) => n.category === category)).slice(0, 5),
-    [news, category]
+    () =>
+      (category === "Все"
+        ? news
+        : (news || []).filter(
+            (n) => normalizeCategoryKey(n?.category) === normalizeCategoryKey(category)
+          )
+      ).slice(0, 5),
+    [news, category, normalizeCategoryKey]
   );
 
   const getImage = (i) => {
@@ -81,7 +104,7 @@ export default function NewsBlock() {
           <div className="grid cols-3">
             {filtered.map((n, i) => (
               <a
-                key={n.id}
+                key={`${String(n?.id ?? "news")}-${String(n?.date ?? "")}-${i}`}
                 className="tile"
                 href={`/news?id=${n.id}`}
                 style={{ overflow: "hidden", padding: 0 }}

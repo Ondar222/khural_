@@ -91,6 +91,23 @@ function firstImageLink(images) {
   return firstFileLink(images[0]);
 }
 
+function ensureUniqueIds(items) {
+  const seen = new Set();
+  return (Array.isArray(items) ? items : []).map((item, idx) => {
+    const base =
+      String(item?.id ?? item?._id ?? "").trim() ||
+      `${String(item?.date || "").trim()}-${String(item?.title || "").trim()}-${idx}`;
+    let id = base;
+    let n = 1;
+    while (seen.has(id)) {
+      n += 1;
+      id = `${base}-${n}`;
+    }
+    seen.add(id);
+    return { ...item, id };
+  });
+}
+
 async function fetchJson(path) {
   try {
     const res = await fetch(path, { cache: "no-cache" });
@@ -208,10 +225,10 @@ export default function DataProvider({ children }) {
             image: img,
           };
         });
-        setNews(mapped);
+        setNews(ensureUniqueIds(mapped));
       } else {
         fetchJson("/data/news.json")
-          .then(setNews)
+          .then((arr) => setNews(ensureUniqueIds(arr)))
           .catch((e) => markError("news", e));
       }
       markLoading("news", false);
