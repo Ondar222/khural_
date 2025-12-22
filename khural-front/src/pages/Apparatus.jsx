@@ -64,7 +64,7 @@ export default function Apparatus() {
   };
 
   return (
-    <section className="section">
+    <section className="section apparatus-page">
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">

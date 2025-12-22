@@ -1259,6 +1259,21 @@ a {
   filter: brightness(0.96);
   color: var(--gold);
 }
+
+/* Apparatus page: make "Подробнее" hover like org chart */
+@media (hover: hover) {
+  .apparatus-page .btn.btn--primary:hover,
+  .apparatus-page a.btn.btn--primary:hover,
+  .apparatus-page .btn.btn--primary:focus-visible,
+  .apparatus-page a.btn.btn--primary:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-hover);
+    background: #003366;
+    color: var(--gold);
+    border-color: rgba(255, 215, 0, 0.8);
+    filter: saturate(1.05);
+  }
+}
 .btn--compact {
   width: clamp(120px, 20%, 180px);
   justify-content: center;
@@ -2522,15 +2537,21 @@ body.hc-yb .ant-btn {
   box-shadow: var(--shadow);
   font-weight: 800;
   text-decoration: none;
-  transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease;
+  border: 2px solid transparent;
+  transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease,
+    background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 .org__item:focus-visible {
   box-shadow: var(--ring-strong);
 }
 @media (hover: hover) {
-  a.org__item:hover {
+  .org__item:hover,
+  .org__item:focus-visible {
     transform: translateY(-1px);
     box-shadow: var(--shadow-hover);
+    background: #003366;
+    color: var(--gold);
+    border-color: rgba(255, 215, 0, 0.8);
     filter: saturate(1.05);
   }
 }
