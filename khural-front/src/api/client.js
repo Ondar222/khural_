@@ -1,7 +1,37 @@
 // Simple API client with auth token support and JSON helpers
-function resolveApiBaseUrl() {
-  return import.meta.env.VITE_API_BASE_URL
+function normalizeBaseUrl(value) {
+  if (!value) return "";
+  const str = String(value).trim();
+  // Strip wrapping quotes/backticks and trailing semicolons that sometimes get into env vars
+  return str.replace(/^[`'"]+/, "").replace(/[`'";]+$/, "").trim();
 }
+
+function resolveApiBaseUrl() {
+  // Priority: window override → <meta name="api-base"> → Vite env → sensible fallback
+  if (typeof window !== "undefined" && window.__API_BASE_URL__) {
+    const normalized = normalizeBaseUrl(window.__API_BASE_URL__);
+    if (normalized) return normalized;
+  }
+
+  if (typeof document !== "undefined") {
+    const meta = document.querySelector('meta[name="api-base"]');
+    const normalized = normalizeBaseUrl(meta?.content);
+    if (normalized) return normalized;
+  }
+
+  const fromEnv = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
+  if (fromEnv) return fromEnv;
+
+  // Fallbacks
+  if (typeof window !== "undefined" && window.location) {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") return "/api"; // dev proxy
+    return window.location.origin;
+  }
+
+  return "";
+}
+
 export const API_BASE_URL = resolveApiBaseUrl();
 
 function unwrapApiPayload(payload) {
