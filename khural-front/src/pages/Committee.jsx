@@ -73,6 +73,7 @@ export default function Committee() {
   const leader = members[0];
   const rest = members.slice(1);
   const staff = Array.isArray(committee.staff) ? committee.staff : [];
+  const backToCommittee = encodeURIComponent(`/committee?id=${encodeURIComponent(committee.id)}`);
 
   return (
     <section className="section">
@@ -132,7 +133,13 @@ export default function Committee() {
                       <div className="gov-card__actions">
                         <a
                           className="gov-card__btn"
-                          href={m.id ? `/government?type=dep&id=${m.id}` : "#"}
+                          href={
+                            m.id
+                              ? `/government?type=dep&id=${encodeURIComponent(
+                                  m.id
+                                )}&back=${backToCommittee}`
+                              : "#"
+                          }
                         >
                           Подробнее
                         </a>

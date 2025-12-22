@@ -143,9 +143,13 @@ export default function Government() {
     const dataset = section === "Депутаты" ? deputies : government;
     const item = dataset.find((p) => p.id === selected);
     if (!item) return null;
-    // Для депутатов ведем на страницу списка депутатов, для остальных - на government
-    const backHref =
-      section === "Депутаты"
+    const sp = new URLSearchParams(window.location.search || "");
+    const backParam = sp.get("back");
+    // If caller provided an explicit "back" target, honor it.
+    // Otherwise: for deputies go to /deputies, for others go back to government section.
+    const backHref = backParam
+      ? decodeURIComponent(backParam)
+      : section === "Депутаты"
         ? "/deputies"
         : `/government?type=${section === "Парламент" ? "gov" : "org"}`;
     return (

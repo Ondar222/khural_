@@ -81,7 +81,7 @@ h3 {
   font-family: "Merriweather", serif;
   position: relative;
   display: inline-block; /* underline matches text width */
-  padding-bottom: 10px;
+  padding-bottom: 0;
 }
 h1 {
   font-size: 28px;
@@ -1736,10 +1736,29 @@ a {
   }
 }
 
-/* Gold underline for headings */
-h1::after,
-h2::after,
-h3::after {
+/* Gold underline (only in Menu and Section/Раздел blocks) */
+.mega-sheet h1,
+.mega-sheet h2,
+.mega-sheet h3,
+.mobile-drawer h1,
+.mobile-drawer h2,
+.mobile-drawer h3,
+.section-page h1,
+.section-page h2,
+.section-page h3,
+.sidenav h3 {
+  padding-bottom: 10px;
+}
+.mega-sheet h1::after,
+.mega-sheet h2::after,
+.mega-sheet h3::after,
+.mobile-drawer h1::after,
+.mobile-drawer h2::after,
+.mobile-drawer h3::after,
+.section-page h1::after,
+.section-page h2::after,
+.section-page h3::after,
+.sidenav h3::after {
   content: "";
   position: absolute;
   left: 0;
@@ -2083,12 +2102,6 @@ h3::after {
 .mobile-drawer .tile.link:active {
   transform: none; /* avoid jumpy hover transform on touch */
 }
-.mobile-drawer__top {
-  margin-top: 4px;
-}
-.mobile-social-card {
-  border-radius: 18px;
-}
 .mobile-auth {
   display: flex;
   gap: 10px;
@@ -2205,152 +2218,10 @@ h3::after {
     grid-template-columns: 1fr; /* single column on mobile */
   }
 }
-.social-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: #0d4b8f;
-  color: #ffd700;
-  align-items: center;
-  text-align: center;
-}
-.social-card__header {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  gap: 10px;
-  text-align: center;
-}
-.social-avatar {
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.social-card__title {
-  font-weight: 800;
-}
-.social-card__subtitle {
-  color: #ffd700;
-  font-size: 14px;
-}
-/* Mobile tweaks keep consistent visuals (colors already set globally) */
-@media (max-width: 959px) {
-  .social-icons .sicon {
-    background: transparent;
-  }
-}
-.social-card__actions {
-  display: flex;
-  gap: 8px;
-}
-.sbtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 18px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  text-decoration: none;
-  font-weight: 800;
-  color: var(--primary);
-}
-.sbtn--vk {
-  color: #0077ff;
-  border-color: #cfe3ff;
-}
-.sbtn--tg {
-  color: #229ed9;
-  border-color: #bfe6f7;
-}
-.sbtn--ok {
-  color: #f58220;
-  border-color: #ffd5b2;
-}
-.sbtn--mx {
-  color: #6c47ff;
-  border-color: #d4ccff;
-}
-/* compact circular icon buttons for social links */
-.social-icons {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-.sicon {
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  /* background: #fff; */
-  border: 1px solid #ffd700;
-  color: #ffd700;
-  text-decoration: none;
-}
-.sicon svg {
-  width: 20px;
-  height: 20px;
-  display: block;
-}
-@media (max-width: 959px) {
-  .social-avatar {
-    width: 60px;
-    height: 60px;
-  }
-
-  .social-card__header {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .social-icons {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-  }
-
-  .sicon {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    width: 40px; /* keep icon compact on mobile */
-    height: 40px;
-    border-radius: 999px;
-  }
-}
-.sheet-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: var(--shadow);
-}
-/* Apply blue background and yellow text to the social card variant (all viewports) */
-.sheet-card.social-card {
-  background: #0d4b8f;
-  color: #ffd700;
-  padding: 14px; /* slightly more compact to reduce empty space */
-}
-/* Ensure full blue background for Head social card on mobile */
-@media (max-width: 959px) {
-  .sheet-card.social-card {
-    background: #0d4b8f;
-    color: #ffd700;
-  }
-}
 .sheet-col h3 {
   margin: 0 0 12px;
   font-size: 18px;
   color: #111827;
-}
-/* Clean headings in mega menu: remove gold underline */
-/* Keep yellow underline on desktop; hide only on mobile */
-@media (max-width: 959px) {
-  .mega-sheet .sheet-col h3::after {
-    display: none;
-  }
 }
 .sheet-col a {
   display: block;
@@ -3015,14 +2886,7 @@ body.hc-yb .ant-btn {
   gap: 12px;
   flex-wrap: wrap;
   justify-content: flex-start;
-}
-@media (min-width: 960px) {
-  .gov-toolbar {
-    flex-wrap: nowrap;
-  }
-  .gov-toolbar__controls {
-    flex-wrap: nowrap;
-  }
+  max-width: 100%;
 }
 @media (max-width: 560px) {
   .gov-toolbar__controls > * {

@@ -44,7 +44,7 @@ export default function SectionPage() {
     // Committees list page
     if (title === "Комитеты") {
       return (
-        <section className="section">
+        <section className="section section-page">
           <div className="container">
             <div className="page-grid">
               <div>
@@ -117,7 +117,7 @@ export default function SectionPage() {
       ];
 
       return (
-        <section className="section">
+        <section className="section section-page">
           <div className="container">
             <div className="page-grid">
               <div>
@@ -139,7 +139,7 @@ export default function SectionPage() {
 
     if (title === "Представительство в Совете Федерации") {
       return (
-        <section className="section">
+        <section className="section section-page">
           <div className="container">
             <div className="page-grid">
               <div>
@@ -166,7 +166,7 @@ export default function SectionPage() {
 
     if (title === "Молодежный Хурал") {
       return (
-        <section className="section">
+        <section className="section section-page">
           <div className="container">
             <div className="page-grid">
               <div>
@@ -192,7 +192,7 @@ export default function SectionPage() {
     }
 
     return (
-      <section className="section">
+      <section className="section section-page">
         <div className="container">
           <div className="page-grid">
             <div>
@@ -211,7 +211,7 @@ export default function SectionPage() {
 
   // Structure diagram view (as on the picture)
   return (
-    <section className="section">
+    <section className="section section-page">
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main" id="focus-overview">

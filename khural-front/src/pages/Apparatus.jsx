@@ -68,11 +68,13 @@ export default function Apparatus() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
-            <div className="tabs" style={{ marginTop: 8, marginBottom: 12 }}>
-              <a className="pill" href="/about?tab=structure&focus=overview">
-                ← Назад к структуре
-              </a>
-            </div>
+            <a
+              className="btn btn-back"
+              href="/about?tab=structure&focus=overview"
+              style={{ marginBottom: 16, display: "inline-block" }}
+            >
+              ← Назад к структуре
+            </a>
             <h1>Аппарат Верховного Хурала (парламента) Республики Тыва</h1>
 
             <div className="orgv2">
