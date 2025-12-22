@@ -603,6 +603,53 @@ a {
   word-break: break-word;
   text-align: right;
 }
+
+/* News category filter (desktop pills, mobile select) */
+.news-cats {
+  margin-bottom: 16px;
+}
+.news-cats--pills {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.news-cats--select {
+  display: none;
+}
+.news-filter {
+  display: grid;
+  gap: 8px;
+  width: min(520px, 100%);
+}
+.news-filter__label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
+}
+.news-filter-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #0a3b72;
+  border-radius: 12px;
+  outline: none;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.news-filter-select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.25);
+}
+
+@media (max-width: 959px) {
+  .news-cats--pills {
+    display: none;
+  }
+  .news-cats--select {
+    display: block;
+  }
+}
 @media (max-width: 959px) {
   .hero .social-left {
     position: absolute;

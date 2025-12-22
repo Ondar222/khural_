@@ -47,14 +47,26 @@ export default function NewsBlock() {
           empty={!loading?.news && (!news || news.length === 0)}
           emptyDescription="Новостей пока нет"
         >
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              flexWrap: "wrap",
-              marginBottom: 16,
-            }}
-          >
+          {/* Desktop: pills. Mobile: single select */}
+          <div className="news-cats news-cats--select">
+            <label className="news-filter">
+              <span className="news-filter__label">Категория</span>
+              <select
+                className="news-filter-select"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                aria-label="Фильтр новостей по категории"
+              >
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="news-cats news-cats--pills">
             {categories.map((c) => (
               <button
                 key={c}
