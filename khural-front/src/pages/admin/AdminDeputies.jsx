@@ -246,3 +246,4 @@ export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, bus
     </div>
   );
 }
+

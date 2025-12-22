@@ -263,3 +263,4 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
     </div>
   );
 }
+

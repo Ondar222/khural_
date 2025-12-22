@@ -418,8 +418,19 @@ a {
   position: relative;
   height: 70vh;
   min-height: 460px;
-  border-radius: 0;
+  border-radius: var(--radius-lg);
   overflow: hidden;
+}
+.hero.hero--contained .caption {
+  left: 0;
+  right: 0;
+}
+.hero.hero--contained .social-left {
+  left: 0;
+}
+.hero.hero--contained .arrows {
+  left: 0;
+  right: 0;
 }
 .hero .slides {
   position: absolute;
@@ -1498,8 +1509,8 @@ a {
     width: auto;
   }
   .hero {
-    height: 56vh;
-    min-height: 380px;
+    height: 44vh;
+    min-height: 300px;
   }
   .hero .title {
     font-size: 30px;

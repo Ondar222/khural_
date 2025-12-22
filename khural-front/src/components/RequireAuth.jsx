@@ -24,3 +24,4 @@ export default function RequireAuth({ children }) {
   if (!isAuthenticated) return null;
   return <>{children}</>;
 }
+

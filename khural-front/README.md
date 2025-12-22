@@ -43,3 +43,4 @@ Example env file is in `env.example` (copy it to `.env.local` if you want to use
 - Refresh token is stored as `refresh_token`
 
 On **401** the client attempts to refresh the access token via `POST /auth/refresh` and retries the request once.
+
