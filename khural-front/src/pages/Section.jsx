@@ -44,6 +44,7 @@ export default function SectionPage() {
       title === "Представительство в Совете Федерации" ||
       title === "Депутатские фракции" ||
       title === "Комиссии" ||
+      title === "Молодежный Хурал" ||
       title.startsWith("Подробнее о:");
 
     // Committees list page
@@ -175,7 +176,7 @@ export default function SectionPage() {
           <div className="container">
             <div className="page-grid">
               <div>
-                <h1>{title}</h1>
+                <h1 className="no-gold-underline">{title}</h1>
                 <p>
                   Раздел в разработке. Здесь будет информация о составе, мероприятиях и документах
                   Молодежного Хурала.
