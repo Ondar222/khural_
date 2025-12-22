@@ -674,9 +674,59 @@ a {
 .resources-grid {
   grid-template-columns: 2fr 1fr;
 }
+/* Portals: collapsible on mobile */
+.portals-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.portals-title {
+  margin: 0;
+}
+.portals-toggle {
+  display: none; /* only on mobile */
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #0a1f44;
+  font-weight: 800;
+  cursor: pointer;
+}
+.portals-toggle__chev {
+  display: inline-block;
+  transition: transform 180ms ease;
+  transform: rotate(-90deg);
+}
+.portals-body {
+  min-width: 0;
+}
+
 @media (max-width: 959px) {
   .resources-grid {
     grid-template-columns: 1fr !important;
+  }
+  .portals-toggle {
+    display: inline-flex;
+  }
+  .portals-body {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 240ms ease;
+  }
+  .portals-body.is-open {
+    max-height: 1200px; /* enough for all items */
+  }
+  .portals-body .tile {
+    height: 96px !important; /* more compact on mobile */
+  }
+  .portals-toggle[aria-expanded="true"] .portals-toggle__chev {
+    transform: rotate(0deg);
   }
 }
 /* Achievements responsive grid */

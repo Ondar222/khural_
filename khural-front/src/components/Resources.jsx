@@ -51,12 +51,30 @@ const LINKS = [
 
 export default function Resources() {
   const { t } = useI18n();
+  const [portalsOpen, setPortalsOpen] = React.useState(false);
+  const portalsId = "portals-list";
+
   return (
     <section className="section">
       <div className="container">
-        <h2>{t("Порталы")}</h2>
+        <div className="portals-head">
+          <h2 className="portals-title">{t("Порталы")}</h2>
+          <button
+            type="button"
+            className="portals-toggle"
+            aria-expanded={portalsOpen}
+            aria-controls={portalsId}
+            onClick={() => setPortalsOpen((v) => !v)}
+          >
+            <span>{portalsOpen ? t("Скрыть") : t("Показать")}</span>
+            <span className="portals-toggle__chev" aria-hidden>
+              ▾
+            </span>
+          </button>
+        </div>
         <div className="grid resources-grid" style={{ gap: 24 }}>
-          <div className="grid cols-3">
+          <div id={portalsId} className={`portals-body ${portalsOpen ? "is-open" : ""}`}>
+            <div className="grid cols-3">
             {LINKS.map(({ label, href }, i) => (
               <a
                 key={i}
@@ -70,6 +88,7 @@ export default function Resources() {
                 <span>→</span>
               </a>
             ))}
+            </div>
           </div>
           <div className="grid" style={{ gap: 24 }}>
             <GosWidget id="gos-widget-1" src="/js/gos_stub1.js" variant={1} />
