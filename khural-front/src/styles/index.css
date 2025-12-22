@@ -1769,6 +1769,14 @@ a {
   border-radius: 3px;
 }
 
+/* Opt-out for specific headings */
+.no-gold-underline {
+  padding-bottom: 0 !important;
+}
+.no-gold-underline::after {
+  display: none !important;
+}
+
 /* Footer */
 .site-footer {
   margin-top: 48px;

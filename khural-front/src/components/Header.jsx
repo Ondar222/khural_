@@ -142,9 +142,6 @@ export default function Header() {
                 <a href="/about">{t("aboutVH")}</a>
                 <a href="/section">{t("structure")}</a>
                 <a href="/committee">{t("committees")}</a>
-                <a href={`/news?category=${encodeURIComponent("Комитеты")}`}>
-                  {t("committees")} ({t("news")})
-                </a>
                 <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
                 <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
                   {t("factions")}
@@ -298,9 +295,6 @@ export default function Header() {
             <a href="/about">{t("aboutVH")}</a>
             <a href="/section">{t("structure")}</a>
             <a href="/committee">{t("committees")}</a>
-            <a href={`/news?category=${encodeURIComponent("Комитеты")}`}>
-              {t("committees")} ({t("news")})
-            </a>
             <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
             <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
               {t("factions")}
@@ -496,13 +490,6 @@ export default function Header() {
             </a>
             <a className="tile link" href="/committee" onClick={() => setMobileOpen(false)}>
               {t("committees")}
-            </a>
-            <a
-              className="tile link"
-              href={`/news?category=${encodeURIComponent("Комитеты")}`}
-              onClick={() => setMobileOpen(false)}
-            >
-              {t("committees")} ({t("news")})
             </a>
             <a
               className="tile link"

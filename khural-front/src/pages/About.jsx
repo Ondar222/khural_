@@ -380,11 +380,6 @@ export default function About() {
                 </div>
               </div>
 
-              <div style={{ marginTop: 14 }}>
-                <a className="btn" href="/about?tab=structure">
-                  Ссылка на структуру (без перерисовки) →
-                </a>
-              </div>
             </div>
           </div>
           <SideNav />

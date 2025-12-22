@@ -40,6 +40,10 @@ export default function SectionPage() {
     } catch {
       // ignore invalid URI encoding
     }
+    const noGoldUnderline =
+      title === "Представительство в Совете Федерации" ||
+      title === "Депутатские фракции" ||
+      title === "Комиссии";
 
     // Committees list page
     if (title === "Комитеты") {
@@ -121,7 +125,7 @@ export default function SectionPage() {
           <div className="container">
             <div className="page-grid">
               <div>
-                <h1>{title}</h1>
+                <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
                 <ul>
                   {commissionsList.map((item) => (
                     <li key={item.id}>
@@ -143,7 +147,7 @@ export default function SectionPage() {
           <div className="container">
             <div className="page-grid">
               <div>
-                <h1>{title}</h1>
+                <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
                 <p>
                   Раздел в разработке. Здесь будет информация о представителях Республики Тыва в
                   Совете Федерации, контакты и биографии.
@@ -196,7 +200,7 @@ export default function SectionPage() {
         <div className="container">
           <div className="page-grid">
             <div>
-              <h1>{title}</h1>
+              <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
               <p>
                 Раздел «{title}» пока не заполнен. Если это важный пункт меню — скажи, и я добавлю
                 содержимое/данные.
@@ -215,7 +219,9 @@ export default function SectionPage() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main" id="focus-overview">
-            <h1>Структура Верховного Хурала (парламента) Республики Тыва</h1>
+            <h1 className="no-gold-underline">
+              Структура Верховного Хурала (парламента) Республики Тыва
+            </h1>
             <div className="org org--khural">
               <div className="org__row org__row--center">
                 <div className="org__item org__item--blue org__item--xl">
