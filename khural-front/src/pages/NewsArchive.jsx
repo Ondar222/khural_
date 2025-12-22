@@ -126,7 +126,7 @@ export default function NewsArchive() {
             <article className="card" style={{ padding: 16 }}>
               <div style={{ height: 340, overflow: "hidden", borderRadius: 12 }}>
                 <img
-                  src={getImage(Math.max(0, idx))}
+                  src={item?.image || getImage(Math.max(0, idx))}
                   alt=""
                   loading="lazy"
                   decoding="async"

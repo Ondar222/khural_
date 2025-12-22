@@ -1,5 +1,5 @@
 import React from "react";
-import { tryApiFetch, SliderApi, AboutApi } from "../api/client.js";
+import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi } from "../api/client.js";
 
 const DataContext = React.createContext({
   slides: [],
@@ -72,6 +72,17 @@ function pick(...vals) {
   return undefined;
 }
 
+function joinApiBase(path) {
+  const p = String(path || "");
+  if (!p) return "";
+  // already absolute
+  if (/^https?:\/\//i.test(p)) return p;
+  const base = String(API_BASE_URL || "").replace(/\/+$/, "");
+  if (!base) return p;
+  if (p.startsWith("/")) return `${base}${p}`;
+  return `${base}/${p}`;
+}
+
 function firstFileLink(maybeFile) {
   if (!maybeFile) return "";
   // Possible shapes:
@@ -80,10 +91,10 @@ function firstFileLink(maybeFile) {
   // - { id } or { file: { id } } (backend may expose only id)
   const link =
     maybeFile?.link || maybeFile?.url || maybeFile?.file?.link || maybeFile?.file?.url || "";
-  if (link) return String(link);
+  if (link) return joinApiBase(String(link));
   const id = maybeFile?.id || maybeFile?.file?.id;
   if (!id) return "";
-  return `/files/v2/${String(id)}`;
+  return joinApiBase(`/files/v2/${String(id)}`);
 }
 
 function firstImageLink(images) {
