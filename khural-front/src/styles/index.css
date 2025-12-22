@@ -2106,8 +2106,10 @@ h3::after {
 .mega-sheet .sheet-header {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 10px;
-  padding: 16px 24px;
+  min-height: 64px; /* match main header row height */
+  padding: 0 24px; /* match .container horizontal padding */
   width: 100%;
   max-width: var(--maxw);
   margin: 0 auto;
