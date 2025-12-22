@@ -13,7 +13,7 @@ export default function SideNav({ title = "Разделы", links: overrideLinks
       label: "Представительство в Совете Федерации",
       href: "/section?title=" + encodeURIComponent("Представительство в Совете Федерации"),
     },
-    { label: "Депутатские фракции", href: "/about?tab=structure&focus=factions" },
+    { label: "Депутатские фракции", href: "/section?title=" + encodeURIComponent("Депутатские фракции") },
     { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
     { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
     {

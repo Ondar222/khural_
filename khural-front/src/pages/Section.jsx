@@ -21,7 +21,7 @@ function useQuery() {
 export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
-  const { committees } = useData();
+  const { committees, factions: structureFactions } = useData();
   const focus = q.get("focus");
 
   // Scroll to a requested block from URL (e.g., /section?focus=committees)
@@ -135,6 +135,46 @@ export default function SectionPage() {
                     </li>
                   ))}
                 </ul>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (title === "Депутатские фракции") {
+      const factions = (structureFactions || []).filter((x) => x && x !== "Все");
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div>
+                <h1 className="no-gold-underline">{title}</h1>
+                <p style={{ marginTop: 0 }}>
+                  Выберите фракцию, чтобы перейти к списку депутатов по этой фракции.
+                </p>
+                {factions.length ? (
+                  <div className="grid cols-2" style={{ marginTop: 12 }}>
+                    {factions.map((f) => (
+                      <a
+                        key={f}
+                        className="tile link"
+                        href={`/deputies?faction=${encodeURIComponent(f)}`}
+                      >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                          <span aria-hidden="true">‹</span>
+                          {f}
+                        </span>
+                        <span aria-hidden="true">›</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="tile" style={{ marginTop: 12 }}>
+                    Список фракций пока пуст.
+                  </div>
+                )}
               </div>
               <SideNav title="Разделы" />
             </div>
