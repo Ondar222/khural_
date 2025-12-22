@@ -80,7 +80,7 @@ export default function Committee() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
-            <h1>{committee.title}</h1>
+            <h1 className="h1-compact">{committee.title}</h1>
 
             {/* Visible deputies list (cards) */}
             {members.length ? (

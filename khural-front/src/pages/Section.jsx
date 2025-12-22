@@ -219,7 +219,7 @@ export default function SectionPage() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main" id="focus-overview">
-            <h1 className="no-gold-underline">
+            <h1 className="no-gold-underline h1-compact">
               Структура Верховного Хурала (парламента) Республики Тыва
             </h1>
             <div className="org org--khural">

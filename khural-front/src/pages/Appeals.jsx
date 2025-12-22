@@ -23,7 +23,7 @@ export default function Appeals() {
   return (
     <section className="section">
       <div className="container">
-        <h1>Обращения граждан</h1>
+        <h1 className="h1-compact">Обращения граждан</h1>
 
         {!isAuthenticated ? (
           <Alert
