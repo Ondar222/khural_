@@ -6,13 +6,13 @@ export default defineConfig({
   server: {
     port: 5173,
     open: false,
-    proxy: {
-      "/api": {
-        // khural-backend now listens on 4000 by default
-        target: "http://localhost:4000",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-      },
-    },
+    // proxy: {
+    //   "/api": {
+    //     // khural-backend now listens on 4000 by default
+    //     target: "http://localhost:4000",
+    //     changeOrigin: true,
+    //     rewrite: (path) => path.replace(/^\/api/, ""),
+    //   },
+    // },
   },
 });

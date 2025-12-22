@@ -1,32 +1,8 @@
 // Simple API client with auth token support and JSON helpers
 function resolveApiBaseUrl() {
-  // 1) Runtime override via window.__API_BASE_URL__
-  if (typeof window !== "undefined" && window.__API_BASE_URL__) {
-    return String(window.__API_BASE_URL__);
-  }
-  // 2) Runtime override via <meta name="api-base" content="...">
-  if (typeof document !== "undefined") {
-    const meta = document.querySelector('meta[name="api-base"]');
-    if (meta && meta.content) return meta.content;
-  }
-  // 3) Build-time env
-  const fromEnv = import.meta?.env?.VITE_API_BASE_URL;
-  if (fromEnv) return String(fromEnv);
-  // 4) Safe defaults:
-  // - local dev: use Vite proxy (/api -> http://localhost:3000)
-  // - otherwise: same origin as frontend (reverse proxy / single domain deploy)
-  if (typeof window !== "undefined" && window.location) {
-    const host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") return "/api";
-    return window.location.origin;
-  }
-  return "/api";
+  return import.meta.env.VITE_API_BASE_URL
 }
 export const API_BASE_URL = resolveApiBaseUrl();
-const ACCESS_TOKEN_STORAGE_KEY = import.meta?.env?.VITE_API_TOKEN_STORAGE_KEY || "access_token";
-const LEGACY_ACCESS_TOKEN_KEYS = ["auth_token"];
-const REFRESH_TOKEN_STORAGE_KEY =
-  import.meta?.env?.VITE_API_REFRESH_TOKEN_STORAGE_KEY || "refresh_token";
 
 function unwrapApiPayload(payload) {
   // Many endpoints return plain JSON; some return { data, meta }.

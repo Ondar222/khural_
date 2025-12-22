@@ -8,6 +8,7 @@
 .env.*
 .DS_Store
 khural-backend__backup_*/
+package-lock.json
 
 
 
