@@ -221,17 +221,16 @@ export async function tryApiFetch(path, options) {
 
 export const AuthApi = {
   async register(user) {
-    // Backend supports both POST /user/ and POST /auth/register
-    // Try /auth/register first (preferred), fallback to /user/
+    // Some deployments expose only POST /user; others have /auth/register.
+    // Prefer /user to avoid 404 spam, fallback to /auth/register.
     try {
-      return await apiFetch("/auth/register", {
+      return await apiFetch("/user", {
         method: "POST",
         body: user,
         auth: false,
       });
     } catch {
-      // Fallback to /user/ endpoint
-      return await apiFetch("/user", {
+      return await apiFetch("/auth/register", {
         method: "POST",
         body: user,
         auth: false,
@@ -263,7 +262,19 @@ export const AuthApi = {
     });
   },
   async me() {
-    return apiFetch("/user/me", { method: "GET", auth: true });
+    // Normalize "current user" endpoint across backends
+    // 1) Newer backends: GET /user/me
+    // 2) Older spec in docs: GET /auth/profile
+    // 3) Legacy: GET /user
+    try {
+      return await apiFetch("/user/me", { method: "GET", auth: true });
+    } catch {
+      try {
+        return await apiFetch("/auth/profile", { method: "GET", auth: true });
+      } catch {
+        return apiFetch("/user", { method: "GET", auth: true });
+      }
+    }
   },
 };
 

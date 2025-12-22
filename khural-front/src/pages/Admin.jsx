@@ -162,15 +162,12 @@ export default function Admin() {
     if (Array.isArray(apiEvents)) setEvents(apiEvents.map(toEventRow));
   };
 
-  const createNews = async ({ titleRu, descRu, titleTu, descTu, imageFile }) => {
+  const createNews = async ({ titleRu, descRu, imageFile }) => {
     setBusy(true);
     try {
       const created = await NewsApi.create({
         content: [
           { lang: "ru", title: titleRu, description: descRu },
-          ...(titleTu || descTu
-            ? [{ lang: "tu", title: titleTu || "", description: descTu || "" }]
-            : []),
         ],
       });
       if (created?.id && imageFile) {
@@ -183,15 +180,12 @@ export default function Admin() {
     }
   };
 
-  const updateNews = async (id, { titleRu, descRu, titleTu, descTu, imageFile }) => {
+  const updateNews = async (id, { titleRu, descRu, imageFile }) => {
     setBusy(true);
     try {
       await NewsApi.patch(id, {
         content: [
           { lang: "ru", title: titleRu, description: descRu },
-          ...(titleTu || descTu
-            ? [{ lang: "tu", title: titleTu || "", description: descTu || "" }]
-            : []),
         ],
       });
       if (imageFile) await NewsApi.uploadMedia(id, imageFile);

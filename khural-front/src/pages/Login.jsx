@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 
 export default function Login() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const { route, navigate } = useHashRoute();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -18,16 +18,23 @@ export default function Login() {
     return next;
   }, [route]);
 
+  const targetAfterLogin = React.useMemo(() => {
+    // If explicit next is provided, honor it. Otherwise, admins go to /admin, others to home.
+    if (nextPath && nextPath !== "/") return nextPath;
+    if ((user?.role || "").toString().toLowerCase() === "admin") return "/admin";
+    return "/";
+  }, [nextPath, user]);
+
   React.useEffect(() => {
-    if (isAuthenticated) navigate(nextPath);
-  }, [isAuthenticated, navigate, nextPath]);
+    if (isAuthenticated) navigate(targetAfterLogin);
+  }, [isAuthenticated, navigate, targetAfterLogin]);
 
   const onFinish = async (values) => {
     setError("");
     setLoading(true);
     try {
       await login(values);
-      navigate(nextPath);
+      navigate(targetAfterLogin);
     } catch (e) {
       setError(e?.message || "Ошибка входа");
     } finally {

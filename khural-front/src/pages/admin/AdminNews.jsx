@@ -67,13 +67,10 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
           <Button
             onClick={() => {
               const ru = pickRu(row.content);
-              const tu = Array.isArray(row.content) && row.content.find((x) => x?.lang === "tu");
               setEditing(row);
               editForm.setFieldsValue({
                 titleRu: ru?.title || "",
                 descRu: ru?.description || "",
-                titleTu: tu?.title || "",
-                descTu: tu?.description || "",
               });
               setEditFile(null);
               setEditOpen(true);
@@ -96,8 +93,6 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
       await onCreate({
         titleRu: values.titleRu,
         descRu: values.descRu,
-        titleTu: values.titleTu || "",
-        descTu: values.descTu || "",
         imageFile: file,
       });
       setOpen(false);
@@ -115,8 +110,6 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
       await onUpdate?.(editing?.id, {
         titleRu: values.titleRu,
         descRu: values.descRu,
-        titleTu: values.titleTu || "",
-        descTu: values.descTu || "",
         imageFile: editFile,
       });
       setEditOpen(false);
@@ -179,15 +172,6 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
             <Input.TextArea autoSize={{ minRows: 5, maxRows: 10 }} />
           </Form.Item>
 
-          <div className="admin-split">
-            <Form.Item label="Заголовок (TU)" name="titleTu">
-              <Input />
-            </Form.Item>
-            <Form.Item label="Описание (TU)" name="descTu">
-              <Input.TextArea autoSize={{ minRows: 3, maxRows: 8 }} />
-            </Form.Item>
-          </div>
-
           <Form.Item label="Обложка (опционально)">
             <Upload
               accept="image/*"
@@ -235,15 +219,6 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
           >
             <Input.TextArea autoSize={{ minRows: 5, maxRows: 10 }} />
           </Form.Item>
-
-          <div className="admin-split">
-            <Form.Item label="Заголовок (TU)" name="titleTu">
-              <Input />
-            </Form.Item>
-            <Form.Item label="Описание (TU)" name="descTu">
-              <Input.TextArea autoSize={{ minRows: 3, maxRows: 8 }} />
-            </Form.Item>
-          </div>
 
           <Form.Item label="Добавить/обновить обложку (опционально)">
             <Upload

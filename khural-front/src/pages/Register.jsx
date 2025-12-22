@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 
 export default function Register() {
-  const { register } = useAuth();
+  const { register, login, isAuthenticated } = useAuth();
   const { navigate } = useHashRoute();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -16,8 +16,14 @@ export default function Register() {
     setLoading(true);
     try {
       await register(values);
+      // Try to log in immediately after successful registration
+      try {
+        await login({ email: values.email, password: values.password });
+      } catch {
+        // ignore; fallback to manual login if backend doesn't allow immediate login
+      }
       setSuccess(true);
-      setTimeout(() => navigate("/login"), 800);
+      setTimeout(() => navigate(isAuthenticated ? "/" : "/login"), 800);
     } catch (e) {
       setError(e?.message || "Ошибка регистрации");
     } finally {

@@ -125,16 +125,7 @@ export default function Deputies() {
               emptyDescription="Список депутатов пуст"
             >
               {/* Single-row filters from Structure */}
-              <div
-                className="filters"
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  margin: "12px 0 18px",
-                }}
-              >
+              <div className="filters filters--deputies">
                 <Dropdown
                   open={openConv}
                   onOpenChange={setOpenConv}
