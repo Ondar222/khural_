@@ -43,7 +43,8 @@ export default function SectionPage() {
     const noGoldUnderline =
       title === "Представительство в Совете Федерации" ||
       title === "Депутатские фракции" ||
-      title === "Комиссии";
+      title === "Комиссии" ||
+      title.startsWith("Подробнее о:");
 
     // Committees list page
     if (title === "Комитеты") {

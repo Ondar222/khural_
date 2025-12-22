@@ -76,11 +76,17 @@ export default function Apparatus() {
               ← Назад к структуре
             </a>
             <h1 className="h1-compact">Аппарат Верховного Хурала (парламента) Республики Тыва</h1>
+            <p className="apparatus-lead">
+              Аппарат обеспечивает организационную, правовую, информационно-аналитическую и
+              административно-хозяйственную деятельность Верховного Хурала (парламента) Республики
+              Тыва.
+            </p>
 
             <div className="orgv2">
-              {/* Руководитель + заместитель */}
-              <div className="orgv2__chain">
-                <div className="orgv2__line" />
+              {/* Руководство */}
+              <div className="apparatus-section">
+                <h2 className="apparatus-section__title">Руководство аппарата</h2>
+                <div className="apparatus-leadership">
                 <div className="person-card person-card--round-xl">
                   <img
                     className="person-card__photo"
@@ -128,29 +134,34 @@ export default function Apparatus() {
                     </a>
                   </div>
                 </div>
-              </div>
-
-              {/* Ветка организационного управления */}
-              <div className="orgv2__strip" style={{ justifyContent: "center" }}>
-                <div
-                  id="unit-org"
-                  className="orgv2__unit"
-                  role="button"
-                  onClick={() =>
-                    setUnitModal({
-                      title: "Организационное управление аппарата",
-                      link: "/apparatus?unit=org",
-                    })
-                  }
-                >
-                  <div className="orgv2__unit_title">Организационное управление аппарата</div>
-                  <a className="btn btn--primary btn--compact" href="/government?type=gov">
-                    Подробнее
-                  </a>
                 </div>
               </div>
 
-              <div className="grid cols-1" style={{ gap: 16, marginBottom: 24 }}>
+              {/* Ветка организационного управления */}
+              <div className="apparatus-section">
+                <h2 className="apparatus-section__title">Ключевое подразделение</h2>
+                <div className="apparatus-feature">
+                  <div
+                    id="unit-org"
+                    className="orgv2__unit"
+                    role="button"
+                    onClick={() =>
+                      setUnitModal({
+                        title: "Организационное управление аппарата",
+                        link: "/apparatus?unit=org",
+                      })
+                    }
+                  >
+                    <div className="orgv2__unit_title">Организационное управление аппарата</div>
+                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
+                      Подробнее
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="apparatus-section">
+                <h2 className="apparatus-section__title">Ответственный представитель</h2>
                 <div className="person-card person-card--committee">
                   <img
                     className="person-card__photo"
@@ -177,31 +188,39 @@ export default function Apparatus() {
               </div>
 
               {/* Прочие подразделения аппарата (раскрывающиеся блоки) */}
-              <div className="orgv2__list">
-                {[
-                  ["law", "Государственно-правовое управление"],
-                  ["admin", "Управление делами Аппарата ВХ РТ"],
-                  ["ia", "Информационно-аналитическое управление"],
-                  ["fin", "Управление финансов, бухгалтерского учета и отчетности Аппарата ВХ РТ"],
-                  ["it", "Отдел технического и программного обеспечения Аппарата ВХ РТ"],
-                  ["hr", "Отдел кадров и государственной службы Аппарата ВХ РТ"],
-                ].map(([id, title]) => (
-                  <React.Fragment key={id}>
-                    <div
-                      className={`orgv2__pill orgv2__pill--outline orgv2__pill--button ${
-                        openUnit === id ? "orgv2__pill--open" : ""
-                      }`}
-                      onClick={() => setOpenUnit(openUnit === id ? null : id)}
-                    >
-                      {title}
-                    </div>
-                    {openUnit === id ? renderUnit(id, title) : null}
-                  </React.Fragment>
-                ))}
+              <div className="apparatus-section">
+                <h2 className="apparatus-section__title">Подразделения аппарата</h2>
+                <div className="orgv2__list apparatus-units">
+                  {[
+                    ["law", "Государственно-правовое управление"],
+                    ["admin", "Управление делами Аппарата ВХ РТ"],
+                    ["ia", "Информационно-аналитическое управление"],
+                    ["fin", "Управление финансов, бухгалтерского учета и отчетности Аппарата ВХ РТ"],
+                    ["it", "Отдел технического и программного обеспечения Аппарата ВХ РТ"],
+                    ["hr", "Отдел кадров и государственной службы Аппарата ВХ РТ"],
+                  ].map(([id, title]) => (
+                    <React.Fragment key={id}>
+                      <div
+                        className={`orgv2__pill orgv2__pill--outline orgv2__pill--button apparatus-units__pill ${
+                          openUnit === id ? "orgv2__pill--open" : ""
+                        }`}
+                        onClick={() => setOpenUnit(openUnit === id ? null : id)}
+                      >
+                        <span>{title}</span>
+                        <span aria-hidden="true" className="apparatus-units__chev">
+                          {openUnit === id ? "–" : "+"}
+                        </span>
+                      </div>
+                      {openUnit === id ? renderUnit(id, title) : null}
+                    </React.Fragment>
+                  ))}
+                </div>
               </div>
 
               {/* Помощники руководства */}
-              <div className="grid cols-1" style={{ gap: 16, marginTop: 24 }}>
+              <div className="apparatus-section">
+                <h2 className="apparatus-section__title">Помощники руководства</h2>
+                <div className="apparatus-assistants">
                 <div className="person-card">
                   <img
                     className="person-card__photo"
@@ -263,6 +282,7 @@ export default function Apparatus() {
                       Подробнее
                     </a>
                   </div>
+                </div>
                 </div>
               </div>
             </div>

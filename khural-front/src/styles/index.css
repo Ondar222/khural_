@@ -1274,6 +1274,155 @@ a {
     filter: saturate(1.05);
   }
 }
+
+/* Apparatus page layout polish */
+.apparatus-lead {
+  margin: 8px 0 18px;
+  color: var(--muted);
+  max-width: 72ch;
+}
+.apparatus-section {
+  display: grid;
+  gap: 12px;
+}
+.apparatus-section__title {
+  margin: 0;
+  font-size: var(--fs-h2);
+  line-height: var(--lh-h2);
+  color: var(--primary);
+}
+.apparatus-leadership {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.apparatus-feature {
+  display: flex;
+  justify-content: center;
+}
+.apparatus-assistants {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 960px) {
+  .apparatus-assistants {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 959px) {
+  .apparatus-leadership {
+    grid-template-columns: 1fr;
+  }
+}
+/* Remove chain visuals on Apparatus for cleaner layout */
+.apparatus-page .person-card::before {
+  display: none;
+}
+.apparatus-page .person-card {
+  /* make cards look like Deputies cards */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    #0a1f44 0px,
+    #0a1f44 160px,
+    #ffffff 160px,
+    #ffffff 100%
+  );
+  border: 1px solid #eef2f7;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.apparatus-page .person-card__photo {
+  width: 96px;
+  height: 96px;
+  align-self: center;
+  /* position avatar fully inside the 160px header (slightly higher) */
+  margin-top: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #eef2f7;
+  box-shadow: 0 0 0 3px #ffffff, 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 2px solid #cfe3ff;
+}
+/* Ensure apparatus avatars don't get overridden by global round-xl/committee variants */
+.apparatus-page .person-card--round-xl .person-card__photo,
+.apparatus-page .person-card--committee .person-card__photo {
+  width: 96px !important;
+  height: 96px !important;
+  margin-top: 44px !important;
+  border-radius: 50% !important;
+}
+.apparatus-page .person-card__body {
+  align-items: center;
+  padding: 12px 16px 16px; /* extra space above name */
+  width: 100%;
+}
+.apparatus-page .person-card__meta {
+  padding-left: 0;
+  list-style: none;
+  font-size: 14px;
+  color: #334155;
+}
+.apparatus-page .person-card__meta li {
+  margin: 6px 0;
+}
+.apparatus-page .btn--compact {
+  margin-left: auto;
+  margin-right: auto;
+}
+/* Font sizes like Deputies cards */
+.apparatus-page .person-card__name {
+  font-size: 17px;
+  color: #0a1f44;
+}
+.apparatus-page .person-card__role {
+  font-size: 14px;
+  font-weight: 700;
+}
+@media (max-width: 560px) {
+  .apparatus-page .person-card {
+    gap: 10px;
+  }
+  .apparatus-page .person-card__photo {
+    width: 88px;
+    height: 88px;
+    margin-top: 54px;
+  }
+  .apparatus-page .person-card--round-xl .person-card__photo,
+  .apparatus-page .person-card--committee .person-card__photo {
+    width: 88px !important;
+    height: 88px !important;
+    margin-top: 54px !important;
+  }
+}
+/* Units accordion */
+.apparatus-units__pill {
+  justify-content: space-between;
+  gap: 12px;
+}
+.apparatus-units__chev {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(13, 75, 143, 0.25);
+  color: #0d4b8f;
+  font-weight: 900;
+  line-height: 1;
+}
+.orgv2__pill--open .apparatus-units__chev {
+  border-color: rgba(255, 215, 0, 0.75);
+  color: var(--gold);
+  background: #003366;
+}
 .btn--compact {
   width: clamp(120px, 20%, 180px);
   justify-content: center;
