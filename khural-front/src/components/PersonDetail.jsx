@@ -71,7 +71,7 @@ export default function PersonDetail({ item, type, backHref }) {
   }, []);
 
   return (
-    <section className="section">
+    <section className="section person-detail">
       <div className="container">
         {backHref && (
           <a

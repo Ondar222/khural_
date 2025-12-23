@@ -237,6 +237,36 @@ export default function SectionPage() {
       );
     }
 
+    if (title === "Совет по взаимодействию с представительными органами муниципальных образований") {
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div>
+                <h1 className="no-gold-underline">{title}</h1>
+                <p style={{ marginTop: 0 }}>
+                  Раздел в разработке. Здесь будут документы, повестки, решения и материалы заседаний
+                  Совета, а также контакты ответственных лиц.
+                </p>
+                <div className="tabs">
+                  <a className="btn" href="/documents">
+                    Документы →
+                  </a>
+                  <a className="btn" href="/news">
+                    Новости →
+                  </a>
+                  <a className="btn" href="/appeals">
+                    Обратиться →
+                  </a>
+                </div>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section className="section section-page">
         <div className="container">

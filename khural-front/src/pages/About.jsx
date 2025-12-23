@@ -5,7 +5,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { AboutApi } from "../api/client.js";
 
 export default function About() {
-  const { committees, aboutPages: cachedPages, aboutStructure: cachedStructure } = useData();
+  const { committees, councils, aboutPages: cachedPages, aboutStructure: cachedStructure } = useData();
   const { lang } = useI18n();
   const [activeTab, setActiveTab] = React.useState("general"); // general | structure
   const [pages, setPages] = React.useState(() => (Array.isArray(cachedPages) ? cachedPages : []));
@@ -93,6 +93,20 @@ export default function About() {
     const roots = (childrenByParent.get("") || []).filter((x) => byId.has(String(x.id)));
     return { roots, childrenByParent };
   }, [structure]);
+
+  const commissionsList = React.useMemo(
+    () => [
+      { title: "Комиссия ВХ РТ по Регламенту и депутатской этике", id: "reglament-etika" },
+      {
+        title: "Комиссия ВХ РТ по контролю за достоверностью сведений о доходах",
+        id: "kontrol-dostovernost",
+      },
+      { title: "Наградная комиссия ВХ РТ", id: "nagradnaya" },
+      { title: "Комиссия ВХ РТ по поддержке участников СВО и их семей", id: "svo-podderzhka" },
+      { title: "Счетная комиссия ВХ РТ", id: "schetnaya" },
+    ],
+    []
+  );
 
   return (
     <section className="section">
@@ -238,8 +252,9 @@ export default function About() {
               </div>
             </div>
 
-            <div id="about-structure" className="person-block" style={{ marginTop: 10 }}>
-              <h3>Структура органов управления</h3>
+            <div id="about-structure" className="person-block about-structure" style={{ marginTop: 22 }}>
+              <div id="focus-overview" style={{ height: 1 }} />
+              <h3 className="about-structure__title">Структура органов управления</h3>
               <p style={{ marginTop: 0 }}>
                 Ниже — схема структуры. Нажмите на фракции/комитеты, чтобы перейти к соответствующим
                 разделам.
@@ -312,7 +327,7 @@ export default function About() {
                 </div>
 
                 <div className="org__row org__row--cols4">
-                  <div className="org__col" id="focus-committees">
+                  <div className="org__col">
                     <a
                       className="org__item org__item--blue"
                       href="/about?tab=structure&focus=committees"
@@ -342,23 +357,8 @@ export default function About() {
                     </a>
                   </div>
 
-                  <div className="org__col org__col--span2" id="focus-commissions">
-                    {[
-                      {
-                        title: "Комиссия ВХ РТ по Регламенту и депутатской этике",
-                        id: "reglament-etika",
-                      },
-                      {
-                        title: "Комиссия ВХ РТ по контролю за достоверностью сведений о доходах",
-                        id: "kontrol-dostovernost",
-                      },
-                      { title: "Наградная комиссия ВХ РТ", id: "nagradnaya" },
-                      {
-                        title: "Комиссия ВХ РТ по поддержке участников СВО и их семей",
-                        id: "svo-podderzhka",
-                      },
-                      { title: "Счетная комиссия ВХ РТ", id: "schetnaya" },
-                    ].map((item) => (
+                  <div className="org__col org__col--span2">
+                    {commissionsList.map((item) => (
                       <a
                         key={item.id}
                         className="org__item org__item--blue"
@@ -370,9 +370,6 @@ export default function About() {
                   </div>
                 </div>
 
-                {/* Placeholder anchor for councils (currently same visual zone) */}
-                <div id="focus-councils" style={{ height: 1 }} />
-
                 <div className="org__row org__row--center">
                   <a className="org__item org__item--xl org__item--blue" href="/apparatus">
                     Аппарат Верховного Хурала (парламента) Республики Тыва
@@ -380,9 +377,84 @@ export default function About() {
                 </div>
               </div>
 
+              {/* Detailed sections for SideNav anchors */}
+              <div id="focus-committees" className="person-block about-structure__section">
+                <h3 className="no-gold-underline">Комитеты</h3>
+                <div className="grid cols-2" style={{ marginTop: 12 }}>
+                  {(committees || []).map((c) => (
+                    <a
+                      key={c.id}
+                      className="tile link"
+                      href={`/committee?id=${encodeURIComponent(c.id)}`}
+                      style={{ display: "block" }}
+                    >
+                      <div style={{ fontWeight: 900, color: "#0a1f44" }}>{c.title}</div>
+                      <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                        {(Array.isArray(c.members) ? c.members.length : 0)
+                          ? `Состав: ${c.members.length}`
+                          : "Состав: —"}
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div id="focus-commissions" className="person-block about-structure__section">
+                <h3 className="no-gold-underline">Комиссии</h3>
+                <div className="grid" style={{ marginTop: 12 }}>
+                  {commissionsList.map((item) => (
+                    <a
+                      key={item.id}
+                      className="tile link"
+                      href={`/commission?id=${item.id}`}
+                      style={{ display: "block" }}
+                    >
+                      <div style={{ fontWeight: 900, color: "#0a1f44" }}>{item.title}</div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div id="focus-councils" className="person-block about-structure__section">
+                <h3 className="no-gold-underline">
+                  Совет по взаимодействию с представительными органами муниципальных образований
+                </h3>
+                <p style={{ marginTop: 6 }}>
+                  Раздел содержит информацию о взаимодействии Верховного Хурала с представительными
+                  органами муниципальных образований: заседания, решения и контакты для обратной связи.
+                </p>
+                <div className="tabs" style={{ marginTop: 10 }}>
+                  <a
+                    className="btn"
+                    href={
+                      "/section?title=" +
+                      encodeURIComponent(
+                        "Совет по взаимодействию с представительными органами муниципальных образований"
+                      )
+                    }
+                  >
+                    Открыть раздел →
+                  </a>
+                  <a className="btn" href="/appeals">
+                    Обратиться →
+                  </a>
+                </div>
+
+                {(councils || []).length ? (
+                  <div className="tile" style={{ marginTop: 12 }}>
+                    <div style={{ fontWeight: 900, marginBottom: 8 }}>Другие советы/комиссии</div>
+                    <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      {(councils || []).map((name) => (
+                        <li key={name}>{name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+
             </div>
           </div>
-          <SideNav />
+          <SideNav className="sidenav--about" title="О Верховном Хурале" />
         </div>
       </div>
     </section>

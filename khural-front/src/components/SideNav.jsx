@@ -1,7 +1,11 @@
 import React from "react";
 
 // Reusable right-side navigation with links to key subpages
-export default function SideNav({ title = "Разделы", links: overrideLinks }) {
+export default function SideNav({
+  title = "Разделы",
+  links: overrideLinks,
+  className = "sidenav--card",
+}) {
   const defaultLinks = [
     { label: "Общие сведения", href: "/about" },
     { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
@@ -30,7 +34,7 @@ export default function SideNav({ title = "Разделы", links: overrideLinks
   const links = Array.isArray(overrideLinks) && overrideLinks.length ? overrideLinks : defaultLinks;
 
   return (
-    <aside className="sidenav" aria-label="Ссылки раздела">
+    <aside className={`sidenav ${className || ""}`.trim()} aria-label="Ссылки раздела">
       <h3 style={{ marginTop: 0 }}>{title}</h3>
       <div className="sidenav__list">
         {links.map((l, i) => (

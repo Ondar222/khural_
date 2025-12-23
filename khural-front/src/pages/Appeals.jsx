@@ -142,7 +142,7 @@ export default function Appeals() {
               label: "Подать обращение",
               children: (
                 <>
-                  {ok ? (
+        {ok ? (
                     <Result status="success" title="Спасибо! Ваше обращение отправлено" />
                   ) : (
                     <Form
@@ -199,19 +199,19 @@ export default function Appeals() {
                         </Form.Item>
                       </div>
 
-                      <Form.Item
-                        label="Тема"
-                        name="subject"
-                        rules={[{ required: true, message: "Укажите тему" }]}
-                      >
+            <Form.Item
+              label="Тема"
+              name="subject"
+              rules={[{ required: true, message: "Укажите тему" }]}
+            >
                         <Input disabled={!isAuthenticated} />
-                      </Form.Item>
+            </Form.Item>
 
-                      <Form.Item
-                        label="Текст обращения"
-                        name="message"
-                        rules={[{ required: true, message: "Введите текст обращения" }]}
-                      >
+            <Form.Item
+              label="Текст обращения"
+              name="message"
+              rules={[{ required: true, message: "Введите текст обращения" }]}
+            >
                         <Input.TextArea rows={8} disabled={!isAuthenticated} />
                       </Form.Item>
 
@@ -234,15 +234,15 @@ export default function Appeals() {
                             </a>
                           </span>
                         </Checkbox>
-                      </Form.Item>
+            </Form.Item>
 
                       <Form.Item style={{ marginBottom: 0 }}>
-                        <Button type="primary" htmlType="submit" disabled={!isAuthenticated} loading={busy}>
-                          Отправить
-                        </Button>
-                      </Form.Item>
-                    </Form>
-                  )}
+              <Button type="primary" htmlType="submit" disabled={!isAuthenticated} loading={busy}>
+                Отправить
+              </Button>
+            </Form.Item>
+          </Form>
+        )}
                 </>
               ),
             },
@@ -319,7 +319,7 @@ export default function Appeals() {
         />
 
         <div style={{ marginTop: 12 }}>
-          <a href="/feedback">Правила о приеме обращений граждан</a>
+        <a href="/feedback">Правила о приеме обращений граждан</a>
         </div>
       </div>
     </section>

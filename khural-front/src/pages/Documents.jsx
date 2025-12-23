@@ -213,9 +213,9 @@ export default function Documents() {
                                   <a
                                     className="btn"
                                     href={url || "#"}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                                     Открыть ↗
                                   </a>
                                 </div>
@@ -233,18 +233,18 @@ export default function Documents() {
                       const isPdf = looksLikePdf(url);
                       return (
                         <div key={d.id || url || d.title} className="law-item card">
-                          <div className="law-left">
-                            <div className="law-ico">📄</div>
-                            <div>
-                              <div className="law-title">{d.title}</div>
+                      <div className="law-left">
+                        <div className="law-ico">📄</div>
+                        <div>
+                          <div className="law-title">{d.title}</div>
                               {d.desc ? <div className="law-desc">{d.desc}</div> : null}
-                              <div className="card-subtitle">
-                                {d.number ? `${d.number} • ` : ""}
-                                {d.date || d.createdAt || ""}
-                                {d.category ? ` • ${d.category}` : ""}
-                              </div>
-                            </div>
+                          <div className="card-subtitle">
+                            {d.number ? `${d.number} • ` : ""}
+                            {d.date || d.createdAt || ""}
+                            {d.category ? ` • ${d.category}` : ""}
                           </div>
+                        </div>
+                      </div>
                           <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
                             {isPdf && url ? (
                               <button
@@ -262,7 +262,7 @@ export default function Documents() {
                         </div>
                       );
                     })}
-                  </div>
+                </div>
                 )}
               </DataState>
             </DataState>

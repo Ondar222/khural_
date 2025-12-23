@@ -1,7 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { Select, Space } from "antd";
+import { Input, Select, Space } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import CommentsBlock from "../components/CommentsBlock.jsx";
 import DataState from "../components/DataState.jsx";
@@ -14,7 +14,11 @@ export default function NewsArchive() {
     return categoryParam || "Все";
   };
   const [category, setCategory] = React.useState(getInitialCategory);
-  const [month, setMonth] = React.useState("Все");
+  const getInitialDate = () => {
+    const dateParam = new URLSearchParams(window.location.search || "").get("date");
+    return dateParam || "";
+  };
+  const [date, setDate] = React.useState(getInitialDate);
   const [selected, setSelected] = React.useState(() => {
     const id = new URLSearchParams(window.location.search || "").get("id");
     return id || null;
@@ -24,12 +28,15 @@ export default function NewsArchive() {
       const params = new URLSearchParams(window.location.search || "");
       const id = params.get("id");
       const categoryParam = params.get("category");
+      const dateParam = params.get("date");
       setSelected(id || null);
       if (categoryParam && !id) {
         setCategory(categoryParam);
       } else if (!categoryParam && !id) {
         setCategory("Все");
       }
+      if (dateParam && !id) setDate(dateParam);
+      if (!dateParam && !id) setDate("");
     };
     window.addEventListener("popstate", onNav);
     window.addEventListener("app:navigate", onNav);
@@ -43,19 +50,15 @@ export default function NewsArchive() {
     () => ["Все", ...Array.from(new Set(news.map((n) => n.category)))],
     [news]
   );
-  const months = React.useMemo(
-    () => ["Все", ...Array.from(new Set(news.map((n) => n.date.slice(0, 7))))],
-    [news]
-  );
 
   const filtered = React.useMemo(
     () =>
       news.filter(
         (n) =>
           (category === "Все" || n.category === category) &&
-          (month === "Все" || n.date.startsWith(month))
+          (!date || String(n.date || "").slice(0, 10) === date)
       ),
-    [news, category, month]
+    [news, category, date]
   );
 
   const getImage = (i) => {
@@ -349,6 +352,8 @@ export default function NewsArchive() {
                       } else {
                         params.set("category", newCategory);
                       }
+                      // preserve date filter
+                      if (date) params.set("date", date);
                       const newHash = params.toString() ? `${h}?${params.toString()}` : h;
                       window.history.pushState({}, "", newHash);
                       window.dispatchEvent(new Event("app:navigate"));
@@ -356,11 +361,24 @@ export default function NewsArchive() {
                     popupMatchSelectWidth={false}
                     options={categories.map((c) => ({ value: c, label: c }))}
                   />
-                  <Select
-                    value={month}
-                    onChange={setMonth}
-                    popupMatchSelectWidth={false}
-                    options={months.map((m) => ({ value: m, label: m }))}
+                  <Input
+                    type="date"
+                    value={date || ""}
+                    onChange={(e) => {
+                      const newDate = e.target.value || "";
+                      setDate(newDate);
+                      const h = window.location.pathname;
+                      const params = new URLSearchParams(window.location.search || "");
+                      if (category && category !== "Все") params.set("category", category);
+                      if (newDate) params.set("date", newDate);
+                      else params.delete("date");
+                      const next = params.toString() ? `${h}?${params.toString()}` : h;
+                      window.history.pushState({}, "", next);
+                      window.dispatchEvent(new Event("app:navigate"));
+                    }}
+                    style={{ minWidth: 220 }}
+                    placeholder="Дата"
+                    aria-label="Фильтр новостей по дате"
                   />
                 </Space>
               </div>
