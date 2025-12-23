@@ -70,7 +70,7 @@ export default function Header() {
     <>
       <header className="site-header">
         <div className="container topbar">
-          <a href="/feedback">{t("feedback")}</a>
+          <a href="/appeals">{t("feedback")}</a>
           <a href="/press">{t("press")}</a>
           <a href="/activity">{t("activity")}</a>
 

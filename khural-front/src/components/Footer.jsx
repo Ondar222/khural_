@@ -42,7 +42,7 @@ export default function Footer() {
               <h4>{t("region")}</h4>
               <nav>
                 <a href="/government">{t("government")}</a>
-                <a href="/feedback">{t("feedback")}</a>
+                <a href="/appeals">{t("feedback")}</a>
                 <a href="/sitemap">{t("sitemap")}</a>
               </nav>
             </div>
