@@ -43,7 +43,7 @@ export default function Footer() {
               <nav>
                 <a href="/government">{t("government")}</a>
                 <a href="/feedback">{t("feedback")}</a>
-                <a href="#">{t("sitemap")}</a>
+                <a href="/sitemap">{t("sitemap")}</a>
               </nav>
             </div>
             <div className="footer-col">
@@ -56,16 +56,22 @@ export default function Footer() {
             <div className="footer-col">
               <h4>{t("docs")}</h4>
               <nav>
-                <a href="#">{t("pdPolicy")}</a>
-                <a href="#">{t("license")}</a>
+                <a href="/pd-policy">{t("pdPolicy")}</a>
+                <a href="/license">{t("license")}</a>
               </nav>
             </div>
             <div className="footer-col">
               <h4>{t("socials")}</h4>
               <nav>
-                <a href="#">{t("vk")}</a>
-                <a href="#">{t("ok")}</a>
-                <a href="#">{t("rutube")}</a>
+                <a href="https://vk.com" target="_blank" rel="noreferrer">
+                  {t("vk")}
+                </a>
+                <a href="https://ok.ru" target="_blank" rel="noreferrer">
+                  {t("ok")}
+                </a>
+                <a href="https://rutube.ru" target="_blank" rel="noreferrer">
+                  {t("rutube")}
+                </a>
               </nav>
             </div>
           </div>

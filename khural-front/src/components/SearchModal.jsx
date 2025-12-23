@@ -105,13 +105,15 @@ export default function SearchModal({ open, onClose }) {
       }));
     const docMatches = documents
       .filter((d) =>
-        [d.title, d.summary].filter(Boolean).some((s) => String(s).toLowerCase().includes(q))
+        [d.title, d.desc, d.description, d.number, d.category, d.type]
+          .filter(Boolean)
+          .some((s) => String(s).toLowerCase().includes(q))
       )
       .map((d) => ({
         id: `doc-${d.id || d.title}`,
         type: "document",
         title: d.title,
-        meta: d.category || "",
+        meta: [d.number, d.category].filter(Boolean).join(" • "),
         href: "/documents",
       }));
     return [...newsMatches, ...docMatches].slice(0, 20);

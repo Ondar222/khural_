@@ -196,13 +196,16 @@ export default function DataProvider({ children }) {
             .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
             .map((s) => ({
               title: s.title || "",
+              desc: pick(s.desc, s.description, s.subtitle) || "",
+              link: pick(s.link, s.url, s.href) || "",
               image: firstFileLink(s.image) || "",
             }))
             .filter((s) => s.title && s.image)
+            .slice(0, 5)
         );
       } else {
         fetchJson("/data/slides.json")
-          .then(setSlides)
+          .then((arr) => setSlides((Array.isArray(arr) ? arr : []).slice(0, 5)))
           .catch((e) => markError("slides", e));
       }
       markLoading("slides", false);

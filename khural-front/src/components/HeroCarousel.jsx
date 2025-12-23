@@ -1,35 +1,108 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const SLIDES = [
   {
     title: "Минцифры региона составило карту точек бесплатного Wi‑Fi в Республике Тыва",
+    desc: "Краткое описание события",
+    link: "/news",
     image: "/img/slide-1.svg",
   },
   {
     title: "Республика Тыва — регион возможностей",
+    desc: "Инвестиции, развитие и новые проекты региона.",
+    link: "/news",
     image: "/img/slider1.jpg",
   },
   {
     title: "Инновации, туризм и открытый диалог",
+    desc: "Ключевые инициативы и события недели.",
+    link: "/news",
     image: "/img/slider2.jpg",
   },
 ];
 
+function normalizeSlideImage(image) {
+  const src = String(image || "").trim();
+  if (!src) return "";
+  if (/^https?:\/\//i.test(src)) return src;
+  if (src.startsWith("/")) return src;
+  return "/" + src;
+}
+
 export default function HeroCarousel() {
-  const { slides: dataSlides } = useData();
+  const { slides: dataSlides, news } = useData();
+  const { t } = useI18n();
   const [active, setActive] = React.useState(0);
 
-  React.useEffect(() => {
-    const id = setInterval(() => {
-      setActive(
-        (i) => (i + 1) % (dataSlides && dataSlides.length ? dataSlides.length : SLIDES.length)
-      );
-    }, 6000);
-    return () => clearInterval(id);
+  const getFallbackNewsImage = React.useCallback((i) => {
+    const imgs = [
+      "/img/news1.jpeg",
+      "/img/news2.jpeg",
+      "/img/news3.jpeg",
+      "/img/news4.jpeg",
+      "/img/news5.jpeg",
+    ];
+    return imgs[i % imgs.length];
+  }, []);
+
+  const newsSlides = React.useMemo(() => {
+    const arr = Array.isArray(news) ? [...news] : [];
+    arr.sort((a, b) => String(b?.date || "").localeCompare(String(a?.date || "")));
+    return arr.slice(0, 5).map((n, i) => ({
+      title: String(n?.title || "").trim(),
+      desc: String(n?.excerpt || n?.desc || n?.description || "").trim(),
+      link: n?.id ? `/news?id=${encodeURIComponent(String(n.id))}` : "/news",
+      image: n?.image || getFallbackNewsImage(i),
+    }));
+  }, [news, getFallbackNewsImage]);
+
+  const baseSlides = React.useMemo(() => {
+    const base = dataSlides && dataSlides.length ? dataSlides : SLIDES;
+    // Normalize to expected shape
+    return (Array.isArray(base) ? base : []).map((s) => ({
+      title: String(s?.title || "").trim(),
+      desc: String(s?.desc || "").trim(),
+      link: s?.link ? String(s.link) : "/news",
+      image: s?.image || "",
+    }));
   }, [dataSlides]);
 
-  const slides = dataSlides && dataSlides.length ? dataSlides : SLIDES;
+  // Primary requirement: slider should broadcast news as slides (up to 5).
+  // If there are fewer than 5 news items, we fill the rest from configured slides.
+  const slides = React.useMemo(() => {
+    const primary = newsSlides.filter((s) => s.title && s.image);
+    if (primary.length >= 5) return primary.slice(0, 5);
+    const seen = new Set(primary.map((s) => `${s.title}|${s.image}`));
+    const extras = baseSlides
+      .filter((s) => s.title && s.image)
+      .filter((s) => {
+        const k = `${s.title}|${s.image}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    return [...primary, ...extras].slice(0, 5);
+  }, [newsSlides, baseSlides]);
+
+  React.useEffect(() => {
+    const len = slides.length || 1;
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % len);
+    }, 6000);
+    return () => clearInterval(id);
+  }, [slides.length]);
+
+  React.useEffect(() => {
+    // If slides length changed and active is out of bounds — reset.
+    if (active >= slides.length) setActive(0);
+  }, [active, slides.length]);
+
+  const current = slides[active] || slides[0];
+  const href = current?.link ? String(current.link) : "/news";
+  const desc = current?.desc ? String(current.desc).trim() : "";
+  const visibleDesc = desc.length > 220 ? desc.slice(0, 220).trim() + "…" : desc;
 
   return (
     <div className="container">
@@ -39,13 +112,21 @@ export default function HeroCarousel() {
             <div
               key={i}
               className={`slide ${i === active ? "active" : ""}`}
-              style={{ backgroundImage: `url(${s.image})` }}
+              style={{ backgroundImage: `url(${normalizeSlideImage(s.image)})` }}
             />
           ))}
           <div className="overlay" />
         </div>
         <div className="caption center">
-          <h1 className="title center">{slides[active].title}</h1>
+          <div className="hero__panel">
+            <h1 className="title center">{current?.title}</h1>
+            {visibleDesc ? <p className="hero__desc">{visibleDesc}</p> : null}
+            <div className="hero__actions">
+              <a className="hero__btn" href={href}>
+                {t("more")} <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </div>
         </div>
         <div className="social-left" aria-hidden>
           <a
@@ -118,9 +199,11 @@ export default function HeroCarousel() {
         </div>
         <div className="dots center">
           {slides.map((_, i) => (
-            <div
+            <button
               key={i}
               className={`dot ${i === active ? "active" : ""}`}
+              type="button"
+              aria-label={`Слайд ${i + 1}`}
               onClick={() => setActive(i)}
             />
           ))}

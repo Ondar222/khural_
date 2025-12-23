@@ -363,6 +363,13 @@ export const AppealsApi = {
       auth: true,
     });
   },
+  async listMine({ page = 1, limit = 50 } = {}) {
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/appeals${suffix}`, { method: "GET", auth: true });
+  },
 };
 
 export const AboutApi = {

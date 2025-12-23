@@ -36,6 +36,9 @@ import Admin from "./pages/Admin.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
+import PdPolicy from "./pages/PdPolicy.jsx";
+import License from "./pages/License.jsx";
+import Sitemap from "./pages/Sitemap.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
@@ -116,6 +119,9 @@ export default function App() {
                           "/contacts": Contacts,
                           "/login": Login,
                           "/register": Register,
+                          "/pd-policy": PdPolicy,
+                          "/license": License,
+                          "/sitemap": Sitemap,
                           "*": NotFound,
                         }}
                       />

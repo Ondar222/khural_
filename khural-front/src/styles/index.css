@@ -497,6 +497,16 @@ a {
 .hero .caption.center {
   text-align: center;
 }
+.hero__panel {
+  width: min(860px, 100%);
+  padding: 18px 18px 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(10, 31, 68, 0.34);
+  backdrop-filter: blur(6px) saturate(135%);
+  -webkit-backdrop-filter: blur(6px) saturate(135%);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
+}
 .hero .title {
   font-size: 44px;
   line-height: 1.1;
@@ -504,17 +514,59 @@ a {
   max-width: 1100px;
   margin: 0 auto 12px;
   font-weight: 900;
+  text-shadow: 0 4px 22px rgba(0, 0, 0, 0.45);
 }
 .hero .title.center {
   text-align: center;
+}
+.hero__desc {
+  margin: 10px auto 0;
+  max-width: 760px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 18px;
+  line-height: 1.5;
+  font-weight: 650;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.38);
+}
+.hero__actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+.hero__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  color: #0a1f44;
+  background: linear-gradient(180deg, #ffe77a 0%, #ffd700 55%, #f4c400 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 200ms ease;
+}
+.hero__btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
+}
+.hero__btn:active {
+  transform: translateY(0);
+}
+.hero__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-strong);
 }
 .hero .social {
   display: flex;
   gap: 12px;
 }
 .hero .sbtn {
-  width: 68px;
-  height: 68px;
+  width: 54px;
+  height: 54px;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -527,10 +579,20 @@ a {
 }
 .hero .sbtn svg,
 .hero .sbtn img {
-  width: 58px;
-  height: 58px;
+  width: 44px;
+  height: 44px;
   display: block;
   object-fit: contain;
+}
+/* Make all social icons visually same size */
+.hero .sbtn img,
+.hero .sbtn svg {
+  flex: 0 0 auto;
+}
+/* MAX icon has less internal padding => looks bigger, scale it down */
+.hero .sbtn--mx img {
+  width: 40px;
+  height: 40px;
 }
 /* Gold underline on hover, consistent with header */
 .hero .sbtn::after {
@@ -552,6 +614,9 @@ a {
   left: 24px;
   bottom: 24px;
   display: flex;
+  /* small inset so icons don't stick to edges */
+  padding-left: 8px;
+  padding-top: 8px;
 }
 .hero .sbtn--vk {
   background: transparent;
@@ -600,20 +665,50 @@ a {
   bottom: 24px;
   display: flex;
   gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(10, 31, 68, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  z-index: 5;
 }
 .hero .dots.center {
   left: 50%;
   transform: translateX(-50%);
 }
 .hero .dot {
-  width: 10px;
+  width: 14px;
   height: 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  padding: 0;
+  transition: width 220ms ease, background 220ms ease, transform 160ms ease,
+    box-shadow 200ms ease, border-color 200ms ease;
 }
 .hero .dot.active {
-  width: 24px;
-  background: #ffd700;
+  width: 32px;
+  background: linear-gradient(180deg, #ffe77a 0%, #ffd700 60%, #f4c400 100%);
+  border-color: rgba(255, 215, 0, 0.85);
+  box-shadow: 0 10px 18px rgba(255, 215, 0, 0.22);
+}
+@media (hover: hover) {
+  .hero .dot:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+  .hero .dot.active:hover {
+    filter: brightness(1.02);
+  }
+}
+.hero .dot:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-strong);
 }
 
 /* Sections */
@@ -683,6 +778,8 @@ a {
     left: 0;
     bottom: 30px;
     display: flex;
+    padding-left: 10px;
+    padding-top: 10px;
   }
   .section-head {
     flex-direction: column;
@@ -1628,6 +1725,70 @@ a {
   margin: 0 0 14px;
 }
 
+/* Share icons (news page): reuse hero-like round buttons */
+.share-icons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.share-title {
+  font-weight: 800;
+  font-size: 14px;
+  color: #0a1f44;
+}
+.share-sbtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid rgba(10, 31, 68, 0.12);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 160ms ease, box-shadow 200ms ease, border-color 160ms ease,
+    filter 160ms ease;
+}
+.share-sbtn svg,
+.share-sbtn img {
+  width: 28px;
+  height: 28px;
+  display: block;
+  object-fit: contain;
+}
+.share-sbtn--ok img {
+  /* ok.png is square and looks slightly larger */
+  width: 26px;
+  height: 26px;
+}
+.share-sbtn--copy {
+  background: #0a3b72;
+  color: var(--gold);
+  border-color: rgba(10, 59, 114, 0.35);
+}
+.share-sbtn--copy svg {
+  width: 18px;
+  height: 18px;
+}
+@media (hover: hover) {
+  .share-sbtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.1);
+    border-color: rgba(255, 215, 0, 0.55);
+  }
+  .share-sbtn--copy:hover {
+    filter: brightness(0.98);
+    border-color: rgba(255, 215, 0, 0.65);
+  }
+}
+.share-sbtn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-strong);
+}
+
 /* Cookie banner */
 .cookie-banner {
   position: fixed;
@@ -1878,9 +2039,32 @@ a {
   .hero .title {
     font-size: 30px;
   }
+  .hero__panel {
+    padding: 14px 14px 12px;
+    border-radius: 18px;
+  }
+  .hero__desc {
+    font-size: 15px;
+  }
+  .hero__actions {
+    margin-top: 12px;
+  }
+  .hero__btn {
+    padding: 11px 16px;
+    gap: 8px;
+  }
   .hero .sbtn {
-    width: 54px;
-    height: 54px;
+    width: 44px;
+    height: 44px;
+  }
+  .hero .sbtn svg,
+  .hero .sbtn img {
+    width: 36px;
+    height: 36px;
+  }
+  .hero .sbtn--mx img {
+    width: 32px;
+    height: 32px;
   }
 }
 
