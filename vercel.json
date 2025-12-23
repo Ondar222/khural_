@@ -1,7 +1,7 @@
 {
   "version": 2,
   "framework": "vite",
-  "installCommand": "npm --prefix khural-front ci",
+  "installCommand": "npm --prefix khural-front install",
   "buildCommand": "npm --prefix khural-front run build",
   "devCommand": "npm --prefix khural-front run dev",
   "outputDirectory": "khural-front/dist",
