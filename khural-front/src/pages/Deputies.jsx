@@ -132,8 +132,12 @@ export default function Deputies() {
                   menu={{ items: convMenuItems }}
                 >
                   <Button size="large">
-                    {convocation === "Все" ? "Все созывы" : `${convocation} созыв`}{" "}
-                    <span style={{ marginLeft: 8 }}>▾</span>
+                    <span className="filters__btnText">
+                      {convocation === "Все" ? "Все созывы" : `${convocation} созыв`}
+                    </span>
+                    <span className="filters__btnCaret" aria-hidden="true">
+                      ▾
+                    </span>
                   </Button>
                 </Dropdown>
                 <Select
@@ -150,7 +154,6 @@ export default function Deputies() {
                             ((committees || []).find((c) => c.id === id)?.title || id),
                         }
                   )}
-                  style={{ minWidth: 280 }}
                 />
                 <Select
                   value={faction}
@@ -160,7 +163,6 @@ export default function Deputies() {
                     value: x,
                     label: x === "Все" ? "По фракциям: Все" : `По фракциям: ${x}`,
                   }))}
-                  style={{ minWidth: 220 }}
                   placeholder="Фракция"
                 />
                 <Select
@@ -171,7 +173,6 @@ export default function Deputies() {
                     value: x,
                     label: x === "Все" ? "По округам: Все" : `По округам: ${x}`,
                   }))}
-                  style={{ minWidth: 220 }}
                   placeholder="Округ"
                 />
               </div>
