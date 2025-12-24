@@ -41,36 +41,21 @@ export default function AuthProvider({ children }) {
   const [user, setUser] = React.useState(null);
   const isAuthenticated = Boolean(token);
 
-  const applySessionFromResponse = React.useCallback(
-    (payload, fallbackProfile) => {
-      const p = payload?.data ? payload.data : payload;
-      const newToken =
-        p?.access_token || p?.accessToken || p?.token || p?.accessToken || p?.jwt || "";
-      const newRefresh = p?.refresh_token || p?.refreshToken || "";
-      const maybeUser = p?.user || p?.profile || null;
-
-      if (newToken) {
-        setToken(newToken);
-        setAuthToken(newToken);
-        setRefresh(newRefresh);
-        setRefreshToken(newRefresh);
-        if (maybeUser) setUser(normalizeUser(maybeUser));
-        return true;
-      }
-
-      // Fallback: backend responded OK but did not issue a token.
-      // We still create a local session so that UI moves into authenticated state.
-      const dummyToken = `session-${Date.now()}`;
-      const profile = normalizeUser(maybeUser || fallbackProfile || {});
-      setToken(dummyToken);
-      setAuthToken(dummyToken);
-      setRefresh("");
-      setRefreshToken("");
-      if (profile) setUser(profile);
-      return true;
-    },
-    []
-  );
+  const applySessionFromResponse = React.useCallback((payload) => {
+    const p = payload?.data ? payload.data : payload;
+    const newToken = p?.access_token || p?.accessToken || p?.token || p?.jwt || "";
+    const newRefresh = p?.refresh_token || p?.refreshToken || "";
+    const maybeUser = p?.user || p?.profile || null;
+  
+    if (!newToken) return false; // <-- ВАЖНО: без токена НЕ логиним
+  
+    setToken(newToken);
+    setAuthToken(newToken);
+    setRefresh(newRefresh);
+    setRefreshToken(newRefresh);
+    if (maybeUser) setUser(normalizeUser(maybeUser));
+    return true;
+  }, []);
 
   const setFakeDevSession = React.useCallback(
     (profile = {}) => {

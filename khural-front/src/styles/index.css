@@ -1206,6 +1206,12 @@ a {
   color: var(--link);
   padding: 20px 20px;
 }
+/* Override for mobile drawer to allow text wrapping */
+.mobile-drawer .tile.link {
+  align-items: flex-start;
+  justify-content: flex-start;
+  white-space: normal;
+}
 @media (hover: hover) {
   .tile:hover {
     transform: translateY(-1px);
@@ -2530,17 +2536,33 @@ a {
   transition: transform 260ms ease, opacity 260ms ease;
   box-shadow: none;
   border-left: none;
-  padding: max(12px, env(safe-area-inset-top)) 16px 18px;
+  padding: max(8px, env(safe-area-inset-top)) 12px max(40px, env(safe-area-inset-bottom) + 24px);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
   z-index: 60;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   height: 100vh;
-  overflow: auto;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   opacity: 0;
+  box-sizing: border-box;
+}
+/* Ensure background extends to footer - add extra space at bottom */
+.mobile-drawer * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.mobile-drawer .tile,
+.mobile-drawer .tile.link {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 .mobile-drawer.open {
   transform: translateX(0);
@@ -2556,14 +2578,133 @@ a {
 /* Make mobile menu tiles look cleaner (less shadow, more UI-like) */
 .mobile-drawer .tile {
   box-shadow: none;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 10px;
 }
 .mobile-drawer .tile.link {
-  padding: 14px 16px;
+  padding: 10px 12px;
+  background: #f3f4f6;
+  border: none;
+  box-shadow: none;
+  color: #111827;
+  justify-content: flex-start;
+  font-size: 14px;
+  line-height: 1.4;
+  min-height: auto;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 .mobile-drawer .tile.link:active {
   transform: none; /* avoid jumpy hover transform on touch */
+  background: #e5e7eb;
+}
+.mobile-drawer .tile.link > span,
+.mobile-menu-link-content {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.4;
+  white-space: normal;
+  overflow: visible;
+}
+.mobile-menu-link-content > span:not([aria-hidden="true"]) {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+.mobile-drawer .tile.link span[aria-hidden="true"] {
+  color: #111827;
+  opacity: 0.7;
+  font-weight: 400;
+  font-size: 14px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.mobile-drawer .tile.link.active,
+.mobile-drawer .tile.link[aria-current="page"] {
+  background: var(--gold, #ffd700);
+  color: #111827;
+}
+/* Tablet styles - same as mobile */
+@media (max-width: 959px) {
+  .mobile-drawer {
+    padding: max(8px, env(safe-area-inset-top)) 12px max(40px, env(safe-area-inset-bottom) + 24px);
+    gap: 8px;
+  }
+  .mobile-drawer .tile.link {
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .mobile-drawer .tile.link span[aria-hidden="true"] {
+    font-size: 14px;
+  }
+  .mobile-drawer .mobile-toolbar {
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .mobile-drawer .mobile-auth__btn {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  .mobile-drawer .btn {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  .mobile-drawer > div[style*="color: #6b7280"] {
+    font-size: 13px;
+    margin: 4px 0 !important;
+  }
+}
+/* Additional optimizations for very small screens */
+@media (max-width: 480px) {
+  .mobile-drawer {
+    padding: max(6px, env(safe-area-inset-top)) 10px max(40px, env(safe-area-inset-bottom) + 24px);
+    gap: 6px;
+  }
+  .mobile-drawer .tile.link {
+    padding: 8px 10px;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .mobile-drawer .tile.link > span {
+    gap: 6px;
+  }
+  .mobile-drawer .tile.link span[aria-hidden="true"] {
+    font-size: 13px;
+  }
+  .mobile-drawer .mobile-toolbar {
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+  }
+  .mobile-drawer .mobile-auth__btn {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .mobile-drawer .btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  .mobile-drawer > div[style*="color: #6b7280"] {
+    font-size: 12px;
+    margin: 3px 0 !important;
+  }
 }
 .mobile-auth {
   display: flex;
@@ -2579,6 +2720,18 @@ a {
   font-weight: 800;
   border-radius: 14px;
   line-height: 1.1;
+}
+/* Override mobile-auth__btn padding in mobile drawer */
+.mobile-drawer .mobile-auth__btn {
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+@media (max-width: 480px) {
+  .mobile-drawer .mobile-auth__btn {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
 }
 .mobile-auth__btn--primary {
   background: #003366;
@@ -2598,9 +2751,23 @@ a {
 }
 /* Mobile drawer: toolbar under icons with yellow underline */
 .mobile-drawer .mobile-toolbar {
-  border-bottom: 4px solid var(--gold);
-  padding-bottom: 8px;
-  margin-bottom: 12px;
+  border-bottom: 3px solid var(--gold);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+.mobile-drawer .mobile-auth {
+  flex-shrink: 0;
+  margin-bottom: 4px;
+}
+.mobile-drawer .btn {
+  padding: 8px 12px;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.mobile-drawer > div[style*="color: #6b7280"] {
+  font-size: 13px;
+  margin: 4px 0 !important;
 }
 /* Top utility bar */
 .topbar {
