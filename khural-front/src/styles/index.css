@@ -377,6 +377,16 @@ a {
     height: 44px;
     border-radius: 12px;
   }
+  .header .icon-btn,
+  .header-actions .icon-btn {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+  .header .icon-btn *,
+  .header-actions .icon-btn * {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
 
   .container_submit {
     display: flex !important;
@@ -2467,53 +2477,106 @@ a {
 }
 .contact-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   margin-bottom: 14px;
   font-size: 13px;
   line-height: 1.5;
   min-width: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
 }
 .contact-icon {
   font-size: 16px;
   flex-shrink: 0;
-  margin-top: 1px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  margin-top: 0;
   width: 18px;
+  height: 18px;
   text-align: center;
+  color: #ffffff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.site-footer .contact-icon.anticon {
+  color: #ffffff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.site-footer .contact-icon.anticon {
+  color: #ffffff !important;
 }
 .site-footer .contact-text {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  color: #e5e7eb;
+  gap: 0;
+  color: #ffffff;
   flex: 1;
   min-width: 0;
   overflow-wrap: break-word;
   word-wrap: break-word;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+}
+@media (min-width: 960px) {
+  .site-footer .contact-text {
+    flex-direction: column;
+  }
+}
+@media (max-width: 959px) {
+  .site-footer .contact-text {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
+.site-footer .contact-row {
+  display: block;
+  margin-bottom: 4px;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  box-shadow: none;
 }
 .site-footer .contact-text strong {
-  color: #fff;
+  color: #ffffff;
   font-weight: 600;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   opacity: 0.9;
   display: block;
-  margin-bottom: 2px;
+  margin-bottom: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  box-shadow: none;
 }
 .site-footer .contact-text span,
 .site-footer .contact-text a {
-  color: #dbeafe;
+  color: #ffffff;
   font-size: 13px;
   text-decoration: none;
   word-break: break-word;
   overflow-wrap: break-word;
   line-height: 1.4;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  box-shadow: none;
 }
 .site-footer .contact-text a:hover {
-  color: #fff;
+  color: #ffffff;
   text-decoration: underline;
+  opacity: 0.8;
 }
 /* Legacy support for .cols */
 .site-footer .cols {

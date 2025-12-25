@@ -82,29 +82,25 @@ export default function Footer() {
             <div className="contact-item">
               <EnvironmentOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
-                <strong>Адрес:</strong>
-                <span>667000, г. Кызыл, ул. Чульдум, д. 18</span>
+                <strong>Адрес:</strong> <span>667000, г. Кызыл, ул. Чульдум, д. 18</span>
               </div>
             </div>
             <div className="contact-item">
               <PhoneOutlined className="contact-icon" style={phoneIconStyle} aria-hidden="true" />
               <div className="contact-text">
-                <strong>Телефон:</strong>
-                <a href="tel:+73942297295">+7 (39422) 9-72-95</a>
+                <strong>Телефон:</strong> <a href="tel:+73942297295">+7 (39422) 9-72-95</a>
               </div>
             </div>
             <div className="contact-item">
               <PrinterOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
-                <strong>Факс:</strong>
-                <span>+7 (39422) 9-72-95, 9-72-96</span>
+                <strong>Факс:</strong> <span>+7 (39422) 9-72-95, 9-72-96</span>
               </div>
             </div>
             <div className="contact-item">
               <MailOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
-                <strong>E-mail:</strong>
-                <a href="mailto:ods@tuva.ru">ods@tuva.ru</a>
+                <strong>E-mail:</strong> <a href="mailto:ods@tuva.ru">ods@tuva.ru</a>
               </div>
             </div>
           </div>
