@@ -3669,6 +3669,10 @@ body.hc-yb .ant-btn {
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid rgba(10, 31, 68, 0.08);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 .sidenav--card .sidenav__list,
 .sidenav--about .sidenav__list {
@@ -3686,6 +3690,8 @@ body.hc-yb .ant-btn {
   color: #1e3a8a;
   font-size: 14px;
   line-height: 1.35;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .sidenav--card .tile.link span[aria-hidden="true"],
 .sidenav--about .tile.link span[aria-hidden="true"] {
@@ -3723,19 +3729,68 @@ body.hc-yb .ant-btn {
 @media (max-width: 560px) {
   .sidenav--card,
   .sidenav--about {
-    padding: 12px;
+    padding: 10px;
+    overflow: hidden;
+  }
+  .sidenav h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  .sidenav__list {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .sidenav .tile.link {
+    font-size: 11px;
+    padding: 8px 10px;
+    line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+  }
+  .sidenav .tile.link span {
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+  }
+  .sidenav--card .tile.link,
+  .sidenav--about .tile.link {
+    font-size: 11px;
+    padding: 8px 10px;
   }
 }
 @media (max-width: 959px) {
   .sidenav {
     margin-top: 16px;
   }
+  .sidenav h3 {
+    font-size: 16px;
+  }
   .sidenav__list {
-    max-height: none; /* allow natural flow on small screens */
-    overflow: visible;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   .sidenav .tile.link {
     padding: 10px 12px;
+    font-size: 13px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
+  }
+  .sidenav .tile.link span {
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .sidenav--card .tile.link,
+  .sidenav--about .tile.link {
+    font-size: 13px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-width: 0;
   }
 }
 
