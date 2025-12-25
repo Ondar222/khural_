@@ -2841,10 +2841,16 @@ a {
 .mobile-auth__btn--primary {
   background: #003366;
   border: 1px solid #003366;
-  color: #ffffff;
+  color: #ffffff !important;
 }
 .mobile-auth__btn--primary:visited {
-  color: #ffffff;
+  color: #ffffff !important;
+}
+.mobile-drawer .mobile-auth__btn--primary {
+  color: #ffffff !important;
+}
+.mobile-drawer .mobile-auth__btn--primary:visited {
+  color: #ffffff !important;
 }
 .mobile-auth__btn--outline {
   background: #ffffff;
