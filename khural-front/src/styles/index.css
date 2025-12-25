@@ -2723,13 +2723,16 @@ a {
   white-space: normal;
   text-align: center;
 }
-.mobile-drawer .tile.link span[aria-hidden="true"] {
+.mobile-drawer .tile.link span[aria-hidden="true"],
+.mobile-drawer .tile.link .anticon {
   color: #111827;
   opacity: 0.7;
   font-weight: 400;
   font-size: 14px;
   flex-shrink: 0;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 .mobile-drawer .tile.link.active,
 .mobile-drawer .tile.link[aria-current="page"] {
@@ -2820,14 +2823,19 @@ a {
 }
 /* Override mobile-auth__btn padding in mobile drawer */
 .mobile-drawer .mobile-auth__btn {
-  padding: 10px 12px;
-  font-size: 14px;
+  padding: 32px 28px;
+  font-size: 18px;
   font-weight: 700;
+  flex: 1 1 50%;
+  width: 50%;
+ height: 6vh;
+  max-width: 50%;
+  margin-bottom: 20px;
 }
 @media (max-width: 480px) {
   .mobile-drawer .mobile-auth__btn {
-    padding: 8px 10px;
-    font-size: 13px;
+    padding: 28px 24px;
+    font-size: 17px;
   }
 }
 .mobile-auth__btn--primary {
@@ -2858,6 +2866,7 @@ a {
   margin-bottom: 4px;
   justify-content: center;
   align-items: center;
+  width: 100%;
 }
 .mobile-menu-links {
   flex: 1;

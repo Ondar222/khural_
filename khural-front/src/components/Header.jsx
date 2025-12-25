@@ -4,6 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import Link from "./Link.jsx";
 import { useData } from "../context/DataContext.jsx";
+import { RightOutlined, LeftOutlined } from "@ant-design/icons";
 // removed unused UI icon libs
 
 export default function Header() {
@@ -460,37 +461,37 @@ export default function Header() {
               <Link to="/" onClick={() => setMobileOpen(false)} className="tile link">
                 <span className="mobile-menu-link-content">
                   {t("home")}
-                  <span aria-hidden="true">&gt;</span>
+                  <RightOutlined aria-hidden="true" />
                 </span>
               </Link>
               <button className="tile link" onClick={() => setMobileSection("vh")}>
                 <span className="mobile-menu-link-content">
                   {t("aboutVH")}
-                  <span aria-hidden="true">&gt;</span>
+                  <RightOutlined aria-hidden="true" />
                 </span>
               </button>
               <Link to="/deputies" onClick={() => setMobileOpen(false)} className="tile link">
                 <span className="mobile-menu-link-content">
                   {t("deputies")}
-                  <span aria-hidden="true">&gt;</span>
+                  <RightOutlined aria-hidden="true" />
                 </span>
               </Link>
               <Link to="/appeals" onClick={() => setMobileOpen(false)} className="tile link">
                 <span className="mobile-menu-link-content">
                   {t("appeals")}
-                  <span aria-hidden="true">&gt;</span>
+                  <RightOutlined aria-hidden="true" />
                 </span>
               </Link>
               <button className="tile link" onClick={() => setMobileSection("docs")}>
                 <span className="mobile-menu-link-content">
                   {t("docs")}
-                  <span aria-hidden="true">&gt;</span>
+                  <RightOutlined aria-hidden="true" />
                 </span>
               </button>
               <button className="tile link" onClick={() => setMobileSection("news")}>
                 <span className="mobile-menu-link-content">
                   {t("news")}
-                  <span aria-hidden="true">&gt;</span>
+                  <RightOutlined aria-hidden="true" />
                 </span>
               </button>
             </div>
@@ -504,19 +505,19 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("aboutVH")}</div>
             <a className="tile link" href="/about" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("aboutVH")}
               </span>
             </a>
             <a className="tile link" href="/section" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("structure")}
               </span>
             </a>
             <a className="tile link" href="/committee" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("committees")}
               </span>
             </a>
@@ -526,7 +527,7 @@ export default function Header() {
               onClick={() => setMobileOpen(false)}
             >
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("commissions")}
               </span>
             </a>
@@ -536,7 +537,7 @@ export default function Header() {
               onClick={() => setMobileOpen(false)}
             >
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("factions")}
               </span>
             </a>
@@ -546,19 +547,19 @@ export default function Header() {
               onClick={() => setMobileOpen(false)}
             >
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("senateRep")}
               </span>
             </a>
             <a className="tile link" href="/apparatus" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("apparatus")}
               </span>
             </a>
             <a className="tile link" href="/contacts" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("contacts")}
               </span>
             </a>
@@ -572,25 +573,25 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("authorities")}</div>
             <a className="tile link" href="/authorities" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("localSelfGovernment")}
               </span>
             </a>
             <a className="tile link" href="/authorities" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("legislativeAssembly")}
               </span>
             </a>
             <a className="tile link" href="/authorities" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("territorialDepartments")}
               </span>
             </a>
             <a className="tile link" href="/authorities" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("headsOfBodies")}
               </span>
             </a>
@@ -604,25 +605,25 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("activity")}</div>
             <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("strategy")}
               </span>
             </a>
             <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("plansAndForecasts")}
               </span>
             </a>
             <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("resultsAndReports")}
               </span>
             </a>
             <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("announcements")}
               </span>
             </a>
@@ -636,19 +637,19 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("news")}</div>
             <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("hotNews")}
               </span>
             </a>
             <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("allNews")}
               </span>
             </a>
             <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("media")}
               </span>
             </a>
@@ -665,7 +666,7 @@ export default function Header() {
                   onClick={() => setMobileOpen(false)}
                 >
                   <span className="mobile-menu-link-content">
-                    <span aria-hidden="true">&lt;</span>
+                    <LeftOutlined aria-hidden="true" />
                     {lang === "ty"
                       ? {
                           Сессии: t("sessions"),
@@ -688,25 +689,25 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("government")}</div>
             <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("head") || "Глава"}
               </span>
             </a>
             <a className="tile link" href="/deputies" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("deputies")}
               </span>
             </a>
             <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("governmentComposition")}
               </span>
             </a>
             <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("executiveBodies")}
               </span>
             </a>
@@ -716,13 +717,13 @@ export default function Header() {
               onClick={() => setMobileOpen(false)}
             >
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("structure")}
               </span>
             </a>
             <a className="tile link" href="/government" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("press")}
               </span>
             </a>
@@ -736,7 +737,7 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("documents")}</div>
             <a className="tile link" href="/docs/laws" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("docsLaws")}
               </span>
             </a>
@@ -746,37 +747,37 @@ export default function Header() {
               onClick={() => setMobileOpen(false)}
             >
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("legislation")} ({t("news")})
               </span>
             </a>
             <a className="tile link" href="/docs/resolutions" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("docsResolutions")}
               </span>
             </a>
             <a className="tile link" href="/docs/initiatives" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("docsInitiatives")}
               </span>
             </a>
             <a className="tile link" href="/docs/civic" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("docsCivic")}
               </span>
             </a>
             <a className="tile link" href="/docs/constitution" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("docsConstitution")}
               </span>
             </a>
             <a className="tile link" href="/docs/bills" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
+                <LeftOutlined aria-hidden="true" />
                 {t("docsBills")}
               </span>
             </a>
