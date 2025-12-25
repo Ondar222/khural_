@@ -456,42 +456,44 @@ export default function Header() {
                 </>
               )}
             </div>
-            <Link to="/" onClick={() => setMobileOpen(false)} className="tile link">
-              <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
-                {t("home")}
-              </span>
-            </Link>
-            <button className="tile link" onClick={() => setMobileSection("vh")}>
-              <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
-                {t("aboutVH")} →
-              </span>
-            </button>
-            <Link to="/deputies" onClick={() => setMobileOpen(false)} className="tile link">
-              <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
-                {t("deputies")}
-              </span>
-            </Link>
-            <Link to="/appeals" onClick={() => setMobileOpen(false)} className="tile link">
-              <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
-                {t("appeals")}
-              </span>
-            </Link>
-            <button className="tile link" onClick={() => setMobileSection("docs")}>
-              <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
-                {t("docs")} →
-              </span>
-            </button>
-            <button className="tile link" onClick={() => setMobileSection("news")}>
-              <span className="mobile-menu-link-content">
-                <span aria-hidden="true">&lt;</span>
-                {t("news")} →
-              </span>
-            </button>
+            <div className="mobile-menu-links">
+              <Link to="/" onClick={() => setMobileOpen(false)} className="tile link">
+                <span className="mobile-menu-link-content">
+                  {t("home")}
+                  <span aria-hidden="true">&gt;</span>
+                </span>
+              </Link>
+              <button className="tile link" onClick={() => setMobileSection("vh")}>
+                <span className="mobile-menu-link-content">
+                  {t("aboutVH")}
+                  <span aria-hidden="true">&gt;</span>
+                </span>
+              </button>
+              <Link to="/deputies" onClick={() => setMobileOpen(false)} className="tile link">
+                <span className="mobile-menu-link-content">
+                  {t("deputies")}
+                  <span aria-hidden="true">&gt;</span>
+                </span>
+              </Link>
+              <Link to="/appeals" onClick={() => setMobileOpen(false)} className="tile link">
+                <span className="mobile-menu-link-content">
+                  {t("appeals")}
+                  <span aria-hidden="true">&gt;</span>
+                </span>
+              </Link>
+              <button className="tile link" onClick={() => setMobileSection("docs")}>
+                <span className="mobile-menu-link-content">
+                  {t("docs")}
+                  <span aria-hidden="true">&gt;</span>
+                </span>
+              </button>
+              <button className="tile link" onClick={() => setMobileSection("news")}>
+                <span className="mobile-menu-link-content">
+                  {t("news")}
+                  <span aria-hidden="true">&gt;</span>
+                </span>
+              </button>
+            </div>
           </>
         )}
         {mobileSection === "vh" && (

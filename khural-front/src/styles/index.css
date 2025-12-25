@@ -2676,12 +2676,13 @@ a {
 }
 .mobile-drawer .tile.link {
   padding: 10px 12px;
-  background: #f3f4f6;
+  background: transparent;
   border: none;
   box-shadow: none;
   color: #111827;
-  justify-content: flex-start;
-  font-size: 14px;
+  justify-content: center;
+  text-align: center;
+  font-size: 24px !important;
   line-height: 1.4;
   min-height: auto;
   width: 100%;
@@ -2694,12 +2695,13 @@ a {
 }
 .mobile-drawer .tile.link:active {
   transform: none; /* avoid jumpy hover transform on touch */
-  background: #e5e7eb;
+  /* background: #e5e7eb; */
 }
 .mobile-drawer .tile.link > span,
 .mobile-menu-link-content {
   display: flex !important;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
   width: 100%;
   max-width: 100%;
@@ -2713,12 +2715,13 @@ a {
   overflow: visible;
 }
 .mobile-menu-link-content > span:not([aria-hidden="true"]) {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
   word-break: break-word;
   overflow-wrap: break-word;
   white-space: normal;
+  text-align: center;
 }
 .mobile-drawer .tile.link span[aria-hidden="true"] {
   color: #111827;
@@ -2801,9 +2804,11 @@ a {
 .mobile-auth {
   display: flex;
   gap: 10px;
+  justify-content: center;
+  align-items: center;
 }
 .mobile-auth__btn {
-  flex: 1;
+  flex: 0 1 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2851,6 +2856,15 @@ a {
 .mobile-drawer .mobile-auth {
   flex-shrink: 0;
   margin-bottom: 4px;
+  justify-content: center;
+  align-items: center;
+}
+.mobile-menu-links {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
 }
 .mobile-drawer .btn {
   padding: 8px 12px;
