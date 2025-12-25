@@ -100,7 +100,7 @@ export function useHashRoute() {
     };
   }, []);
 
-  const navigate = (path) => {
+  const navigate = React.useCallback((path) => {
     const target = typeof path === "string" ? path : String(path || "");
     if (!target) return;
     if (target.startsWith("#")) {
@@ -109,18 +109,109 @@ export function useHashRoute() {
     }
     window.history.pushState({}, "", target);
     window.dispatchEvent(new Event("app:navigate"));
-  };
+  }, []);
 
-  return { route, navigate };
+  return React.useMemo(() => ({ route, navigate }), [route, navigate]);
+}
+
+function matchRoute(path, routePattern) {
+  // Exact match
+  if (routePattern === path) return { match: true, params: {} };
+  
+  // Check if route pattern has parameters (e.g., "/admin/news/edit/:id")
+  if (!routePattern.includes(":")) return null;
+  
+  // Convert pattern to regex
+  const patternParts = routePattern.split("/");
+  const pathParts = path.split("/");
+  
+  if (patternParts.length !== pathParts.length) return null;
+  
+  const params = {};
+  let match = true;
+  
+  for (let i = 0; i < patternParts.length; i++) {
+    const patternPart = patternParts[i];
+    const pathPart = pathParts[i];
+    
+    if (patternPart.startsWith(":")) {
+      // This is a parameter
+      const paramName = patternPart.slice(1);
+      params[paramName] = pathPart;
+    } else if (patternPart !== pathPart) {
+      match = false;
+      break;
+    }
+  }
+  
+  return match ? { match: true, params } : null;
 }
 
 export default function Router({ routes }) {
   const { route } = useHashRoute();
   const base = route.split("?")[0];
-  const Component = routes[base] || routes["*"] || routes["/"];
+  
+  // First try exact match
+  let Component = routes[base];
+  let routeParams = {};
+  
+  // If no exact match, try pattern matching
+  // Sort routes to check patterns with parameters first (more specific routes first)
+  if (!Component) {
+    const routeEntries = Object.entries(routes);
+    // Sort: patterns with : come first, then exact matches, then wildcards
+    const sortedRoutes = routeEntries.sort(([a], [b]) => {
+      const aHasParam = a.includes(":");
+      const bHasParam = b.includes(":");
+      if (aHasParam && !bHasParam) return -1;
+      if (!aHasParam && bHasParam) return 1;
+      if (a === "*") return 1;
+      if (b === "*") return -1;
+      if (a === "/") return 1;
+      if (b === "/") return -1;
+      // For patterns with params, prefer longer/more specific ones
+      if (aHasParam && bHasParam) {
+        return b.split("/").length - a.split("/").length;
+      }
+      return 0;
+    });
+    
+    for (const [pattern, comp] of sortedRoutes) {
+      if (pattern === "*" || pattern === "/") continue;
+      const matchResult = matchRoute(base, pattern);
+      if (matchResult && matchResult.match) {
+        Component = comp;
+        routeParams = matchResult.params || {};
+        // Store params for components to access - set immediately
+        if (typeof window !== "undefined") {
+          if (Object.keys(routeParams).length > 0) {
+            window.__routeParams = routeParams;
+          } else {
+            delete window.__routeParams;
+          }
+        }
+        break;
+      }
+    }
+  } else {
+    // Clear params if exact match
+    if (typeof window !== "undefined") {
+      delete window.__routeParams;
+    }
+  }
+  
+  // Fallback to wildcard or root
+  if (!Component) {
+    Component = routes["*"] || routes["/"];
+    if (typeof window !== "undefined") {
+      delete window.__routeParams;
+    }
+  }
+  
   React.useEffect(() => {
     // Always scroll to top on route change (desktop & mobile)
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }, [base]);
-  return <Component />;
+  
+  return Component ? <Component /> : null;
 }

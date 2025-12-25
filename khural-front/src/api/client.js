@@ -34,6 +34,11 @@ function resolveApiBaseUrl() {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
+// Константы для хранения токенов в sessionStorage
+const ACCESS_TOKEN_STORAGE_KEY = "access_token";
+const REFRESH_TOKEN_STORAGE_KEY = "refresh_token";
+const LEGACY_ACCESS_TOKEN_KEYS = ["token", "auth_token", "jwt"];
+
 function unwrapApiPayload(payload) {
   // Many endpoints return plain JSON; some return { data, meta }.
   // Normalize by returning `data` when present.
@@ -49,10 +54,10 @@ function unwrapApiPayload(payload) {
 
 export function getAuthToken() {
   try {
-    const direct = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    const direct = sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
     if (direct) return direct;
     for (const k of LEGACY_ACCESS_TOKEN_KEYS) {
-      const v = localStorage.getItem(k);
+      const v = sessionStorage.getItem(k);
       if (v) return v;
     }
     return "";
@@ -64,12 +69,12 @@ export function getAuthToken() {
 export function setAuthToken(token) {
   try {
     if (token) {
-      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+      sessionStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
       // keep legacy key in sync for backward compatibility
-      for (const k of LEGACY_ACCESS_TOKEN_KEYS) localStorage.setItem(k, token);
+      for (const k of LEGACY_ACCESS_TOKEN_KEYS) sessionStorage.setItem(k, token);
     } else {
-      localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-      for (const k of LEGACY_ACCESS_TOKEN_KEYS) localStorage.removeItem(k);
+      sessionStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+      for (const k of LEGACY_ACCESS_TOKEN_KEYS) sessionStorage.removeItem(k);
     }
   } catch {
     // ignore storage errors
@@ -78,7 +83,7 @@ export function setAuthToken(token) {
 
 export function getRefreshToken() {
   try {
-    return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || "";
+    return sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || "";
   } catch {
     return "";
   }
@@ -87,9 +92,9 @@ export function getRefreshToken() {
 export function setRefreshToken(token) {
   try {
     if (token) {
-      localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token);
+      sessionStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, token);
     } else {
-      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
     }
   } catch {
     // ignore storage errors
@@ -620,8 +625,22 @@ export const NewsApi = {
   async create(body) {
     return apiFetch("/news", { method: "POST", body, auth: true });
   },
+  async createMultipart(formData) {
+    return apiFetchMultipart("/news", {
+      method: "POST",
+      formData,
+      auth: true,
+    });
+  },
   async patch(id, body) {
     return apiFetch(`/news/${id}`, { method: "PATCH", body, auth: true });
+  },
+  async updateMultipart(id, formData) {
+    return apiFetchMultipart(`/news/${id}`, {
+      method: "PATCH",
+      formData,
+      auth: true,
+    });
   },
   async remove(id) {
     return apiFetch(`/news/${id}`, { method: "DELETE", auth: true });
@@ -635,6 +654,34 @@ export const NewsApi = {
       formData: fd,
       auth: true,
     });
+  },
+  async getAllCategories() {
+    return apiFetch("/news/categories/all", { method: "GET", auth: false });
+  },
+  async uploadCover(id, file) {
+    const fd = new FormData();
+    fd.append("cover", file);
+    return apiFetchMultipart(`/news/${id}/cover`, {
+      method: "POST",
+      formData: fd,
+      auth: true,
+    });
+  },
+  async uploadGallery(id, files) {
+    const fd = new FormData();
+    const arr = Array.isArray(files) ? files : files ? [files] : [];
+    arr.forEach((f) => fd.append("gallery", f));
+    return apiFetchMultipart(`/news/${id}/gallery`, {
+      method: "POST",
+      formData: fd,
+      auth: true,
+    });
+  },
+  async deleteCover(id) {
+    return apiFetch(`/news/${id}/cover`, { method: "DELETE", auth: true });
+  },
+  async deleteGalleryImage(id, fileId) {
+    return apiFetch(`/news/${id}/gallery/${fileId}`, { method: "DELETE", auth: true });
   },
 };
 
@@ -661,6 +708,36 @@ export const DocumentsApi = {
     return apiFetchMultipart(`/documents/${id}/pdf`, {
       method: "POST",
       formData: fd,
+      auth: true,
+    });
+  },
+  async uploadFileTy(id, file) {
+    const fd = new FormData();
+    fd.append("pdf", file);
+    return apiFetchMultipart(`/documents/${id}/pdf-ty`, {
+      method: "POST",
+      formData: fd,
+      auth: true,
+    });
+  },
+};
+
+// Translation endpoints
+export const TranslationApi = {
+  async translateDocument(file, from, to) {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("from", from);
+    fd.append("to", to);
+    return apiFetchMultipart("/translation/documents", {
+      method: "POST",
+      formData: fd,
+      auth: true,
+    });
+  },
+  async getTranslationStatus(jobId) {
+    return apiFetch(`/translation/documents/${jobId}/status`, {
+      method: "GET",
       auth: true,
     });
   },
