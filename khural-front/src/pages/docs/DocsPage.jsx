@@ -8,40 +8,34 @@ const CATEGORIES = [
   {
     slug: "laws",
     title: "Законы Республики Тыва",
-    data: "/data/docs_laws.json",
+    backendType: "law",
   },
   {
     slug: "resolutions",
     title: "Постановления ВХ РТ",
-    data: "/data/docs_resolutions.json",
+    backendType: "resolution",
   },
   {
     slug: "initiatives",
     title: "Законодательные инициативы",
-    data: "/data/docs_initiatives.json",
+    backendType: "order",
   },
   {
     slug: "civic",
     title: "Законодательная инициатива гражданами",
-    data: "/data/docs_civic.json",
+    backendType: "other",
   },
   {
     slug: "constitution",
     title: "Реализация принятых поправок в Конституцию РФ",
-    data: "/data/docs_constitution.json",
+    backendType: "other",
   },
-  { slug: "bills", title: "Законопроекты", data: "/data/docs_bills.json" },
+  { 
+    slug: "bills", 
+    title: "Законопроекты",
+    backendType: "decision",
+  },
 ];
-
-async function fetchJson(path) {
-  try {
-    const res = await fetch(path, { cache: "no-cache" });
-    if (!res.ok) throw new Error("Failed " + path);
-    return await res.json();
-  } catch {
-    return [];
-  }
-}
 
 export default function DocsPage() {
   const { documents } = useData();
@@ -58,21 +52,50 @@ export default function DocsPage() {
   const cat = CATEGORIES.find((c) => c.slug === slug) || CATEGORIES[0];
 
   React.useEffect(() => {
-    const fromApi = (documents || []).filter((d) => d?.type === slug && d?.url);
-    if (fromApi.length) {
-      setDocs(
-        fromApi.map((d) => ({
-          id: d.id,
-          title: d.title,
-          desc: d.desc || d.description || "",
-          number: d.number || "",
-          url: d.url,
-        }))
-      );
-      return;
-    }
-    fetchJson(cat.data).then(setDocs);
-  }, [cat.data, documents, slug]);
+    // Фильтруем документы по типу из бекенда
+    const fromApi = (documents || []).filter((d) => {
+      // Маппинг типов фронтенда на типы бекенда
+      const typeMap = {
+        laws: "laws",
+        resolutions: "resolutions",
+        bills: "bills",
+        initiatives: "initiatives",
+        civic: "other",
+        constitution: "other",
+      };
+      
+      const expectedType = typeMap[slug] || slug;
+      
+      // Для constitution и civic оба используют тип "other" в бекенде
+      // Различаем их по category или metadata
+      if (slug === "constitution") {
+        return d?.type === "other" && (
+          d?.category?.toLowerCase().includes("конституция") ||
+          d?.category?.toLowerCase().includes("constitution") ||
+          d?.title?.toLowerCase().includes("конституция")
+        );
+      }
+      if (slug === "civic") {
+        return d?.type === "other" && (
+          d?.category?.toLowerCase().includes("гражданами") ||
+          d?.category?.toLowerCase().includes("civic") ||
+          d?.title?.toLowerCase().includes("гражданами")
+        );
+      }
+      
+      return d?.type === expectedType;
+    });
+    
+    setDocs(
+      fromApi.map((d) => ({
+        id: d.id,
+        title: d.title,
+        desc: d.desc || d.description || "",
+        number: d.number || "",
+        url: d.url,
+      }))
+    );
+  }, [documents, slug]);
 
   return (
     <section className="section">

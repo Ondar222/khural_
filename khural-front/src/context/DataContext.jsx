@@ -352,36 +352,47 @@ export default function DataProvider({ children }) {
           .catch((e) => markError("deputies", e));
       }
 
-      // Documents from API (laws, resolutions, etc) - fallback to local JSON
+      // Documents from API (laws, resolutions, etc)
       markLoading("documents", true);
       markError("documents", null);
-      const apiDocs = await tryApiFetch("/documents", { auth: false });
-      if (Array.isArray(apiDocs) && apiDocs.length) {
+      try {
+        const apiDocsResponse = await tryApiFetch("/documents", { auth: false });
+        const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
+        
         const typeLabels = {
-          laws: "Законы",
-          resolutions: "Постановления",
-          initiatives: "Инициативы",
-          bills: "Законопроекты",
-          civic: "Обращения",
-          constitution: "Конституция",
+          law: "Законы",
+          resolution: "Постановления",
+          decision: "Законопроекты",
+          order: "Инициативы",
+          other: "Другое",
         };
+        
+        const typeMapping = {
+          law: "laws",
+          resolution: "resolutions",
+          decision: "bills",
+          order: "initiatives",
+          other: "other",
+        };
+        
         setDocuments(
           apiDocs.map((d) => ({
             id: d.id,
             title: d.title,
-            desc: d.description || "",
-            date: pick(d.date, d.createdAt, d.created_at) || "",
+            desc: d.content || d.description || "",
+            date: d.publishedAt || d.createdAt || "",
             number: d.number || "",
             category:
-              d?.category?.name || d.category || typeLabels[d.type] || d.type || "Документы",
-            type: d.type || "other",
-            url: d.url || firstFileLink(d.pdfFile) || firstFileLink(d.file) || "",
+              d?.category?.name || typeLabels[d.type] || d.type || "Документы",
+            type: typeMapping[d.type] || d.type || "other",
+            url: d.metadata?.url || firstFileLink(d.pdfFile) || (d.metadata?.pdfFileTyLink ? String(d.metadata.pdfFileTyLink) : "") || "",
           }))
         );
-      } else {
-        fetchJson("/data/documents.json")
-          .then(setDocuments)
-          .catch((e) => markError("documents", e));
+      } catch (e) {
+        markError("documents", e);
+        setDocuments([]);
+      } finally {
+        markLoading("documents", false);
       }
 
       // Fetch filters from API if available

@@ -1,5 +1,6 @@
 import React from "react";
 import { App, Button, Input, Modal, Form, Upload, Space, Table, Tag } from "antd";
+import { useHashRoute } from "../../Router.jsx";
 
 function pickRu(content) {
   const arr = Array.isArray(content) ? content : [];
@@ -8,13 +9,11 @@ function pickRu(content) {
 
 export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, canWrite }) {
   const { message } = App.useApp();
-  const [open, setOpen] = React.useState(false);
+  const { navigate } = useHashRoute();
   const [editOpen, setEditOpen] = React.useState(false);
   const [q, setQ] = React.useState("");
-  const [file, setFile] = React.useState(null);
   const [editFile, setEditFile] = React.useState(null);
   const [editing, setEditing] = React.useState(null);
-  const [form] = Form.useForm();
   const [editForm] = Form.useForm();
 
   const filtered = React.useMemo(() => {
@@ -66,14 +65,7 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
         <Space wrap>
           <Button
             onClick={() => {
-              const ru = pickRu(row.content);
-              setEditing(row);
-              editForm.setFieldsValue({
-                titleRu: ru?.title || "",
-                descRu: ru?.description || "",
-              });
-              setEditFile(null);
-              setEditOpen(true);
+              navigate(`/admin/news/edit/${row.id}`);
             }}
             disabled={!canWrite}
           >
@@ -86,23 +78,6 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
       ),
     },
   ];
-
-  const submit = async () => {
-    try {
-      const values = await form.validateFields();
-      await onCreate({
-        titleRu: values.titleRu,
-        descRu: values.descRu,
-        imageFile: file,
-      });
-      setOpen(false);
-      form.resetFields();
-      setFile(null);
-    } catch (e) {
-      if (e?.errorFields) return;
-      message.error(e?.message || "Не удалось создать новость");
-    }
-  };
 
   const submitEdit = async () => {
     try {
@@ -132,7 +107,7 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
           className="admin-input"
         />
         <Space wrap>
-          <Button type="primary" onClick={() => setOpen(true)} disabled={!canWrite} loading={busy}>
+          <Button type="primary" onClick={() => navigate("/admin/news/create")} disabled={!canWrite}>
             + Добавить новость
           </Button>
         </Space>
@@ -146,50 +121,6 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
           pagination={{ pageSize: 8 }}
         />
       </div>
-
-      <Modal
-        title="Добавить новость"
-        open={open}
-        onCancel={() => setOpen(false)}
-        onOk={submit}
-        okText="Добавить"
-        confirmLoading={busy}
-        okButtonProps={{ disabled: !canWrite }}
-      >
-        <Form layout="vertical" form={form}>
-          <Form.Item
-            label="Заголовок (RU)"
-            name="titleRu"
-            rules={[{ required: true, message: "Укажите заголовок" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Краткое описание (RU)"
-            name="descRu"
-            rules={[{ required: true, message: "Укажите описание" }]}
-          >
-            <Input.TextArea autoSize={{ minRows: 5, maxRows: 10 }} />
-          </Form.Item>
-
-          <Form.Item label="Обложка (опционально)">
-            <Upload
-              accept="image/*"
-              maxCount={1}
-              beforeUpload={(f) => {
-                setFile(f);
-                return false;
-              }}
-              onRemove={() => setFile(null)}
-            >
-              <Button>Загрузить</Button>
-            </Upload>
-          </Form.Item>
-        </Form>
-        {!canWrite ? (
-          <div className="admin-hint">Для записи в API войдите (или настройте API базу).</div>
-        ) : null}
-      </Modal>
 
       <Modal
         title="Редактировать новость"

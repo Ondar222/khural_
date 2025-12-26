@@ -32,24 +32,36 @@ import DocsPage from "./pages/docs/DocsPage.jsx";
 import ActivitySectionPage from "./pages/activity/ActivitySection.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
-import Admin from "./pages/Admin.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import PdPolicy from "./pages/PdPolicy.jsx";
 import License from "./pages/License.jsx";
 import Sitemap from "./pages/Sitemap.jsx";
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage.jsx";
+import AdminNewsPage from "./pages/admin/AdminNewsPage.jsx";
+import AdminNewsCreatePage from "./pages/admin/AdminNewsCreatePage.jsx";
+import AdminNewsEditPage from "./pages/admin/AdminNewsEditPage.jsx";
+import AdminDeputiesPage from "./pages/admin/AdminDeputiesPage.jsx";
+import AdminDocumentsPage from "./pages/admin/AdminDocumentsPage.jsx";
+import AdminDocumentsCreatePage from "./pages/admin/AdminDocumentsCreatePage.jsx";
+import AdminDocumentsEditPage from "./pages/admin/AdminDocumentsEditPage.jsx";
+import AdminEventsPage from "./pages/admin/AdminEventsPage.jsx";
+import AdminEnvDocsPage from "./pages/admin/AdminEnvDocsPage.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
   const base = (route || "/").split("?")[0];
   const isAdmin = base === "/admin" || base.startsWith("/admin/");
-  const AdminProtected = React.useCallback(() => {
-    return (
+  
+  const AdminProtected = React.useCallback((Component) => {
+    const ProtectedComponent = () => (
       <RequireAuth>
-        <Admin />
+        <Component />
       </RequireAuth>
     );
+    ProtectedComponent.displayName = `AdminProtected(${Component.displayName || Component.name || 'Component'})`;
+    return ProtectedComponent;
   }, []);
 
   return (
@@ -106,12 +118,16 @@ export default function App() {
                           "/authorities": Authorities,
                           "/wifi": Wifi,
                           "/map": MapPage,
-                          "/admin": AdminProtected,
-                          "/admin/news": AdminProtected,
-                          "/admin/deputies": AdminProtected,
-                          "/admin/documents": AdminProtected,
-                          "/admin/events": AdminProtected,
-                          "/admin/env": AdminProtected,
+                          "/admin": AdminProtected(AdminDashboardPage),
+                          "/admin/news": AdminProtected(AdminNewsPage),
+                          "/admin/news/create": AdminProtected(AdminNewsCreatePage),
+                          "/admin/news/edit/:id": AdminProtected(AdminNewsEditPage),
+                          "/admin/deputies": AdminProtected(AdminDeputiesPage),
+                          "/admin/documents": AdminProtected(AdminDocumentsPage),
+                          "/admin/documents/create": AdminProtected(AdminDocumentsCreatePage),
+                          "/admin/documents/:id": AdminProtected(AdminDocumentsEditPage),
+                          "/admin/events": AdminProtected(AdminEventsPage),
+                          "/admin/env": AdminProtected(AdminEnvDocsPage),
                           "/feedback": Feedback,
                           "/press": Press,
                           "/activity": ActivityPage,
