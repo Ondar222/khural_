@@ -174,19 +174,19 @@ export default function Appeals() {
                           name="surname"
                           rules={[{ required: true, message: "Укажите фамилию" }]}
                         >
-                          <Input disabled={!isAuthenticated} />
+                          <Input />
                         </Form.Item>
                         <Form.Item
                           label="Имя"
                           name="name"
                           rules={[{ required: true, message: "Укажите имя" }]}
                         >
-                          <Input disabled={!isAuthenticated} />
+                          <Input />
                         </Form.Item>
                       </div>
 
                       <Form.Item label="Отчество (если есть)" name="patronymic">
-                        <Input disabled={!isAuthenticated} />
+                        <Input />
                       </Form.Item>
 
                       <div className="admin-split">
@@ -195,7 +195,7 @@ export default function Appeals() {
                           name="phone"
                           rules={[{ required: true, message: "Укажите телефон" }]}
                         >
-                          <Input placeholder="+7..." disabled={!isAuthenticated} />
+                          <Input placeholder="+7..." />
                         </Form.Item>
                         <Form.Item
                           label="Email"
@@ -205,7 +205,7 @@ export default function Appeals() {
                             { type: "email", message: "Некорректный email" },
                           ]}
                         >
-                          <Input type="email" disabled={!isAuthenticated} />
+                          <Input type="email" />
                         </Form.Item>
                       </div>
 
@@ -214,7 +214,7 @@ export default function Appeals() {
               name="subject"
               rules={[{ required: true, message: "Укажите тему" }]}
             >
-                        <Input disabled={!isAuthenticated} />
+                        <Input />
             </Form.Item>
 
             <Form.Item
@@ -222,7 +222,7 @@ export default function Appeals() {
               name="message"
               rules={[{ required: true, message: "Введите текст обращения" }]}
             >
-                        <Input.TextArea rows={8} disabled={!isAuthenticated} />
+                        <Input.TextArea rows={8} />
                       </Form.Item>
 
                       <Form.Item
@@ -235,7 +235,7 @@ export default function Appeals() {
                           },
                         ]}
                       >
-                        <Checkbox>
+                        <Checkbox disabled={!isAuthenticated}>
                           <span style={{ lineHeight: 1.35 }}>
                             Я согласен(на) на обработку персональных данных и подтверждаю достоверность
                             сведений.{" "}
@@ -250,6 +250,13 @@ export default function Appeals() {
               <Button type="primary" htmlType="submit" disabled={!isAuthenticated} loading={busy}>
                 Отправить
               </Button>
+              {!isAuthenticated && (
+                <div style={{ marginTop: 12, fontSize: 13, color: "#6b7280" }}>
+                  Для отправки обращения необходимо{" "}
+                  <a href="/login" className="link">войти</a> или{" "}
+                  <a href="/register" className="link">зарегистрироваться</a>
+                </div>
+              )}
             </Form.Item>
           </Form>
         )}
