@@ -26,6 +26,10 @@ function resolveApiBaseUrl() {
   if (typeof window !== "undefined" && window.location) {
     const host = window.location.hostname;
     if (host === "localhost" || host === "127.0.0.1") return "/api"; // dev proxy
+    
+    // Для продакшена используем window.location.origin как fallback
+    // Но это может быть проблемой, если API не на том же домене
+    // В этом случае нужно установить VITE_API_BASE_URL
     return window.location.origin;
   }
 
@@ -151,8 +155,19 @@ export async function apiFetch(
   { method = "GET", body, headers, auth = true, retry = true } = {}
 ) {
   if (!API_BASE_URL) {
-    throw new Error("VITE_API_BASE_URL is not configured");
+    throw new Error("API base URL не настроен. Установите переменную окружения VITE_API_BASE_URL на Vercel.");
   }
+  
+  // Проверяем, не используем ли мы fallback на window.location.origin (что может быть проблемой для продакшена)
+  if (typeof window !== "undefined" && API_BASE_URL === window.location.origin) {
+    const hostname = window.location.hostname;
+    // Если это не localhost, вероятно используется fallback, что может быть проблемой
+    if (hostname !== "localhost" && hostname !== "127.0.0.1" && !hostname.includes("localhost")) {
+      console.warn("⚠️ API base URL использует текущий домен как fallback.");
+      console.warn("Если API находится на другом домене, установите переменную окружения VITE_API_BASE_URL на Vercel.");
+    }
+  }
+  
   const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
   const finalHeaders = {
     Accept: "application/json",
@@ -163,11 +178,24 @@ export async function apiFetch(
     const token = getAuthToken();
     if (token) finalHeaders.Authorization = `Bearer ${token}`;
   }
-  const res = await fetch(url, {
-    method,
-    headers: finalHeaders,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  
+  let res;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: finalHeaders,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (networkError) {
+    // Сетевая ошибка (CORS, недоступен сервер и т.д.)
+    const err = new Error(
+      `Не удалось подключиться к API: ${networkError.message}. Проверьте, что VITE_API_BASE_URL настроен правильно.`
+    );
+    err.status = 0;
+    err.networkError = true;
+    throw err;
+  }
+  
   const isJson = (res.headers.get("content-type") || "").includes("application/json");
   const data = isJson ? await res.json().catch(() => null) : null;
   if (!res.ok) {
@@ -182,11 +210,21 @@ export async function apiFetch(
       setAuthToken("");
       setRefreshToken("");
     }
-    const err = new Error(
-      (data && (data.message || data.error)) || `Request failed: ${res.status}`
-    );
+    
+    // Улучшенные сообщения об ошибках
+    let errorMessage = `Request failed: ${res.status}`;
+    if (res.status === 405) {
+      errorMessage = `Метод не разрешен (405). Возможно, неправильный endpoint или метод запроса. API URL: ${url}`;
+    } else if (res.status === 404) {
+      errorMessage = `Endpoint не найден (404). Проверьте правильность URL API.`;
+    } else if (data && (data.message || data.error)) {
+      errorMessage = data.message || data.error;
+    }
+    
+    const err = new Error(errorMessage);
     err.status = res.status;
     err.data = data;
+    err.url = url;
     throw err;
   }
   return unwrapApiPayload(data);
