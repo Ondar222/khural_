@@ -116,14 +116,16 @@ export function useAdminData() {
 
   React.useEffect(() => {
     (async () => {
-      const [apiNews, apiPersons, apiDocs] = await Promise.all([
+      const [apiNews, apiPersons, apiDocsResponse] = await Promise.all([
         NewsApi.list().catch(() => null),
         PersonsApi.list().catch(() => null),
-        DocumentsApi.list().catch(() => null),
+        DocumentsApi.listAll().catch(() => null),
       ]);
       setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(data.news));
       setPersons(Array.isArray(apiPersons) ? apiPersons : toPersonsFallback(data.deputies));
-      setDocuments(Array.isArray(apiDocs) ? apiDocs : toDocumentsFallback(data.documents));
+      // Обрабатываем структуру ответа от бекенда (может быть { items } или массив)
+      const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
+      setDocuments(Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(data.documents));
       const apiEvents = await EventsApi.list().catch(() => null);
       setEvents(Array.isArray(apiEvents) ? apiEvents.map(toEventRow) : data.events || []);
     })();
@@ -136,13 +138,15 @@ export function useAdminData() {
   }, [themeMode]);
 
   const reload = React.useCallback(async () => {
-    const [apiNews, apiPersons, apiDocs] = await Promise.all([
+    const [apiNews, apiPersons, apiDocsResponse] = await Promise.all([
       NewsApi.list().catch(() => null),
       PersonsApi.list().catch(() => null),
-      DocumentsApi.list().catch(() => null),
+      DocumentsApi.listAll().catch(() => null),
     ]);
     if (Array.isArray(apiNews)) setNews(apiNews);
     if (Array.isArray(apiPersons)) setPersons(apiPersons);
+    // Обрабатываем структуру ответа от бекенда (может быть { items } или массив)
+    const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
     if (Array.isArray(apiDocs)) setDocuments(apiDocs);
     const apiEvents = await EventsApi.list().catch(() => null);
     if (Array.isArray(apiEvents)) setEvents(apiEvents.map(toEventRow));

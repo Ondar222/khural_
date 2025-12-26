@@ -690,6 +690,9 @@ export const DocumentsApi = {
   async list() {
     return apiFetch("/documents", { method: "GET", auth: false });
   },
+  async listAll() {
+    return apiFetch("/documents/all", { method: "GET", auth: true });
+  },
   async getById(id) {
     return apiFetch(`/documents/${id}`, { method: "GET", auth: false });
   },
@@ -732,6 +735,13 @@ export const TranslationApi = {
     return apiFetchMultipart("/translation/documents", {
       method: "POST",
       formData: fd,
+      auth: true,
+    });
+  },
+  async translateDocumentByFileId(fileId, from, to, documentId) {
+    return apiFetch("/translation/documents/by-file-id", {
+      method: "POST",
+      body: { fileId, from, to, documentId },
       auth: true,
     });
   },

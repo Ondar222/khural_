@@ -65,8 +65,15 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
         setTranslationStatus(status);
         
         if (status.status === "completed") {
-          antdMessage.success("Перевод завершен");
+          antdMessage.success("Перевод завершен и файл добавлен к документу");
           setTranslationJob(null);
+          // Перезагружаем документ, чтобы увидеть новый файл
+          try {
+            const doc = await DocumentsApi.getById(documentId);
+            setDocumentData(doc);
+          } catch (error) {
+            console.error("Failed to reload document:", error);
+          }
         } else if (status.status === "failed") {
           antdMessage.error("Перевод не удался");
           setTranslationJob(null);
@@ -81,7 +88,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
 
     const interval = setInterval(checkStatus, 3000);
     return () => clearInterval(interval);
-  }, [translationJob, antdMessage]);
+  }, [translationJob, antdMessage, documentId]);
 
   const handleSubmit = async () => {
     try {
@@ -104,8 +111,22 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
   const [translateTo, setTranslateTo] = React.useState("tyv");
 
   const handleTranslate = async () => {
-    if (!documentData?.pdfFile?.link) {
-      antdMessage.warning("Для перевода необходим загруженный PDF или DOCX файл");
+    // Определяем, какой файл использовать для перевода
+    // Если переводим с русского, используем русский файл
+    // Если переводим с тувинского, используем тувинский файл
+    let fileId = null;
+    
+    if (translateFrom === "ru") {
+      // Переводим с русского - используем русский файл
+      fileId = documentData?.pdfFile?.id;
+    } else if (translateFrom === "tyv") {
+      // Переводим с тувинского - используем тувинский файл
+      fileId = documentData?.metadata?.pdfFileTyId;
+    }
+
+    if (!fileId) {
+      const fileType = translateFrom === "ru" ? "русский" : "тувинский";
+      antdMessage.warning(`Для перевода необходим загруженный ${fileType} файл (PDF или DOCX)`);
       return;
     }
 
@@ -116,21 +137,13 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
 
     try {
       setTranslating(true);
-      
-      // Получаем файл по ссылке
-      const response = await fetch(documentData.pdfFile.link);
-      if (!response.ok) {
-        throw new Error("Не удалось загрузить файл");
-      }
-      const blob = await response.blob();
-      const file = new File([blob], documentData.pdfFile.link.split("/").pop() || "document.pdf", {
-        type: blob.type || "application/pdf",
-      });
 
-      const result = await TranslationApi.translateDocument(
-        file,
+      // Используем новый метод для перевода по ID файла
+      const result = await TranslationApi.translateDocumentByFileId(
+        fileId,
         translateFrom,
-        translateTo
+        translateTo,
+        documentId
       );
 
       setTranslationJob(result);
@@ -176,21 +189,25 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
                 <h4 style={{ marginBottom: 8 }}>Русская версия</h4>
                 <Button
                   type="primary"
-                  onClick={() => window.open(pdfUrlRu, "_blank")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.open(pdfUrlRu, "_blank");
+                  }}
                   style={{ marginBottom: 16 }}
                 >
                   Открыть в новой вкладке
                 </Button>
-                <iframe
-                  src={pdfUrlRu}
-                  style={{
-                    width: "100%",
-                    height: "600px",
-                    border: "1px solid #d9d9d9",
-                    borderRadius: "4px",
-                  }}
-                  title="PDF Preview RU"
-                />
+                <div style={{ border: "1px solid #d9d9d9", borderRadius: "4px", overflow: "hidden" }}>
+                  <iframe
+                    src={pdfUrlRu}
+                    style={{
+                      width: "100%",
+                      height: "600px",
+                      border: "none",
+                    }}
+                    title="PDF Preview RU"
+                  />
+                </div>
               </div>
             )}
             {pdfUrlTy && (
@@ -198,21 +215,25 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
                 <h4 style={{ marginBottom: 8 }}>Тувинская версия</h4>
                 <Button
                   type="primary"
-                  onClick={() => window.open(pdfUrlTy, "_blank")}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.open(pdfUrlTy, "_blank");
+                  }}
                   style={{ marginBottom: 16 }}
                 >
                   Открыть в новой вкладке
                 </Button>
-                <iframe
-                  src={pdfUrlTy}
-                  style={{
-                    width: "100%",
-                    height: "600px",
-                    border: "1px solid #d9d9d9",
-                    borderRadius: "4px",
-                  }}
-                  title="PDF Preview TY"
-                />
+                <div style={{ border: "1px solid #d9d9d9", borderRadius: "4px", overflow: "hidden" }}>
+                  <iframe
+                    src={pdfUrlTy}
+                    style={{
+                      width: "100%",
+                      height: "600px",
+                      border: "none",
+                    }}
+                    title="PDF Preview TY"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -249,7 +270,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
               type="primary"
               onClick={handleTranslate}
               loading={translating}
-              disabled={!canWrite || (!pdfUrlRu && !pdfUrlTy) || translating}
+              disabled={!canWrite || (!documentData?.pdfFile?.id && !documentData?.metadata?.pdfFileTyId) || translating}
               style={{ width: "100%" }}
             >
               Запросить перевод
@@ -277,7 +298,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
             style={{ marginTop: 16 }}
           />
         )}
-        {!pdfUrlRu && !pdfUrlTy && (
+        {!documentData?.pdfFile?.id && !documentData?.metadata?.pdfFileTyId && (
           <Alert
             message="Для перевода необходимо загрузить PDF или DOCX файл"
             type="warning"
@@ -347,7 +368,15 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
               </Upload>
               {pdfUrlRu && !fileRu && (
                 <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
-                  Текущий файл: <a href={pdfUrlRu} target="_blank" rel="noopener noreferrer">открыть</a>
+                  Текущий файл: <a 
+                    href={pdfUrlRu} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open(pdfUrlRu, "_blank");
+                    }}
+                  >открыть</a>
                 </div>
               )}
             </Form.Item>
@@ -368,7 +397,15 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
               </Upload>
               {pdfUrlTy && !fileTy && (
                 <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
-                  Текущий файл: <a href={pdfUrlTy} target="_blank" rel="noopener noreferrer">открыть</a>
+                  Текущий файл: <a 
+                    href={pdfUrlTy} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open(pdfUrlTy, "_blank");
+                    }}
+                  >открыть</a>
                 </div>
               )}
             </Form.Item>
