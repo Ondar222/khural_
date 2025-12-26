@@ -346,12 +346,12 @@ export default function About() {
                   </div>
 
                   <div className="org__col org__col--span2">
-                    <a
-                      className="org__item org__item--blue"
+                      <a
+                        className="org__item org__item--blue"
                       href="/about?tab=structure&focus=councils"
-                    >
+                      >
                       Совет по взаимодействию с представительными органами муниципальных образований
-                    </a>
+                      </a>
                   </div>
                 </div>
 

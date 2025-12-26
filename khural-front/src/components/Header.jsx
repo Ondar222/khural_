@@ -81,7 +81,7 @@ export default function Header() {
                 <span style={{ fontWeight: 600, color: "#111827" }}>
                   {user?.name || user?.email || t("login")}
                 </span>
-                <a href="/admin">{t("admin") || "Админка"}</a>
+                <a href="/admin">{t("Панел управления ") || "Панель управления"}</a>
                 <button
                   className="link-like"
                   onClick={() => {
@@ -373,20 +373,20 @@ export default function Header() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
-            <a
-              href="/"
-              className="logo"
-              aria-label={t("goHome")}
-              onClick={() => setMobileOpen(false)}
-              style={{ textDecoration: "none" }}
-            >
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
-                alt=""
-                width={36}
-                height={36}
-              />
-            </a>
+          <a
+            href="/"
+            className="logo"
+            aria-label={t("goHome")}
+            onClick={() => setMobileOpen(false)}
+            style={{ textDecoration: "none" }}
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
+              alt=""
+              width={36}
+              height={36}
+            />
+          </a>
             <div className="mobile-brand-text" style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
               <div style={{ fontSize: 12, color: "#6b7280" }}>
                 {t("brandTop")} {t("brandParliament")}
@@ -437,7 +437,7 @@ export default function Header() {
                     href="/admin"
                     onClick={() => setMobileOpen(false)}
                   >
-                    {t("admin") || "Админка"}
+                    {t("admin") || "Панель управления"}
                   </a>
                   <button
                     className="btn mobile-auth__btn mobile-auth__btn--outline"

@@ -250,9 +250,9 @@ export default function PersonDetail({ item, type, backHref }) {
                     Открыть
                   </button>
                 ) : (
-                  <a className="law-link" href={laws ? entry.url : "#"} aria-label="Перейти">
-                    ↗
-                  </a>
+                <a className="law-link" href={laws ? entry.url : "#"} aria-label="Перейти">
+                  ↗
+                </a>
                 )}
               </div>
             ))}

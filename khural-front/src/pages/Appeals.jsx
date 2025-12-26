@@ -107,7 +107,7 @@ export default function Appeals() {
       saveLocal(user, next);
       // Show success message for 3 seconds, then switch to history tab
       setTimeout(() => {
-        setTab("history");
+      setTab("history");
         setOk(false);
       }, 3000);
       // refresh from backend in background
