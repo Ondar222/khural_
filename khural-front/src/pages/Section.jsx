@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import SideNav from "../components/SideNav.jsx";
+import PersonDetail from "../components/PersonDetail.jsx";
 
 function useQuery() {
   const [q, setQ] = React.useState(() => {
@@ -184,17 +185,86 @@ export default function SectionPage() {
     }
 
     if (title === "Представительство в Совете Федерации") {
+      const { deputies, government } = useData();
+      
+      // Ищем сенатора - может быть в deputies с особым полем или в government
+      // Проверяем по position/role, содержащему "сенатор" или "Совет Федерации"
+      const findSenator = () => {
+        // Сначала проверяем deputies
+        const senatorFromDeputies = (deputies || []).find((d) => 
+          d && (
+            (d.position && typeof d.position === "string" && d.position.toLowerCase().includes("сенатор")) ||
+            (d.role && typeof d.role === "string" && d.role.toLowerCase().includes("сенатор")) ||
+            (d.position && typeof d.position === "string" && d.position.toLowerCase().includes("совет федерации"))
+          )
+        );
+        
+        if (senatorFromDeputies) {
+          return {
+            ...senatorFromDeputies,
+            role: senatorFromDeputies.position || senatorFromDeputies.role || "Член Совета Федерации от Республики Тыва",
+            type: "dep"
+          };
+        }
+        
+        // Проверяем government
+        const senatorFromGov = (government || []).find((g) => 
+          g && (
+            (g.role && typeof g.role === "string" && g.role.toLowerCase().includes("сенатор")) ||
+            (g.role && typeof g.role === "string" && g.role.toLowerCase().includes("совет федерации"))
+          )
+        );
+        
+        if (senatorFromGov) {
+          return {
+            ...senatorFromGov,
+            type: "org"
+          };
+        }
+        
+        // Если не найден, возвращаем null (будет показана заглушка)
+        return null;
+      };
+      
+      const senator = findSenator();
+      
+      if (senator) {
+        return (
+          <section className="section section-page">
+            <div className="container">
+              <div className="page-grid">
+                <div className="page-grid__main">
+                  <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
+                  <PersonDetail 
+                    item={senator} 
+                    type={senator.type || "dep"}
+                    backHref={`/section?title=${encodeURIComponent("Представительство в Совете Федерации")}`}
+                  />
+                </div>
+                <SideNav title="Разделы" />
+              </div>
+            </div>
+          </section>
+        );
+      }
+      
+      // Если сенатор не найден, показываем заглушку с инструкцией
       return (
         <section className="section section-page">
           <div className="container">
             <div className="page-grid">
               <div>
                 <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
-                <p>
-                  Раздел в разработке. Здесь будет информация о представителях Республики Тыва в
-                  Совете Федерации, контакты и биографии.
-                </p>
-                <div className="tabs">
+                <div className="tile" style={{ padding: 24, marginTop: 20 }}>
+                  <p style={{ marginTop: 0 }}>
+                    Для отображения информации о представителе в Совете Федерации необходимо добавить депутата 
+                    с позицией, содержащей слово "сенатор" или "Совет Федерации" в данные депутатов.
+                  </p>
+                  <p>
+                    Или добавьте запись в файл government.json с ролью, содержащей "сенатор" или "Совет Федерации".
+                  </p>
+                </div>
+                <div className="tabs" style={{ marginTop: 20 }}>
                   <a className="btn" href="/contacts">
                     Контакты →
                   </a>

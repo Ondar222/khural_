@@ -35,15 +35,49 @@ export default function Deputies() {
     if (!hasAny) setConvocation("Все");
   }, [convocation, deputies]);
 
-  const districts = React.useMemo(
-    () => ["Все", ...(structureDistricts || [])],
-    [structureDistricts]
-  );
-  const convocations = React.useMemo(
-    () => ["Все", ...(structureConvocations || [])],
-    [structureConvocations]
-  );
-  const factions = React.useMemo(() => ["Все", ...(structureFactions || [])], [structureFactions]);
+  const districts = React.useMemo(() => {
+    const items = Array.isArray(structureDistricts) ? structureDistricts : [];
+    // Убеждаемся, что все значения - строки
+    const stringItems = items
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") {
+          // Если объект, пытаемся извлечь строковое значение
+          return item.name || item.title || item.label || String(item);
+        }
+        return String(item || "");
+      })
+      .filter((item) => item && item.trim() !== "");
+    return ["Все", ...stringItems];
+  }, [structureDistricts]);
+  
+  const convocations = React.useMemo(() => {
+    const items = Array.isArray(structureConvocations) ? structureConvocations : [];
+    const stringItems = items
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") {
+          return item.name || item.title || item.label || String(item);
+        }
+        return String(item || "");
+      })
+      .filter((item) => item && item.trim() !== "");
+    return ["Все", ...stringItems];
+  }, [structureConvocations]);
+  
+  const factions = React.useMemo(() => {
+    const items = Array.isArray(structureFactions) ? structureFactions : [];
+    const stringItems = items
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") {
+          return item.name || item.title || item.label || String(item);
+        }
+        return String(item || "");
+      })
+      .filter((item) => item && item.trim() !== "");
+    return ["Все", ...stringItems];
+  }, [structureFactions]);
   const convMenuItems = React.useMemo(() => {
     const av = Array.from(new Set(convocations));
     const ordered = CONVOCATION_ORDER.filter((x) => av.includes(x));
@@ -159,20 +193,26 @@ export default function Deputies() {
                   value={faction}
                   onChange={setFaction}
                   dropdownMatchSelectWidth={false}
-                  options={factions.map((x) => ({
-                    value: x,
-                    label: x === "Все" ? "По фракциям: Все" : `По фракциям: ${x}`,
-                  }))}
+                  options={factions.map((x) => {
+                    const strValue = typeof x === "string" ? x : String(x || "");
+                    return {
+                      value: strValue,
+                      label: strValue === "Все" ? "По фракциям: Все" : `По фракциям: ${strValue}`,
+                    };
+                  })}
                   placeholder="Фракция"
                 />
                 <Select
                   value={district}
                   onChange={setDistrict}
                   dropdownMatchSelectWidth={false}
-                  options={districts.map((x) => ({
-                    value: x,
-                    label: x === "Все" ? "По округам: Все" : `По округам: ${x}`,
-                  }))}
+                  options={districts.map((x) => {
+                    const strValue = typeof x === "string" ? x : String(x || "");
+                    return {
+                      value: strValue,
+                      label: strValue === "Все" ? "По округам: Все" : `По округам: ${strValue}`,
+                    };
+                  })}
                   placeholder="Округ"
                 />
               </div>

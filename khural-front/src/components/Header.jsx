@@ -372,20 +372,30 @@ export default function Header() {
             justifyContent: "space-between",
           }}
         >
-          <a
-            href="/"
-            className="logo"
-            aria-label={t("goHome")}
-            onClick={() => setMobileOpen(false)}
-            style={{ textDecoration: "none" }}
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
-              alt=""
-              width={36}
-              height={36}
-            />
-          </a>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+            <a
+              href="/"
+              className="logo"
+              aria-label={t("goHome")}
+              onClick={() => setMobileOpen(false)}
+              style={{ textDecoration: "none" }}
+            >
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
+                alt=""
+                width={36}
+                height={36}
+              />
+            </a>
+            <div className="mobile-brand-text" style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
+              <div style={{ fontSize: 12, color: "#6b7280" }}>
+                {t("brandTop")} {t("brandParliament")}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#003366" }}>
+                {t("brandBottom")}
+              </div>
+            </div>
+          </div>
           <button className="icon-btn" aria-label="Версия для слабовидящих" onClick={cycleMode}>
             👁️
           </button>

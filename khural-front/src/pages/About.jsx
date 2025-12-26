@@ -334,39 +334,24 @@ export default function About() {
                     >
                       Комитеты Верховного Хурала (парламента) Республики Тыва
                     </a>
-                    {(committees || []).map((c) => (
-                      <a
-                        key={c.id}
-                        className="org__item org__item--green"
-                        href={`/committee?id=${encodeURIComponent(c.id)}`}
-                      >
-                        {c.title}
-                      </a>
-                    ))}
                   </div>
 
                   <div className="org__col">
                     <a
                       className="org__item org__item--blue"
-                      href="/commission?id=mezhregionalnye-svyazi"
+                      href="/about?tab=structure&focus=commissions"
                     >
-                      Комитет ВХ РТ по межрегиональным связям
-                    </a>
-                    <a className="org__item org__item--blue" href="/commission?id=smi-obshestvo">
-                      Комитет ВХ РТ по взаимодействию со СМИ и общественными организациями
+                      Комиссии Верховного Хурала (парламента) Республики Тыва
                     </a>
                   </div>
 
                   <div className="org__col org__col--span2">
-                    {commissionsList.map((item) => (
-                      <a
-                        key={item.id}
-                        className="org__item org__item--blue"
-                        href={`/commission?id=${item.id}`}
-                      >
-                        {item.title}
-                      </a>
-                    ))}
+                    <a
+                      className="org__item org__item--blue"
+                      href="/about?tab=structure&focus=councils"
+                    >
+                      Совет по взаимодействию с представительными органами муниципальных образований
+                    </a>
                   </div>
                 </div>
 
