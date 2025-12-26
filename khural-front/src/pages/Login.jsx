@@ -25,8 +25,19 @@ export default function Login() {
     return "/";
   }, [nextPath, user]);
 
+  const hasNavigatedRef = React.useRef(false);
+
   React.useEffect(() => {
-    if (isAuthenticated) navigate(targetAfterLogin);
+    // Only auto-navigate if user just became authenticated and we haven't navigated yet
+    if (isAuthenticated && !hasNavigatedRef.current && targetAfterLogin) {
+      hasNavigatedRef.current = true;
+      // Use setTimeout to ensure navigation happens after state updates
+      setTimeout(() => {
+        navigate(targetAfterLogin);
+      }, 0);
+    } else if (!isAuthenticated) {
+      hasNavigatedRef.current = false;
+    }
   }, [isAuthenticated, navigate, targetAfterLogin]);
 
   const onFinish = async (values) => {
@@ -34,9 +45,15 @@ export default function Login() {
     setLoading(true);
     try {
       await login(values);
-      navigate(targetAfterLogin);
+      // Navigation will happen automatically via useEffect when isAuthenticated becomes true
+      // But we can also navigate here as a fallback
+      if (targetAfterLogin) {
+        hasNavigatedRef.current = true;
+        navigate(targetAfterLogin);
+      }
     } catch (e) {
       setError(e?.message || "Ошибка входа");
+      hasNavigatedRef.current = false;
     } finally {
       setLoading(false);
     }

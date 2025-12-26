@@ -121,11 +121,7 @@ export default function AuthProvider({ children }) {
     const res = await AuthApi.register(form);
     // Some backends return tokens on registration; preserve session if so.
     if (res) {
-      applySessionFromResponse(res, {
-        email: form?.email,
-        name: `${form?.name || ""} ${form?.surname || ""}`.trim() || form?.email,
-        role: form?.role || "user",
-      });
+      applySessionFromResponse(res);
       if (res?.user) setUser(normalizeUser(res.user));
       // If backend didn't return user, try to load it with the new token.
       if (!res?.user) {
@@ -162,7 +158,7 @@ export default function AuthProvider({ children }) {
         throw e;
       }
 
-      applySessionFromResponse(res, { email, role: "admin" });
+      applySessionFromResponse(res);
       if (res?.user) setUser(normalizeUser(res.user));
       // Ensure we have a real user object (backend returns only credentials)
       try {
