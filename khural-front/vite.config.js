@@ -2,7 +2,20 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: "html-transform",
+      transformIndexHtml(html) {
+        const apiBaseUrl = process.env.VITE_API_BASE_URL || "";
+        // If API base URL is not set, remove the meta tag entirely
+        if (!apiBaseUrl) {
+          return html.replace(/<meta name="api-base"[^>]*>/g, "");
+        }
+        return html.replace(/%VITE_API_BASE_URL%/g, apiBaseUrl);
+      },
+    },
+  ],
   server: {
     port: 5173,
     open: false,
