@@ -2998,6 +2998,22 @@ a {
   gap: 12px;
   align-items: center;
 }
+.topbar-auth {
+  flex-direction: row;
+}
+.topbar-auth .btn {
+  width: auto;
+}
+@media (max-width: 959px) {
+  .topbar-auth {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+  .topbar-auth .btn {
+    width: 100%;
+  }
+}
 @media (min-width: 960px) {
   .topbar {
     display: flex;

@@ -75,7 +75,7 @@ export default function Header() {
           <a href="/press">{t("press")}</a>
           <a href="/activity">{t("activity")}</a>
 
-          <span style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
+          <span className="topbar-auth" style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
             {isAuthenticated ? (
               <>
                 <span style={{ fontWeight: 600, color: "#111827" }}>
@@ -89,13 +89,25 @@ export default function Header() {
                   }}
                   style={{ border: "none", background: "transparent", cursor: "pointer" }}
                 >
-                  {t("logout") || "Выйти"}
+                  {t("Выйти") || "Выйти"}
                 </button>
               </>
             ) : (
               <>
-                <a href="/login">{t("login")}</a>
-                <a href="/register">{t("register")}</a>
+                <a 
+                  href="/login" 
+                  className="btn btn--primary"
+                  style={{ padding: "6px 12px", fontSize: "13px", marginTop: "4px", marginBottom: "4px" }}
+                >
+                  {t("login")}
+                </a>
+                <a 
+                  href="/register" 
+                  className="btn"
+                  style={{ padding: "6px 12px", fontSize: "13px", marginTop: "4px", marginBottom: "4px" }}
+                >
+                  {t("register")}
+                </a>
               </>
             )}
           </span>
@@ -436,8 +448,9 @@ export default function Header() {
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
                     href="/admin"
                     onClick={() => setMobileOpen(false)}
+                    style={{ width: "100%" }}
                   >
-                    {t("admin") || "Панель управления"}
+                    {t("Панель управления") || "Панель управления"}
                   </a>
                   <button
                     className="btn mobile-auth__btn mobile-auth__btn--outline"
@@ -445,16 +458,26 @@ export default function Header() {
                       logout();
                       setMobileOpen(false);
                     }}
+                    style={{ width: "100%" }}
                   >
-                    {t("logout") || "Выйти"}
+                    {t("Выйти") || "Выйти"}
                   </button>
                 </div>
               ) : (
-                <>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    width: "100%",
+                    alignItems: "center"
+                  }}
+                >
                   <a
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
                     href="/login"
                     onClick={() => setMobileOpen(false)}
+                    style={{ width: "100%" }}
                   >
                     {t("login")}
                   </a>
@@ -462,10 +485,11 @@ export default function Header() {
                     className="btn mobile-auth__btn mobile-auth__btn--outline"
                     href="/register"
                     onClick={() => setMobileOpen(false)}
+                    style={{ width: "100%" }}
                   >
                     {t("register")}
                   </a>
-                </>
+                </div>
               )}
             </div>
             <div className="mobile-menu-links">

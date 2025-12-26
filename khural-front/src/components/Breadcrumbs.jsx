@@ -1,6 +1,7 @@
 import React from "react";
 import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
+import Link from "./Link.jsx";
 
 // Static titles for base pages
 const TITLES = {
@@ -31,7 +32,7 @@ function getRouteBase(route) {
 }
 
 export default function Breadcrumbs() {
-  const { route } = useHashRoute();
+  const { route, navigate } = useHashRoute();
   const base = getRouteBase(route);
   const { committees } = useData();
 
@@ -128,10 +129,16 @@ export default function Breadcrumbs() {
             const last = idx === trail.length - 1;
             return (
               <span key={idx} className="breadcrumbs__item">
-                {c.href && !last ? (
-                  <a href={c.href}>{c.label}</a>
+                {c.href ? (
+                  <button 
+                    className="btn" 
+                    onClick={() => navigate(c.href)}
+                    aria-current={last ? "page" : undefined}
+                  >
+                    {c.label}
+                  </button>
                 ) : (
-                  <span aria-current="page">{c.label}</span>
+                  <button className="btn" aria-current="page" disabled>{c.label}</button>
                 )}
                 {!last && <span className="breadcrumbs__sep">›</span>}
               </span>
