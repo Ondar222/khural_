@@ -91,8 +91,7 @@ export default function Resources() {
             </div>
           </div>
           <div className="grid" style={{ gap: 24 }}>
-            <GosWidget id="gos-widget-1" src="/js/gos_stub1.js" variant={1} />
-            <GosWidget id="gos-widget-2" src="/js/gos_stub2.js" variant={2} />
+            <GosWidget id="gos-widget-3" src="/js/gos_pos_cit.js" variant={3} />
           </div>
         </div>
       </div>
