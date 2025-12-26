@@ -74,7 +74,7 @@ export default function AdminShell({
         </nav>
 
         <div className="admin-sidebar__footer">
-          <div className="admin-user">
+          <div className="admin-user admin-user--button">
             <div className="admin-user__avatar">A</div>
             <div className="admin-user__meta">
               <div className="admin-user__name">{user?.name || user?.email || "Администратор"}</div>
@@ -82,7 +82,7 @@ export default function AdminShell({
             </div>
           </div>
 
-          <Button danger block onClick={onLogout}>
+          <Button danger block onClick={onLogout} className="admin-logout-btn">
             Выйти
           </Button>
         </div>
@@ -101,6 +101,13 @@ export default function AdminShell({
           </div>
 
           <div className="admin-topbar__right">
+            <a
+              href="/"
+              className="admin-pillbtn admin-pillbtn--site"
+              style={{ textDecoration: "none" }}
+            >
+              На сайт
+            </a>
             <button
               className="admin-iconbtn admin-iconbtn--menu"
               type="button"
@@ -109,7 +116,7 @@ export default function AdminShell({
             >
               <span className="admin-burger" />
             </button>
-            <button className="admin-pillbtn" type="button" onClick={onToggleTheme}>
+            <button className="admin-pillbtn admin-pillbtn--theme" type="button" onClick={onToggleTheme}>
               {themeMode === "light" ? "Тёмная" : "Светлая"}
             </button>
           </div>

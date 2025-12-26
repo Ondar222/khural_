@@ -58,7 +58,7 @@ export default function Resources() {
     <section className="section">
       <div className="container">
         <div className="portals-head">
-          <h2 className="portals-title">{t("Порталы")}</h2>
+          <h2 className="portals-title">{t("portals")}</h2>
           <button
             type="button"
             className="portals-toggle"
@@ -66,7 +66,7 @@ export default function Resources() {
             aria-controls={portalsId}
             onClick={() => setPortalsOpen((v) => !v)}
           >
-            <span>{portalsOpen ? t("Скрыть") : t("Показать")}</span>
+            <span>{portalsOpen ? t("hide") : t("show")}</span>
             <span className="portals-toggle__chev" aria-hidden>
               ▾
             </span>

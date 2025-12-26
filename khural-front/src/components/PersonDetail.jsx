@@ -1,6 +1,7 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
+import PdfPreviewModal from "./PdfPreviewModal.jsx";
 
 export default function PersonDetail({ item, type, backHref }) {
   const { t } = useI18n();
@@ -33,6 +34,7 @@ export default function PersonDetail({ item, type, backHref }) {
         ];
 
   const [active, setActive] = React.useState("bio");
+  const [preview, setPreview] = React.useState(null); // {url, title}
   const phoneIconStyle = { transform: "scaleX(-1)" };
 
   // Smooth-scroll to section without breaking hash-based routing
@@ -236,9 +238,22 @@ export default function PersonDetail({ item, type, backHref }) {
                     <div className="law-status">{laws ? entry.status : "На рассмотрении"}</div>
                   </div>
                 </div>
-                <a className="law-link" href={laws ? entry.url : "#"} aria-label="Перейти">
-                  ↗
-                </a>
+                {laws && entry.url ? (
+                  <button
+                    className="btn btn--primary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPreview({ url: entry.url, title: entry.title || "Документ" });
+                    }}
+                    aria-label="Открыть предпросмотр"
+                  >
+                    Открыть
+                  </button>
+                ) : (
+                  <a className="law-link" href={laws ? entry.url : "#"} aria-label="Перейти">
+                    ↗
+                  </a>
+                )}
               </div>
             ))}
           </div>
@@ -287,6 +302,12 @@ export default function PersonDetail({ item, type, backHref }) {
           </div>
         </div>
       </div>
+      <PdfPreviewModal
+        open={!!preview}
+        onClose={() => setPreview(null)}
+        url={preview?.url}
+        title={preview?.title}
+      />
     </section>
   );
 }

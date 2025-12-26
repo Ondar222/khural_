@@ -415,8 +415,9 @@ export default function Header() {
                     flexDirection: "column",
                     gap: 8,
                     width: "100%",
-                    alignItems: "stretch",
-                  }}
+      
+                    alignItems: "center"
+               }}
                 >
                   <div style={{ fontWeight: 600, color: "#111827" }}>
                     {user?.name || user?.email}

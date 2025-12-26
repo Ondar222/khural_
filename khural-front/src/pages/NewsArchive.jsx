@@ -3,7 +3,6 @@ import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { Input, Select, Space } from "antd";
 import SideNav from "../components/SideNav.jsx";
-import CommentsBlock from "../components/CommentsBlock.jsx";
 import DataState from "../components/DataState.jsx";
 
 export default function NewsArchive() {
@@ -292,8 +291,6 @@ export default function NewsArchive() {
                   </button>
                 </div>
               </div>
-
-              <CommentsBlock entityType="news" entityId={Number(item.id)} />
             </article>
             <aside>
               <h3 style={{ marginBottom: 8 }}>{t("otherNews")}</h3>

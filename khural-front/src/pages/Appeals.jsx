@@ -105,7 +105,11 @@ export default function Appeals() {
       const next = [localItem, ...loadLocal(user)].slice(0, 100);
       setHistory(next);
       saveLocal(user, next);
-      setTab("history");
+      // Show success message for 3 seconds, then switch to history tab
+      setTimeout(() => {
+        setTab("history");
+        setOk(false);
+      }, 3000);
       // refresh from backend in background
       loadHistory();
     } finally {
@@ -143,7 +147,13 @@ export default function Appeals() {
               children: (
                 <>
         {ok ? (
-                    <Result status="success" title="Спасибо! Ваше обращение отправлено" />
+                    <div className="tile" style={{ padding: 24 }}>
+                      <Result 
+                        status="success" 
+                        title="Ваше обращение успешно отправлено!"
+                        subTitle="Обращение принято и зарегистрировано. Вы будете перенаправлены в раздел истории обращений."
+                      />
+                    </div>
                   ) : (
                     <Form
                       layout="vertical"

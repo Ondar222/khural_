@@ -3,9 +3,9 @@ export const ADMIN_THEME_KEY = "khural_admin_theme";
 export function readAdminTheme() {
   try {
     const v = localStorage.getItem(ADMIN_THEME_KEY);
-    return v === "light" ? "light" : "dark";
+    return v === "dark" ? "dark" : "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 
