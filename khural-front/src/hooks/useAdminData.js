@@ -88,6 +88,7 @@ function mapDocType(type) {
 export function useAdminData() {
   const { message } = App.useApp();
   const data = useData();
+  const { reload: reloadDataContext, setEvents: setDataContextEvents, events: dataContextEvents } = data;
   const { isAuthenticated, user, logout, login } = useAuth();
 
   const apiBase = API_BASE_URL || "";
@@ -295,35 +296,94 @@ export function useAdminData() {
   const createEvent = React.useCallback(async (payload) => {
     setBusy(true);
     try {
-      await EventsApi.create(toCalendarDto(payload));
+      const created = await EventsApi.create(toCalendarDto(payload));
       message.success("Событие создано");
+      
+      // Оптимистично добавляем событие в DataContext, чтобы оно сразу появилось в календаре
+      if (created) {
+        const newEvent = {
+          id: String(created.id ?? Math.random().toString(36).slice(2)),
+          date: (() => {
+            const d = payload.date;
+            if (d) return String(d);
+            const start = created.startDate;
+            if (!start) return "";
+            const dt = new Date(Number(start));
+            return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
+          })(),
+          title: payload.title || created.title || "",
+          time: payload.time || (() => {
+            const start = created.startDate;
+            if (!start) return "";
+            const dt = new Date(Number(start));
+            if (isNaN(dt.getTime())) return "";
+            return dt.toISOString().slice(11, 16);
+          })(),
+          place: payload.place || created.location || "",
+          desc: payload.desc || created.description || "",
+        };
+        setDataContextEvents([...dataContextEvents, newEvent]);
+      }
+      
+      // Небольшая задержка, чтобы API успел обработать запрос
+      await new Promise((resolve) => setTimeout(resolve, 100));
       await reload();
+      // Обновляем DataContext, чтобы календарь увидел новое событие (если API работает)
+      reloadDataContext();
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, reloadDataContext, setDataContextEvents, dataContextEvents]);
 
   const updateEvent = React.useCallback(async (id, payload) => {
     setBusy(true);
     try {
-      await EventsApi.patch(id, toCalendarDto(payload));
+      const updated = await EventsApi.patch(id, toCalendarDto(payload));
       message.success("Событие обновлено");
+      
+      // Оптимистично обновляем событие в DataContext
+      if (updated || dataContextEvents) {
+        const updatedEvent = {
+          id: String(id),
+          date: payload.date || "",
+          title: payload.title || "",
+          time: payload.time || "",
+          place: payload.place || "",
+          desc: payload.desc || "",
+        };
+        const updatedEvents = dataContextEvents.map((e) =>
+          String(e.id) === String(id) ? updatedEvent : e
+        );
+        setDataContextEvents(updatedEvents);
+      }
+      
       await reload();
+      // Обновляем DataContext, чтобы календарь увидел обновленное событие (если API работает)
+      reloadDataContext();
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, reloadDataContext, setDataContextEvents, dataContextEvents]);
 
   const deleteEvent = React.useCallback(async (id) => {
     setBusy(true);
     try {
       await EventsApi.remove(id);
       message.success("Событие удалено");
+      
+      // Оптимистично удаляем событие из DataContext
+      if (dataContextEvents) {
+        const filteredEvents = dataContextEvents.filter((e) => String(e.id) !== String(id));
+        setDataContextEvents(filteredEvents);
+      }
+      
       await reload();
+      // Обновляем DataContext, чтобы календарь обновился после удаления (если API работает)
+      reloadDataContext();
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, reloadDataContext, setDataContextEvents, dataContextEvents]);
 
   const stats = React.useMemo(() => ({
     deputies: Array.isArray(persons) ? persons.length : 0,

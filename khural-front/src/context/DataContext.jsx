@@ -251,39 +251,53 @@ export default function DataProvider({ children }) {
     (async () => {
       markLoading("events", true);
       markError("events", null);
-      const apiEvents = await tryApiFetch("/calendar", { auth: false });
-      if (Array.isArray(apiEvents) && apiEvents.length) {
-        setEvents(
-          apiEvents.map((e) => ({
-            id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
-            date: (() => {
-              const d = pick(e.date, e.date_of_event);
-              if (d) return String(d);
-              const start = pick(e.startDate, e.start_date);
-              if (!start) return "";
-              const dt = new Date(Number(start));
-              return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
-            })(),
-            title: pick(e.title, e.event_title) || "",
-            time: (() => {
-              const t = pick(e.time, e.event_time);
-              if (t) return String(t);
-              const start = pick(e.startDate, e.start_date);
-              if (!start) return "";
-              const dt = new Date(Number(start));
-              if (isNaN(dt.getTime())) return "";
-              return dt.toISOString().slice(11, 16);
-            })(),
-            place: pick(e.place, e.event_place, e.location) || "",
-            desc: pick(e.desc, e.description) || "",
-          }))
-        );
-      } else {
-        fetchJson("/data/events.json")
-          .then(setEvents)
-          .catch((e) => markError("events", e));
+      try {
+        const apiEvents = await tryApiFetch("/calendar", { auth: false });
+        if (Array.isArray(apiEvents)) {
+          // Если массив пустой, все равно используем его (не fallback на JSON)
+          if (apiEvents.length === 0) {
+            console.log("Calendar API вернул пустой массив событий");
+            setEvents([]);
+            markLoading("events", false);
+            return;
+          }
+          setEvents(
+            apiEvents.map((e) => ({
+              id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
+              date: (() => {
+                const d = pick(e.date, e.date_of_event);
+                if (d) return String(d);
+                const start = pick(e.startDate, e.start_date);
+                if (!start) return "";
+                const dt = new Date(Number(start));
+                return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
+              })(),
+              title: pick(e.title, e.event_title) || "",
+              time: (() => {
+                const t = pick(e.time, e.event_time);
+                if (t) return String(t);
+                const start = pick(e.startDate, e.start_date);
+                if (!start) return "";
+                const dt = new Date(Number(start));
+                if (isNaN(dt.getTime())) return "";
+                return dt.toISOString().slice(11, 16);
+              })(),
+              place: pick(e.place, e.event_place, e.location) || "",
+              desc: pick(e.desc, e.description) || "",
+            }))
+          );
+          markLoading("events", false);
+          return;
+        }
+      } catch (e) {
+        // API недоступен, используем fallback
+        console.warn("Calendar API недоступен, используем локальные данные", e);
       }
-      markLoading("events", false);
+      // Fallback to local JSON
+      fetchJson("/data/events.json")
+        .then(setEvents)
+        .catch((e) => markError("events", e))
+        .finally(() => markLoading("events", false));
     })();
     // Try API for persons first, fallback to local JSON
     (async () => {

@@ -53,7 +53,9 @@ export default function App() {
   const { route } = useHashRoute();
   const base = (route || "/").split("?")[0];
   const isAdmin = base === "/admin" || base.startsWith("/admin/");
-  
+
+
+
   const AdminProtected = React.useCallback((Component) => {
     const ProtectedComponent = () => (
       <RequireAuth>

@@ -257,7 +257,11 @@ export async function apiFetchText(path, { method = "GET", headers, auth = true 
 export async function tryApiFetch(path, options) {
   try {
     return await apiFetch(path, options);
-  } catch {
+  } catch (error) {
+    // Логируем только для отладки, не показываем пользователю
+    if (error?.status === 404) {
+      console.warn(`API endpoint не найден (404): ${path}. Используется fallback.`);
+    }
     return null;
   }
 }

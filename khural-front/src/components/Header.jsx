@@ -14,6 +14,7 @@ export default function Header() {
   const [mobileSection, setMobileSection] = React.useState(null);
   const { isAuthenticated, user, logout } = useAuth();
 
+
   React.useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") {
@@ -235,9 +236,17 @@ export default function Header() {
           </nav>
 
           <div className="header-actions">
-            <button className="icon-btn" aria-label={t("accessibilityVersion")} onClick={cycleMode}>
-              👁️
-            </button>
+            <img 
+              id="specialButton" 
+              onClick={() => {
+                // Перезагружаем страницу после клика
+                window.location.reload();
+              }}
+              style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+              src="https://lidrekon.ru/images/special.png" 
+              alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+              title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            />
             <button
               className="icon-btn"
               aria-label={t("changeLanguage")}
@@ -284,9 +293,17 @@ export default function Header() {
               height={44}
             />
           </a>
-          <button className="icon-btn" aria-label={t("accessibilityVersion")} onClick={cycleMode}>
-            👁️
-          </button>
+          <img 
+            id="specialButton" 
+            onClick={() => {
+              // Перезагружаем страницу после клика
+              window.location.reload();
+            }}
+            style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+            src="https://lidrekon.ru/images/special.png" 
+            alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+          />
           <button
             className="icon-btn"
             aria-label={t("changeLanguage")}
@@ -408,9 +425,17 @@ export default function Header() {
               </div>
             </div>
           </div>
-          <button className="icon-btn" aria-label="Версия для слабовидящих" onClick={cycleMode}>
-            👁️
-          </button>
+          <img 
+            id="specialButton" 
+            onClick={() => {
+              // Перезагружаем страницу после клика
+              window.location.reload();
+            }}
+            style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+            src="https://lidrekon.ru/images/special.png" 
+            alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+          />
           {/* auth quick actions removed */}
           <button
             className="icon-btn"
