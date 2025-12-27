@@ -238,8 +238,10 @@ export default function Header() {
           <div className="header-actions">
             <img 
               id="specialButton" 
-              onClick={() => {
-                // Перезагружаем страницу после клика
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Перезагружаем страницу после клика, чтобы плагин активировался
                 window.location.reload();
               }}
               style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
