@@ -16,22 +16,28 @@ export default function PersonDetail({ item, type, backHref }) {
     item.photo ||
     "/img/ok.png";
   const address = item.address || "г. Кызыл, ул. Ленина, 40";
-  const laws = Array.isArray(item.laws) && item.laws.length ? item.laws : null;
-  const incomeDocs =
-    Array.isArray(item.incomeDocs) && item.incomeDocs.length
-      ? item.incomeDocs
-      : [{ year: 2024 }, { year: 2023 }, { year: 2022 }];
-  const schedule =
-    Array.isArray(item.schedule) && item.schedule.length
-      ? item.schedule
-      : [
-          ["Понедельник", "10:00 - 12:00"],
-          ["Вторник", "10:00 - 12:00"],
-          ["Среда", "10:00 - 12:00"],
-          ["Четверг", "10:00 - 12:00"],
-          ["Пятница", "10:00 - 12:00"],
-          ["Суббота-Воскресенье", "Выходной"],
-        ];
+  // Используем legislativeActivity из API, если есть, иначе laws из локальных данных
+  const laws = Array.isArray(item.legislativeActivity) && item.legislativeActivity.length 
+    ? item.legislativeActivity 
+    : (Array.isArray(item.laws) && item.laws.length ? item.laws : null);
+  // Используем incomeDeclarations из API, если есть, иначе incomeDocs из локальных данных
+  const incomeDocs = Array.isArray(item.incomeDeclarations) && item.incomeDeclarations.length
+    ? item.incomeDeclarations
+    : (Array.isArray(item.incomeDocs) && item.incomeDocs.length ? item.incomeDocs : []);
+  // Используем receptionSchedule из API, если есть, иначе schedule из локальных данных
+  const schedule = item.receptionSchedule 
+    ? (typeof item.receptionSchedule === 'string' 
+        ? item.receptionSchedule.split('\n').map(line => {
+            const parts = line.split(/[:\-]/);
+            if (parts.length >= 2) {
+              return [parts[0].trim(), parts.slice(1).join(':').trim()];
+            }
+            return [line.trim(), ''];
+          })
+        : (Array.isArray(item.receptionSchedule) ? item.receptionSchedule : []))
+    : (Array.isArray(item.schedule) && item.schedule.length
+        ? item.schedule
+        : []);
 
   const [active, setActive] = React.useState("bio");
   const [preview, setPreview] = React.useState(null); // {url, title}
@@ -92,14 +98,22 @@ export default function PersonDetail({ item, type, backHref }) {
             <div className="person-meta">
               {isDeputy ? (
                 <>
-                  {item.position && <div>{item.position}</div>}
-                  {item.convocation && <div>созыв {item.convocation}</div>}
-                  {item.district && <div>Избирательный округ: {item.district}</div>}
-                  {item.faction && <div>Фракция: «{item.faction}»</div>}
+                  {(item.position || item.role) && (
+                    <div>{typeof (item.position || item.role) === "string" ? (item.position || item.role) : String(item.position || item.role || "")}</div>
+                  )}
+                  {(item.convocationNumber || item.convocation) && (
+                    <div>созыв {typeof (item.convocationNumber || item.convocation) === "string" ? (item.convocationNumber || item.convocation) : String(item.convocationNumber || item.convocation || "")}</div>
+                  )}
+                  {item.district && (
+                    <div>Избирательный округ: {typeof item.district === "string" ? item.district : String(item.district || "")}</div>
+                  )}
+                  {item.faction && (
+                    <div>Фракция: «{typeof item.faction === "string" ? item.faction : String(item.faction || "")}»</div>
+                  )}
                 </>
               ) : (
                 <>
-                  <div>{item.role}</div>
+                  <div>{typeof item.role === "string" ? item.role : String(item.role || "")}</div>
                   {item.agency && <div>{item.agency}</div>}
                 </>
               )}
@@ -173,19 +187,10 @@ export default function PersonDetail({ item, type, backHref }) {
         <div id="bio" className="person-block">
           <h2>Биография</h2>
           <div className="prose">
-            {item.bio ? (
-              <p>{item.bio}</p>
+            {item.biography || item.bio ? (
+              <div dangerouslySetInnerHTML={{ __html: item.biography || item.bio }} />
             ) : (
-              <>
-                <p>
-                  Родился в с. Суг‑Бажы Каа‑Хемского района Республики Тыва. Окончил институт по
-                  специальности «Лечебное дело».
-                </p>
-                <p>
-                  Работал врачом и руководителем медицинских учреждений. Зарекомендовал себя
-                  компетентным, грамотным и опытным специалистом.
-                </p>
-              </>
+              <p>Биография не указана</p>
             )}
           </div>
         </div>
@@ -223,83 +228,112 @@ export default function PersonDetail({ item, type, backHref }) {
 
         <div id="laws" className="person-block">
           <h2>Законодательная деятельность</h2>
-          <div className="law-list">
-            {(laws || [1, 2]).map((entry, i) => (
-              <div key={laws ? entry.id : i} className="law-item tile">
-                <div className="law-left">
-                  <div className="law-ico">📄</div>
-                  <div className="law-text">
-                    <div className="law-title">{laws ? entry.title : `№ 1056580-${i + 1}`}</div>
-                    <div className="law-desc">
-                      {laws
-                        ? entry.desc
-                        : "О внесении изменений в Федеральный закон «О государственной регистрации транспортных средств в РФ»"}
+          {laws && laws.length > 0 ? (
+            <>
+              <div className="law-list">
+                {laws.map((entry, i) => (
+                  <div key={entry.id || entry.number || i} className="law-item tile">
+                    <div className="law-left">
+                      <div className="law-ico">📄</div>
+                      <div className="law-text">
+                        <div className="law-title">{entry.title || entry.number || `Документ ${i + 1}`}</div>
+                        {entry.title && entry.number && (
+                          <div className="law-desc">№ {entry.number}</div>
+                        )}
+                        {entry.status && (
+                          <div className="law-status">{entry.status}</div>
+                        )}
+                      </div>
                     </div>
-                    <div className="law-status">{laws ? entry.status : "На рассмотрении"}</div>
+                    {entry.document || entry.url ? (
+                      <button
+                        className="btn btn--primary"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const docUrl = entry.document || entry.url;
+                          if (docUrl) {
+                            setPreview({ url: docUrl, title: entry.title || entry.number || "Документ" });
+                          }
+                        }}
+                        aria-label="Открыть предпросмотр"
+                      >
+                        Открыть
+                      </button>
+                    ) : null}
                   </div>
-                </div>
-                {laws && entry.url ? (
-                  <button
-                    className="btn btn--primary"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPreview({ url: entry.url, title: entry.title || "Документ" });
-                    }}
-                    aria-label="Открыть предпросмотр"
-                  >
-                    Открыть
-                  </button>
-                ) : (
-                <a className="law-link" href={laws ? entry.url : "#"} aria-label="Перейти">
-                  ↗
-                </a>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
-          <div style={{ textAlign: "center", marginTop: 12 }}>
-            <button className="btn btn--gold">Показать больше</button>
-          </div>
+            </>
+          ) : (
+            <p>Информация о законодательной деятельности отсутствует</p>
+          )}
         </div>
 
         <div id="income" className="person-block">
           <h2>Сведения о доходах</h2>
-          <p>
-            Скачать информацию о доходах, расходах, об имуществе и обязательствах имущественного
-            характера:
-          </p>
-          <div className="grid docs-grid">
-            {incomeDocs.map((doc) => (
-              <div key={doc.year} className="doc-card tile">
-                <div className="doc-header">
-                  <div className="doc-ico">🗂</div>
-                  <div>
-                    <div className="doc-title">Декларация за {doc.year} год</div>
-                    <div className="doc-meta">PDF{doc.size ? `, ${doc.size}` : ""}</div>
+          {incomeDocs && incomeDocs.length > 0 ? (
+            <>
+              <p>
+                Скачать информацию о доходах, расходах, об имуществе и обязательствах имущественного
+                характера:
+              </p>
+              <div className="grid docs-grid">
+                {incomeDocs.map((doc, i) => (
+                  <div key={doc.year || doc.title || i} className="doc-card tile">
+                    <div className="doc-header">
+                      <div className="doc-ico">🗂</div>
+                      <div>
+                        <div className="doc-title">{doc.title || (doc.year ? `Декларация за ${doc.year} год` : `Документ ${i + 1}`)}</div>
+                        <div className="doc-meta">PDF{doc.size ? `, ${doc.size}` : ""}</div>
+                      </div>
+                    </div>
+                    <div>
+                      {doc.document || doc.url ? (
+                        <button
+                          className="btn btn--gold"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const docUrl = doc.document || doc.url;
+                            if (docUrl) {
+                              setPreview({ url: docUrl, title: doc.title || (doc.year ? `Декларация за ${doc.year} год` : "Документ") });
+                            }
+                          }}
+                        >
+                          Перейти к документу
+                        </button>
+                      ) : (
+                        <span className="doc-meta">Документ не загружен</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <a className="btn btn--gold" href={doc.url || "#"}>
-                    Перейти к документу
-                  </a>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <p>Информация о доходах отсутствует</p>
+          )}
         </div>
 
         <div id="schedule" className="person-block">
           <h2>График приема граждан</h2>
-          <div className="sched-grid">
-            {(Array.isArray(schedule[0]) ? schedule : schedule.map((s) => [s.day, s.time])).map(
-              ([day, time]) => (
-                <React.Fragment key={day}>
-                  <div className="sched-cell tile">{day}</div>
-                  <div className="sched-cell tile">{time}</div>
-                </React.Fragment>
-              )
-            )}
-          </div>
+          {schedule && schedule.length > 0 ? (
+            <div className="sched-grid">
+              {(Array.isArray(schedule[0]) ? schedule : schedule.map((s) => [s.day, s.time])).map(
+                ([day, time], i) => (
+                  <React.Fragment key={day || i}>
+                    <div className="sched-cell tile">{day || ""}</div>
+                    <div className="sched-cell tile">{time || ""}</div>
+                  </React.Fragment>
+                )
+              )}
+            </div>
+          ) : typeof item.receptionSchedule === 'string' && item.receptionSchedule.trim() ? (
+            <div className="prose">
+              <p style={{ whiteSpace: "pre-wrap" }}>{item.receptionSchedule}</p>
+            </div>
+          ) : (
+            <p>График приема граждан не указан</p>
+          )}
         </div>
       </div>
       <PdfPreviewModal

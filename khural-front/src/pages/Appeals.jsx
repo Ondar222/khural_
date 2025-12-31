@@ -1,5 +1,5 @@
 import React from "react";
-import { Form, Input, Button, Result, Alert, Tabs, Tag, Checkbox } from "antd";
+import { Form, Input, Button, Result, Alert, Tabs, Tag, Checkbox, Modal } from "antd";
 import { useAuth } from "../context/AuthContext.jsx";
 import { AppealsApi } from "../api/client.js";
 
@@ -50,6 +50,13 @@ function normalizeAppeal(a) {
   };
 }
 
+function truncateToWords(text, maxWords = 3) {
+  if (!text) return "";
+  const words = text.trim().split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(" ") + "...";
+}
+
 export default function Appeals() {
   const { isAuthenticated, user } = useAuth();
   const [tab, setTab] = React.useState("create");
@@ -57,6 +64,7 @@ export default function Appeals() {
   const [busy, setBusy] = React.useState(false);
   const [historyBusy, setHistoryBusy] = React.useState(false);
   const [history, setHistory] = React.useState(() => loadLocal(user));
+  const [selectedAppeal, setSelectedAppeal] = React.useState(null);
 
   React.useEffect(() => {
     // keep local history isolated per user
@@ -86,6 +94,14 @@ export default function Appeals() {
   React.useEffect(() => {
     if (isAuthenticated) loadHistory();
   }, [isAuthenticated, loadHistory]);
+
+  const openModal = (appeal) => {
+    setSelectedAppeal(appeal);
+  };
+
+  const closeModal = () => {
+    setSelectedAppeal(null);
+  };
 
   const onSubmit = async (values) => {
     if (!isAuthenticated) return;
@@ -316,8 +332,24 @@ export default function Appeals() {
                                 </div>
                               </div>
                               {a.message ? (
-                                <div style={{ marginTop: 8, whiteSpace: "pre-wrap", opacity: 0.9 }}>
-                                  {a.message}
+                                <div style={{ marginTop: 8 }}>
+                                  <div
+                                    style={{
+                                      opacity: 0.9,
+                                      wordBreak: "break-word",
+                                      lineHeight: "1.5",
+                                    }}
+                                  >
+                                    {truncateToWords(a.message, 3)}
+                                  </div>
+                                  <Button
+                                    type="link"
+                                    size="small"
+                                    onClick={() => openModal(a)}
+                                    style={{ padding: 0, marginTop: 6, height: "auto", fontSize: "13px" }}
+                                  >
+                                    Подробнее
+                                  </Button>
                                 </div>
                               ) : null}
                             </div>
@@ -339,6 +371,63 @@ export default function Appeals() {
         <a href="/feedback">Правила о приеме обращений граждан</a>
         </div>
       </div>
+
+      <Modal
+        title={
+          selectedAppeal
+            ? `${selectedAppeal.subject || "Обращение"} ${
+                selectedAppeal.number ? `(${selectedAppeal.number})` : ""
+              }`
+            : "Подробности обращения"
+        }
+        open={!!selectedAppeal}
+        onCancel={closeModal}
+        footer={[
+          <Button key="close" onClick={closeModal}>
+            Закрыть
+          </Button>,
+        ]}
+        width={600}
+      >
+        {selectedAppeal && (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 8 }}>
+                <strong>Статус:</strong>{" "}
+                <Tag
+                  color={
+                    selectedAppeal.status === "Ответ отправлен"
+                      ? "green"
+                      : selectedAppeal.status === "В работе"
+                        ? "blue"
+                        : "gold"
+                  }
+                >
+                  {selectedAppeal.status}
+                </Tag>
+              </div>
+              <div style={{ opacity: 0.7, fontSize: 13 }}>
+                <strong>Дата:</strong>{" "}
+                {selectedAppeal.createdAt
+                  ? new Date(selectedAppeal.createdAt).toLocaleString("ru-RU")
+                  : ""}
+              </div>
+            </div>
+            <div
+              style={{
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                lineHeight: "1.6",
+                padding: "12px",
+                backgroundColor: "#f5f5f5",
+                borderRadius: "4px",
+              }}
+            >
+              {selectedAppeal.message}
+            </div>
+          </div>
+        )}
+      </Modal>
     </section>
   );
 }

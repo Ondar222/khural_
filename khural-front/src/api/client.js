@@ -257,7 +257,11 @@ export async function apiFetchText(path, { method = "GET", headers, auth = true 
 export async function tryApiFetch(path, options) {
   try {
     return await apiFetch(path, options);
-  } catch {
+  } catch (error) {
+    // Логируем только для отладки, не показываем пользователю
+    if (error?.status === 404) {
+      console.warn(`API endpoint не найден (404): ${path}. Используется fallback.`);
+    }
     return null;
   }
 }
@@ -412,6 +416,26 @@ export const AppealsApi = {
     qs.set("limit", String(limit));
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return apiFetch(`/appeals${suffix}`, { method: "GET", auth: true });
+  },
+  async listAll({ page = 1, limit = 100 } = {}) {
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+    qs.set("all", "true"); // Параметр для получения всех обращений
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    // Сначала пробуем админский endpoint, если не работает - используем обычный с параметром all
+    try {
+      return await apiFetch(`/appeals/admin${suffix}`, { method: "GET", auth: true });
+    } catch {
+      return apiFetch(`/appeals${suffix}`, { method: "GET", auth: true });
+    }
+  },
+  async updateStatus(id, status) {
+    return apiFetch(`/appeals/${id}/status`, {
+      method: "PATCH",
+      body: { status },
+      auth: true,
+    });
   },
 };
 
