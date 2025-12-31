@@ -4573,6 +4573,13 @@ body.admin-mode[data-admin-theme="dark"] .ant-modal-content {
   background: #0b2142;
   color: #f1f5f9;
 }
+/* All text in modal body should be light in dark theme */
+body.admin-mode[data-admin-theme="dark"] .ant-modal-body {
+  color: rgba(241, 245, 249, 0.92);
+}
+body.admin-mode[data-admin-theme="dark"] .ant-modal-body * {
+  color: inherit;
+}
 body.admin-mode[data-admin-theme="dark"] .ant-modal-header {
   background: transparent;
 }
@@ -4666,7 +4673,16 @@ body.admin-mode[data-admin-theme="dark"] .ant-pagination,
 body.admin-mode[data-admin-theme="dark"] .ant-pagination-item a,
 body.admin-mode[data-admin-theme="dark"] .ant-pagination-prev,
 body.admin-mode[data-admin-theme="dark"] .ant-pagination-next,
-body.admin-mode[data-admin-theme="dark"] .ant-empty-description {
+body.admin-mode[data-admin-theme="dark"] .ant-empty-description,
+body.admin-mode[data-admin-theme="dark"] .ant-form-item-explain,
+body.admin-mode[data-admin-theme="dark"] .ant-form-item-extra,
+body.admin-mode[data-admin-theme="dark"] .ant-modal-title,
+body.admin-mode[data-admin-theme="dark"] .ant-modal-header,
+body.admin-mode[data-admin-theme="dark"] h1,
+body.admin-mode[data-admin-theme="dark"] h2,
+body.admin-mode[data-admin-theme="dark"] h3,
+body.admin-mode[data-admin-theme="dark"] .ant-upload-text,
+body.admin-mode[data-admin-theme="dark"] .ant-upload-hint {
   color: rgba(241, 245, 249, 0.92) !important;
 }
 /* Pagination items in dark mode - light background */

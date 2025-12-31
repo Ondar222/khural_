@@ -10,6 +10,7 @@ const NAV = [
   { key: "documents", label: "Документы", href: "/admin/documents" },
   { key: "events", label: "События", href: "/admin/events" },
   { key: "news", label: "Новости", href: "/admin/news" },
+  { key: "appeals", label: "Обращения", href: "/admin/appeals" },
   { key: "env", label: "ENV доки", href: "/admin/env" },
 ];
 

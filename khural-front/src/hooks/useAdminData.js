@@ -2,7 +2,7 @@ import React from "react";
 import { App, Button, Input } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { API_BASE_URL, NewsApi, PersonsApi, DocumentsApi, EventsApi } from "../api/client.js";
+import { API_BASE_URL, NewsApi, PersonsApi, DocumentsApi, EventsApi, AppealsApi } from "../api/client.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 
 function toNewsFallback(items) {
@@ -58,6 +58,31 @@ function toEventRow(e) {
   };
 }
 
+function normalizeServerList(payload) {
+  if (Array.isArray(payload)) return payload;
+  const p = payload?.data ? payload.data : payload;
+  if (Array.isArray(p?.items)) return p.items;
+  if (Array.isArray(p?.results)) return p.results;
+  if (Array.isArray(p)) return p;
+  return [];
+}
+
+function normalizeAppeal(a) {
+  const createdAt = a?.createdAt || a?.created_at || a?.date || new Date().toISOString();
+  const status = a?.status || a?.state || "Принято";
+  const number = a?.number || a?.registrationNumber || a?.regNumber || a?.id || "";
+  return {
+    id: String(a?.id || a?._id || number || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+    number: String(number || "").trim(),
+    subject: a?.subject || a?.title || "",
+    message: a?.message || a?.text || a?.content || "",
+    status: String(status),
+    createdAt: String(createdAt),
+    userEmail: a?.userEmail || a?.user?.email || a?.email || "",
+    userName: a?.userName || a?.user?.name || a?.name || "",
+  };
+}
+
 function toCalendarDto(values) {
   const date = String(values?.date || "");
   const time = String(values?.time || "00:00");
@@ -103,6 +128,7 @@ export function useAdminData() {
   const [persons, setPersons] = React.useState([]);
   const [documents, setDocuments] = React.useState([]);
   const [events, setEvents] = React.useState([]);
+  const [appeals, setAppeals] = React.useState([]);
 
   const canWrite = isAuthenticated;
 
@@ -129,6 +155,9 @@ export function useAdminData() {
       setDocuments(Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(data.documents));
       const apiEvents = await EventsApi.list().catch(() => null);
       setEvents(Array.isArray(apiEvents) ? apiEvents.map(toEventRow) : data.events || []);
+      const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
+      const apiAppeals = normalizeServerList(apiAppealsResponse);
+      setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
     })();
   }, [data]);
 
@@ -151,6 +180,9 @@ export function useAdminData() {
     if (Array.isArray(apiDocs)) setDocuments(apiDocs);
     const apiEvents = await EventsApi.list().catch(() => null);
     if (Array.isArray(apiEvents)) setEvents(apiEvents.map(toEventRow));
+    const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
+    const apiAppeals = normalizeServerList(apiAppealsResponse);
+    if (Array.isArray(apiAppeals)) setAppeals(apiAppeals.map(normalizeAppeal));
   }, []);
 
   const createNews = React.useCallback(async (formData) => {
@@ -385,6 +417,21 @@ export function useAdminData() {
     }
   }, [message, reload, reloadDataContext, setDataContextEvents, dataContextEvents]);
 
+  const updateAppealStatus = React.useCallback(async (id, status) => {
+    setBusy(true);
+    try {
+      await AppealsApi.updateStatus(id, status);
+      message.success("Статус обращения обновлен");
+      // Обновляем локальный список
+      setAppeals((prev) =>
+        prev.map((a) => (String(a.id) === String(id) ? { ...a, status } : a))
+      );
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload]);
+
   const stats = React.useMemo(() => ({
     deputies: Array.isArray(persons) ? persons.length : 0,
     documents: Array.isArray(documents) ? documents.length : 0,
@@ -431,6 +478,7 @@ export function useAdminData() {
     persons,
     documents,
     events,
+    appeals,
     stats,
     apiBase,
     
@@ -453,6 +501,9 @@ export function useAdminData() {
     createEvent,
     updateEvent,
     deleteEvent,
+    
+    // CRUD Appeals
+    updateAppealStatus,
     
     // State
     busy,
