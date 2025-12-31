@@ -4,6 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import Link from "./Link.jsx";
 import { useData } from "../context/DataContext.jsx";
+import { useHashRoute } from "../Router.jsx";
 import { RightOutlined, LeftOutlined } from "@ant-design/icons";
 // removed unused UI icon libs
 
@@ -13,6 +14,7 @@ export default function Header() {
   const [openMenu, setOpenMenu] = React.useState(null); // 'vh' | 'news' | 'docs'
   const [mobileSection, setMobileSection] = React.useState(null);
   const { isAuthenticated, user, logout } = useAuth();
+  const { route } = useHashRoute();
 
 
   React.useEffect(() => {
@@ -36,6 +38,34 @@ export default function Header() {
 
   const { cycleMode } = useA11y();
   const { lang, setLang, t } = useI18n();
+
+  // Обработчик клика на иконку версии для слабовидящих
+  const handleAccessibilityToggle = React.useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Получаем текущий путь и параметры поиска
+    const currentPath = window.location.pathname;
+    const currentSearch = window.location.search;
+    
+    // Парсим текущие параметры URL
+    const urlParams = new URLSearchParams(currentSearch);
+    const isCurrentlyActive = urlParams.get('special_version') === 'Y';
+    
+    // Переключаем параметр
+    if (isCurrentlyActive) {
+      urlParams.delete('special_version');
+    } else {
+      urlParams.set('special_version', 'Y');
+    }
+    
+    // Формируем новый URL с сохранением маршрута
+    const newSearch = urlParams.toString();
+    const newUrl = currentPath + (newSearch ? '?' + newSearch : '');
+    
+    // Перезагружаем страницу с сохраненным маршрутом
+    window.location.href = newUrl;
+  }, []);
 
   React.useEffect(() => {
     const onNav = () => setSheetOpen(false);
@@ -238,12 +268,7 @@ export default function Header() {
           <div className="header-actions">
             <img 
               id="specialButton" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Перезагружаем страницу после клика, чтобы плагин активировался
-                window.location.reload();
-              }}
+              onClick={handleAccessibilityToggle}
               style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
               src="https://lidrekon.ru/images/special.png" 
               alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
@@ -297,10 +322,7 @@ export default function Header() {
           </a>
           <img 
             id="specialButton" 
-            onClick={() => {
-              // Перезагружаем страницу после клика
-              window.location.reload();
-            }}
+            onClick={handleAccessibilityToggle}
             style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
             src="https://lidrekon.ru/images/special.png" 
             alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
@@ -429,10 +451,7 @@ export default function Header() {
           </div>
           <img 
             id="specialButton" 
-            onClick={() => {
-              // Перезагружаем страницу после клика
-              window.location.reload();
-            }}
+            onClick={handleAccessibilityToggle}
             style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
             src="https://lidrekon.ru/images/special.png" 
             alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 

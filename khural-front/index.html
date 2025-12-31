@@ -16,27 +16,20 @@
       rel="stylesheet"
     />
     <script src="https://lidrekon.ru/slep/js/jquery.js"></script>
-    <script src="https://lidrekon.ru/slep/js/uhpv-full.min.js"></script>
     <script>
       // Предотвращаем автоматическую активацию плагина при загрузке
-      // Плагин будет активироваться только при клике на кнопку
+      // Плагин будет активироваться только при явном запросе через URL параметр
       (function() {
-        if (typeof window !== 'undefined' && window.jQuery) {
-          window.jQuery(document).ready(function($) {
-            // Убеждаемся, что плагин не активируется автоматически
-            // Очищаем cookies/localStorage, которые могут активировать плагин
-            try {
-              // Проверяем, не была ли версия для слабовидящих активирована ранее
-              // Если нужно, очищаем настройки
-              if (typeof document.cookie !== 'undefined') {
-                // Плагин lidrekon.ru использует cookies для сохранения состояния
-                // Мы не будем их очищать, чтобы сохранить выбор пользователя
-                // Но убедимся, что при первой загрузке плагин не активируется
-              }
-            } catch (e) {
-              // Игнорируем ошибки
-            }
-          });
+        // Проверяем наличие параметра special_version=Y в URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const shouldActivate = urlParams.get('special_version') === 'Y';
+        
+        if (shouldActivate) {
+          // Загружаем плагин только если пользователь явно запросил версию для слабовидящих
+          const script = document.createElement('script');
+          script.src = 'https://lidrekon.ru/slep/js/uhpv-full.min.js';
+          script.async = true;
+          document.head.appendChild(script);
         }
       })();
     </script>
