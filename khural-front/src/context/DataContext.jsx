@@ -303,8 +303,9 @@ export default function DataProvider({ children }) {
     (async () => {
       markLoading("deputies", true);
       markError("deputies", null);
-      const apiPersons = await tryApiFetch("/persons", { auth: false });
-      if (Array.isArray(apiPersons) && apiPersons.length) {
+      try {
+        const apiPersons = await tryApiFetch("/persons", { auth: false });
+        if (Array.isArray(apiPersons) && apiPersons.length) {
         // Merge rich profile fields from local JSON (bio/laws/schedule/etc)
         const localDeps = await fetchJson("/data/deputies.json");
         const localByExternalId = new Map((localDeps || []).map((d) => [String(d.id ?? ""), d]));
@@ -322,27 +323,46 @@ export default function DataProvider({ children }) {
             externalId: externalKey || (local?.id ? String(local.id) : undefined),
             name: pick(p.fullName, p.full_name, p.name) || local?.name || "",
             // PersonDetail expects "position" field for deputy
-            position: local?.position || pick(p.description, p.role) || "",
-            bio: local?.bio || "",
-            district:
-              local?.district ||
-              pick(p.electoralDistrict, p.electoral_district) ||
-              (Array.isArray(p.districts) && p.districts[0]?.name) ||
-              p.city ||
-              p.district ||
-              "",
-            faction:
-              local?.faction ||
-              pick(p.faction, p.committee) ||
-              (Array.isArray(p.factions) && p.factions[0]?.name) ||
-              "",
-            convocation:
-              local?.convocation ||
-              pick(p.convocation) ||
-              (Array.isArray(p.convocations) && p.convocations[0]?.name) ||
-              "",
+            position: (() => {
+              const val = local?.position || pick(p.description, p.role) || "";
+              return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
+            })(),
+            // Биография - из API или локальных данных
+            bio: pick(p.biography, p.bio) || local?.bio || "",
+            biography: pick(p.biography, p.bio) || local?.biography || "",
+            district: (() => {
+              const val = local?.district ||
+                pick(p.electoralDistrict, p.electoral_district) ||
+                (Array.isArray(p.districts) && p.districts[0]?.name) ||
+                p.city ||
+                p.district ||
+                "";
+              return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
+            })(),
+            faction: (() => {
+              const val = local?.faction ||
+                pick(p.faction, p.committee) ||
+                (Array.isArray(p.factions) && p.factions[0]?.name) ||
+                "";
+              return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
+            })(),
+            convocation: (() => {
+              const val = local?.convocation ||
+                pick(p.convocationNumber, p.convocation, p.convocation_number) ||
+                (Array.isArray(p.convocations) && p.convocations[0]?.name) ||
+                "";
+              return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
+            })(),
+            convocationNumber: (() => {
+              const val = pick(p.convocationNumber, p.convocation, p.convocation_number) || local?.convocationNumber || "";
+              return typeof val === "string" ? val : String(val || "");
+            })(),
             reception: local?.reception || pick(p.receptionSchedule, p.reception_schedule) || "",
-            address: local?.address || "",
+            receptionSchedule: pick(p.receptionSchedule, p.reception_schedule) || local?.receptionSchedule || "",
+            address: (() => {
+              const val = pick(p.address) || local?.address || "";
+              return typeof val === "string" ? val : String(val || "");
+            })(),
             // Prefer stored image link, fallback to seeded photoUrl or old JSON photo
             photo:
               firstFileLink(p.image) ||
@@ -354,16 +374,39 @@ export default function DataProvider({ children }) {
               phone: pick(p.phoneNumber, p.phone_number, p.phone) || local?.contacts?.phone || "",
               email: p.email || local?.contacts?.email || "",
             },
-            laws: Array.isArray(local?.laws) ? local.laws : [],
-            incomeDocs: Array.isArray(local?.incomeDocs) ? local.incomeDocs : [],
-            schedule: Array.isArray(local?.schedule) ? local.schedule : [],
+            // Законодательная деятельность - из API или локальных данных
+            laws: Array.isArray(p.legislativeActivity) ? p.legislativeActivity : (Array.isArray(local?.laws) ? local.laws : []),
+            legislativeActivity: Array.isArray(p.legislativeActivity) ? p.legislativeActivity : (Array.isArray(local?.legislativeActivity) ? local.legislativeActivity : []),
+            // Сведения о доходах - из API или локальных данных
+            incomeDocs: Array.isArray(p.incomeDeclarations) ? p.incomeDeclarations : (Array.isArray(local?.incomeDocs) ? local.incomeDocs : []),
+            incomeDeclarations: Array.isArray(p.incomeDeclarations) ? p.incomeDeclarations : (Array.isArray(local?.incomeDeclarations) ? local.incomeDeclarations : []),
+            // График приема - из API или локальных данных
+            schedule: Array.isArray(p.receptionSchedule) ? p.receptionSchedule : (Array.isArray(local?.schedule) ? local.schedule : []),
+            // Дополнительные поля
+            structureType: (() => {
+              const val = pick(p.structureType, p.structure_type) || local?.structureType || "";
+              return typeof val === "string" ? val : String(val || "");
+            })(),
+            role: (() => {
+              const val = pick(p.role) || local?.role || "";
+              return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
+            })(),
           };
         });
-        setDeputies(mapped);
-      } else {
-        fetchJson("/data/deputies.json")
-          .then(setDeputies)
-          .catch((e) => markError("deputies", e));
+          setDeputies(mapped);
+          markLoading("deputies", false);
+        } else {
+          // API вернул пустой массив или невалидные данные - используем локальные данные
+          const localDeps = await fetchJson("/data/deputies.json").catch(() => []);
+          setDeputies(Array.isArray(localDeps) ? localDeps : []);
+          markLoading("deputies", false);
+        }
+      } catch (e) {
+        // API недоступен - используем локальные данные
+        console.warn("Persons API недоступен, используем локальные данные", e);
+        const localDeps = await fetchJson("/data/deputies.json").catch(() => []);
+        setDeputies(Array.isArray(localDeps) ? localDeps : []);
+        markLoading("deputies", false);
       }
 
       // Documents from API (laws, resolutions, etc)
