@@ -5,7 +5,8 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { AboutApi } from "../api/client.js";
 
 export default function About() {
-  const { committees, councils, aboutPages: cachedPages, aboutStructure: cachedStructure } = useData();
+  const { committees, aboutPages: cachedPages, aboutStructure: cachedStructure, government } = useData();
+  // NOTE: government is used to link Chairman in the structure diagram.
   const { lang } = useI18n();
   const [activeTab, setActiveTab] = React.useState("general"); // general | structure
   const [pages, setPages] = React.useState(() => (Array.isArray(cachedPages) ? cachedPages : []));
@@ -78,35 +79,8 @@ export default function About() {
     return bySlug;
   }, [pages]);
 
-  const structureTree = React.useMemo(() => {
-    const items = Array.isArray(structure) ? structure : [];
-    const byId = new Map(items.map((x) => [String(x.id), x]));
-    const childrenByParent = new Map();
-    items.forEach((x) => {
-      const pid = x?.parent?.id ? String(x.parent.id) : "";
-      if (!childrenByParent.has(pid)) childrenByParent.set(pid, []);
-      childrenByParent.get(pid).push(x);
-    });
-    childrenByParent.forEach((arr) =>
-      arr.sort((a, b) => Number(a?.order || 0) - Number(b?.order || 0))
-    );
-    const roots = (childrenByParent.get("") || []).filter((x) => byId.has(String(x.id)));
-    return { roots, childrenByParent };
-  }, [structure]);
-
-  const commissionsList = React.useMemo(
-    () => [
-      { title: "Комиссия ВХ РТ по Регламенту и депутатской этике", id: "reglament-etika" },
-      {
-        title: "Комиссия ВХ РТ по контролю за достоверностью сведений о доходах",
-        id: "kontrol-dostovernost",
-      },
-      { title: "Наградная комиссия ВХ РТ", id: "nagradnaya" },
-      { title: "Комиссия ВХ РТ по поддержке участников СВО и их семей", id: "svo-podderzhka" },
-      { title: "Счетная комиссия ВХ РТ", id: "schetnaya" },
-    ],
-    []
-  );
+  // NOTE: About structure diagram below is intentionally kept identical to `/section`
+  // (so we do not render the "Structure (from API)" tree here).
 
   return (
     <section className="section">
@@ -260,58 +234,34 @@ export default function About() {
                 разделам.
               </p>
 
-              {structureTree.roots.length ? (
-                <div className="tile" style={{ marginBottom: 14 }}>
-                  <div style={{ fontWeight: 800, marginBottom: 10 }}>Структура (из API)</div>
-                  <div style={{ display: "grid", gap: 10 }}>
-                    {structureTree.roots.map((r) => (
-                      <div key={r.id} className="tile" style={{ margin: 0 }}>
-                        <div style={{ fontWeight: 800 }}>{r.name}</div>
-                        {r.description ? (
-                          <div style={{ opacity: 0.8, marginTop: 6 }}>{r.description}</div>
-                        ) : null}
-                        {(structureTree.childrenByParent.get(String(r.id)) || []).length ? (
-                          <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-                            {(structureTree.childrenByParent.get(String(r.id)) || []).map((c) => (
-                              <a
-                                key={c.id}
-                                className="link"
-                                href={
-                                  c?.page?.slug
-                                    ? `/about?tab=general&slug=${encodeURIComponent(c.page.slug)}`
-                                    : "/about?tab=structure"
-                                }
-                                style={{
-                                  display: "block",
-                                  padding: "10px 12px",
-                                  borderRadius: 12,
-                                  border: "1px solid rgba(0,0,0,0.08)",
-                                  background: "rgba(255,255,255,0.7)",
-                                }}
-                              >
-                                <div style={{ fontWeight: 700 }}>{c.name}</div>
-                                {c.description ? (
-                                  <div style={{ opacity: 0.75, fontSize: 13, marginTop: 4 }}>
-                                    {c.description}
-                                  </div>
-                                ) : null}
-                              </a>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="org org--khural" id="focus-overview">
+              <div className="org org--khural">
                 <div className="org__row org__row--center">
-                  <div className="org__item org__item--blue org__item--xl">
-                    Председатель Верховного Хурала (парламента) Республики Тыва
-                  </div>
+                  {(() => {
+                    const chairman = (government || []).find(
+                      (g) =>
+                        g &&
+                        g.role &&
+                        typeof g.role === "string" &&
+                        g.role.toLowerCase().includes("председатель")
+                    );
+                    if (chairman && chairman.id) {
+                      return (
+                        <a
+                          className="org__item org__item--blue org__item--xl"
+                          href={`/government?type=gov&id=${encodeURIComponent(chairman.id)}`}
+                        >
+                          Председатель Верховного Хурала (парламента) Республики Тыва
+                        </a>
+                      );
+                    }
+                    return (
+                      <div className="org__item org__item--blue org__item--xl">
+                        Председатель Верховного Хурала (парламента) Республики Тыва
+                      </div>
+                    );
+                  })()}
                 </div>
-
+                {/* Factions row */}
                 <div className="org__row org__row--factions" id="focus-factions">
                   {["Единая Россия", "КПРФ", "ЛДПР", "Новые люди"].map((f) => (
                     <a
@@ -325,36 +275,75 @@ export default function About() {
                     </a>
                   ))}
                 </div>
-
+                {/* Three column zone: committees on the left, commissions/councils on right */}
                 <div className="org__row org__row--cols4">
-                  <div className="org__col">
+                  <div className="org__col" id="focus-committees">
                     <a
                       className="org__item org__item--blue"
-                      href="/about?tab=structure&focus=committees"
+                      href={"/section?title=" + encodeURIComponent("Комитеты")}
                     >
                       Комитеты Верховного Хурала (парламента) Республики Тыва
                     </a>
+                    {(committees || []).map((c) => (
+                      <a
+                        key={c.id}
+                        className="org__item org__item--green"
+                        href={`/committee?id=${encodeURIComponent(c.id)}`}
+                      >
+                        {c.title}
+                      </a>
+                    ))}
                   </div>
-
                   <div className="org__col">
                     <a
                       className="org__item org__item--blue"
-                      href="/about?tab=structure&focus=commissions"
+                      href="/commission?id=mezhregionalnye-svyazi"
                     >
-                      Комиссии Верховного Хурала (парламента) Республики Тыва
+                      Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям
+                    </a>
+                    <a className="org__item org__item--blue" href="/commission?id=smi-obshestvo">
+                      Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со
+                      средствами массовой информации и общественными организациями
                     </a>
                   </div>
-
-                  <div className="org__col org__col--span2">
+                  <div className="org__col org__col--span2" id="focus-commissions">
+                    {[
+                      {
+                        title:
+                          "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
+                        id: "reglament-etika",
+                      },
+                      {
+                        title:
+                          "Комиссия Верховного Хурала (парламента) Республики Тыва контрольно за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
+                        id: "kontrol-dostovernost",
+                      },
+                      {
+                        title: "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
+                        id: "nagradnaya",
+                      },
+                      {
+                        title:
+                          "Комиссия Верховного Хурала (парламента) Республики Тыва по поддержке участников специальной военной операции и их семей",
+                        id: "svo-podderzhka",
+                      },
+                      {
+                        title: "Счетная комиссия Верховного Хурала (парламента) Республики Тыва",
+                        id: "schetnaya",
+                      },
+                    ].map((item, i) => (
                       <a
+                        key={`wide-${i}`}
                         className="org__item org__item--blue"
-                      href="/about?tab=structure&focus=councils"
+                        href={`/commission?id=${item.id}`}
                       >
-                      Совет по взаимодействию с представительными органами муниципальных образований
+                        {item.title}
                       </a>
+                    ))}
                   </div>
                 </div>
-
+                {/* Councils anchor (same visual area for now) */}
+                <div id="focus-councils" style={{ height: 1 }} />
                 <div className="org__row org__row--center">
                   <a className="org__item org__item--xl org__item--blue" href="/apparatus">
                     Аппарат Верховного Хурала (парламента) Республики Тыва
@@ -362,81 +351,7 @@ export default function About() {
                 </div>
               </div>
 
-              {/* Detailed sections for SideNav anchors */}
-              <div id="focus-committees" className="person-block about-structure__section">
-                <h3 className="no-gold-underline">Комитеты</h3>
-                <div className="grid cols-2" style={{ marginTop: 12 }}>
-                  {(committees || []).map((c) => (
-                    <a
-                      key={c.id}
-                      className="tile link"
-                      href={`/committee?id=${encodeURIComponent(c.id)}`}
-                      style={{ display: "block" }}
-                    >
-                      <div style={{ fontWeight: 900, color: "#0a1f44" }}>{c.title}</div>
-                      <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                        {(Array.isArray(c.members) ? c.members.length : 0)
-                          ? `Состав: ${c.members.length}`
-                          : "Состав: —"}
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              <div id="focus-commissions" className="person-block about-structure__section">
-                <h3 className="no-gold-underline">Комиссии</h3>
-                <div className="grid" style={{ marginTop: 12 }}>
-                  {commissionsList.map((item) => (
-                    <a
-                      key={item.id}
-                      className="tile link"
-                      href={`/commission?id=${item.id}`}
-                      style={{ display: "block" }}
-                    >
-                      <div style={{ fontWeight: 900, color: "#0a1f44" }}>{item.title}</div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              <div id="focus-councils" className="person-block about-structure__section">
-                <h3 className="no-gold-underline">
-                  Совет по взаимодействию с представительными органами муниципальных образований
-                </h3>
-                <p style={{ marginTop: 6 }}>
-                  Раздел содержит информацию о взаимодействии Верховного Хурала с представительными
-                  органами муниципальных образований: заседания, решения и контакты для обратной связи.
-                </p>
-                <div className="tabs" style={{ marginTop: 10 }}>
-                  <a
-                    className="btn"
-                    href={
-                      "/section?title=" +
-                      encodeURIComponent(
-                        "Совет по взаимодействию с представительными органами муниципальных образований"
-                      )
-                    }
-                  >
-                    Открыть раздел →
-                  </a>
-                  <a className="btn" href="/appeals">
-                    Обратиться →
-                  </a>
-                </div>
-
-                {(councils || []).length ? (
-                  <div className="tile" style={{ marginTop: 12 }}>
-                    <div style={{ fontWeight: 900, marginBottom: 8 }}>Другие советы/комиссии</div>
-                    <ul style={{ margin: 0, paddingLeft: 18 }}>
-                      {(councils || []).map((name) => (
-                        <li key={name}>{name}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
-
+              {/* NOTE: ниже ничего не рендерим — схема должна совпадать с /section */}
             </div>
           </div>
           <SideNav className="sidenav--about" title="О Верховном Хурале" />
