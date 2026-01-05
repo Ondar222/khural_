@@ -11,8 +11,8 @@ export default function Committee() {
     const sp = new URLSearchParams(window.location.search || "");
     const id = sp.get("id");
     if (id) {
-      const c = (committees || []).find((x) => x.id === id);
-      setCommittee(c || null);
+    const c = (committees || []).find((x) => x.id === id);
+    setCommittee(c || null);
     } else {
       setCommittee(null);
     }
@@ -23,8 +23,8 @@ export default function Committee() {
       const sp = new URLSearchParams(window.location.search || "");
       const id = sp.get("id");
       if (id) {
-        const c = (committees || []).find((x) => x.id === id);
-        setCommittee(c || null);
+      const c = (committees || []).find((x) => x.id === id);
+      setCommittee(c || null);
       } else {
         setCommittee(null);
       }

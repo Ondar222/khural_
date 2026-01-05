@@ -4,6 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import Link from "./Link.jsx";
 import { useData } from "../context/DataContext.jsx";
+import { useHashRoute } from "../Router.jsx";
 import { RightOutlined, LeftOutlined } from "@ant-design/icons";
 // removed unused UI icon libs
 
@@ -13,6 +14,8 @@ export default function Header() {
   const [openMenu, setOpenMenu] = React.useState(null); // 'vh' | 'news' | 'docs'
   const [mobileSection, setMobileSection] = React.useState(null);
   const { isAuthenticated, user, logout } = useAuth();
+  const { route } = useHashRoute();
+
 
   React.useEffect(() => {
     const onKey = (e) => {
@@ -35,6 +38,34 @@ export default function Header() {
 
   const { cycleMode } = useA11y();
   const { lang, setLang, t } = useI18n();
+
+  // Обработчик клика на иконку версии для слабовидящих
+  const handleAccessibilityToggle = React.useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Получаем текущий путь и параметры поиска
+    const currentPath = window.location.pathname;
+    const currentSearch = window.location.search;
+    
+    // Парсим текущие параметры URL
+    const urlParams = new URLSearchParams(currentSearch);
+    const isCurrentlyActive = urlParams.get('special_version') === 'Y';
+    
+    // Переключаем параметр
+    if (isCurrentlyActive) {
+      urlParams.delete('special_version');
+    } else {
+      urlParams.set('special_version', 'Y');
+    }
+    
+    // Формируем новый URL с сохранением маршрута
+    const newSearch = urlParams.toString();
+    const newUrl = currentPath + (newSearch ? '?' + newSearch : '');
+    
+    // Перезагружаем страницу с сохраненным маршрутом
+    window.location.href = newUrl;
+  }, []);
 
   React.useEffect(() => {
     const onNav = () => setSheetOpen(false);
@@ -75,13 +106,13 @@ export default function Header() {
           <a href="/press">{t("press")}</a>
           <a href="/activity">{t("activity")}</a>
 
-          <span style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
+          <span className="topbar-auth" style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
             {isAuthenticated ? (
               <>
                 <span style={{ fontWeight: 600, color: "#111827" }}>
                   {user?.name || user?.email || t("login")}
                 </span>
-                <a href="/admin">{t("admin") || "Админка"}</a>
+                <a href="/admin">{t("Панел управления ") || "Панель управления"}</a>
                 <button
                   className="link-like"
                   onClick={() => {
@@ -89,13 +120,25 @@ export default function Header() {
                   }}
                   style={{ border: "none", background: "transparent", cursor: "pointer" }}
                 >
-                  {t("logout") || "Выйти"}
+                  {t("Выйти") || "Выйти"}
                 </button>
               </>
             ) : (
               <>
-                <a href="/login">{t("login")}</a>
-                <a href="/register">{t("register")}</a>
+                <a 
+                  href="/login" 
+                  className="btn btn--primary"
+                  style={{ padding: "6px 12px", fontSize: "13px", marginTop: "4px", marginBottom: "4px" }}
+                >
+                  {t("login")}
+                </a>
+                <a 
+                  href="/register" 
+                  className="btn"
+                  style={{ padding: "6px 12px", fontSize: "13px", marginTop: "4px", marginBottom: "4px" }}
+                >
+                  {t("register")}
+                </a>
               </>
             )}
           </span>
@@ -223,9 +266,14 @@ export default function Header() {
           </nav>
 
           <div className="header-actions">
-            <button className="icon-btn" aria-label={t("accessibilityVersion")} onClick={cycleMode}>
-              👁️
-            </button>
+            <img 
+              id="specialButton" 
+              onClick={handleAccessibilityToggle}
+              style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+              src="https://lidrekon.ru/images/special.png" 
+              alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+              title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            />
             <button
               className="icon-btn"
               aria-label={t("changeLanguage")}
@@ -272,9 +320,14 @@ export default function Header() {
               height={44}
             />
           </a>
-          <button className="icon-btn" aria-label={t("accessibilityVersion")} onClick={cycleMode}>
-            👁️
-          </button>
+          <img 
+            id="specialButton" 
+            onClick={handleAccessibilityToggle}
+            style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+            src="https://lidrekon.ru/images/special.png" 
+            alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+          />
           <button
             className="icon-btn"
             aria-label={t("changeLanguage")}
@@ -373,20 +426,20 @@ export default function Header() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
-            <a
-              href="/"
-              className="logo"
-              aria-label={t("goHome")}
-              onClick={() => setMobileOpen(false)}
-              style={{ textDecoration: "none" }}
-            >
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
-                alt=""
-                width={36}
-                height={36}
-              />
-            </a>
+          <a
+            href="/"
+            className="logo"
+            aria-label={t("goHome")}
+            onClick={() => setMobileOpen(false)}
+            style={{ textDecoration: "none" }}
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
+              alt=""
+              width={36}
+              height={36}
+            />
+          </a>
             <div className="mobile-brand-text" style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
               <div style={{ fontSize: 12, color: "#6b7280" }}>
                 {t("brandTop")} {t("brandParliament")}
@@ -396,9 +449,14 @@ export default function Header() {
               </div>
             </div>
           </div>
-          <button className="icon-btn" aria-label="Версия для слабовидящих" onClick={cycleMode}>
-            👁️
-          </button>
+          <img 
+            id="specialButton" 
+            onClick={handleAccessibilityToggle}
+            style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+            src="https://lidrekon.ru/images/special.png" 
+            alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+          />
           {/* auth quick actions removed */}
           <button
             className="icon-btn"
@@ -436,8 +494,9 @@ export default function Header() {
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
                     href="/admin"
                     onClick={() => setMobileOpen(false)}
+                    style={{ width: "100%" }}
                   >
-                    {t("admin") || "Админка"}
+                    {t("Панель управления") || "Панель управления"}
                   </a>
                   <button
                     className="btn mobile-auth__btn mobile-auth__btn--outline"
@@ -445,16 +504,26 @@ export default function Header() {
                       logout();
                       setMobileOpen(false);
                     }}
+                    style={{ width: "100%" }}
                   >
-                    {t("logout") || "Выйти"}
+                    {t("Выйти") || "Выйти"}
                   </button>
                 </div>
               ) : (
-                <>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    width: "100%",
+                    alignItems: "center"
+                  }}
+                >
                   <a
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
                     href="/login"
                     onClick={() => setMobileOpen(false)}
+                    style={{ width: "100%" }}
                   >
                     {t("login")}
                   </a>
@@ -462,10 +531,11 @@ export default function Header() {
                     className="btn mobile-auth__btn mobile-auth__btn--outline"
                     href="/register"
                     onClick={() => setMobileOpen(false)}
+                    style={{ width: "100%" }}
                   >
                     {t("register")}
                   </a>
-                </>
+                </div>
               )}
             </div>
             <div className="mobile-menu-links">

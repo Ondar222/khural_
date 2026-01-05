@@ -47,13 +47,16 @@ import AdminDocumentsPage from "./pages/admin/AdminDocumentsPage.jsx";
 import AdminDocumentsCreatePage from "./pages/admin/AdminDocumentsCreatePage.jsx";
 import AdminDocumentsEditPage from "./pages/admin/AdminDocumentsEditPage.jsx";
 import AdminEventsPage from "./pages/admin/AdminEventsPage.jsx";
+import AdminAppealsPage from "./pages/admin/AdminAppealsPage.jsx";
 import AdminEnvDocsPage from "./pages/admin/AdminEnvDocsPage.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
   const base = (route || "/").split("?")[0];
   const isAdmin = base === "/admin" || base.startsWith("/admin/");
-  
+
+
+
   const AdminProtected = React.useCallback((Component) => {
     const ProtectedComponent = () => (
       <RequireAuth>
@@ -127,6 +130,7 @@ export default function App() {
                           "/admin/documents/create": AdminProtected(AdminDocumentsCreatePage),
                           "/admin/documents/:id": AdminProtected(AdminDocumentsEditPage),
                           "/admin/events": AdminProtected(AdminEventsPage),
+                          "/admin/appeals": AdminProtected(AdminAppealsPage),
                           "/admin/env": AdminProtected(AdminEnvDocsPage),
                           "/feedback": Feedback,
                           "/press": Press,

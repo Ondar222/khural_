@@ -52,8 +52,26 @@ export default function Login() {
         navigate(targetAfterLogin);
       }
     } catch (e) {
-      setError(e?.message || "Ошибка входа");
+      let errorMessage = e?.message || "Ошибка входа";
+      
+      // Более понятные сообщения для пользователя
+      if (e?.status === 405) {
+        errorMessage = "Ошибка подключения к серверу. Пожалуйста, обратитесь к администратору.";
+      } else if (e?.status === 0 || e?.networkError) {
+        errorMessage = "Не удалось подключиться к серверу. Проверьте подключение к интернету.";
+      } else if (e?.status === 401) {
+        errorMessage = "Неверный email или пароль.";
+      } else if (errorMessage.includes("VITE_API_BASE_URL") || errorMessage.includes("API base URL")) {
+        errorMessage = "Ошибка конфигурации сервера. Пожалуйста, обратитесь к администратору.";
+      }
+      
+      setError(errorMessage);
       hasNavigatedRef.current = false;
+      
+      // Логируем детали для отладки (только в dev режиме)
+      if (import.meta.env.DEV) {
+        console.error("Login error:", e);
+      }
     } finally {
       setLoading(false);
     }

@@ -485,19 +485,19 @@ export default function Government() {
                           {d.district && (
                             <li>
                               <span>🏛️</span>
-                              <span>{d.district}</span>
+                              <span>{typeof d.district === "string" ? d.district : String(d.district || "")}</span>
                             </li>
                           )}
                           {d.faction && (
                             <li>
                               <span>👥</span>
-                              <span>{d.faction}</span>
+                              <span>{typeof d.faction === "string" ? d.faction : String(d.faction || "")}</span>
                             </li>
                           )}
                           {d.convocation && (
                             <li>
                               <span>🎖️</span>
-                              <span>Созыв: {d.convocation}</span>
+                              <span>Созыв: {typeof d.convocation === "string" ? d.convocation : String(d.convocation || "")}</span>
                             </li>
                           )}
                           {d.contacts?.phone && (
