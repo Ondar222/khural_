@@ -130,36 +130,6 @@ async function fetchJson(path) {
   }
 }
 
-function normalizeStringList(list) {
-  const items = Array.isArray(list) ? list : [];
-  const normalized = items
-    .map((item) => {
-      if (typeof item === "string") return item;
-      if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
-      return String(item || "");
-    })
-    .map((s) => String(s || "").trim())
-    .filter((s) => s);
-  return Array.from(new Set(normalized));
-}
-
-function normalizeDeputyItem(d) {
-  const toText = (v) => {
-    if (v === undefined || v === null) return "";
-    if (typeof v === "string") return v.trim();
-    if (typeof v === "object") return String(v?.name || v?.title || v?.label || "").trim();
-    return String(v).trim();
-  };
-  if (!d || typeof d !== "object") return d;
-  return {
-    ...d,
-    id: String(d.id ?? d._id ?? d.personId ?? ""),
-    faction: toText(d.faction),
-    district: toText(d.district),
-    convocation: toText(d.convocation),
-  };
-}
-
 export default function DataProvider({ children }) {
   const [slides, setSlides] = React.useState([]);
   const [news, setNews] = React.useState([]);
@@ -367,24 +337,21 @@ export default function DataProvider({ children }) {
                 p.city ||
                 p.district ||
                 "";
-              const s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
-              return String(s || "").trim();
+              return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
             })(),
             faction: (() => {
               const val = local?.faction ||
                 pick(p.faction, p.committee) ||
                 (Array.isArray(p.factions) && p.factions[0]?.name) ||
                 "";
-              const s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
-              return String(s || "").trim();
+              return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
             })(),
             convocation: (() => {
               const val = local?.convocation ||
                 pick(p.convocationNumber, p.convocation, p.convocation_number) ||
                 (Array.isArray(p.convocations) && p.convocations[0]?.name) ||
                 "";
-              const s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
-              return String(s || "").trim();
+              return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
             })(),
             convocationNumber: (() => {
               const val = pick(p.convocationNumber, p.convocation, p.convocation_number) || local?.convocationNumber || "";
@@ -426,19 +393,19 @@ export default function DataProvider({ children }) {
             })(),
           };
         });
-          setDeputies(mapped.map(normalizeDeputyItem));
+          setDeputies(mapped);
           markLoading("deputies", false);
         } else {
           // API вернул пустой массив или невалидные данные - используем локальные данные
           const localDeps = await fetchJson("/data/deputies.json").catch(() => []);
-          setDeputies((Array.isArray(localDeps) ? localDeps : []).map(normalizeDeputyItem));
+          setDeputies(Array.isArray(localDeps) ? localDeps : []);
           markLoading("deputies", false);
         }
       } catch (e) {
         // API недоступен - используем локальные данные
         console.warn("Persons API недоступен, используем локальные данные", e);
         const localDeps = await fetchJson("/data/deputies.json").catch(() => []);
-        setDeputies((Array.isArray(localDeps) ? localDeps : []).map(normalizeDeputyItem));
+        setDeputies(Array.isArray(localDeps) ? localDeps : []);
         markLoading("deputies", false);
       }
 
@@ -491,12 +458,10 @@ export default function DataProvider({ children }) {
         tryApiFetch("/persons/districts/all", { auth: false }),
         tryApiFetch("/persons/convocations/all", { auth: false }),
       ]);
-      if (Array.isArray(apiFactions) && apiFactions.length)
-        setFactions(normalizeStringList(apiFactions));
-      if (Array.isArray(apiDistricts) && apiDistricts.length)
-        setDistricts(normalizeStringList(apiDistricts));
+      if (Array.isArray(apiFactions) && apiFactions.length) setFactions(apiFactions);
+      if (Array.isArray(apiDistricts) && apiDistricts.length) setDistricts(apiDistricts);
       if (Array.isArray(apiConvocations) && apiConvocations.length)
-        setConvocations(normalizeStringList(apiConvocations));
+        setConvocations(apiConvocations);
 
       markLoading("documents", false);
       markLoading("deputies", false);
@@ -505,16 +470,9 @@ export default function DataProvider({ children }) {
     markLoading("structure", true);
     fetchJson("/data/structure.json")
       .then((s) => {
-        // Merge (API can be incomplete; structure.json is our baseline)
-        setFactions((prev) =>
-          normalizeStringList([...(Array.isArray(prev) ? prev : []), ...(s?.factions || [])])
-        );
-        setDistricts((prev) =>
-          normalizeStringList([...(Array.isArray(prev) ? prev : []), ...(s?.districts || [])])
-        );
-        setConvocations((prev) =>
-          normalizeStringList([...(Array.isArray(prev) ? prev : []), ...(s?.convocations || [])])
-        );
+        if (!factions.length) setFactions(s.factions || []);
+        if (!districts.length) setDistricts(s.districts || []);
+        if (!convocations.length) setConvocations(s.convocations || []);
         setCommissions(s.commissions || []);
         setCouncils(s.councils || []);
       })

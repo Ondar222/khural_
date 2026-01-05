@@ -460,10 +460,10 @@ export const AboutApi = {
       return await apiFetch(`/pages${suffix}`, { method: "GET", auth: false });
     } catch (e) {
       // Fallback на старый endpoint
-      const qs = new URLSearchParams();
-      if (locale) qs.set("locale", locale);
-      const suffix = qs.toString() ? `?${qs.toString()}` : "";
-      return apiFetch(`/about/pages${suffix}`, { method: "GET", auth: false });
+    const qs = new URLSearchParams();
+    if (locale) qs.set("locale", locale);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/about/pages${suffix}`, { method: "GET", auth: false });
     }
   },
   async getPageBySlug(slug, { locale } = {}) {
@@ -474,12 +474,12 @@ export const AboutApi = {
       });
     } catch (e) {
       // Fallback на старый endpoint
-      const qs = new URLSearchParams();
-      if (locale) qs.set("locale", locale);
-      const suffix = qs.toString() ? `?${qs.toString()}` : "";
-      return apiFetch(`/about/pages/${encodeURIComponent(slug)}${suffix}`, {
-        method: "GET",
-        auth: false,
+    const qs = new URLSearchParams();
+    if (locale) qs.set("locale", locale);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/about/pages/${encodeURIComponent(slug)}${suffix}`, {
+      method: "GET",
+      auth: false,
       });
     }
   },

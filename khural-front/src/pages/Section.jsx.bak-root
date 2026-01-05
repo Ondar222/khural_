@@ -22,7 +22,7 @@ function useQuery() {
 export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
-  const { committees, factions: structureFactions, government } = useData();
+  const { committees, factions: structureFactions } = useData();
   const focus = q.get("focus");
 
   // Scroll to a requested block from URL (e.g., /section?focus=committees)
@@ -145,16 +145,7 @@ export default function SectionPage() {
     }
 
     if (title === "Депутатские фракции") {
-      const defaultFactions = ["Единая Россия", "КПРФ", "ЛДПР", "Новые люди"];
-      const factions = (Array.isArray(structureFactions) ? structureFactions : [])
-        .map((item) => {
-          if (typeof item === "string") return item;
-          if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
-          return String(item || "");
-        })
-        .map((s) => String(s || "").trim())
-        .filter((s) => s && s !== "Все");
-      const mergedFactions = Array.from(new Set([...factions, ...defaultFactions]));
+      const factions = (structureFactions || []).filter((x) => x && x !== "Все");
       return (
         <section className="section section-page">
           <div className="container">
@@ -164,13 +155,13 @@ export default function SectionPage() {
                 <p style={{ marginTop: 0 }}>
                   Выберите фракцию, чтобы перейти к списку депутатов по этой фракции.
                 </p>
-                {mergedFactions.length ? (
+                {factions.length ? (
                   <div className="grid cols-2" style={{ marginTop: 12 }}>
-                    {mergedFactions.map((f) => (
+                    {factions.map((f) => (
                       <a
-                        key={String(f)}
+                        key={f}
                         className="tile link"
-                        href={`/deputies?faction=${encodeURIComponent(String(f))}`}
+                        href={`/deputies?faction=${encodeURIComponent(f)}`}
                       >
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                           <span aria-hidden="true">‹</span>
@@ -375,30 +366,9 @@ export default function SectionPage() {
             </h1>
             <div className="org org--khural">
               <div className="org__row org__row--center">
-                {(() => {
-                  const chairman = (government || []).find(
-                    (g) =>
-                      g &&
-                      g.role &&
-                      typeof g.role === "string" &&
-                      g.role.toLowerCase().includes("председатель")
-                  );
-                  if (chairman && chairman.id) {
-                    return (
-                      <a
-                        className="org__item org__item--blue org__item--xl"
-                        href={`/government?type=gov&id=${encodeURIComponent(chairman.id)}`}
-                      >
-                        Председатель Верховного Хурала (парламента) Республики Тыва
-                      </a>
-                    );
-                  }
-                  return (
-                    <div className="org__item org__item--blue org__item--xl">
-                      Председатель Верховного Хурала (парламента) Республики Тыва
-                    </div>
-                  );
-                })()}
+                <div className="org__item org__item--blue org__item--xl">
+                  Председатель Верховного Хурала (парламента) Республики Тыва
+                </div>
               </div>
               {/* Factions row */}
               <div className="org__row org__row--factions" id="focus-factions">

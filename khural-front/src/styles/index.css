@@ -3044,6 +3044,11 @@ a {
   font-size: 13px;
   color: #4b5563;
 }
+.container.topbar {
+  /* Desktop header: add breathing room above auth buttons and align closer to the right edge */
+  padding-top: 20px;
+  padding-right: 12px;
+}
 .topbar a {
   color: #111827;
   text-decoration: none;
