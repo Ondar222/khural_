@@ -285,16 +285,16 @@ export const AuthApi = {
     }
   },
   async loginWithPassword({ email, password }) {
-    // New backend uses POST /auth/login/password
+    // Standard endpoint: POST /auth/login (per API docs)
     try {
-      return await apiFetch("/auth/login/password", {
+      return await apiFetch("/auth/login", {
         method: "POST",
         body: { email, password },
         auth: false,
       });
     } catch {
-      // Compatibility fallback (older deployments)
-      return apiFetch("/auth/login", {
+      // Fallback for newer backends that use /auth/login/password
+      return apiFetch("/auth/login/password", {
         method: "POST",
         body: { email, password },
         auth: false,
