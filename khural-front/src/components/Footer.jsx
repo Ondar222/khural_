@@ -63,7 +63,7 @@ export default function Footer() {
             <div className="footer-col">
               <h4>{t("socials")}</h4>
               <nav>
-                <a href="https://vk.com" target="_blank" rel="noreferrer">
+                <a href="https://vk.com/public114457376" target="_blank" rel="noreferrer">
                   {t("vk")}
                 </a>
                 <a href="https://ok.ru" target="_blank" rel="noreferrer">

@@ -7,6 +7,7 @@ const BRAND_LOGO_SRC =
 const NAV = [
   { key: "dashboard", label: "Панель управления", href: "/admin" },
   { key: "deputies", label: "Депутаты", href: "/admin/deputies" },
+  { key: "pages", label: "Страницы", href: "/admin/pages" },
   { key: "documents", label: "Документы", href: "/admin/documents" },
   { key: "events", label: "События", href: "/admin/events" },
   { key: "news", label: "Новости", href: "/admin/news" },
@@ -128,6 +129,3 @@ export default function AdminShell({
     </div>
   );
 }
-
-
-

@@ -179,6 +179,11 @@ export async function apiFetch(
     if (token) finalHeaders.Authorization = `Bearer ${token}`;
   }
   
+  // Логирование для отладки (только для POST/PATCH/DELETE)
+  if (method !== "GET" && body) {
+    console.log(`[API] ${method} ${url}`, { body, headers: { ...finalHeaders, Authorization: finalHeaders.Authorization ? "Bearer ***" : undefined } });
+  }
+  
   let res;
   try {
     res = await fetch(url, {
@@ -198,6 +203,12 @@ export async function apiFetch(
   
   const isJson = (res.headers.get("content-type") || "").includes("application/json");
   const data = isJson ? await res.json().catch(() => null) : null;
+  
+  // Логирование ответа для отладки (только для POST/PATCH/DELETE)
+  if (method !== "GET") {
+    console.log(`[API] ${method} ${url} → ${res.status}`, { data, ok: res.ok });
+  }
+  
   if (!res.ok) {
     if (res.status === 401 && auth && retry) {
       const refreshed = await refreshAccessToken().catch(() => null);
@@ -441,18 +452,58 @@ export const AppealsApi = {
 
 export const AboutApi = {
   async listPages({ locale } = {}) {
-    const qs = new URLSearchParams();
-    if (locale) qs.set("locale", locale);
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return apiFetch(`/about/pages${suffix}`, { method: "GET", auth: false });
+    // Пробуем новый endpoint /pages, если не работает - fallback на /about/pages
+    try {
+      const qs = new URLSearchParams();
+      if (locale) qs.set("locale", locale);
+      const suffix = qs.toString() ? `?${qs.toString()}` : "";
+      return await apiFetch(`/pages${suffix}`, { method: "GET", auth: false });
+    } catch (e) {
+      // Fallback на старый endpoint
+      const qs = new URLSearchParams();
+      if (locale) qs.set("locale", locale);
+      const suffix = qs.toString() ? `?${qs.toString()}` : "";
+      return apiFetch(`/about/pages${suffix}`, { method: "GET", auth: false });
+    }
   },
   async getPageBySlug(slug, { locale } = {}) {
-    const qs = new URLSearchParams();
-    if (locale) qs.set("locale", locale);
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return apiFetch(`/about/pages/${encodeURIComponent(slug)}${suffix}`, {
-      method: "GET",
-      auth: false,
+    try {
+      return await apiFetch(`/pages/slug/${encodeURIComponent(slug)}`, {
+        method: "GET",
+        auth: false,
+      });
+    } catch (e) {
+      // Fallback на старый endpoint
+      const qs = new URLSearchParams();
+      if (locale) qs.set("locale", locale);
+      const suffix = qs.toString() ? `?${qs.toString()}` : "";
+      return apiFetch(`/about/pages/${encodeURIComponent(slug)}${suffix}`, {
+        method: "GET",
+        auth: false,
+      });
+    }
+  },
+  async createPage({ title, slug, content, locale = "ru" }) {
+    // Согласно Swagger, endpoint - /pages
+    return apiFetch("/pages", {
+      method: "POST",
+      body: { title, slug, content, locale },
+      auth: true,
+    });
+  },
+  async updatePage(id, { title, slug, content, locale = "ru" }) {
+    // Согласно Swagger, endpoint - /pages/{id}
+    return apiFetch(`/pages/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: { title, slug, content, locale },
+      auth: true,
+    });
+  },
+  async deletePage(id) {
+    // Согласно Swagger, endpoint - /pages/{id}
+    return apiFetch(`/pages/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      auth: true,
     });
   },
   async listStructure() {

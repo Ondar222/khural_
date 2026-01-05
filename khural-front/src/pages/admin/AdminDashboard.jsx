@@ -25,6 +25,7 @@ export default function AdminDashboard({ stats }) {
     <div className="admin-grid">
       <div className="admin-cards admin-cards--stats">
         <StatCard label="Депутаты" value={stats.deputies} />
+        <StatCard label="Страницы" value={stats.pages || 0} />
         <StatCard label="Документы" value={stats.documents} />
         <StatCard label="Новости" value={stats.news} />
         <StatCard label="События" value={stats.events || 0} />
@@ -40,6 +41,11 @@ export default function AdminDashboard({ stats }) {
           title="Добавить депутата"
           description="Создайте карточку депутата и загрузите фото"
           href="/admin/deputies"
+        />
+        <QuickAction
+          title="Управление страницами"
+          description="Создавайте и редактируйте контентные страницы"
+          href="/admin/pages"
         />
         <QuickAction
           title="Загрузить документ"

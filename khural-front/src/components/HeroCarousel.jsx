@@ -131,7 +131,7 @@ export default function HeroCarousel() {
         <div className="social-left" aria-hidden>
           <a
             className="sbtn sbtn--vk"
-            href="https://vk.com"
+            href="https://vk.com/public114457376"
             target="_blank"
             rel="noreferrer"
             aria-label="VK"
@@ -165,7 +165,7 @@ export default function HeroCarousel() {
           </a>
           <a
             className="sbtn sbtn--tg"
-            href="https://t.me"
+            href="https://t.me/s/tuva_parlament"
             target="_blank"
             rel="noreferrer"
             aria-label="Telegram"
