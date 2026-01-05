@@ -188,6 +188,36 @@ a {
   font-weight: 800;
   color: var(--primary);
 }
+.brand-mobile-title {
+  display: none;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.brand-mobile-title__top {
+  font-size: 10px;
+  line-height: 1.1;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brand-mobile-title__mid {
+  font-size: 10px;
+  line-height: 1.1;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.brand-mobile-title__bottom {
+  font-size: 11px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #003366;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .brand .logo {
   width: 56px;
   height: 56px;
@@ -321,20 +351,40 @@ a {
     color: #fff;
   }
   .site-header .row {
-    height: 72px;
-    padding: 8px 10px;
-    gap: 12px;
+    height: 64px;
+    padding: 6px 8px;
+    gap: 10px;
   }
   .brand {
     gap: 8px;
   }
   .brand .logo {
-    width: 56px;
-    height: 56px;
+    width: 46px;
+    height: 46px;
+  }
+  .brand .logo img {
+    width: 46px;
+    height: 46px;
   }
   /* Hide the full title on mobile: keep only the logo */
   .brand .brand-text {
     display: none;
+  }
+  /* Show compact site title on mobile */
+  .brand .brand-mobile-title {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 190px;
+  }
+  .brand-mobile-title__top {
+    font-size: 11px;
+  }
+  .brand-mobile-title__mid {
+    font-size: 11px;
+  }
+  .brand-mobile-title__bottom {
+    font-size: 12px;
   }
   /* Scope any mobile text tweaks to the title container only */
   .brand .brand-text a {
@@ -373,9 +423,19 @@ a {
 }
 @media (max-width: 959px) {
   .icon-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+  .header-actions {
+    gap: 10px;
+  }
+  /* Accessibility icon (eye) in header */
+  .site-header #specialButton {
+    max-width: 34px !important;
+  }
+  .burger span {
+    width: 14px;
   }
   .header .icon-btn,
   .header-actions .icon-btn {
@@ -3062,6 +3122,39 @@ a {
   margin: 0 auto;
   box-sizing: border-box;
 }
+.mega-sheet .sheet-title {
+  margin-right: auto;
+  min-width: 0;
+  display: none; /* show only on mobile where main nav is hidden */
+  flex-direction: column;
+  gap: 2px;
+}
+.mega-sheet .sheet-title__top {
+  font-size: 12px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mega-sheet .sheet-title__mid {
+  font-size: 12px;
+  line-height: 1.1;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mega-sheet .sheet-title__bottom {
+  font-size: 13px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: #003366;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .mega-sheet .sheet-header .icon-btn {
   width: 36px;
   height: 36px;
@@ -3075,6 +3168,23 @@ a {
 @media (max-width: 959px) {
   .mega-sheet .sheet-grid {
     grid-template-columns: 1fr; /* single column on mobile */
+  }
+  .mega-sheet .sheet-header {
+    min-height: 64px;
+    padding: 0 12px;
+    gap: 10px;
+  }
+  .mega-sheet .sheet-title {
+    display: flex;
+    max-width: 190px;
+  }
+  .mega-sheet #specialButton {
+    max-width: 34px !important;
+  }
+  .mega-sheet .sheet-header .icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
   }
 }
 .sheet-col h3 {

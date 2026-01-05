@@ -38,6 +38,9 @@ export default function Header() {
 
   const { cycleMode } = useA11y();
   const { lang, setLang, t } = useI18n();
+  const brandLine1 = lang === "ru" ? "Верховный Хурал" : t("brandTop");
+  const brandLine2 = lang === "ru" ? "(парламент)" : t("brandParliament");
+  const brandLine3 = lang === "ru" ? "Республика Тыва" : t("brandBottom");
 
   // Обработчик клика на иконку версии для слабовидящих
   const handleAccessibilityToggle = React.useCallback((e) => {
@@ -144,7 +147,7 @@ export default function Header() {
           </span>
         </div>
         <div className="container row">
-          <div className="row">
+          <div>
             <div className="brand">
               <a
                 href="/"
@@ -159,13 +162,20 @@ export default function Header() {
                   height={56}
                 />
               </a>
+              {/* Mobile-only title: desktop uses .brand-text, but it is hidden on mobile via CSS */}
+              <a href="/" className="brand-mobile-title" style={{ textDecoration: "none" }}>
+                <div className="brand-mobile-title__top">{brandLine1}</div>
+                <div className="brand-mobile-title__mid">{brandLine2}</div>
+                <div className="brand-mobile-title__bottom">{brandLine3}</div>
+              </a>
               <div className="brand-text">
                 <a href="/" style={{ textDecoration: "none" }}>
-                  <div style={{ fontSize: 16, lineHeight: 1, color: "#6b7280" }}>
-                    {t("brandTop")} <br /> {t("brandParliament")}
+                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 900, color: "var(--muted)" }}>
+                    {brandLine1}
                   </div>
-                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800 }}>
-                    {t("brandBottom")}
+                  <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>{brandLine2}</div>
+                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                    {brandLine3}
                   </div>
                 </a>
               </div>
@@ -320,6 +330,16 @@ export default function Header() {
               height={44}
             />
           </a>
+            <a
+              href="/"
+              className="sheet-title"
+              onClick={() => setSheetOpen(false)}
+              style={{ textDecoration: "none" }}
+            >
+              <div className="sheet-title__top">{brandLine1}</div>
+              <div className="sheet-title__mid">{brandLine2}</div>
+              <div className="sheet-title__bottom">{brandLine3}</div>
+            </a>
           <img 
             id="specialButton" 
             onClick={handleAccessibilityToggle}
@@ -440,13 +460,13 @@ export default function Header() {
               height={36}
             />
           </a>
-            <div className="mobile-brand-text" style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}>
-              <div style={{ fontSize: 12, color: "#6b7280" }}>
-                {t("brandTop")} {t("brandParliament")}
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#003366" }}>
-                {t("brandBottom")}
-              </div>
+            <div
+              className="mobile-brand-text"
+              style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}
+            >
+              <div style={{ fontSize: 12, color: "#6b7280" }}>{brandLine1}</div>
+              <div style={{ fontSize: 12, color: "#6b7280" }}>{brandLine2}</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#003366" }}>{brandLine3}</div>
             </div>
           </div>
           <img 
