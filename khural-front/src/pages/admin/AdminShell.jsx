@@ -9,6 +9,7 @@ const NAV = [
   { key: "deputies", label: "Депутаты", href: "/admin/deputies" },
   { key: "pages", label: "Страницы", href: "/admin/pages" },
   { key: "documents", label: "Документы", href: "/admin/documents" },
+  { key: "slider", label: "Слайдер", href: "/admin/slider" },
   { key: "events", label: "События", href: "/admin/events" },
   { key: "news", label: "Новости", href: "/admin/news" },
   { key: "appeals", label: "Обращения", href: "/admin/appeals" },

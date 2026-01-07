@@ -22,8 +22,15 @@ function getLocalDateKey(d) {
 
 export default function CalendarPage() {
   const { events } = useData();
+  const dateParam = React.useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const q = new URLSearchParams(window.location.search || "");
+    const raw = String(q.get("date") || "").trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : "";
+  }, []);
   const [cursor, setCursor] = React.useState(() => {
-    const d = new Date();
+    const init = dateParam ? new Date(dateParam + "T00:00:00") : new Date();
+    const d = isNaN(init.getTime()) ? new Date() : init;
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const y = cursor.getFullYear();
@@ -40,6 +47,14 @@ export default function CalendarPage() {
     return mp;
   }, [events]);
   const [openedDayEvents, setOpenedDayEvents] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!dateParam) return;
+    const evs = eventsByDateKey.get(dateParam);
+    if (!evs || !evs.length) return;
+    // Open the day from deep-link (e.g. click from HeroCarousel).
+    setOpenedDayEvents(evs);
+  }, [dateParam, eventsByDateKey]);
 
   return (
     <section className="section">

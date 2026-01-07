@@ -366,6 +366,9 @@ export default function DataProvider({ children }) {
               })(),
               place: pick(e.place, e.event_place, e.location) || "",
               desc: pick(e.desc, e.description) || "",
+              isImportant: Boolean(
+                pick(e.isImportant, e.is_important, e.important, e.featured, e.pinned, e.is_featured)
+              ),
             }))
           );
           markLoading("events", false);

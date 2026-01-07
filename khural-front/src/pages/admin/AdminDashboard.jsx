@@ -27,6 +27,7 @@ export default function AdminDashboard({ stats }) {
         <StatCard label="Депутаты" value={stats.deputies} />
         <StatCard label="Страницы" value={stats.pages || 0} />
         <StatCard label="Документы" value={stats.documents} />
+        <StatCard label="Слайдер" value={stats.slides || 0} />
         <StatCard label="Новости" value={stats.news} />
         <StatCard label="События" value={stats.events || 0} />
       </div>
@@ -56,6 +57,11 @@ export default function AdminDashboard({ stats }) {
           title="Добавить событие"
           description="Событие появится в календаре на сайте"
           href="/admin/events"
+        />
+        <QuickAction
+          title="Слайдер: важное объявление"
+          description="Добавьте слайд для важных анонсов на главной"
+          href="/admin/slider"
         />
       </div>
 

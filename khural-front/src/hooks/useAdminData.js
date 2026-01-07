@@ -2,7 +2,15 @@ import React from "react";
 import { App, Button, Input } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { API_BASE_URL, NewsApi, PersonsApi, DocumentsApi, EventsApi, AppealsApi } from "../api/client.js";
+import {
+  API_BASE_URL,
+  NewsApi,
+  PersonsApi,
+  DocumentsApi,
+  EventsApi,
+  AppealsApi,
+  SliderApi,
+} from "../api/client.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 import { toPersonsApiBody } from "../api/personsPayload.js";
 
@@ -56,6 +64,31 @@ function toEventRow(e) {
     title: e?.title || "",
     desc: e?.description || e?.desc || "",
     __raw: e,
+  };
+}
+
+function pickSlideImage(s) {
+  const img = s?.image;
+  if (!img) return "";
+  if (typeof img === "string") return img;
+  if (img?.link) return img.link;
+  if (img?.file?.link) return img.file.link;
+  if (img?.url) return img.url;
+  return "";
+}
+
+function toSliderRow(s) {
+  // Supports both API slider items and DataContext slides (title/desc/link/image).
+  const fromContext = s && (s.desc !== undefined || s.link !== undefined);
+  return {
+    id: String(s?.id ?? Math.random().toString(36).slice(2)),
+    title: String(s?.title || ""),
+    description: String(s?.description ?? s?.desc ?? s?.subtitle ?? ""),
+    url: String(s?.url ?? s?.link ?? s?.href ?? ""),
+    isActive: s?.isActive !== false,
+    order: Number(s?.order ?? 0),
+    image: fromContext ? String(s?.image || "") : pickSlideImage(s),
+    __raw: s,
   };
 }
 
@@ -114,7 +147,11 @@ function mapDocType(type) {
 export function useAdminData() {
   const { message } = App.useApp();
   const data = useData();
-  const { reload: reloadDataContext, setEvents: setDataContextEvents, events: dataContextEvents } = data;
+  const {
+    reload: reloadDataContext,
+    setEvents: setDataContextEvents,
+    events: dataContextEvents,
+  } = data;
   const { isAuthenticated, user, logout, login } = useAuth();
 
   const apiBase = API_BASE_URL || "";
@@ -129,6 +166,7 @@ export function useAdminData() {
   const [persons, setPersons] = React.useState([]);
   const [documents, setDocuments] = React.useState([]);
   const [events, setEvents] = React.useState([]);
+  const [slider, setSlider] = React.useState([]);
   const [appeals, setAppeals] = React.useState([]);
 
   const canWrite = isAuthenticated;
@@ -144,16 +182,26 @@ export function useAdminData() {
 
   React.useEffect(() => {
     (async () => {
-      const [apiNews, apiPersons, apiDocsResponse] = await Promise.all([
+      const [apiNews, apiPersons, apiDocsResponse, apiSlider] = await Promise.all([
         NewsApi.list().catch(() => null),
         PersonsApi.list().catch(() => null),
         DocumentsApi.listAll().catch(() => null),
+        SliderApi.list({ all: true }).catch(() => null),
       ]);
       setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(data.news));
       setPersons(Array.isArray(apiPersons) ? apiPersons : toPersonsFallback(data.deputies));
       // Обрабатываем структуру ответа от бекенда (может быть { items } или массив)
       const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
       setDocuments(Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(data.documents));
+      if (Array.isArray(apiSlider) && apiSlider.length) {
+        setSlider(apiSlider.map(toSliderRow));
+      } else {
+        // Fallback to DataContext slides (it already falls back to /public/data/slides.json)
+        const fallback = (Array.isArray(data.slides) ? data.slides : [])
+          .slice(0, 5)
+          .map((s, i) => ({ ...toSliderRow(s), order: i + 1, isActive: true }));
+        setSlider(fallback);
+      }
       const apiEvents = await EventsApi.list().catch(() => null);
       setEvents(Array.isArray(apiEvents) ? apiEvents.map(toEventRow) : data.events || []);
       const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
@@ -169,16 +217,25 @@ export function useAdminData() {
   }, [themeMode]);
 
   const reload = React.useCallback(async () => {
-    const [apiNews, apiPersons, apiDocsResponse] = await Promise.all([
+    const [apiNews, apiPersons, apiDocsResponse, apiSlider] = await Promise.all([
       NewsApi.list().catch(() => null),
       PersonsApi.list().catch(() => null),
       DocumentsApi.listAll().catch(() => null),
+      SliderApi.list({ all: true }).catch(() => null),
     ]);
     if (Array.isArray(apiNews)) setNews(apiNews);
     if (Array.isArray(apiPersons)) setPersons(apiPersons);
     // Обрабатываем структуру ответа от бекенда (может быть { items } или массив)
     const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
     if (Array.isArray(apiDocs)) setDocuments(apiDocs);
+    if (Array.isArray(apiSlider) && apiSlider.length) {
+      setSlider(apiSlider.map(toSliderRow));
+    } else {
+      const fallback = (Array.isArray(data.slides) ? data.slides : [])
+        .slice(0, 5)
+        .map((s, i) => ({ ...toSliderRow(s), order: i + 1, isActive: true }));
+      setSlider(fallback);
+    }
     const apiEvents = await EventsApi.list().catch(() => null);
     if (Array.isArray(apiEvents)) setEvents(apiEvents.map(toEventRow));
     const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
@@ -418,6 +475,79 @@ export function useAdminData() {
     }
   }, [message, reload, reloadDataContext, setDataContextEvents, dataContextEvents]);
 
+  const createSlide = React.useCallback(async ({ title, description, url, isActive }) => {
+    setBusy(true);
+    try {
+      if (Array.isArray(slider) && slider.length >= 5) {
+        throw new Error("Максимум 5 слайдов");
+      }
+      await SliderApi.create({
+        title: title || "",
+        description: description || "",
+        url: url || "",
+        isActive: isActive ?? true,
+      });
+      message.success("Слайд создан");
+      await reload();
+      reloadDataContext();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload, reloadDataContext, slider]);
+
+  const updateSlide = React.useCallback(async (id, { title, description, url, isActive }) => {
+    setBusy(true);
+    try {
+      await SliderApi.patch(id, {
+        title: title || "",
+        description: description || "",
+        url: url || "",
+        isActive: isActive ?? true,
+      });
+      message.success("Слайд обновлён");
+      await reload();
+      reloadDataContext();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload, reloadDataContext]);
+
+  const deleteSlide = React.useCallback(async (id) => {
+    setBusy(true);
+    try {
+      await SliderApi.remove(id);
+      message.success("Слайд удалён");
+      await reload();
+      reloadDataContext();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload, reloadDataContext]);
+
+  const uploadSlideImage = React.useCallback(async (id, file) => {
+    setBusy(true);
+    try {
+      await SliderApi.uploadImage(id, file);
+      message.success("Картинка загружена");
+      await reload();
+      reloadDataContext();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload, reloadDataContext]);
+
+  const reorderSlides = React.useCallback(async (ids) => {
+    setBusy(true);
+    try {
+      await SliderApi.reorder(Array.isArray(ids) ? ids : []);
+      message.success("Порядок слайдов обновлён");
+      await reload();
+      reloadDataContext();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload, reloadDataContext]);
+
   const updateAppealStatus = React.useCallback(async (id, status) => {
     setBusy(true);
     try {
@@ -438,7 +568,8 @@ export function useAdminData() {
     documents: Array.isArray(documents) ? documents.length : 0,
     news: Array.isArray(news) ? news.length : 0,
     events: Array.isArray(events) ? events.length : 0,
-  }), [persons, documents, news, events]);
+    slides: Array.isArray(slider) ? slider.length : 0,
+  }), [persons, documents, news, events, slider]);
 
   const handleLogin = React.useCallback(async () => {
     setLoginBusy(true);
@@ -479,6 +610,7 @@ export function useAdminData() {
     persons,
     documents,
     events,
+    slider,
     appeals,
     stats,
     apiBase,
@@ -502,6 +634,13 @@ export function useAdminData() {
     createEvent,
     updateEvent,
     deleteEvent,
+
+    // CRUD Slider
+    createSlide,
+    updateSlide,
+    deleteSlide,
+    uploadSlideImage,
+    reorderSlides,
     
     // CRUD Appeals
     updateAppealStatus,

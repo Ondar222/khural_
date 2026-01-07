@@ -32,31 +32,9 @@ function normalizeSlideImage(image) {
 }
 
 export default function HeroCarousel() {
-  const { slides: dataSlides, news } = useData();
+  const { slides: dataSlides } = useData();
   const { t } = useI18n();
   const [active, setActive] = React.useState(0);
-
-  const getFallbackNewsImage = React.useCallback((i) => {
-    const imgs = [
-      "/img/news1.jpeg",
-      "/img/news2.jpeg",
-      "/img/news3.jpeg",
-      "/img/news4.jpeg",
-      "/img/news5.jpeg",
-    ];
-    return imgs[i % imgs.length];
-  }, []);
-
-  const newsSlides = React.useMemo(() => {
-    const arr = Array.isArray(news) ? [...news] : [];
-    arr.sort((a, b) => String(b?.date || "").localeCompare(String(a?.date || "")));
-    return arr.slice(0, 5).map((n, i) => ({
-      title: String(n?.title || "").trim(),
-      desc: String(n?.excerpt || n?.desc || n?.description || "").trim(),
-      link: n?.id ? `/news?id=${encodeURIComponent(String(n.id))}` : "/news",
-      image: n?.image || getFallbackNewsImage(i),
-    }));
-  }, [news, getFallbackNewsImage]);
 
   const baseSlides = React.useMemo(() => {
     const base = dataSlides && dataSlides.length ? dataSlides : SLIDES;
@@ -69,22 +47,10 @@ export default function HeroCarousel() {
     }));
   }, [dataSlides]);
 
-  // Primary requirement: slider should broadcast news as slides (up to 5).
-  // If there are fewer than 5 news items, we fill the rest from configured slides.
-  const slides = React.useMemo(() => {
-    const primary = newsSlides.filter((s) => s.title && s.image);
-    if (primary.length >= 5) return primary.slice(0, 5);
-    const seen = new Set(primary.map((s) => `${s.title}|${s.image}`));
-    const extras = baseSlides
-      .filter((s) => s.title && s.image)
-      .filter((s) => {
-        const k = `${s.title}|${s.image}`;
-        if (seen.has(k)) return false;
-        seen.add(k);
-        return true;
-      });
-    return [...primary, ...extras].slice(0, 5);
-  }, [newsSlides, baseSlides]);
+  const slides = React.useMemo(
+    () => baseSlides.filter((s) => s.title && s.image).slice(0, 5),
+    [baseSlides]
+  );
 
   React.useEffect(() => {
     const len = slides.length || 1;
@@ -106,7 +72,7 @@ export default function HeroCarousel() {
 
   return (
     <div className="container">
-      <section className="hero hero--contained" aria-label="Главные события">
+      <section className="hero hero--contained" aria-label="Важные объявления">
         <div className="slides" aria-hidden>
           {slides.map((s, i) => (
             <div
