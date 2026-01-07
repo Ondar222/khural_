@@ -4328,54 +4328,83 @@ body.admin-mode[data-admin-theme="light"] .admin-nav__item.is-active {
   width: 100%;
 }
 .admin-user {
-  display: flex;
- flex-direction: row;
- justify-content: space-around;
-  gap: 10px;
-  padding: 16px 20px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  background: radial-gradient(900px 240px at 10% 0%, rgba(255, 215, 0, 0.14), transparent 60%),
+    rgba(255, 255, 255, 0.03);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  text-decoration: none;
+  color: inherit;
 }
-.admin-user--button {
-  cursor: default;
+.admin-user--link {
+  cursor: pointer;
   transition: transform 160ms ease, box-shadow 200ms ease, background 160ms ease,
     border-color 160ms ease;
 }
+@media (hover: hover) {
+  .admin-user--link:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 215, 0, 0.34);
+    background: radial-gradient(900px 240px at 10% 0%, rgba(255, 215, 0, 0.20), transparent 60%),
+      rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 16px 34px rgba(0, 0, 0, 0.14),
+      0 0 28px rgba(255, 215, 0, 0.14);
+  }
+}
+.admin-user--link:focus-visible {
+  box-shadow: var(--ring-strong);
+  outline: none;
+}
 body.admin-mode[data-admin-theme="light"] .admin-user {
-  border-color: rgba(15, 23, 42, 0.12);
-  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 215, 0, 0.20);
+  background: radial-gradient(900px 240px at 10% 0%, rgba(255, 215, 0, 0.18), transparent 60%),
+    rgba(255, 255, 255, 0.86);
 }
 .admin-user__avatar {
-  width: 52px;
-  height: 52px;
+  width: 62px;
+  height: 62px;
   border-radius: 999px;
   display: grid;
   place-items: center;
   font-weight: 900;
-  font-size: 20px;
-  background: rgba(255, 215, 0, 0.16);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  font-size: 22px;
+  background: radial-gradient(220px 220px at 30% 20%, rgba(255, 255, 255, 0.45), transparent 55%),
+    rgba(255, 215, 0, 0.18);
+  border: 1px solid rgba(255, 215, 0, 0.26);
   flex-shrink: 0;
+  overflow: hidden;
+}
+.admin-user__avatarImg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 .admin-user__name {
   font-weight: 800;
-  font-size: 17px;
-  text-align: center;
+  font-size: 18px;
+  text-align: left;
 }
 .admin-user__role {
   opacity: 0.7;
   font-size: 14px;
-  text-align: center;
+  text-align: left;
 }
 .admin-user__meta {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0;
+  gap: 2px;
 }
 .admin-sidebar__footer .ant-btn,
 .admin-logout-btn {
@@ -4391,12 +4420,12 @@ body.admin-mode[data-admin-theme="light"] .admin-user {
     padding: 20px 16px;
   }
   .admin-user {
-    padding: 20px 24px;
+    padding: 18px 18px;
   }
   .admin-user__avatar {
-    width: 56px;
-    height: 56px;
-    font-size: 22px;
+    width: 68px;
+    height: 68px;
+    font-size: 24px;
   }
   .admin-user__name {
     font-size: 18px;
@@ -5524,6 +5553,88 @@ body.admin-mode[data-admin-theme="dark"] .admin-action__cta {
 body.admin-mode[data-admin-theme="dark"] .admin-action:hover .admin-action__title,
 body.admin-mode[data-admin-theme="dark"] .admin-action:hover .admin-action__desc {
   color: var(--gold);
+}
+
+/* Admin profile page */
+.admin-profile__head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.admin-profile__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 26px;
+  background: radial-gradient(240px 240px at 30% 20%, rgba(255, 255, 255, 0.5), transparent 55%),
+    rgba(255, 215, 0, 0.18);
+  border: 1px solid rgba(255, 215, 0, 0.26);
+  overflow: hidden;
+}
+.admin-profile__avatarImg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.admin-profile__avatarActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.admin-profile__name {
+  font-weight: 900;
+  font-size: 20px;
+}
+.admin-profile__role {
+  opacity: 0.75;
+  margin-top: 2px;
+}
+.admin-profile__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.admin-profile__item {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 215, 0, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 12px 14px;
+}
+body.admin-mode[data-admin-theme="light"] .admin-profile__item {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+.admin-profile__label {
+  font-size: 12px;
+  opacity: 0.7;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.admin-profile__value {
+  margin-top: 6px;
+  font-weight: 800;
+}
+.admin-profile__actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+@media (max-width: 959px) {
+  .admin-profile__grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-profile__actions .ant-btn {
+    flex: 1 1 auto;
+  }
 }
 
 /* Make common antd text white in admin dark mode */

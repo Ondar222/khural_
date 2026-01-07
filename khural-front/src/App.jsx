@@ -59,6 +59,7 @@ import AdminEnvDocsPage from "./pages/admin/AdminEnvDocsPage.jsx";
 import AdminSliderPage from "./pages/admin/AdminSliderPage.jsx";
 import AdminSliderCreatePage from "./pages/admin/AdminSliderCreatePage.jsx";
 import AdminSliderEditPage from "./pages/admin/AdminSliderEditPage.jsx";
+import AdminProfilePage from "./pages/admin/AdminProfilePage.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
@@ -134,6 +135,7 @@ export default function App() {
                           "/wifi": Wifi,
                           "/map": MapPage,
                           "/admin": AdminProtected(AdminDashboardPage),
+                          "/admin/profile": AdminProtected(AdminProfilePage),
                           "/admin/news": AdminProtected(AdminNewsPage),
                           "/admin/news/create": AdminProtected(AdminNewsCreatePage),
                           "/admin/news/edit/:id": AdminProtected(AdminNewsEditPage),

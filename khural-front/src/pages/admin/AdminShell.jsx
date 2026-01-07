@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "antd";
+import { readAdminAvatar } from "./adminAvatar.js";
 
 const BRAND_LOGO_SRC =
   "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg";
@@ -35,6 +36,18 @@ export default function AdminShell({
   children,
 }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [avatarUrl, setAvatarUrl] = React.useState(() => readAdminAvatar());
+
+  React.useEffect(() => {
+    const onAvatar = () => setAvatarUrl(readAdminAvatar());
+    window.addEventListener("khural:admin-avatar-updated", onAvatar);
+    return () => window.removeEventListener("khural:admin-avatar-updated", onAvatar);
+  }, []);
+
+  const avatarLetter = React.useMemo(() => {
+    const s = String(user?.name || user?.email || "A").trim();
+    return s ? s[0].toUpperCase() : "A";
+  }, [user]);
 
   return (
     <div className="admin-shell">
@@ -77,13 +90,19 @@ export default function AdminShell({
         </nav>
 
         <div className="admin-sidebar__footer">
-          <div className="admin-user admin-user--button">
-            <div className="admin-user__avatar">A</div>
+          <a
+            className="admin-user admin-user--link"
+            href="/admin/profile"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <div className={"admin-user__avatar" + (avatarUrl ? " admin-user__avatar--img" : "")}>
+              {avatarUrl ? <img src={avatarUrl} alt="" className="admin-user__avatarImg" /> : avatarLetter}
+            </div>
             <div className="admin-user__meta">
               <div className="admin-user__name">{user?.name || user?.email || "Администратор"}</div>
               <div className="admin-user__role">{user?.role || "admin"}</div>
             </div>
-          </div>
+          </a>
 
           <Button danger block onClick={onLogout} className="admin-logout-btn">
             Выйти
