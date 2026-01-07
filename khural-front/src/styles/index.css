@@ -5071,6 +5071,146 @@ body.admin-mode[data-admin-theme="light"] .admin-page-editor__hero {
   }
 }
 
+/* Slider editor (admin) */
+.admin-slider-editor {
+  display: grid;
+  gap: 16px;
+}
+.admin-slider-editor__hero {
+  border-radius: 22px;
+  padding: 18px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: radial-gradient(900px 240px at 10% 0%, rgba(255, 215, 0, 0.18), transparent 60%),
+    radial-gradient(900px 240px at 90% 0%, rgba(13, 75, 143, 0.25), transparent 60%),
+    rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+body.admin-mode[data-admin-theme="light"] .admin-slider-editor__hero {
+  background: radial-gradient(900px 240px at 10% 0%, rgba(255, 215, 0, 0.22), transparent 60%),
+    radial-gradient(900px 240px at 90% 0%, rgba(13, 75, 143, 0.14), transparent 60%),
+    rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+.admin-slider-editor__hero-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.admin-slider-editor__hero-left {
+  min-width: min(560px, 100%);
+}
+.admin-slider-editor__kicker {
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.admin-slider-editor__title {
+  margin-top: 6px;
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.15;
+}
+.admin-slider-editor__subtitle {
+  margin-top: 8px;
+  opacity: 0.85;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.admin-slider-editor__hero-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media (max-width: 720px) {
+  .admin-slider-editor__hero-actions {
+    width: 100%;
+  }
+  .admin-slider-editor__hero-actions .ant-btn {
+    flex: 1 1 auto;
+  }
+}
+.admin-slider-editor__section-title {
+  font-weight: 900;
+  margin-bottom: 12px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Events editor (admin) */
+.admin-events-editor {
+  display: grid;
+  gap: 16px;
+}
+.admin-events-editor__hero {
+  border-radius: 22px;
+  padding: 18px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: radial-gradient(900px 240px at 10% 0%, rgba(255, 215, 0, 0.18), transparent 60%),
+    radial-gradient(900px 240px at 90% 0%, rgba(13, 75, 143, 0.25), transparent 60%),
+    rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px) saturate(140%);
+}
+body.admin-mode[data-admin-theme="light"] .admin-events-editor__hero {
+  background: radial-gradient(900px 240px at 10% 0%, rgba(255, 215, 0, 0.22), transparent 60%),
+    radial-gradient(900px 240px at 90% 0%, rgba(13, 75, 143, 0.14), transparent 60%),
+    rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+.admin-events-editor__hero-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.admin-events-editor__hero-left {
+  min-width: min(560px, 100%);
+}
+.admin-events-editor__kicker {
+  font-size: 12px;
+  opacity: 0.8;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.admin-events-editor__title {
+  margin-top: 6px;
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.15;
+}
+.admin-events-editor__subtitle {
+  margin-top: 8px;
+  opacity: 0.85;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.admin-events-editor__hero-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media (max-width: 720px) {
+  .admin-events-editor__hero-actions {
+    width: 100%;
+  }
+  .admin-events-editor__hero-actions .ant-btn {
+    flex: 1 1 auto;
+  }
+}
+.admin-events-editor__section-title {
+  font-weight: 900;
+  margin-bottom: 12px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
 .admin-note__title {
   font-weight: 900;
   font-size: 16px;
@@ -5085,6 +5225,23 @@ body.admin-mode[data-admin-theme="light"] .admin-page-editor__hero {
   margin-top: 10px;
   opacity: 0.75;
   font-size: 12px;
+}
+
+/* Admin warning/info helpers (unify colors across pages) */
+.admin-card--warning {
+  background: rgba(255, 215, 0, 0.18) !important;
+  border-color: rgba(255, 215, 0, 0.28) !important;
+  color: rgba(17, 24, 39, 0.9) !important;
+}
+body.admin-mode[data-admin-theme="dark"] .admin-card--warning {
+  background: rgba(255, 215, 0, 0.14) !important;
+  border-color: rgba(255, 215, 0, 0.26) !important;
+  color: rgba(241, 245, 249, 0.92) !important;
+}
+.admin-card--warning a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Ant Design tweaks inside admin */

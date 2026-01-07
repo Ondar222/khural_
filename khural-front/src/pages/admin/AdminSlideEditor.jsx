@@ -1,0 +1,182 @@
+import React from "react";
+import { App, Button, Form, Input, Space, Switch, Upload } from "antd";
+import { useHashRoute } from "../../Router.jsx";
+import { SliderApi } from "../../api/client.js";
+import { Editor } from "@tinymce/tinymce-react";
+
+function splitDateAndDescription(desc) {
+  const s = String(desc || "");
+  const m = s.match(/^\s*(?:Дата события|Дата)\s*:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})\s*\n?/i);
+  if (!m) return { date: "", description: s };
+  const date = m[1] || "";
+  const rest = s.slice(m[0].length);
+  return { date, description: rest.trimStart() };
+}
+
+function joinDateAndDescription(date, description) {
+  const d = String(date || "").trim();
+  const body = String(description || "").trim();
+  if (!d) return body;
+  return `Дата события: ${d}${body ? `\n${body}` : ""}`;
+}
+
+export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpdate, onUploadImage, busy, canWrite }) {
+  const { message } = App.useApp();
+  const { navigate } = useHashRoute();
+  const [form] = Form.useForm();
+  const [loading, setLoading] = React.useState(mode === "edit");
+  const [saving, setSaving] = React.useState(false);
+  const [imageFile, setImageFile] = React.useState(null);
+  const titleValue = Form.useWatch("title", form);
+  const descriptionHtml = Form.useWatch("description", form);
+
+  React.useEffect(() => {
+    if (mode !== "edit") return;
+    const id = String(slideId || "");
+    if (!id) return;
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const local = (Array.isArray(items) ? items : []).find((s) => String(s?.id) === String(id)) || null;
+        const fromApi = await SliderApi.getById(id).catch(() => null);
+        const src = fromApi || local;
+        if (!src) return;
+        const dateSplit = splitDateAndDescription(src.description || src.desc || src.subtitle || "");
+        form.setFieldsValue({
+          title: src.title || "",
+          date: dateSplit.date || "",
+          description: dateSplit.description || "",
+          url: src.url || src.link || src.href || "",
+          isActive: src.isActive !== false,
+        });
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [mode, slideId, items, form]);
+
+  const onSave = async () => {
+    if (!canWrite) return;
+    setSaving(true);
+    try {
+      const values = await form.validateFields();
+      const payload = {
+        title: values.title,
+        description: joinDateAndDescription(values.date, values.description),
+        url: values.url,
+        isActive: values.isActive,
+      };
+
+      if (mode === "create") {
+        const existingCount = Array.isArray(items) ? items.length : 0;
+        if (existingCount >= 5) {
+          message.error("Максимум 5 слайдов. Удалите существующий слайд, чтобы добавить новый.");
+          return;
+        }
+        const created = await onCreate?.(payload);
+        // If API returned created object with id - upload image
+        const createdId = created?.id;
+        if (createdId && imageFile) await onUploadImage?.(createdId, imageFile);
+        message.success("Слайд создан");
+        navigate("/admin/slider");
+        return;
+      }
+
+      const id = String(slideId || "");
+      if (!id) throw new Error("Не удалось определить ID слайда");
+      await onUpdate?.(id, payload);
+      if (imageFile) await onUploadImage?.(id, imageFile);
+      message.success("Слайд обновлён");
+      navigate("/admin/slider");
+    } catch (e) {
+      if (e?.errorFields) return;
+      message.error(e?.message || "Не удалось сохранить слайд");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="admin-slider-editor">
+      <div className="admin-slider-editor__hero">
+        <div className="admin-slider-editor__hero-row">
+          <div className="admin-slider-editor__hero-left">
+            <div className="admin-slider-editor__kicker">Слайдер</div>
+            <div className="admin-slider-editor__title">
+              {mode === "create" ? "Создать слайд" : "Редактировать слайд"}
+            </div>
+            {mode === "edit" && titleValue ? (
+              <div className="admin-slider-editor__subtitle">{String(titleValue)}</div>
+            ) : (
+              <div className="admin-slider-editor__subtitle">Важные объявления на главной</div>
+            )}
+          </div>
+          <div className="admin-slider-editor__hero-actions">
+            <Button onClick={() => navigate("/admin/slider")}>Отмена</Button>
+            <Button type="primary" onClick={onSave} disabled={!canWrite} loading={Boolean(busy || saving)}>
+              Сохранить
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="admin-card">
+        <div className="admin-slider-editor__section-title">Данные слайда</div>
+        <Form layout="vertical" form={form} initialValues={{ isActive: true }}>
+          <div className="admin-split">
+            <Form.Item label="Заголовок" name="title" rules={[{ required: true, message: "Укажите заголовок" }]}>
+              <Input disabled={loading || saving} />
+            </Form.Item>
+            <Form.Item label="Дата события" name="date" rules={[{ required: true, message: "Укажите дату события" }]}>
+              <Input type="date" disabled={loading || saving} />
+            </Form.Item>
+          </div>
+
+          <Form.Item label="Описание" name="description">
+            <Editor
+              apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
+              disabled={loading || saving}
+              value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
+              onEditorChange={(content) => form.setFieldValue("description", content)}
+              init={{ height: 320, menubar: true }}
+              plugins={["lists", "link", "image", "media"]}
+              toolbar="lists link image media"
+            />
+          </Form.Item>
+
+          <div className="admin-split">
+            <Form.Item label="Ссылка" name="url">
+              <Input disabled={loading || saving} placeholder="/news?id=123 или https://..." />
+            </Form.Item>
+            <Form.Item label="Активен" name="isActive" valuePropName="checked">
+              <Switch disabled={loading || saving} />
+            </Form.Item>
+          </div>
+
+          <Form.Item label="Картинка слайда" tooltip="Загружается через API /slider/{id}/image">
+            <Upload
+              accept="image/*"
+              maxCount={1}
+              beforeUpload={(file) => {
+                setImageFile(file);
+                return false;
+              }}
+              showUploadList={true}
+            >
+              <Button disabled={loading || saving}>Выбрать картинку</Button>
+            </Upload>
+            <div className="admin-hint">
+              Картинка применится после сохранения. В списке можно быстро заменить через кнопку «Картинка».
+            </div>
+          </Form.Item>
+        </Form>
+      </div>
+    </div>
+  );
+}
+
+

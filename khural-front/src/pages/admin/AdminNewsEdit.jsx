@@ -546,7 +546,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       </div>
 
       {!canWrite ? (
-        <div className="admin-card" style={{ marginTop: 16, background: "#fff3cd", color: "#856404" }}>
+        <div className="admin-card admin-card--warning" style={{ marginTop: 16 }}>
           Для записи в API войдите (или настройте API базу).
         </div>
       ) : null}

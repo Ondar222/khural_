@@ -1,7 +1,7 @@
 import React from "react";
 import { App, Button, Input } from "antd";
 import AdminShell from "./AdminShell.jsx";
-import AdminEvents from "./AdminEvents.jsx";
+import AdminEventsList from "./AdminEventsList.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 
 export default function AdminEventsPage() {
@@ -43,14 +43,7 @@ export default function AdminEventsPage() {
       onLogout={adminData.handleLogout}
     >
       {loginCard}
-      <AdminEvents
-        items={adminData.events}
-        onCreate={adminData.createEvent}
-        onUpdate={adminData.updateEvent}
-        onDelete={adminData.deleteEvent}
-        busy={adminData.busy}
-        canWrite={adminData.canWrite}
-      />
+      <AdminEventsList items={adminData.events} onDelete={adminData.deleteEvent} busy={adminData.busy} canWrite={adminData.canWrite} />
     </AdminShell>
   );
 }

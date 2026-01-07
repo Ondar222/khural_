@@ -52,9 +52,13 @@ import AdminDocumentsPage from "./pages/admin/AdminDocumentsPage.jsx";
 import AdminDocumentsCreatePage from "./pages/admin/AdminDocumentsCreatePage.jsx";
 import AdminDocumentsEditPage from "./pages/admin/AdminDocumentsEditPage.jsx";
 import AdminEventsPage from "./pages/admin/AdminEventsPage.jsx";
+import AdminEventsCreatePage from "./pages/admin/AdminEventsCreatePage.jsx";
+import AdminEventsEditPage from "./pages/admin/AdminEventsEditPage.jsx";
 import AdminAppealsPage from "./pages/admin/AdminAppealsPage.jsx";
 import AdminEnvDocsPage from "./pages/admin/AdminEnvDocsPage.jsx";
 import AdminSliderPage from "./pages/admin/AdminSliderPage.jsx";
+import AdminSliderCreatePage from "./pages/admin/AdminSliderCreatePage.jsx";
+import AdminSliderEditPage from "./pages/admin/AdminSliderEditPage.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
@@ -143,7 +147,11 @@ export default function App() {
                           "/admin/documents/create": AdminProtected(AdminDocumentsCreatePage),
                           "/admin/documents/:id": AdminProtected(AdminDocumentsEditPage),
                           "/admin/events": AdminProtected(AdminEventsPage),
+                          "/admin/events/create": AdminProtected(AdminEventsCreatePage),
+                          "/admin/events/edit/:id": AdminProtected(AdminEventsEditPage),
                           "/admin/slider": AdminProtected(AdminSliderPage),
+                          "/admin/slider/create": AdminProtected(AdminSliderCreatePage),
+                          "/admin/slider/edit/:id": AdminProtected(AdminSliderEditPage),
                           "/admin/appeals": AdminProtected(AdminAppealsPage),
                           "/admin/env": AdminProtected(AdminEnvDocsPage),
                           "/feedback": Feedback,

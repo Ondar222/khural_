@@ -2,6 +2,7 @@ import React from "react";
 import { App, Button, Input, Form, Upload, Space, Select, Switch, Card, Divider, Alert } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { DocumentsApi, TranslationApi } from "../../api/client.js";
+import { Editor } from "@tinymce/tinymce-react";
 
 const TYPE_OPTIONS = [
   { value: "laws", label: "Законы" },
@@ -24,6 +25,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
   const [translating, setTranslating] = React.useState(false);
   const [translationJob, setTranslationJob] = React.useState(null);
   const [translationStatus, setTranslationStatus] = React.useState(null);
+  const descriptionHtml = Form.useWatch("description", form);
 
   // Загружаем данные документа
   React.useEffect(() => {
@@ -332,7 +334,15 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
             </Form.Item>
 
             <Form.Item label="Описание" name="description">
-              <Input.TextArea autoSize={{ minRows: 3, maxRows: 8 }} />
+              <Editor
+                apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
+                disabled={loading || busy || !canWrite}
+                value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
+                onEditorChange={(content) => form.setFieldValue("description", content)}
+                init={{ height: 320, menubar: true }}
+                plugins={["lists", "link", "image", "media"]}
+                toolbar="lists link image media"
+              />
             </Form.Item>
           </div>
 
@@ -410,7 +420,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
       </Form>
 
       {!canWrite ? (
-        <div className="admin-card" style={{ marginTop: 16, background: "#fff3cd", color: "#856404" }}>
+        <div className="admin-card admin-card--warning" style={{ marginTop: 16 }}>
           Для записи в API войдите (или настройте API базу).
         </div>
       ) : null}

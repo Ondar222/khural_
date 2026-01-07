@@ -1,10 +1,10 @@
 import React from "react";
 import { Button, Input } from "antd";
 import AdminShell from "./AdminShell.jsx";
-import AdminSliderList from "./AdminSliderList.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
+import AdminSlideEditor from "./AdminSlideEditor.jsx";
 
-export default function AdminSliderPage() {
+export default function AdminSliderCreatePage() {
   const adminData = useAdminData();
 
   const loginCard = !adminData.isAuthenticated ? (
@@ -14,11 +14,7 @@ export default function AdminSliderPage() {
         <div style={{ opacity: 0.8, fontSize: 13, lineHeight: 1.45 }}>
           Чтобы редактировать, добавлять и удалять записи, выполните вход.
         </div>
-        <Input
-          placeholder="Email"
-          value={adminData.email}
-          onChange={(e) => adminData.setEmail(e.target.value)}
-        />
+        <Input placeholder="Email" value={adminData.email} onChange={(e) => adminData.setEmail(e.target.value)} />
         <Input.Password
           placeholder="Пароль"
           value={adminData.password}
@@ -34,7 +30,7 @@ export default function AdminSliderPage() {
   return (
     <AdminShell
       activeKey="slider"
-      title="Слайдер (важные объявления)"
+      title="Создание слайда"
       subtitle={`API: ${adminData.apiBase || "—"} • ${adminData.canWrite ? "доступ на запись" : "только просмотр"}`}
       user={adminData.user}
       themeMode={adminData.themeMode}
@@ -42,12 +38,12 @@ export default function AdminSliderPage() {
       onLogout={adminData.handleLogout}
     >
       {loginCard}
-      <AdminSliderList
+      <AdminSlideEditor
+        mode="create"
         items={adminData.slider}
+        onCreate={adminData.createSlide}
         onUpdate={adminData.updateSlide}
-        onDelete={adminData.deleteSlide}
         onUploadImage={adminData.uploadSlideImage}
-        onReorder={adminData.reorderSlides}
         busy={adminData.busy}
         canWrite={adminData.canWrite}
       />
