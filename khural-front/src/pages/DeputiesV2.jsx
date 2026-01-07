@@ -4,6 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { Select, Button, Dropdown } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
+import { PersonsApi } from "../api/client.js";
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
 const STORAGE_KEY = "khural_deputies_overrides_v1";
@@ -58,6 +59,71 @@ function mergeDeputies(base, overrides) {
   return out;
 }
 
+function normalizeApiDeputy(p) {
+  const toText = (v) => {
+    if (v === undefined || v === null) return "";
+    if (typeof v === "string") return v.trim();
+    if (typeof v === "object") return String(v?.name || v?.title || v?.label || "").trim();
+    return String(v).trim();
+  };
+  if (!p || typeof p !== "object") return null;
+  const id = String(p.id ?? p._id ?? p.personId ?? "");
+  if (!id) return null;
+  const name = toText(p.fullName || p.full_name || p.name);
+  const district = toText(p.electoralDistrict || p.electoral_district || p.district);
+  const faction = toText(p.faction);
+  const convocation = toText(p.convocationNumber || p.convocation || p.convocation_number);
+  const contacts = {
+    phone: toText(p.phoneNumber || p.phone_number || p.phone || p.contacts?.phone),
+    email: toText(p.email || p.contacts?.email),
+  };
+  const photo =
+    toText(p?.image?.link) ||
+    toText(p?.image?.url) ||
+    toText(p?.photoUrl || p?.photo_url || p?.photo) ||
+    "";
+  const position = toText(p.position || p.role || p.description);
+
+  return {
+    ...p,
+    id,
+    name: name || p.name || "",
+    fullName: name,
+    district,
+    electoralDistrict: district,
+    faction,
+    convocation,
+    convocationNumber: convocation,
+    contacts,
+    photo,
+    position,
+  };
+}
+
+function mergeByIdPreferApi(baseDeputies, apiDeputies) {
+  const base = Array.isArray(baseDeputies) ? baseDeputies : [];
+  const api = Array.isArray(apiDeputies) ? apiDeputies : [];
+  const apiById = new Map(api.map((d) => [String(d.id), d]));
+  const out = [];
+  const seen = new Set();
+
+  for (const d of base) {
+    const id = String(d?.id ?? "");
+    if (!id) continue;
+    const apiD = apiById.get(id);
+    out.push(apiD ? { ...d, ...apiD } : d);
+    seen.add(id);
+  }
+  for (const d of api) {
+    const id = String(d?.id ?? "");
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    out.push(d);
+    seen.add(id);
+  }
+  return out;
+}
+
 export default function DeputiesV2() {
   const {
     deputies: baseDeputies,
@@ -72,23 +138,49 @@ export default function DeputiesV2() {
   const { t } = useI18n();
 
   const [overrides, setOverrides] = React.useState(() => readOverrides());
+  const [apiDeputies, setApiDeputies] = React.useState([]);
+  const [apiBusy, setApiBusy] = React.useState(false);
   React.useEffect(() => {
-    const onCustom = () => setOverrides(readOverrides());
+    let alive = true;
+    const loadApi = async () => {
+      setApiBusy(true);
+      try {
+        const res = await PersonsApi.list().catch(() => null);
+        const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+        const mapped = arr.map(normalizeApiDeputy).filter(Boolean);
+        if (alive) setApiDeputies(mapped);
+      } finally {
+        if (alive) setApiBusy(false);
+      }
+    };
+
+    const onCustom = () => {
+      setOverrides(readOverrides());
+      loadApi();
+      // Also trigger a DataContext reload for cases when API is available publicly
+      reload();
+    };
     const onStorage = (e) => {
-      if (e?.key === STORAGE_KEY) setOverrides(readOverrides());
+      if (e?.key === STORAGE_KEY) {
+        setOverrides(readOverrides());
+        loadApi();
+        reload();
+      }
     };
     window.addEventListener("khural:deputies-updated", onCustom);
     window.addEventListener("storage", onStorage);
+    loadApi();
     return () => {
+      alive = false;
       window.removeEventListener("khural:deputies-updated", onCustom);
       window.removeEventListener("storage", onStorage);
     };
-  }, []);
+  }, [reload]);
 
-  const deputies = React.useMemo(
-    () => mergeDeputies(baseDeputies, overrides),
-    [baseDeputies, overrides]
-  );
+  const deputies = React.useMemo(() => {
+    const withApi = mergeByIdPreferApi(baseDeputies, apiDeputies);
+    return mergeDeputies(withApi, overrides);
+  }, [baseDeputies, apiDeputies, overrides]);
 
   // Filters per structure
   const [convocation, setConvocation] = React.useState("Все");
@@ -264,7 +356,7 @@ export default function DeputiesV2() {
               </div>
 
               <DataState
-                loading={false}
+                loading={apiBusy && filtered.length === 0}
                 error={null}
                 empty={filtered.length === 0}
                 emptyDescription="По выбранным фильтрам ничего не найдено"

@@ -1,5 +1,8 @@
 import React from "react";
 import DeputiesV2 from "./pages/DeputiesV2.jsx";
+import PagesIndex from "./pages/PagesIndex.jsx";
+import PageBySlug from "./pages/PageBySlug.jsx";
+import AdminPagesV2Routes from "./pages/admin/AdminPagesV2Routes.jsx";
 
 function getRouteFromLocation() {
   if (typeof window === "undefined") return "/";
@@ -159,6 +162,17 @@ export default function Router({ routes }) {
   // Hotfix: allow deputies list to include admin-created updates without touching root-owned `App.jsx`
   if (base === "/deputies") {
     Component = DeputiesV2;
+  }
+
+  // Pages: V2 admin routes (no modal) + public pages by slug
+  if (base === "/admin/pages" || base === "/admin/pages/create" || base.startsWith("/admin/pages/edit/")) {
+    Component = AdminPagesV2Routes;
+  }
+  if (base === "/pages") {
+    Component = PagesIndex;
+  }
+  if (base.startsWith("/p/")) {
+    Component = PageBySlug;
   }
   
   // If no exact match, try pattern matching
