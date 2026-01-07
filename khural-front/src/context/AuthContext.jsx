@@ -1,4 +1,5 @@
 import React from "react";
+import { message } from "antd";
 import {
   AuthApi,
   setAuthToken,
@@ -33,6 +34,36 @@ function normalizeUser(u) {
       u?.role_id ||
       "user",
   };
+}
+
+function isInAdminArea() {
+  try {
+    if (typeof window === "undefined") return false;
+    const hash = String(window.location?.hash || "");
+    // hash-router: #/admin...
+    return hash.includes("/admin");
+  } catch {
+    return false;
+  }
+}
+
+function friendlyAuthError(e, fallback) {
+  let errorMessage = e?.message || fallback;
+  if (e?.status === 405) {
+    errorMessage = "Ошибка подключения к серверу. Пожалуйста, обратитесь к администратору.";
+  } else if (e?.status === 0 || e?.networkError) {
+    errorMessage = "Не удалось подключиться к серверу. Проверьте подключение к интернету.";
+  } else if (e?.status === 401) {
+    errorMessage = "Неверный email или пароль.";
+  } else if (e?.status === 409) {
+    errorMessage = "Пользователь с таким email уже существует.";
+  } else if (
+    typeof errorMessage === "string" &&
+    (errorMessage.includes("VITE_API_BASE_URL") || errorMessage.includes("API base URL"))
+  ) {
+    errorMessage = "Ошибка конфигурации сервера. Пожалуйста, обратитесь к администратору.";
+  }
+  return errorMessage || fallback;
 }
 
 export default function AuthProvider({ children }) {
@@ -118,22 +149,30 @@ export default function AuthProvider({ children }) {
   }, [token]);
 
   const register = React.useCallback(async (form) => {
-    const res = await AuthApi.register(form);
-    // Some backends return tokens on registration; preserve session if so.
-    if (res) {
-      applySessionFromResponse(res);
-      if (res?.user) setUser(normalizeUser(res.user));
-      // If backend didn't return user, try to load it with the new token.
-      if (!res?.user) {
-        try {
-          const me = await AuthApi.me();
-          setUser(normalizeUser(me));
-        } catch {
-          // ignore
+    try {
+      const res = await AuthApi.register(form);
+      // Some backends return tokens on registration; preserve session if so.
+      if (res) {
+        applySessionFromResponse(res);
+        if (res?.user) setUser(normalizeUser(res.user));
+        // If backend didn't return user, try to load it with the new token.
+        if (!res?.user) {
+          try {
+            const me = await AuthApi.me();
+            setUser(normalizeUser(me));
+          } catch {
+            // ignore
+          }
         }
       }
+      message.success("Регистрация выполнена");
+      return res;
+    } catch (e) {
+      const errorMessage = friendlyAuthError(e, "Ошибка регистрации");
+      message.error(errorMessage);
+      if (e && typeof e === "object") e.message = errorMessage;
+      throw e;
     }
-    return res;
   }, [applySessionFromResponse]);
 
   const login = React.useCallback(
@@ -155,6 +194,10 @@ export default function AuthProvider({ children }) {
           });
           return { token: "dev-fake-token" };
         }
+        const errorMessage = friendlyAuthError(e, "Ошибка входа");
+        // In admin area, UI already shows its own notifications; avoid duplicates.
+        if (!isInAdminArea()) message.error(errorMessage);
+        if (e && typeof e === "object") e.message = errorMessage;
         throw e;
       }
 
@@ -167,6 +210,8 @@ export default function AuthProvider({ children }) {
       } catch {
         // ignore; token may still be valid, user will be loaded by effect
       }
+      // In admin area, UI already shows its own notifications; avoid duplicates.
+      if (!isInAdminArea()) message.success("Вход выполнен");
       return res;
     },
     [applySessionFromResponse, setFakeDevSession]

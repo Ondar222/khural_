@@ -8,11 +8,9 @@ export default function Register() {
   const { navigate } = useHashRoute();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
-  const [success, setSuccess] = React.useState(false);
 
   const onFinish = async (values) => {
     setError("");
-    setSuccess(false);
     setLoading(true);
     try {
       await register(values);
@@ -22,7 +20,6 @@ export default function Register() {
       } catch {
         // ignore; fallback to manual login if backend doesn't allow immediate login
       }
-      setSuccess(true);
       setTimeout(() => navigate(isAuthenticated ? "/" : "/login"), 800);
     } catch (e) {
       setError(e?.message || "Ошибка регистрации");
@@ -36,13 +33,6 @@ export default function Register() {
       <div className="container" style={{ maxWidth: 640 }}>
         <h1>Регистрация</h1>
         {error ? <Alert type="error" message={error} style={{ marginBottom: 12 }} /> : null}
-        {success ? (
-          <Alert
-            type="success"
-            message="Регистрация выполнена. Сейчас вы будете перенаправлены на страницу входа."
-            style={{ marginBottom: 12 }}
-          />
-        ) : null}
         <Form layout="vertical" onFinish={onFinish} initialValues={{ role: "citizen" }}>
           <Form.Item
             label="Фамилия"

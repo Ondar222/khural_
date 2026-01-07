@@ -1,0 +1,356 @@
+import React from "react";
+import { useData } from "../context/DataContext.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
+import { Select, Button, Dropdown } from "antd";
+import SideNav from "../components/SideNav.jsx";
+import DataState from "../components/DataState.jsx";
+
+const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
+const STORAGE_KEY = "khural_deputies_overrides_v1";
+
+function safeParse(json) {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function readOverrides() {
+  if (typeof window === "undefined") return { created: [], updatedById: {}, deletedIds: [] };
+  const raw = window.localStorage?.getItem(STORAGE_KEY) || "";
+  const parsed = safeParse(raw);
+  if (!parsed || typeof parsed !== "object") return { created: [], updatedById: {}, deletedIds: [] };
+  return {
+    created: Array.isArray(parsed.created) ? parsed.created : [],
+    updatedById: parsed.updatedById && typeof parsed.updatedById === "object" ? parsed.updatedById : {},
+    deletedIds: Array.isArray(parsed.deletedIds) ? parsed.deletedIds : [],
+  };
+}
+
+function mergeDeputies(base, overrides) {
+  const list = Array.isArray(base) ? base : [];
+  const created = Array.isArray(overrides?.created) ? overrides.created : [];
+  const updatedById = overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
+  const deleted = new Set((overrides?.deletedIds || []).map((x) => String(x)));
+
+  const out = [];
+  const seen = new Set();
+
+  for (const d of list) {
+    const id = String(d?.id ?? "");
+    if (!id) continue;
+    if (deleted.has(id)) continue;
+    const patch = updatedById[id];
+    out.push(patch ? { ...d, ...patch } : d);
+    seen.add(id);
+  }
+
+  for (const d of created) {
+    const id = String(d?.id ?? "");
+    if (!id) continue;
+    if (deleted.has(id)) continue;
+    if (seen.has(id)) continue;
+    out.push(d);
+    seen.add(id);
+  }
+
+  return out;
+}
+
+export default function DeputiesV2() {
+  const {
+    deputies: baseDeputies,
+    committees,
+    factions: structureFactions,
+    districts: structureDistricts,
+    convocations: structureConvocations,
+    loading,
+    errors,
+    reload,
+  } = useData();
+  const { t } = useI18n();
+
+  const [overrides, setOverrides] = React.useState(() => readOverrides());
+  React.useEffect(() => {
+    const onCustom = () => setOverrides(readOverrides());
+    const onStorage = (e) => {
+      if (e?.key === STORAGE_KEY) setOverrides(readOverrides());
+    };
+    window.addEventListener("khural:deputies-updated", onCustom);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("khural:deputies-updated", onCustom);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  const deputies = React.useMemo(
+    () => mergeDeputies(baseDeputies, overrides),
+    [baseDeputies, overrides]
+  );
+
+  // Filters per structure
+  const [convocation, setConvocation] = React.useState("Все");
+  const [committeeId, setCommitteeId] = React.useState("Все");
+  const [faction, setFaction] = React.useState("Все");
+  const [district, setDistrict] = React.useState("Все");
+  const [openConv, setOpenConv] = React.useState(false);
+
+  React.useEffect(() => {
+    if (convocation === "Все") return;
+    if (!Array.isArray(deputies) || deputies.length === 0) return;
+    const hasAny = deputies.some((d) => d?.convocation === convocation);
+    if (!hasAny) setConvocation("Все");
+  }, [convocation, deputies]);
+
+  const districts = React.useMemo(() => {
+    const items = Array.isArray(structureDistricts) ? structureDistricts : [];
+    const stringItems = items
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
+        return String(item || "");
+      })
+      .filter((item) => item && item.trim() !== "");
+    return ["Все", ...stringItems];
+  }, [structureDistricts]);
+
+  const convocations = React.useMemo(() => {
+    const items = Array.isArray(structureConvocations) ? structureConvocations : [];
+    const stringItems = items
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
+        return String(item || "");
+      })
+      .filter((item) => item && item.trim() !== "");
+    return ["Все", ...stringItems];
+  }, [structureConvocations]);
+
+  const factions = React.useMemo(() => {
+    const items = Array.isArray(structureFactions) ? structureFactions : [];
+    const stringItems = items
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
+        return String(item || "");
+      })
+      .filter((item) => item && item.trim() !== "");
+    return ["Все", ...stringItems];
+  }, [structureFactions]);
+
+  const convMenuItems = React.useMemo(() => {
+    const av = Array.from(new Set(convocations));
+    const ordered = CONVOCATION_ORDER.filter((x) => av.includes(x));
+    return ordered.map((c) => ({
+      key: c,
+      label: c === "Все" ? "Все созывы" : `${c} созыв`,
+      onClick: () => {
+        setConvocation(c);
+        setOpenConv(false);
+      },
+    }));
+  }, [convocations]);
+
+  const committeeOptions = React.useMemo(() => ["Все", ...(committees || []).map((c) => c.id)], [committees]);
+
+  const committeeMatcher = React.useMemo(() => {
+    if (committeeId === "Все") return null;
+    const c = (committees || []).find((x) => x.id === committeeId);
+    if (!c) return null;
+    const ids = new Set();
+    const names = new Set();
+    (c.members || []).forEach((m) => {
+      if (!m) return;
+      if (m.id) ids.add(m.id);
+      if (m.name) names.add(m.name);
+    });
+    return { ids, names };
+  }, [committeeId, committees]);
+
+  const filtered = React.useMemo(() => {
+    return deputies.filter((d) => {
+      if (convocation !== "Все" && d.convocation !== convocation) return false;
+      if (faction !== "Все" && d.faction !== faction) return false;
+      if (district !== "Все" && d.district !== district) return false;
+      if (committeeMatcher) {
+        if (committeeMatcher.ids.has(d.id)) return true;
+        if (committeeMatcher.names.has(d.name)) return true;
+        return false;
+      }
+      return true;
+    });
+  }, [deputies, convocation, faction, district, committeeMatcher]);
+
+  React.useEffect(() => {
+    const applyFromHash = () => {
+      const sp = new URLSearchParams(window.location.search || "");
+      const f = sp.get("faction");
+      const d = sp.get("district");
+      const cv = sp.get("convocation");
+      const cm = sp.get("committee");
+      if (f) setFaction(decodeURIComponent(f));
+      if (d) setDistrict(decodeURIComponent(d));
+      if (cv) setConvocation(decodeURIComponent(cv));
+      if (cm) setCommitteeId(decodeURIComponent(cm));
+    };
+    applyFromHash();
+    window.addEventListener("popstate", applyFromHash);
+    window.addEventListener("app:navigate", applyFromHash);
+    return () => {
+      window.removeEventListener("popstate", applyFromHash);
+      window.removeEventListener("app:navigate", applyFromHash);
+    };
+  }, []);
+
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="page-grid">
+          <div className="page-grid__main">
+            <h1>{t("deputies")}</h1>
+            <DataState
+              loading={Boolean(loading?.deputies) && (!deputies || deputies.length === 0)}
+              error={errors?.deputies}
+              onRetry={reload}
+              empty={!loading?.deputies && (!deputies || deputies.length === 0)}
+              emptyDescription="Список депутатов пуст"
+            >
+              <div className="filters filters--deputies">
+                <Dropdown open={openConv} onOpenChange={setOpenConv} menu={{ items: convMenuItems }}>
+                  <Button size="large">
+                    <span className="filters__btnText">
+                      {convocation === "Все" ? "Все созывы" : `${convocation} созыв`}
+                    </span>
+                    <span className="filters__btnCaret" aria-hidden="true">
+                      ▾
+                    </span>
+                  </Button>
+                </Dropdown>
+                <Select
+                  value={committeeId}
+                  onChange={setCommitteeId}
+                  dropdownMatchSelectWidth={false}
+                  options={committeeOptions.map((id) =>
+                    id === "Все"
+                      ? { value: "Все", label: "По комитетам: Все" }
+                      : {
+                          value: id,
+                          label: `По комитетам: ` + ((committees || []).find((c) => c.id === id)?.title || id),
+                        }
+                  )}
+                />
+                <Select
+                  value={faction}
+                  onChange={setFaction}
+                  dropdownMatchSelectWidth={false}
+                  options={factions.map((x) => ({
+                    value: x,
+                    label: x === "Все" ? "По фракциям: Все" : `По фракциям: ${x}`,
+                  }))}
+                  placeholder="Фракция"
+                />
+                <Select
+                  value={district}
+                  onChange={setDistrict}
+                  dropdownMatchSelectWidth={false}
+                  options={districts.map((x) => ({
+                    value: x,
+                    label: x === "Все" ? "По округам: Все" : `По округам: ${x}`,
+                  }))}
+                  placeholder="Округ"
+                />
+              </div>
+
+              <DataState
+                loading={false}
+                error={null}
+                empty={filtered.length === 0}
+                emptyDescription="По выбранным фильтрам ничего не найдено"
+              >
+                <div className="grid cols-3">
+                  {filtered.map((d) => (
+                    <div key={d.id} className="gov-card">
+                      <div className="gov-card__top">
+                        <img
+                          className="gov-card__avatar"
+                          src={
+                            d.photo ||
+                            (d.image && d.image.link) ||
+                            "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
+                          }
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </div>
+                      <div className="gov-card__body">
+                        <div className="gov-card__name">{d.name}</div>
+                        {d.position ? (
+                          <div className="gov-card__role">{d.position}</div>
+                        ) : (
+                          <div className="gov-card__role">Депутат</div>
+                        )}
+                        <ul className="gov-meta">
+                          {d.reception && (
+                            <li>
+                              <span>⏰</span>
+                              <span>Приём: {d.reception}</span>
+                            </li>
+                          )}
+                          {d.district && (
+                            <li>
+                              <span>🏛️</span>
+                              <span>
+                                {typeof d.district === "string" ? d.district : String(d.district || "")}
+                              </span>
+                            </li>
+                          )}
+                          {d.faction && (
+                            <li>
+                              <span>👥</span>
+                              <span>
+                                {typeof d.faction === "string" ? d.faction : String(d.faction || "")}
+                              </span>
+                            </li>
+                          )}
+                          {d.convocation && (
+                            <li>
+                              <span>🎖️</span>
+                              <span>Созыв: {d.convocation}</span>
+                            </li>
+                          )}
+                          {d.contacts?.phone && (
+                            <li>
+                              <span>📞</span>
+                              <span>{d.contacts.phone}</span>
+                            </li>
+                          )}
+                          {d.contacts?.email && (
+                            <li>
+                              <span>✉️</span>
+                              <span>{d.contacts.email}</span>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                      <div className="gov-card__actions">
+                        <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
+                          Подробнее
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </DataState>
+            </DataState>
+          </div>
+          <SideNav />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+

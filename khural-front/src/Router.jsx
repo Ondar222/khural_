@@ -1,4 +1,5 @@
 import React from "react";
+import DeputiesV2 from "./pages/DeputiesV2.jsx";
 
 function getRouteFromLocation() {
   if (typeof window === "undefined") return "/";
@@ -154,6 +155,11 @@ export default function Router({ routes }) {
   // First try exact match
   let Component = routes[base];
   let routeParams = {};
+
+  // Hotfix: allow deputies list to include admin-created updates without touching root-owned `App.jsx`
+  if (base === "/deputies") {
+    Component = DeputiesV2;
+  }
   
   // If no exact match, try pattern matching
   // Sort routes to check patterns with parameters first (more specific routes first)

@@ -1,7 +1,7 @@
 import React from "react";
 import { App, Button, Input } from "antd";
 import AdminShell from "./AdminShell.jsx";
-import AdminDeputies from "./AdminDeputies.jsx";
+import AdminDeputies from "./AdminDeputiesV2.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 
 export default function AdminDeputiesPage() {
