@@ -45,6 +45,8 @@ import AdminNewsPage from "./pages/admin/AdminNewsPage.jsx";
 import AdminNewsCreatePage from "./pages/admin/AdminNewsCreatePage.jsx";
 import AdminNewsEditPage from "./pages/admin/AdminNewsEditPage.jsx";
 import AdminDeputiesPage from "./pages/admin/AdminDeputiesPage.jsx";
+import AdminDeputiesCreatePage from "./pages/admin/AdminDeputiesCreatePage.jsx";
+import AdminDeputiesEditPage from "./pages/admin/AdminDeputiesEditPage.jsx";
 import AdminPagesV2Routes from "./pages/admin/AdminPagesV2Routes.jsx";
 import AdminDocumentsPage from "./pages/admin/AdminDocumentsPage.jsx";
 import AdminDocumentsCreatePage from "./pages/admin/AdminDocumentsCreatePage.jsx";
@@ -132,6 +134,8 @@ export default function App() {
                           "/admin/news/create": AdminProtected(AdminNewsCreatePage),
                           "/admin/news/edit/:id": AdminProtected(AdminNewsEditPage),
                           "/admin/deputies": AdminProtected(AdminDeputiesPage),
+                          "/admin/deputies/create": AdminProtected(AdminDeputiesCreatePage),
+                          "/admin/deputies/edit/:id": AdminProtected(AdminDeputiesEditPage),
                           "/admin/pages": AdminProtected(AdminPagesV2Routes),
                           "/admin/pages/create": AdminProtected(AdminPagesV2Routes),
                           "/admin/pages/edit/:id": AdminProtected(AdminPagesV2Routes),

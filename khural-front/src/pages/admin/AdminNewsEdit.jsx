@@ -249,85 +249,84 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
 
   if (loadingNews) {
     return (
-      <div style={{ width: "100%", padding: "24px", textAlign: "center" }}>
-        <p>Загрузка данных новости...</p>
+      <div className="admin-news-editor">
+        <div className="admin-card" style={{ textAlign: "center" }}>
+          <div style={{ fontWeight: 900 }}>Загрузка данных новости…</div>
+          <div className="admin-hint">Подождите, загружаем контент, категории и медиа.</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ width: "100%", padding: "24px" }}>
-      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>Редактирование новости</h1>
-        <Space>
-          <Button onClick={() => navigate("/admin/news")}>Отмена</Button>
-          <Button type="primary" onClick={handleSubmit} loading={busy} disabled={!canWrite}>
-            Сохранить
-          </Button>
-        </Space>
+    <div className="admin-news-editor">
+      <div className="admin-news-editor__hero">
+        <div className="admin-news-editor__hero-row">
+          <div className="admin-news-editor__hero-left">
+            <div className="admin-news-editor__kicker">Новости</div>
+            <div className="admin-news-editor__title">Редактирование новости</div>
+            {newsData?.slug ? <div className="admin-news-editor__subtitle">{String(newsData.slug)}</div> : null}
+          </div>
+          <div className="admin-news-editor__hero-actions">
+            <Button onClick={() => navigate("/admin/news")}>Отмена</Button>
+            <Button type="primary" onClick={handleSubmit} loading={busy} disabled={!canWrite}>
+              Сохранить
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Form layout="vertical" form={form}>
         {/* Общие поля */}
-        <div style={{ marginBottom: 24, display: "grid", gridTemplateColumns: "2fr 2fr", gap: 16 }}>
-          <Form.Item
-            label="Категория"
-            name="categoryId"
-            rules={[{ required: true, message: "Выберите категорию" }]}
-          >
-            <Select
-              placeholder="Выберите категорию"
-              loading={loadingCategories}
-              options={categories.map((cat) => ({
-                value: cat.id,
-                label: cat.name,
-              }))}
-            />
-          </Form.Item>
-          <Form.Item
-            label="Slug (URL-адрес)"
-            name="slug"
-            tooltip="URL-совместимый адрес. Если не указан, будет сгенерирован автоматически"
-          >
-            <Input placeholder="sessiya-iyul-2025" />
-          </Form.Item>
-        </div>
+        <div className="admin-news-editor__grid">
+          <div className="admin-card">
+            <div className="admin-news-editor__section-title">Основное</div>
+            <Form.Item
+              label="Категория"
+              name="categoryId"
+              rules={[{ required: true, message: "Выберите категорию" }]}
+            >
+              <Select
+                placeholder="Выберите категорию"
+                loading={loadingCategories}
+                options={categories.map((cat) => ({
+                  value: cat.id,
+                  label: cat.name,
+                }))}
+              />
+            </Form.Item>
+            <Form.Item
+              label="Slug (URL-адрес)"
+              name="slug"
+              tooltip="URL-совместимый адрес. Если не указан, будет сгенерирован автоматически"
+            >
+              <Input placeholder="sessiya-iyul-2025" />
+            </Form.Item>
+          </div>
 
-        <div style={{ marginBottom: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <Form.Item
-            label="Дата публикации"
-            name="publishedAt"
-          >
-            <DatePicker
-              showTime
-              format="DD.MM.YYYY HH:mm"
-              style={{ width: "100%" }}
-              placeholder="Выберите дату публикации"
-            />
-          </Form.Item>
-          <Form.Item
-            label="Опубликовано"
-            name="isPublished"
-            valuePropName="checked"
-            initialValue={false}
-          >
-            <Switch />
-          </Form.Item>
+          <div className="admin-card">
+            <div className="admin-news-editor__section-title">Публикация</div>
+            <Form.Item label="Дата публикации" name="publishedAt">
+              <DatePicker
+                showTime
+                format="DD.MM.YYYY HH:mm"
+                style={{ width: "100%" }}
+                placeholder="Выберите дату публикации"
+              />
+            </Form.Item>
+            <Form.Item label="Опубликовано" name="isPublished" valuePropName="checked" initialValue={false}>
+              <Switch />
+            </Form.Item>
+          </div>
         </div>
 
         {/* Языковые секции */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-            gap: 24,
-            width: "100%",
-          }}
-        >
-          {/* Тувинская часть */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Тувинский язык</h2>
+        <div className="admin-news-editor__lang-grid">
+          <div className="admin-card">
+            <div className="admin-news-editor__lang-head">
+              <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>
+                Тувинский язык
+              </div>
               <Button
                 type="default"
                 onClick={() => handleTranslate("ru", "tyv")}
@@ -378,10 +377,11 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
             </Form.Item>
           </div>
 
-          {/* Русская часть */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Русский язык</h2>
+          <div className="admin-card">
+            <div className="admin-news-editor__lang-head">
+              <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>
+                Русский язык
+              </div>
               <Button
                 type="default"
                 onClick={() => handleTranslate("tyv", "ru")}
@@ -437,9 +437,9 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       </Form>
 
       {/* Медиа файлы */}
-      <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-        <div>
-          <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Обложка</h3>
+      <div className="admin-news-editor__media-grid">
+        <div className="admin-card">
+          <div className="admin-news-editor__section-title">Обложка</div>
           <Upload
             accept="image/*"
             maxCount={1}
@@ -486,8 +486,8 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
             {!coverImage && <div><div className="ant-upload-text">Загрузить</div></div>}
           </Upload>
         </div>
-        <div>
-          <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Галерея</h3>
+        <div className="admin-card">
+          <div className="admin-news-editor__section-title">Галерея</div>
           <Upload
             accept="image/*"
             multiple
@@ -546,7 +546,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       </div>
 
       {!canWrite ? (
-        <div style={{ marginTop: 16, padding: 12, background: "#fff3cd", borderRadius: 4, color: "#856404" }}>
+        <div className="admin-card" style={{ marginTop: 16, background: "#fff3cd", color: "#856404" }}>
           Для записи в API войдите (или настройте API базу).
         </div>
       ) : null}

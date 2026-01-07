@@ -7,6 +7,37 @@ import { toPersonsApiBody } from "../../api/personsPayload.js";
 
 const STORAGE_KEY = "khural_deputies_overrides_v1";
 
+function normKey(v) {
+  return String(v || "")
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function toReceptionScheduleText(schedule) {
+  if (typeof schedule === "string") return schedule;
+  if (!Array.isArray(schedule)) return "";
+  return schedule
+    .map((x) => {
+      const day = x?.day ? String(x.day) : "";
+      const time = x?.time ? String(x.time) : "";
+      return [day, time].filter(Boolean).join(": ");
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
+function toLegislativeActivity(laws) {
+  if (!Array.isArray(laws)) return [];
+  return laws.map((x) => ({
+    number: x?.title || x?.number || "",
+    title: x?.desc || x?.title || "",
+    status: x?.status || "",
+    document: x?.url || x?.id || "",
+  }));
+}
+
 function safeParse(json) {
   try {
     return JSON.parse(json);
@@ -97,7 +128,7 @@ export default function AdminDeputiesV2({
   canWrite,
 }) {
   const { message } = App.useApp();
-  const { reload: reloadPublicData } = useData();
+  const { reload: reloadPublicData, deputies: publicDeputies } = useData();
   const [open, setOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
   const [q, setQ] = React.useState("");
@@ -222,8 +253,7 @@ export default function AdminDeputiesV2({
                 email: row.email || row.contacts?.email || "",
                 phoneNumber: row.phoneNumber || row.contacts?.phone || row.phone || "",
                 address: row.address || row.contacts?.address || "",
-                biography: row.biography || row.description || "",
-                description: row.description || "",
+                description: row.biography || row.bio || row.description || row.position || "",
                 convocationNumber: row.convocationNumber || row.convocation || "",
                 structureType: row.structureType || "",
                 role: row.role || "",
@@ -251,7 +281,10 @@ export default function AdminDeputiesV2({
                 message.success("Депутат удалён");
                 reloadPublicData();
               } catch (e) {
-                message.error(e?.message || "Не удалось удалить депутата");
+                // Fallback: allow local delete even if API is not available or user has no rights.
+                setLocalDeleted((prev) => new Set([...prev, id]));
+                message.warning("Удалено локально (сервер недоступен или нет прав)");
+                reloadPublicData();
               } finally {
                 setBusyLocal(false);
               }
@@ -288,6 +321,110 @@ export default function AdminDeputiesV2({
     };
   }, []);
 
+  const syncFromCodeToApi = React.useCallback(() => {
+    if (!canWrite) return;
+    const list = Array.isArray(publicDeputies) ? publicDeputies : [];
+    if (!list.length) {
+      message.error("Локальные данные депутатов не найдены (public/data/deputies.json)");
+      return;
+    }
+
+    Modal.confirm({
+      title: "Синхронизировать депутатов в API?",
+      content:
+        "Возьмём данные из кода (public/data/deputies.json) и создадим отсутствующих депутатов в базе через API. Это нужно для прода, чтобы CRUD работал через сервер.",
+      okText: "Синхронизировать",
+      cancelText: "Отмена",
+      onOk: async () => {
+        setBusyLocal(true);
+        try {
+          const server = await PersonsApi.list().catch(() => []);
+          const serverList = Array.isArray(server) ? server : [];
+          const existing = new Set(
+            serverList.map(
+              (p) =>
+                `${normKey(p?.fullName || p?.full_name || p?.name)}|${normKey(
+                  p?.electoralDistrict || p?.electoral_district || p?.district
+                )}`
+            )
+          );
+
+          let createdCount = 0;
+          let skippedCount = 0;
+          let photoCount = 0;
+          let failedCount = 0;
+
+          for (const d of list) {
+            const fullName = d?.fullName || d?.name || "";
+            const district = d?.electoralDistrict || d?.electoral_district || d?.district || "";
+            const k = `${normKey(fullName)}|${normKey(district)}`;
+            if (!normKey(fullName)) {
+              skippedCount += 1;
+              continue;
+            }
+            if (existing.has(k)) {
+              skippedCount += 1;
+              continue;
+            }
+
+            const body = toPersonsApiBody({
+              fullName,
+              electoralDistrict: district,
+              faction: d?.faction || "",
+              phoneNumber: d?.phoneNumber || d?.contacts?.phone || "",
+              email: d?.email || d?.contacts?.email || "",
+              address: d?.address || "",
+              biography: d?.biography || d?.bio || "",
+              description: d?.description || d?.position || "",
+              convocationNumber: d?.convocationNumber || d?.convocation || "",
+              structureType: d?.structureType || "",
+              role: d?.role || "",
+              receptionSchedule: d?.receptionSchedule || toReceptionScheduleText(d?.schedule),
+              legislativeActivity: Array.isArray(d?.legislativeActivity)
+                ? d.legislativeActivity
+                : toLegislativeActivity(d?.laws),
+              incomeDeclarations: Array.isArray(d?.incomeDeclarations) ? d.incomeDeclarations : [],
+            });
+
+            try {
+              const created = await PersonsApi.create(body);
+              const createdId = created?.id ?? created?._id ?? created?.personId;
+              createdCount += 1;
+              existing.add(k);
+
+              const photo = d?.photo || d?.image?.link || "";
+              if (createdId && photo) {
+                try {
+                  const abs = new URL(String(photo), window.location.origin).toString();
+                  const res = await fetch(abs);
+                  if (res.ok) {
+                    const blob = await res.blob();
+                    const ext = blob.type && blob.type.includes("/") ? blob.type.split("/")[1] : "jpg";
+                    const file = new File([blob], `photo.${ext}`, { type: blob.type || "image/jpeg" });
+                    await PersonsApi.uploadMedia(createdId, file);
+                    photoCount += 1;
+                  }
+                } catch {
+                  // ignore photo errors
+                }
+              }
+            } catch (e) {
+              failedCount += 1;
+              console.warn("Seed person failed", e);
+            }
+          }
+
+          message.success(
+            `Готово: создано ${createdCount}, пропущено ${skippedCount}, фото ${photoCount}, ошибок ${failedCount}`
+          );
+          reloadPublicData();
+        } finally {
+          setBusyLocal(false);
+        }
+      },
+    });
+  }, [canWrite, message, publicDeputies, reloadPublicData]);
+
   const submit = async () => {
     try {
       if (!canWrite) return;
@@ -297,19 +434,31 @@ export default function AdminDeputiesV2({
       // Ensure defaults for list fields
       if (!Array.isArray(body.legislativeActivity)) body.legislativeActivity = [];
       if (!Array.isArray(body.incomeDeclarations)) body.incomeDeclarations = [];
+      // Keep compatibility: treat "description" form field as biography content
+      if (!body.biography) body.biography = body.description || "";
+      if (!body.bio) body.bio = body.biography || "";
 
-      const created = await PersonsApi.create(toPersonsApiBody(body));
-      const createdId = created?.id ?? created?._id ?? created?.personId;
-      if (createdId && imageFile) await PersonsApi.uploadMedia(createdId, imageFile);
-
-      const uiItem = normalizeForUi({
-        ...body,
-        ...created,
-        id: String(createdId || created?.id || `tmp-${Date.now()}`),
-      });
+      let uiItem = null;
+      try {
+        const created = await PersonsApi.create(toPersonsApiBody(body));
+        const createdId = created?.id ?? created?._id ?? created?.personId;
+        if (createdId && imageFile) await PersonsApi.uploadMedia(createdId, imageFile);
+        uiItem = normalizeForUi({
+          ...body,
+          ...created,
+          id: String(createdId || created?.id || `tmp-${Date.now()}`),
+        });
+        message.success("Депутат создан");
+      } catch (e) {
+        // Local-only create (offline / no rights)
+        uiItem = normalizeForUi({
+          ...body,
+          id: `local-${Date.now()}`,
+        });
+        message.warning("Создано локально (сервер недоступен или нет прав)");
+      }
 
       setLocalCreated((prev) => [uiItem, ...prev]);
-      message.success("Депутат создан");
       reloadPublicData();
       setOpen(false);
       form.resetFields();
@@ -333,14 +482,23 @@ export default function AdminDeputiesV2({
       const { imageFile, ...body } = { ...values, imageFile: editFile };
       if (!Array.isArray(body.legislativeActivity)) body.legislativeActivity = [];
       if (!Array.isArray(body.incomeDeclarations)) body.incomeDeclarations = [];
-
-      await PersonsApi.patch(id, toPersonsApiBody(body));
-      if (imageFile) await PersonsApi.uploadMedia(id, imageFile);
+      // Keep compatibility: treat "description" form field as biography content
+      if (!body.biography) body.biography = body.description || "";
+      if (!body.bio) body.bio = body.biography || "";
 
       const uiItem = normalizeForUi({ ...body, id });
-      setLocalUpdated((prev) => ({ ...prev, [id]: uiItem }));
-      message.success("Депутат обновлён");
-      reloadPublicData();
+      try {
+        await PersonsApi.patch(id, toPersonsApiBody(body));
+        if (imageFile) await PersonsApi.uploadMedia(id, imageFile);
+        setLocalUpdated((prev) => ({ ...prev, [id]: uiItem }));
+        message.success("Депутат обновлён");
+        reloadPublicData();
+      } catch (e) {
+        // Local-only update (offline / no rights)
+        setLocalUpdated((prev) => ({ ...prev, [id]: uiItem }));
+        message.warning("Обновлено локально (сервер недоступен или нет прав)");
+        reloadPublicData();
+      }
       setEditOpen(false);
       setEditing(null);
       editForm.resetFields();
@@ -365,6 +523,9 @@ export default function AdminDeputiesV2({
         <Space wrap>
           <Button type="primary" onClick={() => setOpen(true)} disabled={!canWrite} loading={busy}>
             + Добавить депутата
+          </Button>
+          <Button onClick={syncFromCodeToApi} disabled={!canWrite} loading={Boolean(busyLocal)}>
+            Синхронизировать из кода в API
           </Button>
         </Space>
       </div>
@@ -429,10 +590,6 @@ export default function AdminDeputiesV2({
               </Select>
             </Form.Item>
           ) : null}
-
-          <Form.Item label="Биография (HTML)" name="biography">
-            <Input.TextArea autoSize={{ minRows: 6, maxRows: 12 }} placeholder="Введите HTML-код биографии" />
-          </Form.Item>
 
           <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: "16px", marginTop: "16px" }}>
             <div style={{ marginBottom: "12px" }}>Контакты</div>
@@ -523,8 +680,8 @@ export default function AdminDeputiesV2({
             </Form.List>
           </div>
 
-          <Form.Item label="Описание" name="description">
-            <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} />
+          <Form.Item label="Биография" name="description">
+            <Input.TextArea autoSize={{ minRows: 4, maxRows: 10 }} />
           </Form.Item>
 
           <Form.Item label="Фото (опционально)">
@@ -603,10 +760,6 @@ export default function AdminDeputiesV2({
             </Form.Item>
           ) : null}
 
-          <Form.Item label="Биография (HTML)" name="biography">
-            <Input.TextArea autoSize={{ minRows: 6, maxRows: 12 }} placeholder="Введите HTML-код биографии" />
-          </Form.Item>
-
           <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: "16px", marginTop: "16px" }}>
             <div style={{ marginBottom: "12px" }}>Контакты</div>
             <div className="admin-split">
@@ -696,8 +849,8 @@ export default function AdminDeputiesV2({
             </Form.List>
           </div>
 
-          <Form.Item label="Описание" name="description">
-            <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} />
+          <Form.Item label="Биография" name="description">
+            <Input.TextArea autoSize={{ minRows: 4, maxRows: 10 }} />
           </Form.Item>
 
           <Form.Item label="Фото (опционально)">

@@ -30,16 +30,29 @@ function toNewsFallback(items) {
 }
 
 function toPersonsFallback(items) {
-  return (items || []).map((p) => ({
-    id: p.id || p._id || Math.random().toString(36).slice(2),
-    fullName: p.fullName || p.name || "",
-    electoralDistrict: p.electoralDistrict || p.district || "",
-    faction: p.faction || "",
-    phoneNumber: p.phoneNumber || p?.contacts?.phone || "",
-    email: p.email || p?.contacts?.email || "",
-    description: p.description || "",
-    image: p.image || (p.photo ? { link: p.photo } : null),
-  }));
+  // Fallback should preserve rich local fields from DataContext (bio/laws/schedule/etc)
+  // while normalizing to the shape AdminDeputies UI expects.
+  return (items || []).map((p) => {
+    const id = String(p?.id || p?._id || p?.personId || Math.random().toString(36).slice(2));
+    const fullName = p?.fullName || p?.full_name || p?.name || "";
+    const district = p?.electoralDistrict || p?.electoral_district || p?.district || "";
+    const phone = p?.phoneNumber || p?.phone_number || p?.phone || p?.contacts?.phone || "";
+    const email = p?.email || p?.contacts?.email || "";
+    const image = p?.image || (p?.photo ? { link: p.photo } : null);
+    return {
+      ...p,
+      id,
+      fullName,
+      name: p?.name || fullName,
+      electoralDistrict: p?.electoralDistrict || district,
+      district: p?.district || district,
+      faction: p?.faction || "",
+      phoneNumber: p?.phoneNumber || phone,
+      email,
+      description: p?.description || p?.position || "",
+      image,
+    };
+  });
 }
 
 function toDocumentsFallback(items) {
@@ -189,7 +202,7 @@ export function useAdminData() {
         SliderApi.list({ all: true }).catch(() => null),
       ]);
       setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(data.news));
-      setPersons(Array.isArray(apiPersons) ? apiPersons : toPersonsFallback(data.deputies));
+      setPersons(Array.isArray(apiPersons) && apiPersons.length ? apiPersons : toPersonsFallback(data.deputies));
       // Обрабатываем структуру ответа от бекенда (может быть { items } или массив)
       const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
       setDocuments(Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(data.documents));
@@ -224,7 +237,8 @@ export function useAdminData() {
       SliderApi.list({ all: true }).catch(() => null),
     ]);
     if (Array.isArray(apiNews)) setNews(apiNews);
-    if (Array.isArray(apiPersons)) setPersons(apiPersons);
+    if (Array.isArray(apiPersons) && apiPersons.length) setPersons(apiPersons);
+    else setPersons(toPersonsFallback(data.deputies));
     // Обрабатываем структуру ответа от бекенда (может быть { items } или массив)
     const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
     if (Array.isArray(apiDocs)) setDocuments(apiDocs);

@@ -1,12 +1,22 @@
 import React from "react";
-import { App, Button, Input } from "antd";
+import { Button, Input } from "antd";
+import { useHashRoute } from "../../Router.jsx";
 import AdminShell from "./AdminShell.jsx";
-import AdminDeputies from "./AdminDeputiesList.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
+import AdminDeputyEditor from "./AdminDeputyEditor.jsx";
 
-export default function AdminDeputiesPage() {
+export default function AdminDeputiesEditPage() {
   const adminData = useAdminData();
-  const { message } = App.useApp();
+  const { route } = useHashRoute();
+
+  const deputyId = React.useMemo(() => {
+    const base = (route || "/").split("?")[0];
+    if (typeof window !== "undefined" && window.__routeParams && window.__routeParams.id) {
+      return String(window.__routeParams.id);
+    }
+    const match = base.match(/\/admin\/deputies\/edit\/(.+)$/);
+    return match ? decodeURIComponent(match[1]) : "";
+  }, [route]);
 
   const loginCard = !adminData.isAuthenticated ? (
     <div className="admin-card" style={{ marginBottom: 16 }}>
@@ -15,11 +25,7 @@ export default function AdminDeputiesPage() {
         <div style={{ opacity: 0.8, fontSize: 13, lineHeight: 1.45 }}>
           Чтобы редактировать, добавлять и удалять записи, выполните вход.
         </div>
-        <Input
-          placeholder="Email"
-          value={adminData.email}
-          onChange={(e) => adminData.setEmail(e.target.value)}
-        />
+        <Input placeholder="Email" value={adminData.email} onChange={(e) => adminData.setEmail(e.target.value)} />
         <Input.Password
           placeholder="Пароль"
           value={adminData.password}
@@ -32,10 +38,26 @@ export default function AdminDeputiesPage() {
     </div>
   ) : null;
 
+  if (!deputyId) {
+    return (
+      <AdminShell
+        activeKey="deputies"
+        title="Ошибка"
+        subtitle=""
+        user={adminData.user}
+        themeMode={adminData.themeMode}
+        onToggleTheme={adminData.toggleTheme}
+        onLogout={adminData.handleLogout}
+      >
+        <div className="admin-card">Неверный ID депутата</div>
+      </AdminShell>
+    );
+  }
+
   return (
     <AdminShell
       activeKey="deputies"
-      title="Депутаты"
+      title="Редактирование депутата"
       subtitle={`API: ${adminData.apiBase || "—"} • ${adminData.canWrite ? "доступ на запись" : "только просмотр"}`}
       user={adminData.user}
       themeMode={adminData.themeMode}
@@ -43,14 +65,7 @@ export default function AdminDeputiesPage() {
       onLogout={adminData.handleLogout}
     >
       {loginCard}
-      <AdminDeputies
-        items={adminData.persons}
-        onCreate={adminData.createDeputy}
-        onUpdate={adminData.updateDeputy}
-        onDelete={adminData.deleteDeputy}
-        busy={adminData.busy}
-        canWrite={adminData.canWrite}
-      />
+      <AdminDeputyEditor mode="edit" deputyId={deputyId} canWrite={adminData.canWrite} />
     </AdminShell>
   );
 }

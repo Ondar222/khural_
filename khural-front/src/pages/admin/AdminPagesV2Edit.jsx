@@ -2,6 +2,7 @@ import React from "react";
 import { Button, Form, Input, Select } from "antd";
 import { AboutApi, apiFetch } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
+import { Editor } from "@tinymce/tinymce-react";
 
 function normalizeList(res) {
   if (Array.isArray(res)) return res;
@@ -26,6 +27,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
   const [busy, setBusy] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [parents, setParents] = React.useState([]);
+  const contentHtml = Form.useWatch("content", form);
 
   React.useEffect(() => {
     let alive = true;
@@ -89,19 +91,24 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
   }, [canWrite, form, id, onDone, reload]);
 
   return (
-    <div className="admin-grid">
-      <div className="admin-card" style={{ maxWidth: 980 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-          <div style={{ fontWeight: 900, fontSize: 18 }}>Редактировать страницу</div>
-          <div style={{ display: "flex", gap: 8 }}>
+    <div className="admin-page-editor">
+      <div className="admin-page-editor__hero">
+        <div className="admin-page-editor__hero-row">
+          <div className="admin-page-editor__hero-left">
+            <div className="admin-page-editor__kicker">Страницы</div>
+            <div className="admin-page-editor__title">Редактировать страницу</div>
+            <div className="admin-page-editor__subtitle">{String(id || "")}</div>
+          </div>
+          <div className="admin-page-editor__hero-actions">
             <Button onClick={onDone}>Назад</Button>
             <Button type="primary" onClick={submit} loading={busy} disabled={!canWrite || loading}>
               Сохранить
             </Button>
           </div>
         </div>
+      </div>
 
-        <div style={{ height: 12 }} />
+      <div className="admin-card admin-page-editor__card">
 
         <Form layout="vertical" form={form} initialValues={{ locale: "ru" }}>
           <Form.Item label="Название" name="title" rules={[{ required: true, message: "Введите название" }]}>
@@ -136,7 +143,17 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
             />
           </Form.Item>
           <Form.Item label="Содержимое (HTML)" name="content">
-            <Input.TextArea disabled={loading} autoSize={{ minRows: 14, maxRows: 28 }} />
+            <Editor
+              apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
+              value={typeof contentHtml === "string" ? contentHtml : ""}
+              onEditorChange={(content) => form.setFieldValue("content", content)}
+              init={{
+                height: 520,
+                menubar: true,
+              }}
+              plugins={["lists", "link", "image", "media"]}
+              toolbar="lists link image media"
+            />
           </Form.Item>
         </Form>
       </div>

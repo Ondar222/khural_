@@ -2,6 +2,7 @@ import React from "react";
 import { Button, Form, Input, Select } from "antd";
 import { AboutApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
+import { Editor } from "@tinymce/tinymce-react";
 
 function slugify(input) {
   return String(input || "")
@@ -18,6 +19,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   const [form] = Form.useForm();
   const [busy, setBusy] = React.useState(false);
   const [parents, setParents] = React.useState([]);
+  const contentHtml = Form.useWatch("content", form);
 
   const prefillParent = React.useMemo(() => {
     const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
@@ -86,19 +88,24 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   }, [parentSlug, slugLeaf]);
 
   return (
-    <div className="admin-grid">
-      <div className="admin-card" style={{ maxWidth: 980 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-          <div style={{ fontWeight: 900, fontSize: 18 }}>Создать страницу</div>
-          <div style={{ display: "flex", gap: 8 }}>
+    <div className="admin-page-editor">
+      <div className="admin-page-editor__hero">
+        <div className="admin-page-editor__hero-row">
+          <div className="admin-page-editor__hero-left">
+            <div className="admin-page-editor__kicker">Страницы</div>
+            <div className="admin-page-editor__title">Создать страницу</div>
+            <div className="admin-page-editor__subtitle">Контентная страница (HTML) для сайта</div>
+          </div>
+          <div className="admin-page-editor__hero-actions">
             <Button onClick={onDone}>Назад</Button>
             <Button type="primary" onClick={submit} loading={busy} disabled={!canWrite}>
               Создать
             </Button>
           </div>
         </div>
+      </div>
 
-        <div style={{ height: 12 }} />
+      <div className="admin-card admin-page-editor__card">
 
         <Form layout="vertical" form={form} initialValues={{ locale: "ru" }}>
           <Form.Item label="Название" name="title" rules={[{ required: true, message: "Введите название" }]}>
@@ -134,7 +141,17 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
             />
           </Form.Item>
           <Form.Item label="Содержимое (HTML)" name="content">
-            <Input.TextArea autoSize={{ minRows: 14, maxRows: 28 }} placeholder="<p>...</p>" />
+            <Editor
+              apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
+              value={typeof contentHtml === "string" ? contentHtml : ""}
+              onEditorChange={(content) => form.setFieldValue("content", content)}
+              init={{
+                height: 520,
+                menubar: true,
+              }}
+              plugins={["lists", "link", "image", "media"]}
+              toolbar="lists link image media"
+            />
           </Form.Item>
         </Form>
       </div>

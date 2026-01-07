@@ -159,8 +159,11 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
 
   if (loading) {
     return (
-      <div style={{ width: "100%", padding: "24px", textAlign: "center" }}>
-        <p>Загрузка данных документа...</p>
+      <div className="admin-doc-editor">
+        <div className="admin-card" style={{ textAlign: "center" }}>
+          <div style={{ fontWeight: 900 }}>Загрузка данных документа…</div>
+          <div className="admin-hint">Подождите, загружаем данные и файлы.</div>
+        </div>
       </div>
     );
   }
@@ -169,103 +172,94 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
   const pdfUrlTy = documentData?.metadata?.pdfFileTyLink;
 
   return (
-    <div style={{ width: "100%", padding: "24px" }}>
-      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>Редактирование документа</h1>
-        <Space>
-          <Button onClick={() => navigate("/admin/documents")}>Отмена</Button>
-          <Button type="primary" onClick={handleSubmit} loading={busy} disabled={!canWrite}>
-            Сохранить
-          </Button>
-        </Space>
+    <div className="admin-doc-editor">
+      <div className="admin-doc-editor__hero">
+        <div className="admin-doc-editor__hero-row">
+          <div className="admin-doc-editor__hero-left">
+            <div className="admin-doc-editor__kicker">Документы</div>
+            <div className="admin-doc-editor__title">Редактирование документа</div>
+            {documentData?.title ? (
+              <div className="admin-doc-editor__subtitle">{String(documentData.title)}</div>
+            ) : null}
+          </div>
+          <div className="admin-doc-editor__hero-actions">
+            <Button onClick={() => navigate("/admin/documents")}>Отмена</Button>
+            <Button type="primary" onClick={handleSubmit} loading={busy} disabled={!canWrite}>
+              Сохранить
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Просмотр PDF */}
       {(pdfUrlRu || pdfUrlTy) && (
-        <Card title="Просмотр документов" style={{ marginBottom: 24 }}>
-          <div style={{ display: "grid", gridTemplateColumns: pdfUrlRu && pdfUrlTy ? "1fr 1fr" : "1fr", gap: 16 }}>
+        <div className="admin-card">
+          <div className="admin-doc-editor__section-title">Просмотр документов</div>
+          <div
+            className="admin-doc-editor__pdf-grid"
+            style={{ gridTemplateColumns: pdfUrlRu && pdfUrlTy ? "1fr 1fr" : "1fr" }}
+          >
             {pdfUrlRu && (
-              <div>
-                <h4 style={{ marginBottom: 8 }}>Русская версия</h4>
-                <Button
-                  type="primary"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.open(pdfUrlRu, "_blank");
-                  }}
-                  style={{ marginBottom: 16 }}
-                >
-                  Открыть в новой вкладке
-                </Button>
-                <div style={{ border: "1px solid #d9d9d9", borderRadius: "4px", overflow: "hidden" }}>
-                  <iframe
-                    src={pdfUrlRu}
-                    style={{
-                      width: "100%",
-                      height: "600px",
-                      border: "none",
+              <div className="admin-doc-editor__pdf-pane">
+                <div className="admin-doc-editor__pdf-head">
+                  <div style={{ fontWeight: 900 }}>Русская версия</div>
+                  <Button
+                    type="primary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open(pdfUrlRu, "_blank");
                     }}
-                    title="PDF Preview RU"
-                  />
+                  >
+                    Открыть
+                  </Button>
+                </div>
+                <div className="admin-doc-editor__pdf-frame">
+                  <iframe src={pdfUrlRu} title="PDF Preview RU" />
                 </div>
               </div>
             )}
             {pdfUrlTy && (
-              <div>
-                <h4 style={{ marginBottom: 8 }}>Тувинская версия</h4>
-                <Button
-                  type="primary"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.open(pdfUrlTy, "_blank");
-                  }}
-                  style={{ marginBottom: 16 }}
-                >
-                  Открыть в новой вкладке
-                </Button>
-                <div style={{ border: "1px solid #d9d9d9", borderRadius: "4px", overflow: "hidden" }}>
-                  <iframe
-                    src={pdfUrlTy}
-                    style={{
-                      width: "100%",
-                      height: "600px",
-                      border: "none",
+              <div className="admin-doc-editor__pdf-pane">
+                <div className="admin-doc-editor__pdf-head">
+                  <div style={{ fontWeight: 900 }}>Тувинская версия</div>
+                  <Button
+                    type="primary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open(pdfUrlTy, "_blank");
                     }}
-                    title="PDF Preview TY"
-                  />
+                  >
+                    Открыть
+                  </Button>
+                </div>
+                <div className="admin-doc-editor__pdf-frame">
+                  <iframe src={pdfUrlTy} title="PDF Preview TY" />
                 </div>
               </div>
             )}
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Форма перевода */}
-      <Card title="Перевод документа" style={{ marginBottom: 24 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="admin-card">
+        <div className="admin-doc-editor__section-title">Перевод документа</div>
+        <div className="admin-doc-editor__triple-grid">
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Язык источника</label>
-            <Select
-              value={translateFrom}
-              style={{ width: "100%" }}
-              onChange={setTranslateFrom}
-            >
+            <label className="admin-doc-editor__label">Язык источника</label>
+            <Select value={translateFrom} style={{ width: "100%" }} onChange={setTranslateFrom}>
               <Select.Option value="ru">Русский</Select.Option>
               <Select.Option value="tyv">Тувинский</Select.Option>
             </Select>
           </div>
           <div>
-            <label style={{ display: "block", marginBottom: 8, fontWeight: 500 }}>Язык перевода</label>
-            <Select
-              value={translateTo}
-              style={{ width: "100%" }}
-              onChange={setTranslateTo}
-            >
+            <label className="admin-doc-editor__label">Язык перевода</label>
+            <Select value={translateTo} style={{ width: "100%" }} onChange={setTranslateTo}>
               <Select.Option value="ru">Русский</Select.Option>
               <Select.Option value="tyv">Тувинский</Select.Option>
             </Select>
           </div>
-          <div style={{ display: "flex", alignItems: "flex-end" }}>
+          <div className="admin-doc-editor__triple-action">
             <Button
               type="primary"
               onClick={handleTranslate}
@@ -305,52 +299,54 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
             style={{ marginTop: 16 }}
           />
         )}
-      </Card>
-
-      <Divider />
+      </div>
 
       {/* Форма редактирования */}
       <Form layout="vertical" form={form}>
-        <Form.Item
-          label="Название"
-          name="title"
-          rules={[{ required: true, message: "Укажите название" }]}
-        >
-          <Input />
-        </Form.Item>
+        <div className="admin-doc-editor__grid">
+          <div className="admin-card">
+            <div className="admin-doc-editor__section-title">Основное</div>
+            <Form.Item
+              label="Название"
+              name="title"
+              rules={[{ required: true, message: "Укажите название" }]}
+            >
+              <Input />
+            </Form.Item>
 
-        <div className="admin-split">
-          <Form.Item label="№" name="number">
-            <Input />
-          </Form.Item>
-          <Form.Item label="Дата" name="date">
-            <Input />
-          </Form.Item>
+            <div className="admin-split">
+              <Form.Item label="№" name="number">
+                <Input />
+              </Form.Item>
+              <Form.Item label="Дата" name="date">
+                <Input />
+              </Form.Item>
+            </div>
+
+            <Form.Item label="Категория" name="category">
+              <Input />
+            </Form.Item>
+
+            <Form.Item label="Тип" name="type">
+              <Select options={TYPE_OPTIONS} />
+            </Form.Item>
+
+            <Form.Item label="Описание" name="description">
+              <Input.TextArea autoSize={{ minRows: 3, maxRows: 8 }} />
+            </Form.Item>
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-doc-editor__section-title">Публикация</div>
+            <Form.Item label="Опубликовано" name="isPublished" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+          </div>
         </div>
 
-        <Form.Item label="Категория" name="category">
-          <Input />
-        </Form.Item>
-
-        <Form.Item label="Тип" name="type">
-          <Select options={TYPE_OPTIONS} />
-        </Form.Item>
-
-        <Form.Item label="Описание" name="description">
-          <Input.TextArea autoSize={{ minRows: 3, maxRows: 8 }} />
-        </Form.Item>
-
-        <Form.Item
-          label="Опубликовано"
-          name="isPublished"
-          valuePropName="checked"
-        >
-          <Switch />
-        </Form.Item>
-
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Файлы документа</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="admin-card">
+          <div className="admin-doc-editor__section-title">Файлы документа</div>
+          <div className="admin-doc-editor__files-grid">
             <Form.Item
               label="Русская версия (PDF/DOCX)"
               help="Загрузите хотя бы один файл"
@@ -414,7 +410,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
       </Form>
 
       {!canWrite ? (
-        <div style={{ marginTop: 16, padding: 12, background: "#fff3cd", borderRadius: 4, color: "#856404" }}>
+        <div className="admin-card" style={{ marginTop: 16, background: "#fff3cd", color: "#856404" }}>
           Для записи в API войдите (или настройте API базу).
         </div>
       ) : null}
