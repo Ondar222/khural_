@@ -1,3 +1,9 @@
+.admin-emblem {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
 :root {
   --bg: #f5f6f8;
   --card: #fff;
@@ -4243,14 +4249,16 @@ body.admin-mode[data-admin-theme="light"] .admin-brand {
   border-color: rgba(15, 23, 42, 0.08);
 }
 .admin-brand__logo {
-  width: 44px;
-  height: 44px;
+  width: 78px;
+  height: 78px;
   border-radius: 14px;
   display: grid;
   place-items: center;
   font-weight: 900;
-  background: rgba(255, 215, 0, 0.18);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  /* No background behind emblem (requested) */
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
 }
 .admin-brand__logo img {
   display: block;
@@ -4422,18 +4430,20 @@ body.admin-mode[data-admin-theme="light"] .admin-topbar {
   gap: 14px;
 }
 .admin-topbar__logo {
-  width: 40px;
-  height: 40px;
+  width: 74px;
+  height: 74px;
   border-radius: 14px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
+  /* No background behind emblem (requested) */
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
   text-decoration: none;
 }
 body.admin-mode[data-admin-theme="light"] .admin-topbar__logo {
-  border-color: rgba(15, 23, 42, 0.14);
-  background: rgba(255, 255, 255, 0.75);
+  border-color: transparent !important;
+  background: transparent !important;
 }
 .admin-topbar__logo img {
   display: block;
@@ -4458,6 +4468,11 @@ body.admin-mode[data-admin-theme="light"] .admin-topbar__logo {
     flex-wrap: wrap;
     align-items: flex-start;
   }
+  .admin-topbar__logo {
+    width: 58px;
+    height: 58px;
+    border-radius: 16px;
+  }
   .admin-topbar__right {
     width: 100%;
     justify-content: flex-end;
@@ -4465,6 +4480,14 @@ body.admin-mode[data-admin-theme="light"] .admin-topbar__logo {
   }
   .admin-heading__title {
     font-size: 16px;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-brand__logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
   }
 }
 .admin-heading__title {

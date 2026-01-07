@@ -56,7 +56,7 @@ export default function AdminShell({
         </div>
         <div className="admin-brand">
           <div className="admin-brand__logo">
-            <img src={BRAND_LOGO_SRC} alt="" width={34} height={34} />
+            <img src={BRAND_LOGO_SRC} alt="" className="admin-emblem" />
           </div>
           <div className="admin-brand__text">
             <div className="admin-brand__title">Админ-панель</div>
@@ -95,7 +95,7 @@ export default function AdminShell({
         <header className="admin-topbar">
           <div className="admin-topbar__left">
             <a className="admin-topbar__logo" href="/" aria-label="На главную">
-              <img src={BRAND_LOGO_SRC} alt="" width={36} height={36} />
+              <img src={BRAND_LOGO_SRC} alt="" className="admin-emblem" />
             </a>
             <div className="admin-heading">
               <div className="admin-heading__title">{title}</div>
