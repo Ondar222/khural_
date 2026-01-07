@@ -4,6 +4,7 @@ import { useData } from "../context/DataContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { API_BASE_URL, NewsApi, PersonsApi, DocumentsApi, EventsApi, AppealsApi } from "../api/client.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
+import { toPersonsApiBody } from "../api/personsPayload.js";
 
 function toNewsFallback(items) {
   return (items || []).map((n) => ({
@@ -222,7 +223,7 @@ export function useAdminData() {
     setBusy(true);
     try {
       const { imageFile, ...body } = payload || {};
-      const created = await PersonsApi.create(body);
+      const created = await PersonsApi.create(toPersonsApiBody(body));
       if (created?.id && imageFile) {
         await PersonsApi.uploadMedia(created.id, imageFile);
       }
@@ -237,7 +238,7 @@ export function useAdminData() {
     setBusy(true);
     try {
       const { imageFile, ...body } = payload || {};
-      await PersonsApi.patch(id, body);
+      await PersonsApi.patch(id, toPersonsApiBody(body));
       if (imageFile) await PersonsApi.uploadMedia(id, imageFile);
       message.success("Депутат обновлён");
       await reload();

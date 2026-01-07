@@ -3,6 +3,7 @@ import { App, Button, Input, Modal, Form, Upload, Space, Table, Select } from "a
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { PersonsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
+import { toPersonsApiBody } from "../../api/personsPayload.js";
 
 const STORAGE_KEY = "khural_deputies_overrides_v1";
 
@@ -297,7 +298,7 @@ export default function AdminDeputiesV2({
       if (!Array.isArray(body.legislativeActivity)) body.legislativeActivity = [];
       if (!Array.isArray(body.incomeDeclarations)) body.incomeDeclarations = [];
 
-      const created = await PersonsApi.create(body);
+      const created = await PersonsApi.create(toPersonsApiBody(body));
       const createdId = created?.id ?? created?._id ?? created?.personId;
       if (createdId && imageFile) await PersonsApi.uploadMedia(createdId, imageFile);
 
@@ -333,7 +334,7 @@ export default function AdminDeputiesV2({
       if (!Array.isArray(body.legislativeActivity)) body.legislativeActivity = [];
       if (!Array.isArray(body.incomeDeclarations)) body.incomeDeclarations = [];
 
-      await PersonsApi.patch(id, body);
+      await PersonsApi.patch(id, toPersonsApiBody(body));
       if (imageFile) await PersonsApi.uploadMedia(id, imageFile);
 
       const uiItem = normalizeForUi({ ...body, id });

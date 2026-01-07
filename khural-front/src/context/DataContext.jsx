@@ -63,6 +63,8 @@ export function useData() {
   return React.useContext(DataContext);
 }
 
+const DEPUTIES_OVERRIDES_KEY = "khural_deputies_overrides_v1";
+
 function pick(...vals) {
   for (const v of vals) {
     if (v === undefined || v === null) continue;
@@ -70,6 +72,55 @@ function pick(...vals) {
     return v;
   }
   return undefined;
+}
+
+function safeParse(json) {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function readDeputiesOverrides() {
+  if (typeof window === "undefined") return { created: [], updatedById: {}, deletedIds: [] };
+  const raw = window.localStorage?.getItem(DEPUTIES_OVERRIDES_KEY) || "";
+  const parsed = safeParse(raw);
+  if (!parsed || typeof parsed !== "object") return { created: [], updatedById: {}, deletedIds: [] };
+  return {
+    created: Array.isArray(parsed.created) ? parsed.created : [],
+    updatedById: parsed.updatedById && typeof parsed.updatedById === "object" ? parsed.updatedById : {},
+    deletedIds: Array.isArray(parsed.deletedIds) ? parsed.deletedIds : [],
+  };
+}
+
+function mergeDeputiesWithOverrides(base, overrides) {
+  const created = Array.isArray(overrides?.created) ? overrides.created : [];
+  const updatedById = overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
+  const deletedIds = new Set(Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []);
+
+  const out = [];
+  const seen = new Set();
+
+  for (const it of Array.isArray(base) ? base : []) {
+    const id = String(it?.id ?? "");
+    if (!id) continue;
+    if (deletedIds.has(id)) continue;
+    const override = updatedById[id];
+    out.push(override ? { ...it, ...override } : it);
+    seen.add(id);
+  }
+
+  for (const it of created) {
+    const id = String(it?.id ?? "");
+    if (!id) continue;
+    if (deletedIds.has(id)) continue;
+    if (seen.has(id)) continue;
+    out.push(it);
+    seen.add(id);
+  }
+
+  return out;
 }
 
 function joinApiBase(path) {
@@ -164,7 +215,7 @@ export default function DataProvider({ children }) {
   const [slides, setSlides] = React.useState([]);
   const [news, setNews] = React.useState([]);
   const [events, setEvents] = React.useState([]);
-  const [deputies, setDeputies] = React.useState([]);
+  const [deputiesBase, setDeputiesBase] = React.useState([]);
   const [factions, setFactions] = React.useState([]);
   const [districts, setDistricts] = React.useState([]);
   const [convocations, setConvocations] = React.useState([]);
@@ -201,6 +252,7 @@ export default function DataProvider({ children }) {
     about: null,
   });
   const [reloadSeq, setReloadSeq] = React.useState(0);
+  const [deputiesOverrides, setDeputiesOverrides] = React.useState(() => readDeputiesOverrides());
 
   const markLoading = React.useCallback((key, value) => {
     setLoading((s) => ({ ...s, [key]: Boolean(value) }));
@@ -426,19 +478,19 @@ export default function DataProvider({ children }) {
             })(),
           };
         });
-          setDeputies(mapped.map(normalizeDeputyItem));
+          setDeputiesBase(mapped.map(normalizeDeputyItem));
           markLoading("deputies", false);
         } else {
           // API вернул пустой массив или невалидные данные - используем локальные данные
           const localDeps = await fetchJson("/data/deputies.json").catch(() => []);
-          setDeputies((Array.isArray(localDeps) ? localDeps : []).map(normalizeDeputyItem));
+          setDeputiesBase((Array.isArray(localDeps) ? localDeps : []).map(normalizeDeputyItem));
           markLoading("deputies", false);
         }
       } catch (e) {
         // API недоступен - используем локальные данные
         console.warn("Persons API недоступен, используем локальные данные", e);
         const localDeps = await fetchJson("/data/deputies.json").catch(() => []);
-        setDeputies((Array.isArray(localDeps) ? localDeps : []).map(normalizeDeputyItem));
+        setDeputiesBase((Array.isArray(localDeps) ? localDeps : []).map(normalizeDeputyItem));
         markLoading("deputies", false);
       }
 
@@ -554,6 +606,21 @@ export default function DataProvider({ children }) {
     })();
   }, [reloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Keep deputies overrides in sync (admin writes them to localStorage and dispatches this event)
+  React.useEffect(() => {
+    const onLocal = () => setDeputiesOverrides(readDeputiesOverrides());
+    window.addEventListener("khural:deputies-updated", onLocal);
+    window.addEventListener("storage", onLocal);
+    return () => {
+      window.removeEventListener("khural:deputies-updated", onLocal);
+      window.removeEventListener("storage", onLocal);
+    };
+  }, []);
+
+  const deputies = React.useMemo(() => {
+    return mergeDeputiesWithOverrides(deputiesBase, deputiesOverrides);
+  }, [deputiesBase, deputiesOverrides]);
+
   const value = React.useMemo(
     () => ({
       slides,
@@ -578,7 +645,7 @@ export default function DataProvider({ children }) {
       setSlides,
       setNews,
       setEvents,
-      setDeputies,
+      setDeputies: setDeputiesBase,
       setFactions,
       setDistricts,
       setConvocations,
@@ -613,7 +680,7 @@ export default function DataProvider({ children }) {
       setSlides,
       setNews,
       setEvents,
-      setDeputies,
+      setDeputiesBase,
       setFactions,
       setDistricts,
       setConvocations,
