@@ -3,7 +3,7 @@ import { Button } from "antd";
 
 function StatCard({ label, value }) {
   return (
-    <div className="admin-card admin-stat">
+    <div className="admin-card admin-stat admin-card--hover">
       <div className="admin-stat__value">{value}</div>
       <div className="admin-stat__label">{label}</div>
     </div>
@@ -12,7 +12,7 @@ function StatCard({ label, value }) {
 
 function QuickAction({ title, description, href }) {
   return (
-    <a className="admin-card admin-action" href={href}>
+    <a className="admin-card admin-action admin-card--hover" href={href}>
       <div className="admin-action__title">{title}</div>
       <div className="admin-action__desc">{description}</div>
       <div className="admin-action__cta">Перейти</div>
@@ -22,7 +22,7 @@ function QuickAction({ title, description, href }) {
 
 export default function AdminDashboard({ stats }) {
   return (
-    <div className="admin-grid">
+    <div className="admin-grid admin-dashboard">
       <div className="admin-cards admin-cards--stats">
         <StatCard label="Депутаты" value={stats.deputies} />
         <StatCard label="Страницы" value={stats.pages || 0} />
@@ -65,16 +65,7 @@ export default function AdminDashboard({ stats }) {
         />
       </div>
 
-      <div className="admin-card admin-note">
-        <div className="admin-note__title">Подсказка</div>
-        <div className="admin-note__text">
-          Если API недоступен, админка продолжит работать в режиме предпросмотра (данные будут
-          только локально в браузере).
-        </div>
-        <Button href="/admin/news" type="primary">
-          Начать
-        </Button>
-      </div>
+    
     </div>
   );
 }

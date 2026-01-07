@@ -99,7 +99,7 @@ export default function AdminShell({
             </a>
             <div className="admin-heading">
               <div className="admin-heading__title">{title}</div>
-              {subtitle ? <div className="admin-heading__subtitle">{subtitle}</div> : null}
+              {/* Intentionally hidden: subtitle line near the logo breaks header layout */}
             </div>
           </div>
 
