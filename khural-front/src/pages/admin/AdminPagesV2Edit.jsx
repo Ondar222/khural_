@@ -25,6 +25,19 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
   const [form] = Form.useForm();
   const [busy, setBusy] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [parents, setParents] = React.useState([]);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      const all = normalizeList(await apiFetch("/pages", { method: "GET", auth: true }).catch(() => []));
+      const slugs = Array.from(new Set((all || []).map((p) => String(p.slug || "")).filter(Boolean))).sort();
+      if (alive) setParents(slugs);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   React.useEffect(() => {
     let alive = true;
@@ -34,9 +47,14 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         const page = await getPageById(id);
         if (!alive) return;
         if (!page) throw new Error("Страница не найдена");
+        const slug = String(page.slug || "");
+        const parts = slug.split("/").filter(Boolean);
+        const parentSlug = parts.slice(0, -1).join("/");
+        const leaf = parts.slice(-1)[0] || "";
         form.setFieldsValue({
           title: page.title || page.name || "",
-          slug: page.slug || "",
+          parentSlug,
+          slugLeaf: leaf,
           locale: page.locale || page.lang || "ru",
           content: page.content || page.body || "",
         });
@@ -54,9 +72,12 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
     setBusy(true);
     try {
       const values = await form.validateFields();
+      const parentSlug = String(values.parentSlug || "").trim().replace(/^\/+|\/+$/g, "");
+      const leaf = String(values.slugLeaf || "").trim().replace(/^\/+|\/+$/g, "");
+      const fullSlug = parentSlug ? `${parentSlug}/${leaf}` : leaf;
       await AboutApi.updatePage(id, {
         title: values.title,
-        slug: values.slug,
+        slug: fullSlug,
         locale: values.locale || "ru",
         content: values.content || "",
       });
@@ -86,7 +107,23 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           <Form.Item label="Название" name="title" rules={[{ required: true, message: "Введите название" }]}>
             <Input disabled={loading} />
           </Form.Item>
-          <Form.Item label="Slug (URL-адрес)" name="slug" rules={[{ required: true, message: "Введите slug" }]}>
+          <Form.Item label="Родитель (опционально)" name="parentSlug">
+            <Select
+              disabled={loading}
+              allowClear
+              showSearch
+              placeholder="Без родителя"
+              options={parents.map((s) => ({ value: s, label: s }))}
+              filterOption={(input, option) =>
+                String(option?.value || "").toLowerCase().includes(String(input || "").toLowerCase())
+              }
+            />
+          </Form.Item>
+          <Form.Item
+            label="Slug (последняя часть)"
+            name="slugLeaf"
+            rules={[{ required: true, message: "Введите slug" }]}
+          >
             <Input disabled={loading} />
           </Form.Item>
           <Form.Item label="Язык" name="locale">
@@ -106,5 +143,6 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
     </div>
   );
 }
+
 
 

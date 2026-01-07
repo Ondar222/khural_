@@ -17,12 +17,43 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   const { reload } = useData();
   const [form] = Form.useForm();
   const [busy, setBusy] = React.useState(false);
+  const [parents, setParents] = React.useState([]);
+
+  const prefillParent = React.useMemo(() => {
+    const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
+    return sp.get("parent") ? decodeURIComponent(sp.get("parent")) : "";
+  }, []);
+
+  React.useEffect(() => {
+    form.setFieldValue("parentSlug", prefillParent || "");
+  }, [form, prefillParent]);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      // Load parents for both locales to allow easy nesting
+      const [ru, tyv] = await Promise.all([
+        AboutApi.listPages({ locale: "ru" }).catch(() => []),
+        AboutApi.listPages({ locale: "tyv" }).catch(() => []),
+      ]);
+      const all = []
+        .concat(Array.isArray(ru) ? ru : Array.isArray(ru?.items) ? ru.items : [])
+        .concat(Array.isArray(tyv) ? tyv : Array.isArray(tyv?.items) ? tyv.items : []);
+      const slugs = Array.from(
+        new Set(all.map((p) => String(p.slug || "")).filter((s) => s))
+      ).sort();
+      if (alive) setParents(slugs);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const onTitleChange = React.useCallback(() => {
     const title = form.getFieldValue("title");
-    const currentSlug = form.getFieldValue("slug");
-    if (currentSlug) return;
-    form.setFieldValue("slug", slugify(title));
+    const currentLeaf = form.getFieldValue("slugLeaf");
+    if (currentLeaf) return;
+    form.setFieldValue("slugLeaf", slugify(title));
   }, [form]);
 
   const submit = React.useCallback(async () => {
@@ -30,9 +61,12 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
     setBusy(true);
     try {
       const values = await form.validateFields();
+      const parentSlug = String(values.parentSlug || "").trim().replace(/^\/+|\/+$/g, "");
+      const leaf = String(values.slugLeaf || "").trim().replace(/^\/+|\/+$/g, "");
+      const fullSlug = parentSlug ? `${parentSlug}/${leaf}` : leaf;
       await AboutApi.createPage({
         title: values.title,
-        slug: values.slug,
+        slug: fullSlug,
         locale: values.locale || "ru",
         content: values.content || "",
       });
@@ -42,6 +76,14 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       setBusy(false);
     }
   }, [canWrite, form, onDone, reload]);
+
+  const parentSlug = Form.useWatch("parentSlug", form);
+  const slugLeaf = Form.useWatch("slugLeaf", form);
+  const fullSlugPreview = React.useMemo(() => {
+    const p = String(parentSlug || "").trim().replace(/^\/+|\/+$/g, "");
+    const l = String(slugLeaf || "").trim().replace(/^\/+|\/+$/g, "");
+    return p ? `${p}/${l}` : l;
+  }, [parentSlug, slugLeaf]);
 
   return (
     <div className="admin-grid">
@@ -62,9 +104,27 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
           <Form.Item label="Название" name="title" rules={[{ required: true, message: "Введите название" }]}>
             <Input onChange={onTitleChange} />
           </Form.Item>
-          <Form.Item label="Slug (URL-адрес)" name="slug" rules={[{ required: true, message: "Введите slug" }]}>
+          <Form.Item label="Родитель (опционально)" name="parentSlug">
+            <Select
+              allowClear
+              showSearch
+              placeholder="Без родителя"
+              options={parents.map((s) => ({ value: s, label: s }))}
+              filterOption={(input, option) =>
+                String(option?.value || "").toLowerCase().includes(String(input || "").toLowerCase())
+              }
+            />
+          </Form.Item>
+          <Form.Item
+            label="Slug (последняя часть)"
+            name="slugLeaf"
+            rules={[{ required: true, message: "Введите slug" }]}
+          >
             <Input placeholder="information" />
           </Form.Item>
+          <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 10 }}>
+            Итоговый URL: <code>{`/p/${fullSlugPreview || "..."}`}</code>
+          </div>
           <Form.Item label="Язык" name="locale">
             <Select
               options={[
@@ -81,5 +141,6 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
     </div>
   );
 }
+
 
 

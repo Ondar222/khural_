@@ -13,6 +13,8 @@ export default function SideNav({
     // "Депутаты" — по умолчанию показываем текущий созыв (если есть в данных)
     { label: "Депутаты", href: "/deputies?convocation=VIII" },
     { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
+    // Пользовательские страницы, созданные через админку
+    { label: "Страницы", href: "/pages" },
     {
       label: "Представительство в Совете Федерации",
       href: "/section?title=" + encodeURIComponent("Представительство в Совете Федерации"),

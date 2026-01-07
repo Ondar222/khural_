@@ -19,7 +19,9 @@ import A11yProvider from "./context/A11yContext.jsx";
 import CalendarPage from "./pages/Calendar.jsx";
 import About from "./pages/About.jsx";
 import Documents from "./pages/Documents.jsx";
-import Deputies from "./pages/Deputies.jsx";
+import Deputies from "./pages/DeputiesV2.jsx";
+import PagesIndex from "./pages/PagesIndex.jsx";
+import PageBySlug from "./pages/PageBySlug.jsx";
 import Appeals from "./pages/Appeals.jsx";
 import MapPage from "./pages/Map.jsx";
 import { App as AntApp, ConfigProvider, theme } from "antd";
@@ -43,7 +45,7 @@ import AdminNewsPage from "./pages/admin/AdminNewsPage.jsx";
 import AdminNewsCreatePage from "./pages/admin/AdminNewsCreatePage.jsx";
 import AdminNewsEditPage from "./pages/admin/AdminNewsEditPage.jsx";
 import AdminDeputiesPage from "./pages/admin/AdminDeputiesPage.jsx";
-import AdminPagesPage from "./pages/admin/AdminPagesPage.jsx";
+import AdminPagesV2Routes from "./pages/admin/AdminPagesV2Routes.jsx";
 import AdminDocumentsPage from "./pages/admin/AdminDocumentsPage.jsx";
 import AdminDocumentsCreatePage from "./pages/admin/AdminDocumentsCreatePage.jsx";
 import AdminDocumentsEditPage from "./pages/admin/AdminDocumentsEditPage.jsx";
@@ -117,6 +119,8 @@ export default function App() {
                           "/apparatus": Apparatus,
                           "/section": SectionPage,
                           "/deputies": Deputies,
+                          "/pages": PagesIndex,
+                          "/p/:slug": PageBySlug,
                           "/appeals": Appeals,
                           "/government": Government,
                           "/authorities": Authorities,
@@ -127,7 +131,9 @@ export default function App() {
                           "/admin/news/create": AdminProtected(AdminNewsCreatePage),
                           "/admin/news/edit/:id": AdminProtected(AdminNewsEditPage),
                           "/admin/deputies": AdminProtected(AdminDeputiesPage),
-                          "/admin/pages": AdminProtected(AdminPagesPage),
+                          "/admin/pages": AdminProtected(AdminPagesV2Routes),
+                          "/admin/pages/create": AdminProtected(AdminPagesV2Routes),
+                          "/admin/pages/edit/:id": AdminProtected(AdminPagesV2Routes),
                           "/admin/documents": AdminProtected(AdminDocumentsPage),
                           "/admin/documents/create": AdminProtected(AdminDocumentsCreatePage),
                           "/admin/documents/:id": AdminProtected(AdminDocumentsEditPage),

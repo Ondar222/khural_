@@ -36,22 +36,26 @@ export default function AdminPagesV2List({
 }) {
   const { reload: reloadData } = useData();
   const [q, setQ] = React.useState("");
-  const [locale, setLocale] = React.useState("ru");
+  const [localeMode, setLocaleMode] = React.useState("all"); // all | ru | tyv
   const [busy, setBusy] = React.useState(false);
   const [items, setItems] = React.useState([]);
 
   const load = React.useCallback(async () => {
     setBusy(true);
     try {
-      const arr = await listPagesWithFallback({ locale });
-      setItems(Array.isArray(arr) ? arr : []);
+      const locales = localeMode === "all" ? ["ru", "tyv"] : [localeMode];
+      const results = await Promise.all(
+        locales.map((loc) => listPagesWithFallback({ locale: loc }).catch(() => []))
+      );
+      const merged = results.flat();
+      setItems(Array.isArray(merged) ? merged : []);
     } catch (e) {
       onMessage?.("error", e?.message || "Не удалось загрузить страницы");
       setItems([]);
     } finally {
       setBusy(false);
     }
-  }, [locale, onMessage]);
+  }, [localeMode, onMessage]);
 
   React.useEffect(() => {
     load();
@@ -59,12 +63,23 @@ export default function AdminPagesV2List({
 
   const filtered = React.useMemo(() => {
     const qq = q.trim().toLowerCase();
-    if (!qq) return items;
-    return (items || []).filter((p) => {
+    const base = Array.isArray(items) ? items : [];
+    const list = !qq
+      ? base
+      : base.filter((p) => {
       const title = String(p.title || p.name || "").toLowerCase();
       const slug = String(p.slug || "").toLowerCase();
       return title.includes(qq) || slug.includes(qq);
     });
+    return list
+      .map((p) => {
+        const slug = String(p.slug || "");
+        const parts = slug.split("/").filter(Boolean);
+        const depth = Math.max(0, parts.length - 1);
+        const parentSlug = parts.slice(0, -1).join("/");
+        return { ...p, __depth: depth, __parentSlug: parentSlug };
+      })
+      .sort((a, b) => String(a.slug || "").localeCompare(String(b.slug || "")));
   }, [items, q]);
 
   const deletePage = React.useCallback(
@@ -91,7 +106,10 @@ export default function AdminPagesV2List({
       dataIndex: "title",
       render: (_, row) => (
         <div style={{ display: "grid", gap: 4 }}>
-          <div style={{ fontWeight: 800 }}>{row.title || row.name || "—"}</div>
+          <div style={{ fontWeight: 800 }}>
+            {row.__depth ? <span style={{ opacity: 0.6 }}>{"— ".repeat(row.__depth)}</span> : null}
+            {row.title || row.name || "—"}
+          </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Tag>{row.slug || "—"}</Tag>
             <Tag color="blue">{(row.locale || row.lang || "ru").toUpperCase()}</Tag>
@@ -102,11 +120,14 @@ export default function AdminPagesV2List({
     {
       title: "Действия",
       key: "actions",
-      width: 360,
+      width: 520,
       render: (_, row) => (
         <Space wrap>
           <Button onClick={() => onPreview?.(row.slug)} disabled={!row.slug}>
             Открыть
+          </Button>
+          <Button onClick={() => onCreate?.(row.slug)} disabled={!canWrite || !row.slug}>
+            + Подстраница
           </Button>
           <Button onClick={() => onEdit?.(row.id)} disabled={!canWrite}>
             Редактировать
@@ -138,13 +159,17 @@ export default function AdminPagesV2List({
           className="admin-input"
         />
         <Space wrap>
-          <Button onClick={() => setLocale((x) => (x === "ru" ? "tyv" : "ru"))}>
-            Язык: {locale === "tyv" ? "Тыва" : "Русский"}
+          <Button
+            onClick={() =>
+              setLocaleMode((x) => (x === "all" ? "ru" : x === "ru" ? "tyv" : "all"))
+            }
+          >
+            Язык: {localeMode === "all" ? "Все" : localeMode === "tyv" ? "Тыва" : "Русский"}
           </Button>
           <Button onClick={load} loading={busy}>
             Обновить
           </Button>
-          <Button type="primary" onClick={onCreate} disabled={!canWrite}>
+          <Button type="primary" onClick={() => onCreate?.()} disabled={!canWrite}>
             + Создать страницу
           </Button>
         </Space>
@@ -162,5 +187,6 @@ export default function AdminPagesV2List({
     </div>
   );
 }
+
 
 

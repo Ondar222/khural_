@@ -1,8 +1,4 @@
 import React from "react";
-import DeputiesV2 from "./pages/DeputiesV2.jsx";
-import PagesIndex from "./pages/PagesIndex.jsx";
-import PageBySlug from "./pages/PageBySlug.jsx";
-import AdminPagesV2Routes from "./pages/admin/AdminPagesV2Routes.jsx";
 
 function getRouteFromLocation() {
   if (typeof window === "undefined") return "/";
@@ -129,19 +125,31 @@ function matchRoute(path, routePattern) {
   const patternParts = routePattern.split("/");
   const pathParts = path.split("/");
   
-  if (patternParts.length !== pathParts.length) return null;
+  // Support trailing "rest param" for routes like "/p/:slug" matching "/p/a/b"
+  // We only allow this when the last segment in the pattern is a parameter.
+  const lastPattern = patternParts[patternParts.length - 1];
+  const canConsumeRest = lastPattern && lastPattern.startsWith(":");
+  if (patternParts.length !== pathParts.length) {
+    if (!(canConsumeRest && patternParts.length < pathParts.length)) return null;
+  }
   
   const params = {};
   let match = true;
   
   for (let i = 0; i < patternParts.length; i++) {
     const patternPart = patternParts[i];
-    const pathPart = pathParts[i];
+    // If this is the last pattern param and path is longer, capture the rest
+    const isLast = i === patternParts.length - 1;
+    const pathPart = isLast && canConsumeRest && pathParts.length > patternParts.length
+      ? pathParts.slice(i).join("/")
+      : pathParts[i];
     
     if (patternPart.startsWith(":")) {
       // This is a parameter
       const paramName = patternPart.slice(1);
       params[paramName] = pathPart;
+      // Rest param consumed everything; stop
+      if (isLast && canConsumeRest && pathParts.length > patternParts.length) break;
     } else if (patternPart !== pathPart) {
       match = false;
       break;
@@ -158,22 +166,6 @@ export default function Router({ routes }) {
   // First try exact match
   let Component = routes[base];
   let routeParams = {};
-
-  // Hotfix: allow deputies list to include admin-created updates without touching root-owned `App.jsx`
-  if (base === "/deputies") {
-    Component = DeputiesV2;
-  }
-
-  // Pages: V2 admin routes (no modal) + public pages by slug
-  if (base === "/admin/pages" || base === "/admin/pages/create" || base.startsWith("/admin/pages/edit/")) {
-    Component = AdminPagesV2Routes;
-  }
-  if (base === "/pages") {
-    Component = PagesIndex;
-  }
-  if (base.startsWith("/p/")) {
-    Component = PageBySlug;
-  }
   
   // If no exact match, try pattern matching
   // Sort routes to check patterns with parameters first (more specific routes first)

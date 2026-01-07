@@ -40,16 +40,21 @@ export default function PagesIndex() {
         <DataState loading={loading} error={error} empty={!loading && items.length === 0} emptyDescription="Страниц нет">
           <div className="card" style={{ padding: 16 }}>
             <div style={{ display: "grid", gap: 10 }}>
-              {(items || []).map((p) => (
-                <a
-                  key={String(p.id || p.slug || Math.random())}
-                  className="link"
-                  href={`/p/${encodeURIComponent(p.slug)}`}
-                  style={{ fontWeight: 700 }}
-                >
-                  {p.title || p.name || p.slug}
-                </a>
-              ))}
+              {(items || []).map((p) => {
+                const slug = String(p.slug || "");
+                const segs = slug.split("/").filter(Boolean).map((s) => encodeURIComponent(s));
+                const href = `/p/${segs.join("/")}`;
+                return (
+                  <a
+                    key={String(p.id || p.slug || Math.random())}
+                    className="link"
+                    href={href}
+                    style={{ fontWeight: 700 }}
+                  >
+                    {p.title || p.name || p.slug}
+                  </a>
+                );
+              })}
             </div>
           </div>
         </DataState>
@@ -57,5 +62,6 @@ export default function PagesIndex() {
     </section>
   );
 }
+
 
 
