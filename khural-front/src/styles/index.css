@@ -2946,6 +2946,23 @@ a {
   justify-content: center;
   align-items: center;
 }
+.mobile-auth__panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 215, 0, 0.16);
+  background: radial-gradient(900px 240px at 10% 0%, rgba(255, 215, 0, 0.16), transparent 60%),
+    rgba(255, 255, 255, 0.06);
+}
+.mobile-auth__name {
+  font-weight: 900;
+  color: #111827;
+  text-align: center;
+}
 .mobile-auth__btn {
   flex: 0 1 auto;
   display: inline-flex;
@@ -3055,12 +3072,12 @@ a {
   padding-top: 20px;
   padding-right: 12px;
 }
-.topbar a {
+.topbar > a {
   color: #111827;
   text-decoration: none;
   margin-right: 16px;
 }
-.topbar a:hover {
+.topbar > a:hover {
   color: var(--link);
 }
 .topbar > span {
@@ -3071,6 +3088,40 @@ a {
 }
 .topbar-auth {
   flex-direction: row;
+  justify-content: flex-end;
+  text-align: right;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.topbar-auth__name {
+  font-weight: 800;
+  color: #111827;
+  max-width: min(220px, 28vw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-auth a {
+  margin-right: 0; /* override .topbar > a spacing */
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+.topbar-auth a:hover {
+  background: rgba(255, 215, 0, 0.14);
+}
+.topbar .link-like {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-weight: 800;
+  color: #111827;
+}
+.topbar .link-like:hover {
+  color: var(--link);
+  background: rgba(255, 215, 0, 0.12);
 }
 .topbar-auth .btn {
   width: auto;

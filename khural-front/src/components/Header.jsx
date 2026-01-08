@@ -109,19 +109,18 @@ export default function Header() {
           <a href="/press">{t("press")}</a>
           <a href="/activity">{t("activity")}</a>
 
-          <span className="topbar-auth" style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center" }}>
+          <span className="topbar-auth">
             {isAuthenticated ? (
               <>
-                <span style={{ fontWeight: 600, color: "#111827" }}>
+                <span className="topbar-auth__name">
                   {user?.name || user?.email || t("login")}
                 </span>
-                <a href="/admin">{t("Панел управления ") || "Панель управления"}</a>
+                <a href="/admin">{t("Панель управления") || "Панель управления"}</a>
                 <button
                   className="link-like"
                   onClick={() => {
                     logout();
                   }}
-                  style={{ border: "none", background: "transparent", cursor: "pointer" }}
                 >
                   {t("Выйти") || "Выйти"}
                 </button>
@@ -497,19 +496,8 @@ export default function Header() {
           <>
             <div className="mobile-auth">
               {isAuthenticated ? (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                    width: "100%",
-      
-                    alignItems: "center"
-               }}
-                >
-                  <div style={{ fontWeight: 600, color: "#111827" }}>
-                    {user?.name || user?.email}
-                  </div>
+                <div className="mobile-auth__panel">
+                  <div className="mobile-auth__name">{user?.name || user?.email}</div>
                   <a
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
                     href="/admin"
@@ -530,15 +518,7 @@ export default function Header() {
                   </button>
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                    width: "100%",
-                    alignItems: "center"
-                  }}
-                >
+                <div className="mobile-auth__panel">
                   <a
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
                     href="/login"
