@@ -193,7 +193,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         </div>
       </div>
 
-      <Form layout="vertical" form={form}>
+      <Form layout="vertical" form={form} initialValues={{ isPublished: true }}>
         <div className="admin-news-editor__grid">
           <div className="admin-card">
             <div className="admin-news-editor__section-title">Основное</div>
@@ -230,7 +230,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
                 placeholder="Выберите дату публикации"
               />
             </Form.Item>
-            <Form.Item label="Опубликовано" name="isPublished" valuePropName="checked" initialValue={false}>
+            <Form.Item label="Опубликовано" name="isPublished" valuePropName="checked">
               <Switch />
             </Form.Item>
             <Form.Item

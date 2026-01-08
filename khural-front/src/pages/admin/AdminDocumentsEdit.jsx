@@ -363,7 +363,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
             >
               <Upload
                 maxCount={1}
-                accept=".pdf,.docx"
+                accept=".pdf,.doc,.docx"
                 beforeUpload={(f) => {
                   setFileRu(f);
                   return false;
@@ -392,7 +392,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
             >
               <Upload
                 maxCount={1}
-                accept=".pdf,.docx"
+                accept=".pdf,.doc,.docx"
                 beforeUpload={(f) => {
                   setFileTy(f);
                   return false;

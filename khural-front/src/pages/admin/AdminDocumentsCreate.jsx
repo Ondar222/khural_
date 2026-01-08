@@ -54,7 +54,7 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
         </div>
       </div>
 
-      <Form layout="vertical" form={form} initialValues={{ type: "laws", isPublished: false }}>
+      <Form layout="vertical" form={form} initialValues={{ type: "laws", isPublished: true }}>
         <div className="admin-doc-editor__grid">
           <div className="admin-card">
             <div className="admin-doc-editor__section-title">Основное</div>
@@ -106,10 +106,10 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
         <div className="admin-card">
           <div className="admin-doc-editor__section-title">Файлы документа</div>
           <div className="admin-doc-editor__files-grid">
-            <Form.Item label="Русская версия (PDF/DOCX)" help="Загрузите хотя бы один файл">
+            <Form.Item label="Русская версия (PDF/DOC/DOCX)" help="Загрузите хотя бы один файл">
               <Upload
                 maxCount={1}
-                accept=".pdf,.docx"
+                accept=".pdf,.doc,.docx"
                 beforeUpload={(f) => {
                   setFileRu(f);
                   return false;
@@ -119,10 +119,10 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
                 <Button>Выбрать файл</Button>
               </Upload>
             </Form.Item>
-            <Form.Item label="Тувинская версия (PDF/DOCX)" help="Загрузите хотя бы один файл">
+            <Form.Item label="Тувинская версия (PDF/DOC/DOCX)" help="Загрузите хотя бы один файл">
               <Upload
                 maxCount={1}
-                accept=".pdf,.docx"
+                accept=".pdf,.doc,.docx"
                 beforeUpload={(f) => {
                   setFileTy(f);
                   return false;

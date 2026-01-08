@@ -5,6 +5,10 @@ import { Input, Select, Space } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 
+function looksLikeHtml(s) {
+  return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
+}
+
 export default function NewsArchive() {
   const { news, loading, errors, reload } = useData();
   const { t } = useI18n();
@@ -141,22 +145,25 @@ export default function NewsArchive() {
                 />
               </div>
               <div className="prose" style={{ marginTop: 16 }}>
-                <p>{item.excerpt}</p>
-                {Array.isArray(item.content) && item.content.length > 0 ? (
-                  item.content.map((p, i) => <p key={i}>{p}</p>)
-                ) : (
-                  <>
-                    <p>
-                      Полный текст новости будет дополнен. Сейчас отображается расширенное описание
-                      на основе краткой выжимки.
-                    </p>
-                    <p>
-                      При необходимости вы можете добавить поле
-                      <strong> content</strong> и <strong> image</strong> в файле данных, чтобы
-                      вывести официальный текст и фотографию события.
-                    </p>
-                  </>
-                )}
+                {item.excerpt ? (
+                  looksLikeHtml(item.excerpt) ? (
+                    <div dangerouslySetInnerHTML={{ __html: String(item.excerpt) }} />
+                  ) : (
+                    <p>{item.excerpt}</p>
+                  )
+                ) : null}
+
+                {item.contentHtml ? (
+                  <div dangerouslySetInnerHTML={{ __html: String(item.contentHtml) }} />
+                ) : Array.isArray(item.content) && item.content.length > 0 ? (
+                  item.content.map((p, i) =>
+                    looksLikeHtml(p) ? (
+                      <div key={i} dangerouslySetInnerHTML={{ __html: String(p) }} />
+                    ) : (
+                      <p key={i}>{p}</p>
+                    )
+                  )
+                ) : null}
               </div>
 
               <div

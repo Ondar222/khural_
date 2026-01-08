@@ -1,5 +1,5 @@
 import React from "react";
-import { App, Button, Form, Input, Select, Space, Upload } from "antd";
+import { App, Button, Form, Input, Select, Space, Upload, Modal } from "antd";
 import { Editor } from "@tinymce/tinymce-react";
 import { useHashRoute } from "../../Router.jsx";
 import { PersonsApi } from "../../api/client.js";
@@ -81,7 +81,7 @@ function normalizeInitial(d) {
 export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
-  const { reload, deputies } = useData();
+  const { reload, deputies, factions, districts, setFactions } = useData();
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(mode === "edit");
   const [saving, setSaving] = React.useState(false);
@@ -89,6 +89,8 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const structureType = Form.useWatch("structureType", form);
   const biographyHtml = Form.useWatch("biography", form);
   const fullNameValue = Form.useWatch("fullName", form);
+  const [newFactionOpen, setNewFactionOpen] = React.useState(false);
+  const [newFactionName, setNewFactionName] = React.useState("");
 
   React.useEffect(() => {
     if (mode !== "edit") return;
@@ -222,10 +224,38 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             </Form.Item>
             <div className="admin-split">
               <Form.Item label="Фракция" name="faction">
-                <Input disabled={loading || saving} />
+                <Select
+                  disabled={loading || saving}
+                  placeholder="Выберите фракцию"
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  options={(Array.isArray(factions) ? factions : [])
+                    .filter((x) => x && String(x).trim() !== "")
+                    .map((x) => ({ value: String(x), label: String(x) }))}
+                  dropdownRender={(menu) => (
+                    <div>
+                      {menu}
+                      <div style={{ padding: 8, borderTop: "1px solid #f0f0f0" }}>
+                        <Button type="dashed" block onClick={() => setNewFactionOpen(true)} disabled={!canWrite}>
+                          + Добавить новую фракцию
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                />
               </Form.Item>
               <Form.Item label="Округ" name="electoralDistrict">
-                <Input disabled={loading || saving} />
+                <Select
+                  disabled={loading || saving}
+                  placeholder="Выберите округ"
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  options={(Array.isArray(districts) ? districts : [])
+                    .filter((x) => x && String(x).trim() !== "")
+                    .map((x) => ({ value: String(x), label: String(x) }))}
+                />
               </Form.Item>
             </div>
           </div>
@@ -322,6 +352,48 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           </Form.Item>
         </div>
       </Form>
+
+      <Modal
+        title="Добавить новую фракцию"
+        open={newFactionOpen}
+        onCancel={() => {
+          setNewFactionOpen(false);
+          setNewFactionName("");
+        }}
+        okText="Добавить"
+        cancelText="Отмена"
+        okButtonProps={{ disabled: !canWrite || !String(newFactionName || "").trim() }}
+        onOk={async () => {
+          const name = String(newFactionName || "").trim();
+          if (!name) return;
+          try {
+            await PersonsApi.createFaction({ name });
+            setFactions((prev) => {
+              const arr = Array.isArray(prev) ? prev : [];
+              const next = Array.from(new Set([...arr.map(String), name]));
+              return next;
+            });
+            form.setFieldValue("faction", name);
+            message.success("Фракция добавлена");
+            setNewFactionOpen(false);
+            setNewFactionName("");
+          } catch (e) {
+            message.error(e?.message || "Не удалось добавить фракцию");
+          }
+        }}
+      >
+        <Input
+          placeholder="Например: Фракция «Единая Тыва»"
+          value={newFactionName}
+          onChange={(e) => setNewFactionName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.preventDefault();
+          }}
+        />
+        <div className="admin-hint" style={{ marginTop: 8 }}>
+          Фракция будет сохранена в API и появится в выпадающем списке.
+        </div>
+      </Modal>
     </div>
   );
 }

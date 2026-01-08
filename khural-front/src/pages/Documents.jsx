@@ -18,6 +18,10 @@ function looksLikePdf(url) {
   return u.includes(".pdf");
 }
 
+function looksLikeHtml(s) {
+  return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
+}
+
 export default function Documents() {
   const { documents, loading, errors, reload } = useData();
   const [cat, setCat] = React.useState("Все");
@@ -192,7 +196,13 @@ export default function Documents() {
                                   <div className="law-ico">📄</div>
                                   <div>
                                     <div className="law-title">{d.title}</div>
-                                    {d.desc ? <div className="law-desc">{d.desc}</div> : null}
+                                    {d.desc ? (
+                                      looksLikeHtml(d.desc) ? (
+                                        <div className="law-desc" dangerouslySetInnerHTML={{ __html: String(d.desc) }} />
+                                      ) : (
+                                        <div className="law-desc">{d.desc}</div>
+                                      )
+                                    ) : null}
                                     <div className="card-subtitle">
                                       {d.number ? `${d.number} • ` : ""}
                                       {d.date || d.createdAt || ""}
@@ -237,7 +247,13 @@ export default function Documents() {
                         <div className="law-ico">📄</div>
                         <div>
                           <div className="law-title">{d.title}</div>
-                              {d.desc ? <div className="law-desc">{d.desc}</div> : null}
+                              {d.desc ? (
+                                looksLikeHtml(d.desc) ? (
+                                  <div className="law-desc" dangerouslySetInnerHTML={{ __html: String(d.desc) }} />
+                                ) : (
+                                  <div className="law-desc">{d.desc}</div>
+                                )
+                              ) : null}
                           <div className="card-subtitle">
                             {d.number ? `${d.number} • ` : ""}
                             {d.date || d.createdAt || ""}

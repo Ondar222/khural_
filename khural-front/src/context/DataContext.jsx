@@ -1,5 +1,10 @@
 import React from "react";
 import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi } from "../api/client.js";
+import {
+  readNewsOverrides,
+  NEWS_OVERRIDES_EVENT_NAME,
+  NEWS_OVERRIDES_STORAGE_KEY,
+} from "../utils/newsOverrides.js";
 
 const DataContext = React.createContext({
   slides: [],
@@ -181,6 +186,128 @@ async function fetchJson(path) {
   }
 }
 
+function normalizeLocaleKey(v) {
+  return String(v || "").trim().toLowerCase();
+}
+
+function normalizeNewsDateKey(raw) {
+  if (raw === undefined || raw === null) return "";
+  if (typeof raw === "number") {
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? "" : d.toISOString();
+  }
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (/^\d{10,13}$/.test(s)) {
+    const ms = s.length === 10 ? Number(s) * 1000 : Number(s);
+    const d = new Date(ms);
+    return isNaN(d.getTime()) ? "" : d.toISOString();
+  }
+  // allow "YYYY-MM-DD" and ISO strings as-is
+  return s;
+}
+
+function pickNewsKey(n) {
+  const key =
+    pick(
+      n?.newsId,
+      n?.news_id,
+      n?.parentId,
+      n?.parent_id,
+      n?.entityId,
+      n?.entity_id,
+      n?.slug,
+      n?.newsSlug,
+      n?.news_slug
+    ) || "";
+  if (String(key).trim()) return `news:${String(key).trim()}`;
+
+  const date = normalizeNewsDateKey(pick(n?.publishedAt, n?.published_at, n?.createdAt, n?.created_at));
+  const category =
+    pick(n?.category?.name, n?.category, n?.category_name) || "";
+  const contentArr = Array.isArray(n?.content) ? n.content : [];
+  const ru =
+    contentArr.find((c) => normalizeLocaleKey(c?.locale || c?.lang) === "ru") ||
+    contentArr[0] ||
+    null;
+  const title = String(ru?.title || n?.title || "").trim();
+
+  // fallback: stable key by visible fields (works when backend flattens joins and returns per-language/per-file rows)
+  return `news:${normalizeLocaleKey(title)}|${normalizeLocaleKey(category)}|${normalizeLocaleKey(date)}`;
+}
+
+function mergeApiNewsRows(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  const byKey = new Map();
+
+  for (const n of list) {
+    const k = pickNewsKey(n);
+    if (!k) continue;
+    const prev = byKey.get(k);
+    if (!prev) {
+      byKey.set(k, n);
+      continue;
+    }
+
+    // Merge common join-duplication shapes: content + images/gallery + coverImage
+    const merged = {
+      ...prev,
+      ...n,
+      content: (() => {
+        const a = Array.isArray(prev.content) ? prev.content : [];
+        const b = Array.isArray(n.content) ? n.content : [];
+        const out = [];
+        const seen = new Set();
+        for (const c of [...a, ...b]) {
+          if (!c || typeof c !== "object") continue;
+          const lk = normalizeLocaleKey(c.locale || c.lang || "");
+          const ck = lk || Math.random().toString(36).slice(2);
+          if (seen.has(ck)) continue;
+          seen.add(ck);
+          out.push(c);
+        }
+        return out.length ? out : (a.length ? a : b);
+      })(),
+      images: (() => {
+        const a = Array.isArray(prev.images) ? prev.images : [];
+        const b = Array.isArray(n.images) ? n.images : [];
+        return [...a, ...b];
+      })(),
+      gallery: (() => {
+        const a = Array.isArray(prev.gallery) ? prev.gallery : [];
+        const b = Array.isArray(n.gallery) ? n.gallery : [];
+        return [...a, ...b];
+      })(),
+      coverImage: prev.coverImage || n.coverImage,
+    };
+    byKey.set(k, merged);
+  }
+
+  return Array.from(byKey.values());
+}
+
+function mergeByIdPreferFirst(primary, secondary) {
+  const a = Array.isArray(primary) ? primary : [];
+  const b = Array.isArray(secondary) ? secondary : [];
+  const seen = new Set();
+  const out = [];
+  for (const it of a) {
+    const id = String(it?.id ?? "").trim();
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    out.push(it);
+    seen.add(id);
+  }
+  for (const it of b) {
+    const id = String(it?.id ?? "").trim();
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    out.push(it);
+    seen.add(id);
+  }
+  return out;
+}
+
 function normalizeStringList(list) {
   const items = Array.isArray(list) ? list : [];
   const normalized = items
@@ -296,37 +423,77 @@ export default function DataProvider({ children }) {
     (async () => {
       markLoading("news", true);
       markError("news", null);
-      const apiNews = await tryApiFetch("/news", { auth: false });
-      if (Array.isArray(apiNews) && apiNews.length) {
-        const mapped = apiNews.map((n) => {
-          // Backend may return either localized content array or flat strings.
-          const ru =
-            (Array.isArray(n.content) && n.content.find((c) => c?.lang === "ru")) ||
-            (Array.isArray(n.content) ? n.content[0] : null) ||
-            null;
-          const title = ru?.title || n.title || "";
-          const desc = String(ru?.description || n.shortDescription || n.description || "");
-          const img = firstImageLink(n.images || n.gallery) || firstFileLink(n.coverImage);
-          const date =
-            pick(n.publishedAt, n.published_at) ||
-            pick(n.createdAt, n.created_at) ||
-            new Date().toISOString();
-          return {
-            id: String(n.id ?? Math.random().toString(36).slice(2)),
-            title,
-            category: pick(n?.category?.name, n.category, n.category_name) || "Новости",
-            date,
-            excerpt: desc,
-            content: desc ? desc.split(/\n{2,}/g).filter(Boolean) : [],
-            image: img,
-          };
-        });
-        setNews(ensureUniqueIds(mapped));
-      } else {
-        fetchJson("/data/news.json")
-          .then((arr) => setNews(ensureUniqueIds(arr)))
-          .catch((e) => markError("news", e));
-      }
+      const [apiNewsRaw, localNewsRaw] = await Promise.all([
+        tryApiFetch("/news", { auth: false }),
+        fetchJson("/data/news.json"),
+      ]);
+
+      const apiNewsArr = Array.isArray(apiNewsRaw)
+        ? apiNewsRaw
+        : Array.isArray(apiNewsRaw?.items)
+          ? apiNewsRaw.items
+          : Array.isArray(apiNewsRaw?.data?.items)
+            ? apiNewsRaw.data.items
+            : null;
+
+      const mappedApi = Array.isArray(apiNewsArr)
+        ? mergeApiNewsRows(apiNewsArr).map((n) => {
+            // Backend returns localized content array; admin sends { locale }, older backends may use { lang }.
+            const ru =
+              (Array.isArray(n.content) &&
+                n.content.find((c) => normalizeLocaleKey(c?.locale || c?.lang) === "ru")) ||
+              (Array.isArray(n.content) ? n.content[0] : null) ||
+              null;
+
+            const title = String(ru?.title || n.title || "");
+            const excerpt = String(
+              ru?.shortDescription ||
+                ru?.description ||
+                n.shortDescription ||
+                n.description ||
+                ""
+            );
+            const contentHtml = String(ru?.content || n.contentHtml || n.contentText || "");
+
+            const img = firstImageLink(n.images || n.gallery) || firstFileLink(n.coverImage);
+
+            const dateStr =
+              normalizeNewsDateKey(
+                pick(n.publishedAt, n.published_at, n.createdAt, n.created_at)
+              ) || new Date().toISOString();
+
+            const dedupKey = pickNewsKey(n);
+            const id = String(
+              pick(
+                n.id,
+                n._id,
+                n.newsId,
+                n.news_id,
+                n.parentId,
+                n.parent_id,
+                dedupKey
+              ) || Math.random().toString(36).slice(2)
+            );
+
+            return {
+              id,
+              title,
+              category: pick(n?.category?.name, n.category, n.category_name) || "Новости",
+              date: dateStr,
+              excerpt,
+              // Keep both: rich HTML and plain content array (for legacy JSON)
+              contentHtml: contentHtml || "",
+              content: [],
+              image: img,
+            };
+          })
+        : [];
+
+      const mappedLocal = ensureUniqueIds(Array.isArray(localNewsRaw) ? localNewsRaw : []);
+      const merged = mergeByIdPreferFirst(ensureUniqueIds(mappedApi), mappedLocal);
+      const deleted = new Set((readNewsOverrides()?.deletedIds || []).map(String));
+      const filtered = merged.filter((n) => !deleted.has(String(n?.id ?? "")));
+      setNews(ensureUniqueIds(filtered));
       markLoading("news", false);
     })();
     // Try API for events first, fallback to local JSON
@@ -608,6 +775,27 @@ export default function DataProvider({ children }) {
       markLoading("about", false);
     })();
   }, [reloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Apply local "news deleted" overrides (admin can delete locally when API is unavailable)
+  React.useEffect(() => {
+    const apply = () => {
+      const deleted = new Set((readNewsOverrides()?.deletedIds || []).map(String));
+      if (!deleted.size) return;
+      setNews((prev) =>
+        (Array.isArray(prev) ? prev : []).filter((n) => !deleted.has(String(n?.id ?? "")))
+      );
+    };
+    const onCustom = () => apply();
+    const onStorage = (e) => {
+      if (e?.key === NEWS_OVERRIDES_STORAGE_KEY) apply();
+    };
+    window.addEventListener(NEWS_OVERRIDES_EVENT_NAME, onCustom);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(NEWS_OVERRIDES_EVENT_NAME, onCustom);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   // Keep deputies overrides in sync (admin writes them to localStorage and dispatches this event)
   React.useEffect(() => {

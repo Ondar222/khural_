@@ -11,6 +11,7 @@ import {
   AppealsApi,
   SliderApi,
 } from "../api/client.js";
+import { addDeletedNewsId } from "../utils/newsOverrides.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 import { toPersonsApiBody } from "../api/personsPayload.js";
 
@@ -263,10 +264,12 @@ export function useAdminData() {
       const created = await NewsApi.createMultipart(formData);
       message.success("Новость создана");
       await reload();
+      // Обновляем публичные данные, чтобы новость сразу появилась на сайте
+      reloadDataContext();
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, reloadDataContext]);
 
   const updateNews = React.useCallback(async (id, formData) => {
     setBusy(true);
@@ -274,21 +277,33 @@ export function useAdminData() {
       await NewsApi.updateMultipart(id, formData);
       message.success("Новость обновлена");
       await reload();
+      reloadDataContext();
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, reloadDataContext]);
 
   const deleteNews = React.useCallback(async (id) => {
     setBusy(true);
     try {
-      await NewsApi.remove(id);
-      message.success("Новость удалена");
-      await reload();
+      try {
+        await NewsApi.remove(id);
+        message.success("Новость удалена");
+        await reload();
+        reloadDataContext();
+      } catch (e) {
+        // Fallback: allow local delete when API is unavailable (dev without backend / no rights)
+        addDeletedNewsId(id);
+        setNews((prev) =>
+          (Array.isArray(prev) ? prev : []).filter((n) => String(n?.id ?? "") !== String(id))
+        );
+        message.warning("Удалено локально (сервер недоступен или нет прав)");
+        reloadDataContext();
+      }
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, reloadDataContext]);
 
   const createDeputy = React.useCallback(async (payload) => {
     setBusy(true);
@@ -357,10 +372,11 @@ export function useAdminData() {
       }
       message.success("Документ создан");
       await reload();
+      reloadDataContext();
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, reloadDataContext]);
 
   const updateDocument = React.useCallback(async (
     id,
@@ -381,10 +397,11 @@ export function useAdminData() {
       if (fileTy) await DocumentsApi.uploadFileTy(id, fileTy);
       message.success("Документ обновлён");
       await reload();
+      reloadDataContext();
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, reloadDataContext]);
 
   const deleteDocument = React.useCallback(async (id) => {
     setBusy(true);
@@ -392,10 +409,11 @@ export function useAdminData() {
       await DocumentsApi.remove(id);
       message.success("Документ удалён");
       await reload();
+      reloadDataContext();
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, reloadDataContext]);
 
   const createEvent = React.useCallback(async (payload) => {
     setBusy(true);
