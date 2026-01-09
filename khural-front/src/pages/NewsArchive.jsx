@@ -149,7 +149,7 @@ export default function NewsArchive() {
                   looksLikeHtml(item.excerpt) ? (
                     <div dangerouslySetInnerHTML={{ __html: String(item.excerpt) }} />
                   ) : (
-                    <p>{item.excerpt}</p>
+                <p>{item.excerpt}</p>
                   )
                 ) : null}
 

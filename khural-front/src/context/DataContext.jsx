@@ -10,6 +10,11 @@ import {
   EVENTS_OVERRIDES_EVENT_NAME,
   EVENTS_OVERRIDES_STORAGE_KEY,
 } from "../utils/eventsOverrides.js";
+import {
+  readSliderOverrides,
+  SLIDER_OVERRIDES_EVENT_NAME,
+  SLIDER_OVERRIDES_STORAGE_KEY,
+} from "../utils/sliderOverrides.js";
 
 const DataContext = React.createContext({
   slides: [],
@@ -372,6 +377,68 @@ function normalizeDeputyItem(d) {
   };
 }
 
+function mergeSlidesWithOverrides(baseSlides, overrides) {
+  const list = Array.isArray(baseSlides) ? baseSlides : [];
+  const created = Array.isArray(overrides?.created) ? overrides.created : [];
+  const updatedById =
+    overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
+  const deleted = new Set((overrides?.deletedIds || []).map((x) => String(x)));
+  // NOTE: orderIds handled in code below (avoids babel ambiguity in older configs)
+  const order = Array.isArray(overrides?.orderIds) ? overrides.orderIds.map(String) : [];
+  const out = [];
+  const seen = new Set();
+
+  const pushSlide = (s) => {
+    const id = String(s?.id ?? "").trim();
+    if (!id) return;
+    if (deleted.has(id)) return;
+    if (seen.has(id)) return;
+    const patchRaw = updatedById[id];
+    // IMPORTANT: keep backward compatibility with older stored overrides that accidentally
+    // overwrote `image` with empty string (which makes the slide disappear).
+    const patch =
+      patchRaw && typeof patchRaw === "object"
+        ? (() => {
+            const p = { ...patchRaw };
+            if (
+              Object.prototype.hasOwnProperty.call(p, "image") &&
+              String(p.image || "").trim() === "" &&
+              String(s?.image || "").trim() !== ""
+            ) {
+              delete p.image;
+            }
+            return p;
+          })()
+        : patchRaw;
+    const merged = patch ? { ...s, ...(patch || {}), id } : { ...s, id };
+    out.push(merged);
+    seen.add(id);
+  };
+
+  list.forEach(pushSlide);
+  created.forEach(pushSlide);
+
+  // Apply explicit order if provided
+  if (order.length) {
+    const byId = new Map(out.map((s) => [String(s.id), s]));
+    const ordered = [];
+    const used = new Set();
+    for (const id of order) {
+      const it = byId.get(String(id));
+      if (it) {
+        ordered.push(it);
+        used.add(String(id));
+      }
+    }
+    for (const it of out) {
+      if (!used.has(String(it.id))) ordered.push(it);
+    }
+    return ordered;
+  }
+
+  return out;
+}
+
 export default function DataProvider({ children }) {
   const [slides, setSlides] = React.useState([]);
   const [news, setNews] = React.useState([]);
@@ -415,6 +482,7 @@ export default function DataProvider({ children }) {
   const [reloadSeq, setReloadSeq] = React.useState(0);
   const [deputiesOverrides, setDeputiesOverrides] = React.useState(() => readDeputiesOverrides());
   const [eventsOverrides, setEventsOverrides] = React.useState(() => readEventsOverrides());
+  const [slidesOverrides, setSlidesOverrides] = React.useState(() => readSliderOverrides());
 
   const markLoading = React.useCallback((key, value) => {
     setLoading((s) => ({ ...s, [key]: Boolean(value) }));
@@ -433,20 +501,37 @@ export default function DataProvider({ children }) {
       markLoading("slides", true);
       markError("slides", null);
       const apiSlides = await SliderApi.list({ all: false }).catch(() => null);
-      if (Array.isArray(apiSlides) && apiSlides.length) {
-        setSlides(
-          apiSlides
-            .filter((s) => s && s.isActive !== false)
+      if (Array.isArray(apiSlides)) {
+        // If API returns empty array, use code defaults (public/data/slides.json) for now.
+        if (apiSlides.length === 0) {
+          const local = await fetchJson("/data/slides.json").catch(() => []);
+          const mappedLocal = (Array.isArray(local) ? local : [])
+            .slice(0, 5)
+            .map((s, i) => ({
+              id: String(s?.id ?? `imp-${i + 1}`),
+              title: String(s?.title || ""),
+              desc: String(s?.desc || s?.description || ""),
+              link: String(s?.link || s?.url || s?.href || "/news"),
+              image: String(s?.image || ""),
+              isActive: true,
+              order: i + 1,
+            }));
+          setSlides(mappedLocal);
+        } else {
+          const mapped = apiSlides
+            .filter((s) => s) // keep even inactive; we'll filter after overrides
             .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
             .map((s) => ({
+              id: String(s.id ?? ""),
               title: s.title || "",
               desc: pick(s.desc, s.description, s.subtitle) || "",
               link: pick(s.link, s.url, s.href) || "",
               image: firstFileLink(s.image) || "",
-            }))
-            .filter((s) => s.title && s.image)
-            .slice(0, 5)
-        );
+              isActive: s.isActive !== false,
+              order: Number(s.order || 0),
+            }));
+          setSlides(mapped);
+        }
       } else {
         fetchJson("/data/slides.json")
           .then((arr) => setSlides((Array.isArray(arr) ? arr : []).slice(0, 5)))
@@ -810,6 +895,20 @@ export default function DataProvider({ children }) {
     })();
   }, [reloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Keep slider overrides in sync (admin writes them to localStorage and dispatches this event)
+  React.useEffect(() => {
+    const onLocal = () => setSlidesOverrides(readSliderOverrides());
+    const onStorage = (e) => {
+      if (e?.key === SLIDER_OVERRIDES_STORAGE_KEY) onLocal();
+    };
+    window.addEventListener(SLIDER_OVERRIDES_EVENT_NAME, onLocal);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(SLIDER_OVERRIDES_EVENT_NAME, onLocal);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
   // Keep events overrides in sync (admin writes them to localStorage and dispatches this event)
   React.useEffect(() => {
     const onLocal = () => setEventsOverrides(readEventsOverrides());
@@ -862,9 +961,17 @@ export default function DataProvider({ children }) {
     return mergeEventsWithOverrides(events, eventsOverrides);
   }, [events, eventsOverrides]);
 
+  const slidesWithOverrides = React.useMemo(() => {
+    const merged = mergeSlidesWithOverrides(slides, slidesOverrides);
+    return (Array.isArray(merged) ? merged : [])
+      .filter((s) => s && s.isActive !== false)
+      .filter((s) => String(s.title || "").trim() && String(s.image || "").trim())
+      .slice(0, 5);
+  }, [slides, slidesOverrides]);
+
   const value = React.useMemo(
     () => ({
-      slides,
+      slides: slidesWithOverrides,
       news,
       events: eventsWithOverrides,
       deputies,
@@ -900,7 +1007,7 @@ export default function DataProvider({ children }) {
       setAboutStructure,
     }),
     [
-      slides,
+      slidesWithOverrides,
       news,
       eventsWithOverrides,
       deputies,

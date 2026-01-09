@@ -15,6 +15,7 @@ import { addDeletedNewsId } from "../utils/newsOverrides.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 import { toPersonsApiBody } from "../api/personsPayload.js";
 import { addCreatedEvent, updateEventOverride, addDeletedEventId } from "../utils/eventsOverrides.js";
+import { addCreatedSlide, updateSlideOverride, addDeletedSlideId, setSliderOrder } from "../utils/sliderOverrides.js";
 
 function toNewsFallback(items) {
   return (items || []).map((n) => ({
@@ -592,15 +593,35 @@ export function useAdminData() {
       if (Array.isArray(slider) && slider.length >= 5) {
         throw new Error("Максимум 5 слайдов");
       }
-      await SliderApi.create({
-        title: title || "",
-        description: description || "",
-        url: url || "",
-        isActive: isActive ?? true,
-      });
-      message.success("Слайд создан");
-      await reload();
-      reloadDataContext();
+      try {
+        const created = await SliderApi.create({
+          title: title || "",
+          description: description || "",
+          url: url || "",
+          isActive: isActive ?? true,
+        });
+        message.success("Слайд создан");
+        await reload();
+        reloadDataContext();
+        return created;
+      } catch (e) {
+        // Fallback: create locally (useful for dev without backend)
+        const localId = `local-slide-${Date.now()}`;
+        const local = {
+          id: localId,
+          title: String(title || ""),
+          desc: String(description || ""),
+          link: String(url || ""),
+          image: "", // can be set via upload fallback
+          isActive: isActive ?? true,
+          order: 0,
+        };
+        addCreatedSlide(local);
+        setSlider((prev) => [toSliderRow(local), ...(Array.isArray(prev) ? prev : [])]);
+        message.warning("Слайд создан локально (сервер недоступен или нет прав)");
+        reloadDataContext();
+        return local;
+      }
     } finally {
       setBusy(false);
     }
@@ -609,14 +630,45 @@ export function useAdminData() {
   const updateSlide = React.useCallback(async (id, { title, description, url, isActive }) => {
     setBusy(true);
     try {
-      await SliderApi.patch(id, {
+      const payload = {
         title: title || "",
         description: description || "",
         url: url || "",
         isActive: isActive ?? true,
+      };
+      const looksLocal = String(id || "").startsWith("imp-") || String(id || "").startsWith("local-");
+      if (!looksLocal) {
+        try {
+          await SliderApi.patch(id, payload);
+          message.success("Слайд обновлён");
+          await reload();
+          reloadDataContext();
+          return;
+        } catch (e) {
+          // fall back below
+        }
+      }
+      updateSlideOverride(String(id), {
+        id: String(id),
+        title: String(payload.title),
+        desc: String(payload.description),
+        link: String(payload.url),
+        isActive: payload.isActive,
       });
-      message.success("Слайд обновлён");
-      await reload();
+      setSlider((prev) =>
+        (Array.isArray(prev) ? prev : []).map((s) =>
+          String(s?.id) === String(id)
+            ? {
+                ...s,
+                title: String(payload.title),
+                description: String(payload.description),
+                url: String(payload.url),
+                isActive: payload.isActive,
+              }
+            : s
+        )
+      );
+      message.warning("Слайд обновлён локально (сервер недоступен или нет прав)");
       reloadDataContext();
     } finally {
       setBusy(false);
@@ -626,9 +678,21 @@ export function useAdminData() {
   const deleteSlide = React.useCallback(async (id) => {
     setBusy(true);
     try {
-      await SliderApi.remove(id);
-      message.success("Слайд удалён");
-      await reload();
+      const looksLocal = String(id || "").startsWith("imp-") || String(id || "").startsWith("local-");
+      if (!looksLocal) {
+        try {
+          await SliderApi.remove(id);
+          message.success("Слайд удалён");
+          await reload();
+          reloadDataContext();
+          return;
+        } catch (e) {
+          // fall back below
+        }
+      }
+      addDeletedSlideId(String(id));
+      setSlider((prev) => (Array.isArray(prev) ? prev : []).filter((s) => String(s?.id) !== String(id)));
+      message.warning("Слайд удалён локально (сервер недоступен или нет прав)");
       reloadDataContext();
     } finally {
       setBusy(false);
@@ -638,9 +702,26 @@ export function useAdminData() {
   const uploadSlideImage = React.useCallback(async (id, file) => {
     setBusy(true);
     try {
-      await SliderApi.uploadImage(id, file);
-      message.success("Картинка загружена");
-      await reload();
+      const looksLocal = String(id || "").startsWith("imp-") || String(id || "").startsWith("local-");
+      if (!looksLocal) {
+        try {
+          await SliderApi.uploadImage(id, file);
+          message.success("Картинка загружена");
+          await reload();
+          reloadDataContext();
+          return;
+        } catch (e) {
+          // fall back below
+        }
+      }
+      const url = typeof window !== "undefined" && file ? URL.createObjectURL(file) : "";
+      if (url) {
+        updateSlideOverride(String(id), { id: String(id), image: url });
+        setSlider((prev) =>
+          (Array.isArray(prev) ? prev : []).map((s) => (String(s?.id) === String(id) ? { ...s, image: url } : s))
+        );
+      }
+      message.warning("Картинка применена локально (сервер недоступен или нет прав)");
       reloadDataContext();
     } finally {
       setBusy(false);
@@ -650,9 +731,39 @@ export function useAdminData() {
   const reorderSlides = React.useCallback(async (ids) => {
     setBusy(true);
     try {
-      await SliderApi.reorder(Array.isArray(ids) ? ids : []);
-      message.success("Порядок слайдов обновлён");
-      await reload();
+      const arr = Array.isArray(ids) ? ids.map(String) : [];
+      const hasLocal = arr.some((x) => x.startsWith("imp-") || x.startsWith("local-"));
+      if (!hasLocal) {
+        try {
+          await SliderApi.reorder(arr);
+          message.success("Порядок слайдов обновлён");
+          await reload();
+          reloadDataContext();
+          return;
+        } catch (e) {
+          // fall back below
+        }
+      }
+      setSliderOrder(arr);
+      setSlider((prev) => {
+        const list = Array.isArray(prev) ? prev.slice() : [];
+        const byId = new Map(list.map((s) => [String(s?.id), s]));
+        const ordered = [];
+        const used = new Set();
+        for (const id of arr) {
+          const it = byId.get(String(id));
+          if (it) {
+            ordered.push(it);
+            used.add(String(id));
+          }
+        }
+        for (const it of list) {
+          const sid = String(it?.id ?? "");
+          if (sid && !used.has(sid)) ordered.push(it);
+        }
+        return ordered;
+      });
+      message.warning("Порядок сохранён локально (сервер недоступен или нет прав)");
       reloadDataContext();
     } finally {
       setBusy(false);
