@@ -4,7 +4,28 @@ import { useHashRoute } from "../../Router.jsx";
 
 function pickRu(content) {
   const arr = Array.isArray(content) ? content : [];
-  return arr.find((x) => x?.lang === "ru") || arr[0] || null;
+  return (
+    arr.find((x) => String(x?.locale || x?.lang || "").toLowerCase() === "ru") || arr[0] || null
+  );
+}
+
+function toKey(row) {
+  const r = row && typeof row === "object" ? row : {};
+  // Prefer stable backend fields when present
+  const key =
+    r.slug ||
+    r.newsId ||
+    r.news_id ||
+    r.parentId ||
+    r.parent_id ||
+    r.entityId ||
+    r.entity_id ||
+    "";
+  if (String(key).trim()) return `news:${String(key).trim()}`;
+  const ru = pickRu(r.content);
+  const title = String(ru?.title || r.title || "").trim().toLowerCase();
+  const date = String(r.publishedAt || r.published_at || r.createdAt || r.created_at || "").trim();
+  return `news:${title}|${date}`;
 }
 
 export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, canWrite }) {
@@ -16,15 +37,82 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
   const [editing, setEditing] = React.useState(null);
   const [editForm] = Form.useForm();
 
+  const grouped = React.useMemo(() => {
+    const list = Array.isArray(items) ? items : [];
+    const mp = new Map();
+    for (const n of list) {
+      const k = toKey(n);
+      const prev = mp.get(k);
+      if (!prev) {
+        mp.set(k, { ...n, __ids: [n.id].filter(Boolean) });
+      } else {
+        const ids = Array.isArray(prev.__ids) ? prev.__ids : [];
+        const nextIds = [...ids, n.id].filter(Boolean).map(String);
+        // Keep the first item as representative, but remember all ids for delete
+        mp.set(k, { ...prev, __ids: Array.from(new Set(nextIds)) });
+      }
+    }
+    return Array.from(mp.values());
+  }, [items]);
+
   const filtered = React.useMemo(() => {
     const qq = q.trim().toLowerCase();
-    if (!qq) return items;
-    return (items || []).filter((n) => {
+    if (!qq) return grouped;
+    return (grouped || []).filter((n) => {
       const ru = pickRu(n.content);
       const t = String(ru?.title || n.title || "").toLowerCase();
       return t.includes(qq);
     });
-  }, [items, q]);
+  }, [grouped, q]);
+
+  const handleDelete = React.useCallback(
+    async (row) => {
+      if (!canWrite) return;
+      const ids = Array.isArray(row?.__ids) && row.__ids.length ? row.__ids : [row?.id].filter(Boolean);
+      if (!ids.length) return;
+      const key = `del-${Date.now()}`;
+      message.loading({ content: `Удаляем (${ids.length})…`, key, duration: 0 });
+      let ok = 0;
+      let fail = 0;
+      for (const id of ids) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await onDelete?.(id);
+          ok += 1;
+        } catch {
+          fail += 1;
+        }
+      }
+      if (fail === 0) message.success({ content: `Удалено: ${ok}`, key });
+      else message.warning({ content: `Удалено: ${ok}, ошибок: ${fail}`, key });
+    },
+    [onDelete, message, canWrite]
+  );
+
+  const deleteEmptyTitles = React.useCallback(async () => {
+    if (!canWrite) return;
+    const targets = (filtered || []).filter((n) => {
+      const ru = pickRu(n.content);
+      const title = String(ru?.title || n.title || "").trim();
+      return !title;
+    });
+    if (!targets.length) {
+      message.info("Записей без заголовка не найдено");
+      return;
+    }
+    Modal.confirm({
+      title: "Удалить записи без заголовка?",
+      content: `Будет удалено ${targets.length} записей (включая дубли по языкам/связям).`,
+      okText: "Удалить",
+      cancelText: "Отмена",
+      onOk: async () => {
+        for (const row of targets) {
+          // eslint-disable-next-line no-await-in-loop
+          await handleDelete(row);
+        }
+      },
+    });
+  }, [filtered, handleDelete, message, canWrite]);
 
   const columns = [
     {
@@ -71,7 +159,7 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
           >
             Редактировать
           </Button>
-          <Button danger onClick={() => onDelete(row.id)} disabled={!canWrite}>
+          <Button danger onClick={() => handleDelete(row)} disabled={!canWrite}>
             Удалить
           </Button>
         </Space>
@@ -109,6 +197,9 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
         <Space wrap>
           <Button type="primary" onClick={() => navigate("/admin/news/create")} disabled={!canWrite}>
             + Добавить новость
+          </Button>
+          <Button onClick={deleteEmptyTitles} disabled={!canWrite}>
+            Удалить без заголовка
           </Button>
         </Space>
       </div>

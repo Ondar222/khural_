@@ -141,8 +141,25 @@ function mergeDeputiesWithOverrides(base, overrides) {
 function joinApiBase(path) {
   const p = String(path || "");
   if (!p) return "";
-  // already absolute
-  if (/^https?:\/\//i.test(p)) return p;
+  // already absolute: try to convert file URLs to same-origin to avoid CORP/CORS blocks
+  if (/^https?:\/\//i.test(p)) {
+    try {
+      const u = new URL(p);
+      const isFileLike =
+        u.pathname.startsWith("/files") ||
+        u.pathname.startsWith("/uploads") ||
+        u.pathname.startsWith("/media");
+      if (typeof window !== "undefined" && window.location && isFileLike) {
+        // If resource is cross-origin, prefer same-origin path (expects reverse proxy in prod / vite proxy in dev)
+        if (u.origin !== window.location.origin) {
+          return u.pathname + u.search + u.hash;
+        }
+      }
+    } catch {
+      // ignore url parse errors
+    }
+    return p;
+  }
   const base = String(API_BASE_URL || "").replace(/\/+$/, "");
   if (!base) return p;
   if (p.startsWith("/")) return `${base}${p}`;

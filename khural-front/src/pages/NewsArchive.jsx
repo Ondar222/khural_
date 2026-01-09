@@ -141,6 +141,11 @@ export default function NewsArchive() {
                   alt=""
                   loading="lazy"
                   decoding="async"
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            img.onerror = null;
+                            img.src = getImage(Math.max(0, idx));
+                          }}
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               </div>

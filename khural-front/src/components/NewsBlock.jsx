@@ -115,6 +115,12 @@ export default function NewsBlock() {
                     alt=""
                     loading="lazy"
                     decoding="async"
+                    onError={(e) => {
+                      // fallback for any unsupported/broken/cross-origin image
+                      const img = e.currentTarget;
+                      img.onerror = null;
+                      img.src = getImage(i);
+                    }}
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 </div>
