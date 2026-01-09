@@ -31,6 +31,21 @@ function renderText(v) {
   return String(v);
 }
 
+function looksLikeHtml(s) {
+  return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
+}
+
+function stripHtmlToText(html) {
+  const s = String(html || "");
+  // remove tags
+  const noTags = s.replace(/<[^>]*>/g, " ");
+  // decode minimal nbsp-like entities and collapse whitespace
+  return noTags
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export default function EventModal({ open, onClose, events }) {
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
@@ -66,7 +81,28 @@ export default function EventModal({ open, onClose, events }) {
                   {renderText(ev.time) ? ` • ${renderText(ev.time)}` : ""}
                 </div>
                 {renderText(ev.place) ? <div className="text-muted">{renderText(ev.place)}</div> : null}
-                {renderText(ev.desc) ? <p style={{ marginBottom: 0 }}>{renderText(ev.desc)}</p> : null}
+                {(() => {
+                  const raw = renderText(ev.desc);
+                  if (!raw) return null;
+                  if (looksLikeHtml(raw)) {
+                    const plain = stripHtmlToText(raw);
+                    if (!plain) return null; // ignore empty HTML like <p>&nbsp;</p>
+                    return (
+                      <div
+                        className="prose"
+                        style={{ marginTop: 8 }}
+                        dangerouslySetInnerHTML={{ __html: raw }}
+                      />
+                    );
+                  }
+                  const plain = String(raw || "").trim();
+                  if (!plain) return null;
+                  return (
+                    <p className="prose" style={{ marginBottom: 0, marginTop: 8 }}>
+                      {plain}
+                    </p>
+                  );
+                })()}
               </div>
             ))}
           </div>

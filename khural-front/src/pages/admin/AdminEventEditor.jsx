@@ -9,6 +9,7 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
   const [form] = Form.useForm();
   const [saving, setSaving] = React.useState(false);
   const [loading, setLoading] = React.useState(mode === "edit");
+  const editorRef = React.useRef(null);
 
   const titleValue = Form.useWatch("title", form);
   const descHtml = Form.useWatch("desc", form);
@@ -38,11 +39,16 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
     setSaving(true);
     try {
       const values = await form.validateFields();
+      // Ensure TinyMCE HTML is captured even if Form didn't sync yet
+      const html = editorRef.current && typeof editorRef.current.getContent === "function"
+        ? String(editorRef.current.getContent() || "")
+        : "";
+      const payload = { ...values, desc: html || values.desc || "" };
       if (mode === "create") {
-        await onCreate?.(values);
+        await onCreate?.(payload);
         message.success("Событие создано");
       } else {
-        await onUpdate?.(String(eventId), values);
+        await onUpdate?.(String(eventId), payload);
         message.success("Событие обновлено");
       }
       navigate("/admin/events");
@@ -104,6 +110,9 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
             <Editor
               apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
               disabled={loading || saving}
+              onInit={(_, editor) => {
+                editorRef.current = editor;
+              }}
               value={typeof descHtml === "string" ? descHtml : ""}
               onEditorChange={(content) => form.setFieldValue("desc", content)}
               init={{ height: 320, menubar: true }}

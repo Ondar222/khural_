@@ -14,7 +14,7 @@ import {
 import { addDeletedNewsId } from "../utils/newsOverrides.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 import { toPersonsApiBody } from "../api/personsPayload.js";
-import { addCreatedEvent } from "../utils/eventsOverrides.js";
+import { addCreatedEvent, updateEventOverride, addDeletedEventId } from "../utils/eventsOverrides.js";
 
 function toNewsFallback(items) {
   return (items || []).map((n) => ({
@@ -509,11 +509,16 @@ export function useAdminData() {
   const updateEvent = React.useCallback(async (id, payload) => {
     setBusy(true);
     try {
-      const updated = await EventsApi.patch(id, toCalendarDto(payload));
-      message.success("Событие обновлено");
-      
-      // Оптимистично обновляем событие в DataContext
-      if (updated || dataContextEvents) {
+      try {
+        await EventsApi.patch(id, toCalendarDto(payload));
+        message.success("Событие обновлено");
+      } catch (e) {
+        // allow local update if API is unavailable/no rights
+        message.warning("Обновлено локально (сервер недоступен или нет прав)");
+      }
+
+      // Оптимистично обновляем событие в DataContext + сохраняем в overrides, чтобы работало в календаре при 404/429
+      if (dataContextEvents) {
         const toText = (v) => {
           if (v === undefined || v === null) return "";
           if (typeof v === "string") return v;
@@ -545,6 +550,7 @@ export function useAdminData() {
           String(e.id) === String(id) ? updatedEvent : e
         );
         setDataContextEvents(updatedEvents);
+        updateEventOverride(String(id), updatedEvent);
       }
       
       await reload();
@@ -558,8 +564,13 @@ export function useAdminData() {
   const deleteEvent = React.useCallback(async (id) => {
     setBusy(true);
     try {
-      await EventsApi.remove(id);
-      message.success("Событие удалено");
+      try {
+        await EventsApi.remove(id);
+        message.success("Событие удалено");
+      } catch (e) {
+        message.warning("Удалено локально (сервер недоступен или нет прав)");
+      }
+      addDeletedEventId(String(id));
       
       // Оптимистично удаляем событие из DataContext
       if (dataContextEvents) {

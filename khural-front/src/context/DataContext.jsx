@@ -183,20 +183,27 @@ function ensureUniqueIds(items) {
 function mergeEventsWithOverrides(base, overrides) {
   const list = Array.isArray(base) ? base : [];
   const created = Array.isArray(overrides?.created) ? overrides.created : [];
+  const updatedById =
+    overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
+  const deleted = new Set((overrides?.deletedIds || []).map((x) => String(x)));
   const out = [];
   const seen = new Set();
   for (const e of list) {
     const id = String(e?.id ?? "").trim();
     if (!id) continue;
+    if (deleted.has(id)) continue;
     if (seen.has(id)) continue;
-    out.push(e);
+    const patch = updatedById[id];
+    out.push(patch ? { ...e, ...patch, id } : e);
     seen.add(id);
   }
   for (const e of created) {
     const id = String(e?.id ?? "").trim();
     if (!id) continue;
+    if (deleted.has(id)) continue;
     if (seen.has(id)) continue;
-    out.push(e);
+    const patch = updatedById[id];
+    out.push(patch ? { ...e, ...patch, id } : e);
     seen.add(id);
   }
   return out;
