@@ -5,6 +5,11 @@ import {
   NEWS_OVERRIDES_EVENT_NAME,
   NEWS_OVERRIDES_STORAGE_KEY,
 } from "../utils/newsOverrides.js";
+import {
+  readEventsOverrides,
+  EVENTS_OVERRIDES_EVENT_NAME,
+  EVENTS_OVERRIDES_STORAGE_KEY,
+} from "../utils/eventsOverrides.js";
 
 const DataContext = React.createContext({
   slides: [],
@@ -173,6 +178,28 @@ function ensureUniqueIds(items) {
     seen.add(id);
     return { ...item, id };
   });
+}
+
+function mergeEventsWithOverrides(base, overrides) {
+  const list = Array.isArray(base) ? base : [];
+  const created = Array.isArray(overrides?.created) ? overrides.created : [];
+  const out = [];
+  const seen = new Set();
+  for (const e of list) {
+    const id = String(e?.id ?? "").trim();
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    out.push(e);
+    seen.add(id);
+  }
+  for (const e of created) {
+    const id = String(e?.id ?? "").trim();
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    out.push(e);
+    seen.add(id);
+  }
+  return out;
 }
 
 async function fetchJson(path) {
@@ -380,6 +407,7 @@ export default function DataProvider({ children }) {
   });
   const [reloadSeq, setReloadSeq] = React.useState(0);
   const [deputiesOverrides, setDeputiesOverrides] = React.useState(() => readDeputiesOverrides());
+  const [eventsOverrides, setEventsOverrides] = React.useState(() => readEventsOverrides());
 
   const markLoading = React.useCallback((key, value) => {
     setLoading((s) => ({ ...s, [key]: Boolean(value) }));
@@ -506,12 +534,11 @@ export default function DataProvider({ children }) {
           // Если массив пустой, все равно используем его (не fallback на JSON)
           if (apiEvents.length === 0) {
             console.log("Calendar API вернул пустой массив событий");
-            setEvents([]);
+            setEvents(mergeEventsWithOverrides([], readEventsOverrides()));
             markLoading("events", false);
             return;
           }
-          setEvents(
-            apiEvents.map((e) => ({
+          const mapped = apiEvents.map((e) => ({
               id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
               date: (() => {
                 const d = pick(e.date, e.date_of_event);
@@ -521,7 +548,7 @@ export default function DataProvider({ children }) {
                 const dt = new Date(Number(start));
                 return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
               })(),
-              title: pick(e.title, e.event_title) || "",
+              title: String(pick(e.title, e.event_title) || ""),
               time: (() => {
                 const t = pick(e.time, e.event_time);
                 if (t) return String(t);
@@ -531,13 +558,13 @@ export default function DataProvider({ children }) {
                 if (isNaN(dt.getTime())) return "";
                 return dt.toISOString().slice(11, 16);
               })(),
-              place: pick(e.place, e.event_place, e.location) || "",
-              desc: pick(e.desc, e.description) || "",
+              place: String(pick(e.place, e.event_place, e.location) || ""),
+              desc: String(pick(e.desc, e.description) || ""),
               isImportant: Boolean(
                 pick(e.isImportant, e.is_important, e.important, e.featured, e.pinned, e.is_featured)
               ),
-            }))
-          );
+            }));
+          setEvents(mergeEventsWithOverrides(mapped, readEventsOverrides()));
           markLoading("events", false);
           return;
         }
@@ -547,7 +574,7 @@ export default function DataProvider({ children }) {
       }
       // Fallback to local JSON
       fetchJson("/data/events.json")
-        .then(setEvents)
+        .then((arr) => setEvents(mergeEventsWithOverrides(arr, readEventsOverrides())))
         .catch((e) => markError("events", e))
         .finally(() => markLoading("events", false));
     })();
@@ -776,6 +803,18 @@ export default function DataProvider({ children }) {
     })();
   }, [reloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Keep events overrides in sync (admin writes them to localStorage and dispatches this event)
+  React.useEffect(() => {
+    const onLocal = () => setEventsOverrides(readEventsOverrides());
+    window.addEventListener(EVENTS_OVERRIDES_EVENT_NAME, onLocal);
+    window.addEventListener("storage", (e) => {
+      if (e?.key === EVENTS_OVERRIDES_STORAGE_KEY) onLocal();
+    });
+    return () => {
+      window.removeEventListener(EVENTS_OVERRIDES_EVENT_NAME, onLocal);
+    };
+  }, []);
+
   // Apply local "news deleted" overrides (admin can delete locally when API is unavailable)
   React.useEffect(() => {
     const apply = () => {
@@ -812,11 +851,15 @@ export default function DataProvider({ children }) {
     return mergeDeputiesWithOverrides(deputiesBase, deputiesOverrides);
   }, [deputiesBase, deputiesOverrides]);
 
+  const eventsWithOverrides = React.useMemo(() => {
+    return mergeEventsWithOverrides(events, eventsOverrides);
+  }, [events, eventsOverrides]);
+
   const value = React.useMemo(
     () => ({
       slides,
       news,
-      events,
+      events: eventsWithOverrides,
       deputies,
       factions,
       districts,
@@ -852,7 +895,7 @@ export default function DataProvider({ children }) {
     [
       slides,
       news,
-      events,
+      eventsWithOverrides,
       deputies,
       factions,
       districts,

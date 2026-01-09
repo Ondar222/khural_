@@ -5,6 +5,16 @@ import EventModal from "./EventModal.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "./DataState.jsx";
 
+function parseEventDate(raw) {
+  if (raw === undefined || raw === null) return new Date(NaN);
+  if (raw instanceof Date) return raw;
+  if (typeof raw === "number") return new Date(raw);
+  const s = String(raw || "").trim();
+  if (!s) return new Date(NaN);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(`${s}T00:00:00`);
+  return new Date(s);
+}
+
 export default function CalendarWidget() {
   const { events, loading, errors, reload } = useData();
   const { t } = useI18n();
@@ -28,7 +38,8 @@ export default function CalendarWidget() {
   const eventsByDateKey = useMemo(() => {
     const map = new Map();
     events.forEach((ev) => {
-      const d = new Date(ev.date);
+      const d = parseEventDate(ev.date);
+      if (isNaN(d.getTime())) return;
       const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
       if (!map.has(k)) map.set(k, []);
       map.get(k).push(ev);

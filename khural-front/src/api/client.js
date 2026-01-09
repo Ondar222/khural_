@@ -185,11 +185,24 @@ export async function apiFetch(
   }
   
   let res;
+  let jsonBody;
+  if (body) {
+    try {
+      jsonBody = JSON.stringify(body);
+    } catch (e) {
+      const err = new Error(
+        `Ошибка формирования запроса: данные содержат несериализуемые объекты (например, объект редактора). ` +
+          `Проверьте поля формы. Технически: ${e?.message || String(e)}`
+      );
+      err.serializationError = true;
+      throw err;
+    }
+  }
   try {
     res = await fetch(url, {
       method,
       headers: finalHeaders,
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? jsonBody : undefined,
     });
   } catch (networkError) {
     // Сетевая ошибка (CORS, недоступен сервер и т.д.)

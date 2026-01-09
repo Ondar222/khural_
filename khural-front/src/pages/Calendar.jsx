@@ -2,6 +2,17 @@ import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import EventModal from "../components/EventModal.jsx";
 
+function parseEventDate(raw) {
+  if (raw === undefined || raw === null) return new Date(NaN);
+  if (raw instanceof Date) return raw;
+  if (typeof raw === "number") return new Date(raw);
+  const s = String(raw || "").trim();
+  if (!s) return new Date(NaN);
+  // IMPORTANT: "YYYY-MM-DD" is parsed as UTC by default; force local time to avoid day shifts
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(`${s}T00:00:00`);
+  return new Date(s);
+}
+
 function getMonthGrid(year, month) {
   const first = new Date(year, month, 1);
   const start = new Date(first);
@@ -39,7 +50,8 @@ export default function CalendarPage() {
   const eventsByDateKey = React.useMemo(() => {
     const mp = new Map();
     for (const e of events) {
-      const d = new Date(e.date);
+      const d = parseEventDate(e.date);
+      if (isNaN(d.getTime())) continue;
       const key = getLocalDateKey(d);
       if (!mp.has(key)) mp.set(key, []);
       mp.get(key).push(e);

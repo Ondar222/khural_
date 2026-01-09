@@ -14,6 +14,7 @@ import {
 import { addDeletedNewsId } from "../utils/newsOverrides.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 import { toPersonsApiBody } from "../api/personsPayload.js";
+import { addCreatedEvent } from "../utils/eventsOverrides.js";
 
 function toNewsFallback(items) {
   return (items || []).map((n) => ({
@@ -132,16 +133,44 @@ function normalizeAppeal(a) {
 }
 
 function toCalendarDto(values) {
-  const date = String(values?.date || "");
-  const time = String(values?.time || "00:00");
+  const safeString = (v) => {
+    if (v === undefined || v === null) return "";
+    if (typeof v === "string") return v;
+    if (typeof v === "number" || typeof v === "boolean") return String(v);
+    if (typeof v === "object") {
+      // Tinymce editor instance (or similar) can be circular; extract HTML safely.
+      if (typeof v.getContent === "function") {
+        try {
+          return String(v.getContent() || "");
+        } catch {
+          return "";
+        }
+      }
+      // Typical DOM/event shapes
+      if (typeof v?.target?.value === "string") return v.target.value;
+      // Common content shapes
+      if (typeof v?.content === "string") return v.content;
+      if (typeof v?.html === "string") return v.html;
+      // Last resort: try JSON, then fallback to empty to avoid circular refs
+      try {
+        return JSON.stringify(v);
+      } catch {
+        return "";
+      }
+    }
+    return String(v);
+  };
+
+  const date = safeString(values?.date);
+  const time = safeString(values?.time) || "00:00";
   const [hh, mm] = time.split(":").map((x) => parseInt(x, 10));
   const dt = new Date(`${date}T00:00:00.000Z`);
   if (!isNaN(hh)) dt.setUTCHours(hh);
   if (!isNaN(mm)) dt.setUTCMinutes(mm);
   return {
-    title: values?.title || "",
-    description: values?.desc || "",
-    location: values?.place || "",
+    title: safeString(values?.title),
+    description: safeString(values?.desc),
+    location: safeString(values?.place),
     startDate: dt.getTime(),
     isPublic: true,
   };
@@ -423,17 +452,36 @@ export function useAdminData() {
       
       // Оптимистично добавляем событие в DataContext, чтобы оно сразу появилось в календаре
       if (created) {
+        const toText = (v) => {
+          if (v === undefined || v === null) return "";
+          if (typeof v === "string") return v;
+          if (typeof v === "number" || typeof v === "boolean") return String(v);
+          if (typeof v === "object") {
+            if (typeof v.getContent === "function") {
+              try {
+                return String(v.getContent() || "");
+              } catch {
+                return "";
+              }
+            }
+            if (typeof v?.target?.value === "string") return v.target.value;
+            if (typeof v?.content === "string") return v.content;
+            if (typeof v?.html === "string") return v.html;
+            return "";
+          }
+          return String(v);
+        };
         const newEvent = {
           id: String(created.id ?? Math.random().toString(36).slice(2)),
           date: (() => {
             const d = payload.date;
-            if (d) return String(d);
+            if (d) return toText(d);
             const start = created.startDate;
             if (!start) return "";
             const dt = new Date(Number(start));
             return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
           })(),
-          title: payload.title || created.title || "",
+          title: toText(payload.title) || toText(created.title) || "",
           time: payload.time || (() => {
             const start = created.startDate;
             if (!start) return "";
@@ -441,21 +489,22 @@ export function useAdminData() {
             if (isNaN(dt.getTime())) return "";
             return dt.toISOString().slice(11, 16);
           })(),
-          place: payload.place || created.location || "",
-          desc: payload.desc || created.description || "",
+          place: toText(payload.place) || toText(created.location) || "",
+          desc: toText(payload.desc) || toText(created.description) || "",
         };
         setDataContextEvents([...dataContextEvents, newEvent]);
+        // Persist locally so it stays visible even if GET /calendar is rate-limited (429) temporarily
+        addCreatedEvent(newEvent);
       }
       
       // Небольшая задержка, чтобы API успел обработать запрос
       await new Promise((resolve) => setTimeout(resolve, 100));
       await reload();
-      // Обновляем DataContext, чтобы календарь увидел новое событие (если API работает)
-      reloadDataContext();
+      // НЕ дергаем reloadDataContext здесь: при 429 GET /calendar DataContext упадет в fallback и затрет оптимистичное событие.
     } finally {
       setBusy(false);
     }
-  }, [message, reload, reloadDataContext, setDataContextEvents, dataContextEvents]);
+  }, [message, reload, setDataContextEvents, dataContextEvents]);
 
   const updateEvent = React.useCallback(async (id, payload) => {
     setBusy(true);
@@ -465,13 +514,32 @@ export function useAdminData() {
       
       // Оптимистично обновляем событие в DataContext
       if (updated || dataContextEvents) {
+        const toText = (v) => {
+          if (v === undefined || v === null) return "";
+          if (typeof v === "string") return v;
+          if (typeof v === "number" || typeof v === "boolean") return String(v);
+          if (typeof v === "object") {
+            if (typeof v.getContent === "function") {
+              try {
+                return String(v.getContent() || "");
+              } catch {
+                return "";
+              }
+            }
+            if (typeof v?.target?.value === "string") return v.target.value;
+            if (typeof v?.content === "string") return v.content;
+            if (typeof v?.html === "string") return v.html;
+            return "";
+          }
+          return String(v);
+        };
         const updatedEvent = {
           id: String(id),
-          date: payload.date || "",
-          title: payload.title || "",
-          time: payload.time || "",
-          place: payload.place || "",
-          desc: payload.desc || "",
+          date: toText(payload.date) || "",
+          title: toText(payload.title) || "",
+          time: toText(payload.time) || "",
+          place: toText(payload.place) || "",
+          desc: toText(payload.desc) || "",
         };
         const updatedEvents = dataContextEvents.map((e) =>
           String(e.id) === String(id) ? updatedEvent : e
