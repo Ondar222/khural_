@@ -15,6 +15,11 @@ import {
   SLIDER_OVERRIDES_EVENT_NAME,
   SLIDER_OVERRIDES_STORAGE_KEY,
 } from "../utils/sliderOverrides.js";
+import {
+  readDocumentsOverrides,
+  DOCUMENTS_OVERRIDES_EVENT_NAME,
+  DOCUMENTS_OVERRIDES_STORAGE_KEY,
+} from "../utils/documentsOverrides.js";
 
 const DataContext = React.createContext({
   slides: [],
@@ -825,8 +830,11 @@ export default function DataProvider({ children }) {
           other: "other",
         };
         
+        const deletedDocs = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
         setDocuments(
-          apiDocs.map((d) => ({
+          apiDocs
+            .filter((d) => !deletedDocs.has(String(d?.id ?? "")))
+            .map((d) => ({
             id: d.id,
             title: d.title,
             desc: d.content || d.description || "",
@@ -957,6 +965,27 @@ export default function DataProvider({ children }) {
     window.addEventListener("storage", onStorage);
     return () => {
       window.removeEventListener(NEWS_OVERRIDES_EVENT_NAME, onCustom);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  // Apply local "documents deleted" overrides (admin can delete locally when API is unavailable)
+  React.useEffect(() => {
+    const apply = () => {
+      const deleted = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
+      if (!deleted.size) return;
+      setDocuments((prev) =>
+        (Array.isArray(prev) ? prev : []).filter((d) => !deleted.has(String(d?.id ?? "")))
+      );
+    };
+    const onCustom = () => apply();
+    const onStorage = (e) => {
+      if (e?.key === DOCUMENTS_OVERRIDES_STORAGE_KEY) apply();
+    };
+    window.addEventListener(DOCUMENTS_OVERRIDES_EVENT_NAME, onCustom);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(DOCUMENTS_OVERRIDES_EVENT_NAME, onCustom);
       window.removeEventListener("storage", onStorage);
     };
   }, []);

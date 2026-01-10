@@ -1,5 +1,5 @@
 import React from "react";
-import { App, Button, Input, Space, Table, Tag } from "antd";
+import { App, Button, Input, Modal, Space, Table, Tag } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 
 const TYPE_OPTIONS = [
@@ -84,7 +84,26 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
           >
             Редактировать
           </Button>
-          <Button danger onClick={() => onDelete(row.id)} disabled={!canWrite}>
+          <Button
+            danger
+            onClick={() => {
+              Modal.confirm({
+                title: "Удалить документ?",
+                content: "Действие необратимо. Если сервер недоступен — документ будет скрыт локально.",
+                okText: "Удалить",
+                okType: "danger",
+                cancelText: "Отмена",
+                onOk: async () => {
+                  try {
+                    await onDelete?.(row.id);
+                  } catch (e) {
+                    message.error(e?.message || "Не удалось удалить документ");
+                  }
+                },
+              });
+            }}
+            disabled={!canWrite}
+          >
             Удалить
           </Button>
         </Space>

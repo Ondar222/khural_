@@ -12,6 +12,7 @@ import {
   SliderApi,
 } from "../api/client.js";
 import { addDeletedNewsId } from "../utils/newsOverrides.js";
+import { addDeletedDocumentId, readDocumentsOverrides } from "../utils/documentsOverrides.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 import { toPersonsApiBody } from "../api/personsPayload.js";
 import { addCreatedEvent, updateEventOverride, addDeletedEventId } from "../utils/eventsOverrides.js";
@@ -245,7 +246,9 @@ export function useAdminData() {
         : toPersonsFallback(fb.deputies)
     );
     const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
-    setDocuments(Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(fb.documents));
+    const deletedDocs = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
+    const docsList = Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(fb.documents);
+    setDocuments((Array.isArray(docsList) ? docsList : []).filter((d) => !deletedDocs.has(String(d?.id ?? ""))));
     if (Array.isArray(apiSlider) && apiSlider.length) {
       setSlider(apiSlider.map(toSliderRow));
     } else {
@@ -471,8 +474,14 @@ export function useAdminData() {
   const deleteDocument = React.useCallback(async (id) => {
     setBusy(true);
     try {
-      await DocumentsApi.remove(id);
-      message.success("Документ удалён");
+      try {
+        await DocumentsApi.remove(id);
+        message.success("Документ удалён");
+      } catch (e) {
+        // Fallback: hide locally when API is unavailable / no rights
+        addDeletedDocumentId(String(id));
+        message.warning("Документ удалён локально (сервер недоступен или нет прав)");
+      }
       await reload();
       reloadDataContext();
     } finally {
