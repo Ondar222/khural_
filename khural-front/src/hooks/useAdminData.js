@@ -10,6 +10,7 @@ import {
   EventsApi,
   AppealsApi,
   SliderApi,
+  getAuthToken,
 } from "../api/client.js";
 import { addDeletedNewsId } from "../utils/newsOverrides.js";
 import { addDeletedDocumentId, readDocumentsOverrides } from "../utils/documentsOverrides.js";
@@ -478,9 +479,23 @@ export function useAdminData() {
         await DocumentsApi.remove(id);
         message.success("Документ удалён");
       } catch (e) {
-        // Fallback: hide locally when API is unavailable / no rights
-        addDeletedDocumentId(String(id));
-        message.warning("Документ удалён локально (сервер недоступен или нет прав)");
+        // Second attempt via same-origin proxy path (helps when API base was misconfigured on prod)
+        try {
+          const token = getAuthToken();
+          const res = await fetch(`/api/documents/${encodeURIComponent(String(id))}`, {
+            method: "DELETE",
+            headers: {
+              Accept: "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          message.success("Документ удалён");
+        } catch {
+          // Fallback: hide locally when API is unavailable / no rights
+          addDeletedDocumentId(String(id));
+          message.warning("Документ удалён локально (сервер недоступен или нет прав)");
+        }
       }
       await reload();
       reloadDataContext();

@@ -25,12 +25,9 @@ function resolveApiBaseUrl() {
   // Fallbacks
   if (typeof window !== "undefined" && window.location) {
     const host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1") return "/api"; // dev proxy
-    
-    // Для продакшена используем window.location.origin как fallback
-    // Но это может быть проблемой, если API не на том же домене
-    // В этом случае нужно установить VITE_API_BASE_URL
-    return window.location.origin;
+    // Prefer same-origin reverse-proxy path. Works in dev (Vite proxy) and prod (nginx proxy).
+    if (host === "localhost" || host === "127.0.0.1") return "/api";
+    return "/api";
   }
 
   return "";
