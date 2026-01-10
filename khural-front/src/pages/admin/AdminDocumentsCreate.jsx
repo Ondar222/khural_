@@ -20,6 +20,7 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
   const [fileRu, setFileRu] = React.useState(null);
   const [fileTy, setFileTy] = React.useState(null);
   const descriptionHtml = Form.useWatch("description", form);
+  const editorRef = React.useRef(null);
 
   const handleSubmit = async () => {
     try {
@@ -28,7 +29,11 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
         antdMessage.error("Загрузите хотя бы один файл (русская или тувинская версия)");
         return;
       }
-      await onCreate({ ...values, fileRu, fileTy });
+      const html =
+        editorRef.current && typeof editorRef.current.getContent === "function"
+          ? String(editorRef.current.getContent() || "")
+          : "";
+      await onCreate({ ...values, description: html || values.description || "", fileRu, fileTy });
       navigate("/admin/documents");
     } catch (error) {
       if (error?.errorFields) return;
@@ -83,6 +88,9 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
               <Editor
                 apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
                 disabled={busy || !canWrite}
+                onInit={(_, editor) => {
+                  editorRef.current = editor;
+                }}
                 value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
                 onEditorChange={(content) => form.setFieldValue("description", content)}
                 init={{ height: 320, menubar: true }}

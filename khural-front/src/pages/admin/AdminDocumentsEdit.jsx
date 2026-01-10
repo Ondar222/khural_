@@ -26,6 +26,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
   const [translationJob, setTranslationJob] = React.useState(null);
   const [translationStatus, setTranslationStatus] = React.useState(null);
   const descriptionHtml = Form.useWatch("description", form);
+  const editorRef = React.useRef(null);
 
   // Загружаем данные документа
   React.useEffect(() => {
@@ -101,7 +102,11 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
         antdMessage.error("Загрузите хотя бы один файл (русская или тувинская версия)");
         return;
       }
-      await onUpdate?.(documentId, { ...values, fileRu, fileTy });
+      const html =
+        editorRef.current && typeof editorRef.current.getContent === "function"
+          ? String(editorRef.current.getContent() || "")
+          : "";
+      await onUpdate?.(documentId, { ...values, description: html || values.description || "", fileRu, fileTy });
       navigate("/admin/documents");
     } catch (error) {
       if (error?.errorFields) return;
@@ -337,6 +342,9 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
               <Editor
                 apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
                 disabled={loading || busy || !canWrite}
+                onInit={(_, editor) => {
+                  editorRef.current = editor;
+                }}
                 value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
                 onEditorChange={(content) => form.setFieldValue("description", content)}
                 init={{ height: 320, menubar: true }}

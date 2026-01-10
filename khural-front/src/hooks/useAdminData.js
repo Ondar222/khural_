@@ -376,12 +376,35 @@ export function useAdminData() {
   }) => {
     setBusy(true);
     try {
+      const safeString = (v) => {
+        if (v === undefined || v === null) return "";
+        if (typeof v === "string") return v;
+        if (typeof v === "number" || typeof v === "boolean") return String(v);
+        if (typeof v === "object") {
+          if (typeof v.getContent === "function") {
+            try {
+              return String(v.getContent() || "");
+            } catch {
+              return "";
+            }
+          }
+          if (typeof v?.target?.value === "string") return v.target.value;
+          if (typeof v?.content === "string") return v.content;
+          if (typeof v?.html === "string") return v.html;
+          try {
+            return JSON.stringify(v);
+          } catch {
+            return "";
+          }
+        }
+        return String(v);
+      };
       const created = await DocumentsApi.create({
-        title,
-        content: description || "",
+        title: safeString(title),
+        content: safeString(description) || "",
         type: mapDocType(type),
         metadata: category ? { category } : undefined,
-        number,
+        number: safeString(number),
         publishedAt: date ? Date.parse(date) : undefined,
         isPublished: isPublished ?? false,
       });
@@ -403,12 +426,35 @@ export function useAdminData() {
   ) => {
     setBusy(true);
     try {
+      const safeString = (v) => {
+        if (v === undefined || v === null) return "";
+        if (typeof v === "string") return v;
+        if (typeof v === "number" || typeof v === "boolean") return String(v);
+        if (typeof v === "object") {
+          if (typeof v.getContent === "function") {
+            try {
+              return String(v.getContent() || "");
+            } catch {
+              return "";
+            }
+          }
+          if (typeof v?.target?.value === "string") return v.target.value;
+          if (typeof v?.content === "string") return v.content;
+          if (typeof v?.html === "string") return v.html;
+          try {
+            return JSON.stringify(v);
+          } catch {
+            return "";
+          }
+        }
+        return String(v);
+      };
       await DocumentsApi.patch(id, {
-        title,
-        content: description || "",
+        title: safeString(title),
+        content: safeString(description) || "",
         type: mapDocType(type),
         metadata: category ? { category } : undefined,
-        number,
+        number: safeString(number),
         publishedAt: date ? Date.parse(date) : undefined,
         isPublished: isPublished ?? false,
       });
