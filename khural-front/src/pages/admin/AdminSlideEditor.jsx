@@ -29,6 +29,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
   const [imageFile, setImageFile] = React.useState(null);
   const titleValue = Form.useWatch("title", form);
   const descriptionHtml = Form.useWatch("description", form);
+  const editorRef = React.useRef(null);
 
   React.useEffect(() => {
     if (mode !== "edit") return;
@@ -64,9 +65,13 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
     setSaving(true);
     try {
       const values = await form.validateFields();
+      const html =
+        editorRef.current && typeof editorRef.current.getContent === "function"
+          ? String(editorRef.current.getContent() || "")
+          : "";
       const payload = {
         title: values.title,
-        description: joinDateAndDescription(values.date, values.description),
+        description: joinDateAndDescription(values.date, html || values.description),
         url: values.url,
         isActive: values.isActive,
       };
@@ -140,6 +145,9 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
             <Editor
               apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
               disabled={loading || saving}
+              onInit={(_, editor) => {
+                editorRef.current = editor;
+              }}
               value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
               onEditorChange={(content) => form.setFieldValue("description", content)}
               init={{ height: 320, menubar: true }}

@@ -1,6 +1,8 @@
 import React from "react";
-import { App, Button, Input, Space, Table, Switch, Upload } from "antd";
+import { App, Button, Input, Modal, Space, Table, Switch, Upload } from "antd";
 import { useHashRoute } from "../../Router.jsx";
+import { useData } from "../../context/DataContext.jsx";
+import { SliderApi } from "../../api/client.js";
 
 export default function AdminSliderList({
   items,
@@ -13,6 +15,7 @@ export default function AdminSliderList({
 }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
+  const publicData = useData();
   const [q, setQ] = React.useState("");
   const [rows, setRows] = React.useState([]);
 
@@ -24,6 +27,81 @@ export default function AdminSliderList({
   }, [items]);
 
   const maxReached = rows.length >= 5;
+
+  const syncFromCodeToApi = React.useCallback(() => {
+    if (!canWrite) return;
+    const codeSlides = (Array.isArray(publicData?.slides) ? publicData.slides : []).slice(0, 5);
+    if (!codeSlides.length) {
+      message.error("Кодовые слайды не найдены (public/data/slides.json)");
+      return;
+    }
+    Modal.confirm({
+      title: "Синхронизировать 5 слайдов из кода в API?",
+      content:
+        "Создаст слайды на сервере и загрузит картинки, чтобы они работали на проде (не локально). Если API отвечает ошибками/429 — синхронизация может частично не выполниться.",
+      okText: "Синхронизировать",
+      cancelText: "Отмена",
+      onOk: async () => {
+        const key = `sync-${Date.now()}`;
+        message.loading({ content: "Синхронизация…", key, duration: 0 });
+        let created = 0;
+        let uploaded = 0;
+        let failed = 0;
+
+        for (const s of codeSlides) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            const createdSlide = await SliderApi.create({
+              title: String(s?.title || ""),
+              description: String(s?.desc || ""),
+              url: String(s?.link || ""),
+              isActive: true,
+            });
+            created += 1;
+            const createdId = createdSlide?.id;
+
+            const imgSrc = String(s?.image || "").trim();
+            if (createdId && imgSrc) {
+              try {
+                const abs = new URL(imgSrc, window.location.origin).toString();
+                // eslint-disable-next-line no-await-in-loop
+                const res = await fetch(abs);
+                if (res.ok) {
+                  // eslint-disable-next-line no-await-in-loop
+                  const blob = await res.blob();
+                  const ext = blob.type && blob.type.includes("/") ? blob.type.split("/")[1] : "jpg";
+                  const file = new File([blob], `slide.${ext}`, { type: blob.type || "image/jpeg" });
+                  // eslint-disable-next-line no-await-in-loop
+                  await SliderApi.uploadImage(createdId, file);
+                  uploaded += 1;
+                }
+              } catch {
+                // ignore upload errors
+              }
+            }
+          } catch (e) {
+            failed += 1;
+          }
+        }
+
+        try {
+          // Refresh order best-effort: pull list and reorder by current order
+          const list = await SliderApi.list({ all: true }).catch(() => null);
+          const arr = Array.isArray(list) ? list : [];
+          const ids = arr
+            .filter((x) => x && x.isActive !== false)
+            .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+            .map((x) => String(x.id));
+          if (ids.length) await onReorder?.(ids);
+        } catch {
+          // ignore
+        }
+
+        if (failed === 0) message.success({ content: `Готово: создано ${created}, картинок ${uploaded}`, key });
+        else message.warning({ content: `Готово частично: создано ${created}, картинок ${uploaded}, ошибок ${failed}`, key });
+      },
+    });
+  }, [canWrite, publicData?.slides, message, onReorder]);
 
   const filtered = React.useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -130,6 +208,7 @@ export default function AdminSliderList({
 
           <Upload
             showUploadList={false}
+            accept="image/*"
             beforeUpload={(file) => {
               if (!canWrite) return false;
               onUploadImage?.(row.id, file);
@@ -177,6 +256,9 @@ export default function AdminSliderList({
             loading={busy}
           >
             + Добавить слайд
+          </Button>
+          <Button onClick={syncFromCodeToApi} disabled={!canWrite}>
+            Синхронизировать из кода в API
           </Button>
         </Space>
       </div>

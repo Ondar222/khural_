@@ -598,11 +598,14 @@ a {
 .hero__desc {
   margin: 10px auto 0;
   max-width: 760px;
-  color: rgba(255, 255, 255, 0.92);
+  color: #fff;
   font-size: 18px;
   line-height: 1.5;
   font-weight: 650;
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.38);
+}
+.hero__desc * {
+  color: inherit !important;
 }
 .hero__actions {
   margin-top: 16px;

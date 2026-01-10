@@ -200,6 +200,12 @@ export function useAdminData() {
 
   const apiBase = API_BASE_URL || "";
 
+  // Keep latest public data for fallback without triggering fetch loops.
+  const fallbackRef = React.useRef(data);
+  React.useEffect(() => {
+    fallbackRef.current = data;
+  }, [data]);
+
   const [themeMode, setThemeMode] = React.useState(() => readAdminTheme());
 
   const [busy, setBusy] = React.useState(false);
@@ -224,35 +230,42 @@ export function useAdminData() {
     };
   }, [themeMode]);
 
+  const loadAll = React.useCallback(async () => {
+    const fb = fallbackRef.current || {};
+    const [apiNews, apiPersons, apiDocsResponse, apiSlider] = await Promise.all([
+      NewsApi.list().catch(() => null),
+      PersonsApi.list().catch(() => null),
+      DocumentsApi.listAll().catch(() => null),
+      SliderApi.list({ all: true }).catch(() => null),
+    ]);
+    setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(fb.news));
+    setPersons(
+      Array.isArray(apiPersons) && apiPersons.length
+        ? apiPersons
+        : toPersonsFallback(fb.deputies)
+    );
+    const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
+    setDocuments(Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(fb.documents));
+    if (Array.isArray(apiSlider) && apiSlider.length) {
+      setSlider(apiSlider.map(toSliderRow));
+    } else {
+      // Fallback to DataContext slides (it already falls back to /public/data/slides.json)
+      const fallback = (Array.isArray(fb.slides) ? fb.slides : [])
+        .slice(0, 5)
+        .map((s, i) => ({ ...toSliderRow(s), order: i + 1, isActive: true }));
+      setSlider(fallback);
+    }
+    const apiEvents = await EventsApi.list().catch(() => null);
+    setEvents(Array.isArray(apiEvents) ? apiEvents.map(toEventRow) : fb.events || []);
+    const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
+    const apiAppeals = normalizeServerList(apiAppealsResponse);
+    setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
+  }, []);
+
   React.useEffect(() => {
-    (async () => {
-      const [apiNews, apiPersons, apiDocsResponse, apiSlider] = await Promise.all([
-        NewsApi.list().catch(() => null),
-        PersonsApi.list().catch(() => null),
-        DocumentsApi.listAll().catch(() => null),
-        SliderApi.list({ all: true }).catch(() => null),
-      ]);
-      setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(data.news));
-      setPersons(Array.isArray(apiPersons) && apiPersons.length ? apiPersons : toPersonsFallback(data.deputies));
-      // Обрабатываем структуру ответа от бекенда (может быть { items } или массив)
-      const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
-      setDocuments(Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(data.documents));
-      if (Array.isArray(apiSlider) && apiSlider.length) {
-        setSlider(apiSlider.map(toSliderRow));
-      } else {
-        // Fallback to DataContext slides (it already falls back to /public/data/slides.json)
-        const fallback = (Array.isArray(data.slides) ? data.slides : [])
-          .slice(0, 5)
-          .map((s, i) => ({ ...toSliderRow(s), order: i + 1, isActive: true }));
-        setSlider(fallback);
-      }
-      const apiEvents = await EventsApi.list().catch(() => null);
-      setEvents(Array.isArray(apiEvents) ? apiEvents.map(toEventRow) : data.events || []);
-      const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
-      const apiAppeals = normalizeServerList(apiAppealsResponse);
-      setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
-    })();
-  }, [data]);
+    // Load once on mount to avoid spamming the API (429).
+    loadAll();
+  }, [loadAll]);
 
   const toggleTheme = React.useCallback(() => {
     const next = themeMode === "light" ? "dark" : "light";
@@ -261,32 +274,8 @@ export function useAdminData() {
   }, [themeMode]);
 
   const reload = React.useCallback(async () => {
-    const [apiNews, apiPersons, apiDocsResponse, apiSlider] = await Promise.all([
-      NewsApi.list().catch(() => null),
-      PersonsApi.list().catch(() => null),
-      DocumentsApi.listAll().catch(() => null),
-      SliderApi.list({ all: true }).catch(() => null),
-    ]);
-    if (Array.isArray(apiNews)) setNews(apiNews);
-    if (Array.isArray(apiPersons) && apiPersons.length) setPersons(apiPersons);
-    else setPersons(toPersonsFallback(data.deputies));
-    // Обрабатываем структуру ответа от бекенда (может быть { items } или массив)
-    const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
-    if (Array.isArray(apiDocs)) setDocuments(apiDocs);
-    if (Array.isArray(apiSlider) && apiSlider.length) {
-      setSlider(apiSlider.map(toSliderRow));
-    } else {
-      const fallback = (Array.isArray(data.slides) ? data.slides : [])
-        .slice(0, 5)
-        .map((s, i) => ({ ...toSliderRow(s), order: i + 1, isActive: true }));
-      setSlider(fallback);
-    }
-    const apiEvents = await EventsApi.list().catch(() => null);
-    if (Array.isArray(apiEvents)) setEvents(apiEvents.map(toEventRow));
-    const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
-    const apiAppeals = normalizeServerList(apiAppealsResponse);
-    if (Array.isArray(apiAppeals)) setAppeals(apiAppeals.map(normalizeAppeal));
-  }, []);
+    await loadAll();
+  }, [loadAll]);
 
   const createNews = React.useCallback(async (formData) => {
     setBusy(true);
@@ -714,9 +703,18 @@ export function useAdminData() {
           // fall back below
         }
       }
-      const url = typeof window !== "undefined" && file ? URL.createObjectURL(file) : "";
+      const toDataUrl = (f) =>
+        new Promise((resolve) => {
+          if (!f || typeof FileReader === "undefined") return resolve("");
+          const reader = new FileReader();
+          reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(f);
+        });
+      const dataUrl = typeof window !== "undefined" && file ? await toDataUrl(file) : "";
+      const url = dataUrl || "";
       if (url) {
-        updateSlideOverride(String(id), { id: String(id), image: url });
+        updateSlideOverride(String(id), { image: url });
         setSlider((prev) =>
           (Array.isArray(prev) ? prev : []).map((s) => (String(s?.id) === String(id) ? { ...s, image: url } : s))
         );

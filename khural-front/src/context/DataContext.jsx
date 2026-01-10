@@ -141,6 +141,8 @@ function mergeDeputiesWithOverrides(base, overrides) {
 function joinApiBase(path) {
   const p = String(path || "");
   if (!p) return "";
+  // Keep browser-managed URLs intact
+  if (/^(data|blob):/i.test(p)) return p;
   // already absolute: try to convert file URLs to same-origin to avoid CORP/CORS blocks
   if (/^https?:\/\//i.test(p)) {
     try {

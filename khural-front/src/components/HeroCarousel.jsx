@@ -26,6 +26,8 @@ const SLIDES = [
 function normalizeSlideImage(image) {
   const src = String(image || "").trim();
   if (!src) return "";
+  // Keep browser-managed URLs intact
+  if (/^(data|blob):/i.test(src)) return src;
   if (/^https?:\/\//i.test(src)) return src;
   if (src.startsWith("/")) return src;
   return "/" + src;
@@ -69,6 +71,7 @@ export default function HeroCarousel() {
   const href = current?.link ? String(current.link) : "/news";
   const desc = current?.desc ? String(current.desc).trim() : "";
   const visibleDesc = desc.length > 220 ? desc.slice(0, 220).trim() + "…" : desc;
+  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(desc);
 
   return (
     <div className="container">
@@ -86,7 +89,13 @@ export default function HeroCarousel() {
         <div className="caption center">
           <div className="hero__panel">
             <h1 className="title center">{current?.title}</h1>
-            {visibleDesc ? <p className="hero__desc">{visibleDesc}</p> : null}
+            {visibleDesc ? (
+              looksLikeHtml ? (
+                <div className="hero__desc" dangerouslySetInnerHTML={{ __html: desc }} />
+              ) : (
+                <p className="hero__desc">{visibleDesc}</p>
+              )
+            ) : null}
             <div className="hero__actions">
               <a className="hero__btn" href={href}>
                 {t("more")} <span aria-hidden="true">→</span>
