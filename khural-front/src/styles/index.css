@@ -413,6 +413,7 @@ a {
   place-items: center;
   border: 1px solid #e5e7eb;
   background: #0d4b8f;
+  color: #ffffff;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease,
     border-color 160ms ease, background 160ms ease;
@@ -450,8 +451,8 @@ a {
   }
   .header .icon-btn *,
   .header-actions .icon-btn * {
-    color: #ffffff !important;
-    font-weight: 700 !important;
+    color: inherit !important;
+    font-weight: inherit !important;
   }
 
   .container_submit {
@@ -462,11 +463,12 @@ a {
 .burger {
   display: grid;
   gap: 4px;
+  color: inherit;
 }
 .burger span {
   width: 16px;
   height: 2px;
-  background: #ffffff;
+  background: currentColor;
   display: block;
 }
 
@@ -1504,16 +1506,15 @@ a {
 }
 .btn.btn--primary {
   background: #0a3b72;
-  /* Gold text is more visible than white on some displays */
-  color: var(--gold);
+  color: #ffffff;
   border: 1px solid #0a3b72;
 }
 .btn.btn--primary:visited {
-  color: var(--gold);
+  color: #ffffff;
 }
 .btn.btn--primary:hover {
   filter: brightness(0.96);
-  color: var(--gold);
+  color: #ffffff;
 }
 
 /* Apparatus page: make "Подробнее" hover like org chart */
@@ -3110,8 +3111,17 @@ a {
   border-radius: 12px;
   font-weight: 800;
 }
-.topbar-auth a:hover {
-  background: rgba(255, 215, 0, 0.14);
+.topbar-auth a:not(.btn):hover {
+  background: #f8fafc;
+}
+
+/* Header auth buttons: on hover match the "Регистрация" button look (light bg + dark text) */
+.topbar-auth .btn.btn--primary:hover,
+.topbar-auth a.btn.btn--primary:hover {
+  background: #f8fafc;
+  color: #0a1f44;
+  border-color: #e5e7eb;
+  filter: none;
 }
 .topbar .link-like {
   border: none;
