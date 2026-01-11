@@ -90,16 +90,19 @@ export default function Header() {
   }, [mobileOpen, sheetOpen]);
 
   const { news } = useData();
-  const newsCategories = React.useMemo(
-    () => [
-      "Актуальные новости",
-      "Все новости",
-      "Медиа",
-      "—",
-      ...Array.from(new Set(news.map((n) => n.category))),
-    ],
-    [news]
-  );
+  const newsCategories = React.useMemo(() => {
+    const cats = Array.from(
+      new Set(
+        (news || []).map((n) => {
+          const c = n?.category;
+          if (typeof c === "string") return c;
+          if (!c) return "";
+          return c.name || c.title || String(c);
+        })
+      )
+    ).filter((c) => typeof c === "string" && c.trim() !== "");
+    return ["Актуальные новости", "Все новости", "Медиа", "—", ...cats];
+  }, [news]);
 
   return (
     <>

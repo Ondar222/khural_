@@ -1,10 +1,10 @@
 import React from "react";
-import { App, Button, Input, Form, Upload, Space, Select, DatePicker, Switch } from "antd";
+import { App, Button, Input, Form, Upload, Select, DatePicker, Switch } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { useTranslation } from "../../hooks/index.js";
-import { Editor } from '@tinymce/tinymce-react';
 import { NewsApi } from "../../api/client.js";
 import dayjs from "dayjs";
+import { decodeHtmlEntities } from "../../utils/html.js";
 
 export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const { navigate } = useHashRoute();
@@ -17,8 +17,6 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const [loadingNews, setLoadingNews] = React.useState(true);
   const [newsData, setNewsData] = React.useState(null);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
-  const tyvEditorRef = React.useRef(null);
-  const ruEditorRef = React.useRef(null);
 
   // Загружаем категории при монтировании
   React.useEffect(() => {
@@ -51,29 +49,19 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         const ruContent = contentArray.find((c) => c.locale === "ru") || {};
         const tyvContent = contentArray.find((c) => c.locale === "tyv") || {};
 
-        // Заполняем форму
+        // Заполняем форму и декодируем HTML-сущности
         form.setFieldsValue({
           categoryId: news.category?.id,
           slug: news.slug,
           publishedAt: news.publishedAt ? dayjs(news.publishedAt) : null,
           isPublished: news.isPublished ?? false,
-          shortDescriptionRu: ruContent.shortDescription || "",
+          shortDescriptionRu: decodeHtmlEntities(ruContent.shortDescription || ""),
           titleRu: ruContent.title || "",
-          contentRu: ruContent.content || "",
-          shortDescriptionTy: tyvContent.shortDescription || "",
+          contentRu: decodeHtmlEntities(ruContent.content || ""),
+          shortDescriptionTy: decodeHtmlEntities(tyvContent.shortDescription || ""),
           titleTy: tyvContent.title || "",
-          contentTy: tyvContent.content || "",
+          contentTy: decodeHtmlEntities(tyvContent.content || ""),
         });
-
-        // Устанавливаем контент в редакторы
-        setTimeout(() => {
-          if (ruEditorRef.current && ruContent.content) {
-            ruEditorRef.current.setContent(ruContent.content);
-          }
-          if (tyvEditorRef.current && tyvContent.content) {
-            tyvEditorRef.current.setContent(tyvContent.content);
-          }
-        }, 100);
 
         // Загружаем информацию о медиа
         if (news.coverImage) {
@@ -122,16 +110,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       const contentTarget = toLang === "tyv" ? "contentTy" : "contentRu";
 
       const title = String(values[titleField] || "");
-      // Получаем содержимое напрямую из редактора, если он доступен
-      let content = "";
-      if (contentField === "contentTy" && tyvEditorRef.current) {
-        content = String(tyvEditorRef.current.getContent() || "");
-      } else if (contentField === "contentRu" && ruEditorRef.current) {
-        content = String(ruEditorRef.current.getContent() || "");
-      } else {
-        // Fallback на значение из формы
-        content = String(values[contentField] || "");
-      }
+      const content = String(values[contentField] || "");
 
       if (!title && !content) {
         antdMessage.warning("Заполните поля для перевода");
@@ -162,16 +141,6 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         [contentTarget]: translatedContent,
       });
 
-      // Устанавливаем значения напрямую в редакторы через ref
-      // Важно: используем setTimeout для гарантии, что редактор готов
-      setTimeout(() => {
-        if (contentTarget === "contentTy" && tyvEditorRef.current) {
-          tyvEditorRef.current.setContent(translatedContent);
-        } else if (contentTarget === "contentRu" && ruEditorRef.current) {
-          ruEditorRef.current.setContent(translatedContent);
-        }
-      }, 100);
-
       antdMessage.success("Перевод выполнен");
     } catch (error) {
       console.error("Translation error:", error);
@@ -183,9 +152,11 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
     try {
       const values = await form.validateFields();
 
-      // Получаем контент из редакторов
-      const contentRu = ruEditorRef.current ? ruEditorRef.current.getContent() : (values.contentRu || "");
-      const contentTy = tyvEditorRef.current ? tyvEditorRef.current.getContent() : (values.contentTy || "");
+      // Получаем контент из текстовых полей (raw HTML)
+      const contentRu = decodeHtmlEntities(values.contentRu || "");
+      const contentTy = decodeHtmlEntities(values.contentTy || "");
+      const shortRu = decodeHtmlEntities(values.shortDescriptionRu || "");
+      const shortTy = decodeHtmlEntities(values.shortDescriptionTy || "");
 
       // Формируем массив локализованного контента
       const contentArray = [];
@@ -196,7 +167,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
           locale: "ru",
           title: values.titleRu || "",
           content: contentRu || "",
-          shortDescription: values.shortDescriptionRu || "",
+          shortDescription: shortRu || "",
         });
       }
 
@@ -206,7 +177,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
           locale: "tyv",
           title: values.titleTy || "",
           content: contentTy || "",
-          shortDescription: values.shortDescriptionTy || "",
+          shortDescription: shortTy || "",
         });
       }
 
@@ -358,21 +329,10 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               name="contentTy"
               rules={[{ required: false, message: "Укажите контент" }]}
             >
-              <Editor
-                apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-                onInit={(evt, editor) => {
-                  tyvEditorRef.current = editor;
-                }}
-                initialValue=""
-                onEditorChange={(content) => {
-                  if (typeof content === "string") {
-                    form.setFieldsValue({
-                      contentTy: content,
-                    });
-                  }
-                }}
-                plugins={["lists", "link", "image", "media"]}
-                toolbar="lists link image media"
+              <Input.TextArea
+                placeholder="<p>Контент (TY)</p>"
+                autoSize={{ minRows: 12, maxRows: 24 }}
+                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
               />
             </Form.Item>
           </div>
@@ -415,21 +375,10 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               name="contentRu"
               rules={[{ required: true, message: "Укажите контент" }]}
             >
-              <Editor
-                apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-                onInit={(evt, editor) => {
-                  ruEditorRef.current = editor;
-                }}
-                initialValue=""
-                onEditorChange={(content) => {
-                  if (typeof content === "string") {
-                    form.setFieldsValue({
-                      contentRu: content,
-                    });
-                  }
-                }}
-                plugins={["lists", "link", "image", "media"]}
-                toolbar="lists link image media"
+              <Input.TextArea
+                placeholder="<p>Контент (RU)</p>"
+                autoSize={{ minRows: 12, maxRows: 24 }}
+                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
               />
             </Form.Item>
           </div>

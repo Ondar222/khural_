@@ -68,19 +68,21 @@ export default function DocsPage() {
       
       // Для constitution и civic оба используют тип "other" в бекенде
       // Различаем их по category или metadata
+      const catStr =
+        typeof d?.category === "string"
+          ? d.category
+          : d?.category?.name || d?.category?.title || "";
+      const titleStr = typeof d?.title === "string" ? d.title : String(d?.title || "");
+
       if (slug === "constitution") {
-        return d?.type === "other" && (
-          d?.category?.toLowerCase().includes("конституция") ||
-          d?.category?.toLowerCase().includes("constitution") ||
-          d?.title?.toLowerCase().includes("конституция")
-        );
+        const lowerCat = catStr.toLowerCase();
+        const lowerTitle = titleStr.toLowerCase();
+        return d?.type === "other" && (lowerCat.includes("конституция") || lowerCat.includes("constitution") || lowerTitle.includes("конституция"));
       }
       if (slug === "civic") {
-        return d?.type === "other" && (
-          d?.category?.toLowerCase().includes("гражданами") ||
-          d?.category?.toLowerCase().includes("civic") ||
-          d?.title?.toLowerCase().includes("гражданами")
-        );
+        const lowerCat = catStr.toLowerCase();
+        const lowerTitle = titleStr.toLowerCase();
+        return d?.type === "other" && (lowerCat.includes("гражданами") || lowerCat.includes("civic") || lowerTitle.includes("гражданами"));
       }
       
       return d?.type === expectedType;
@@ -89,10 +91,15 @@ export default function DocsPage() {
     setDocs(
       fromApi.map((d) => ({
         id: d.id,
-        title: d.title,
-        desc: d.desc || d.description || "",
-        number: d.number || "",
-        url: d.url,
+        title: typeof d.title === "string" ? d.title : d?.title?.name || d?.title?.title || String(d.title || ""),
+        desc: (() => {
+          const raw = d.desc || d.description || "";
+          if (typeof raw === "string") return raw;
+          if (Array.isArray(raw)) return raw.join(" ");
+          return raw ? String(raw) : "";
+        })(),
+        number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
+        url: typeof d.url === "string" ? d.url : d.url ? String(d.url) : "",
       }))
     );
   }, [documents, slug]);

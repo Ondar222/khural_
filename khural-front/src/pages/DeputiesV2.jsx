@@ -59,6 +59,14 @@ function mergeDeputies(base, overrides) {
   return out;
 }
 
+function toDisplay(v) {
+  if (v === undefined || v === null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number") return String(v);
+  if (typeof v === "object") return v.name || v.title || v.label || v.fullName || String(v);
+  return String(v);
+}
+
 function normalizeApiDeputy(p) {
   const toText = (v) => {
     if (v === undefined || v === null) return "";
@@ -362,78 +370,79 @@ export default function DeputiesV2() {
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
                 <div className="grid cols-3">
-                  {filtered.map((d) => (
-                    <div key={d.id} className="gov-card">
-                      <div className="gov-card__top">
-                        <img
-                          className="gov-card__avatar"
-                          src={
-                            d.photo ||
-                            (d.image && d.image.link) ||
-                            "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                          }
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                        />
+                  {filtered.map((d) => {
+                    const photo =
+                      typeof d.photo === "string"
+                        ? d.photo
+                        : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || "";
+                    return (
+                      <div key={d.id} className="gov-card">
+                        <div className="gov-card__top">
+                          <img
+                            className="gov-card__avatar"
+                            src={
+                              photo ||
+                              "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
+                            }
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+                        <div className="gov-card__body">
+                          <div className="gov-card__name">{toDisplay(d.name)}</div>
+                          {d.position ? (
+                            <div className="gov-card__role">{toDisplay(d.position)}</div>
+                          ) : (
+                            <div className="gov-card__role">Депутат</div>
+                          )}
+                          <ul className="gov-meta">
+                            {d.reception && (
+                              <li>
+                                <span>⏰</span>
+                                <span>Приём: {toDisplay(d.reception)}</span>
+                              </li>
+                            )}
+                            {d.district && (
+                              <li>
+                                <span>🏛️</span>
+                                <span>{toDisplay(d.district)}</span>
+                              </li>
+                            )}
+                            {d.faction && (
+                              <li>
+                                <span>👥</span>
+                                <span>{toDisplay(d.faction)}</span>
+                              </li>
+                            )}
+                            {d.convocation && (
+                              <li>
+                                <span>🎖️</span>
+                                <span>Созыв: {toDisplay(d.convocation)}</span>
+                              </li>
+                            )}
+                            {d.contacts?.phone && (
+                              <li>
+                                <span>📞</span>
+                                <span>{toDisplay(d.contacts.phone)}</span>
+                              </li>
+                            )}
+                            {d.contacts?.email && (
+                              <li>
+                                <span>✉️</span>
+                                <span>{toDisplay(d.contacts.email)}</span>
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                        <div className="gov-card__actions">
+                          <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
+                            Подробнее
+                          </a>
+                        </div>
                       </div>
-                      <div className="gov-card__body">
-                        <div className="gov-card__name">{d.name}</div>
-                        {d.position ? (
-                          <div className="gov-card__role">{d.position}</div>
-                        ) : (
-                          <div className="gov-card__role">Депутат</div>
-                        )}
-                        <ul className="gov-meta">
-                          {d.reception && (
-                            <li>
-                              <span>⏰</span>
-                              <span>Приём: {d.reception}</span>
-                            </li>
-                          )}
-                          {d.district && (
-                            <li>
-                              <span>🏛️</span>
-                              <span>
-                                {typeof d.district === "string" ? d.district : String(d.district || "")}
-                              </span>
-                            </li>
-                          )}
-                          {d.faction && (
-                            <li>
-                              <span>👥</span>
-                              <span>
-                                {typeof d.faction === "string" ? d.faction : String(d.faction || "")}
-                              </span>
-                            </li>
-                          )}
-                          {d.convocation && (
-                            <li>
-                              <span>🎖️</span>
-                              <span>Созыв: {d.convocation}</span>
-                            </li>
-                          )}
-                          {d.contacts?.phone && (
-                            <li>
-                              <span>📞</span>
-                              <span>{d.contacts.phone}</span>
-                            </li>
-                          )}
-                          {d.contacts?.email && (
-                            <li>
-                              <span>✉️</span>
-                              <span>{d.contacts.email}</span>
-                            </li>
-                          )}
-                        </ul>
-                      </div>
-                      <div className="gov-card__actions">
-                        <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
-                          Подробнее
-                        </a>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </DataState>
             </DataState>

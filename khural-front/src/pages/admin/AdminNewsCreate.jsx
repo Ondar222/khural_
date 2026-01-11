@@ -1,10 +1,11 @@
 import React from "react";
-import { App, Button, Input, Form, Upload, Space, Select, DatePicker, Switch } from "antd";
+// TMP_MARKER
+import { App, Button, Input, Form, Upload, Select, DatePicker, Switch } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { useTranslation } from "../../hooks/index.js";
-import { Editor } from '@tinymce/tinymce-react';
 import { NewsApi } from "../../api/client.js";
 import dayjs from "dayjs";
+import { decodeHtmlEntities } from "../../utils/html.js";
 
 export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
   const { navigate } = useHashRoute();
@@ -15,8 +16,6 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
   const [categories, setCategories] = React.useState([]);
   const [loadingCategories, setLoadingCategories] = React.useState(false);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
-  const tyvEditorRef = React.useRef(null);
-  const ruEditorRef = React.useRef(null);
 
   // Загружаем категории при монтировании
   React.useEffect(() => {
@@ -52,16 +51,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       const contentTarget = toLang === "tyv" ? "contentTy" : "contentRu";
       
       const title = String(values[titleField] || "");
-      // Получаем содержимое напрямую из редактора, если он доступен
-      let content = "";
-      if (contentField === "contentTy" && tyvEditorRef.current) {
-        content = String(tyvEditorRef.current.getContent() || "");
-      } else if (contentField === "contentRu" && ruEditorRef.current) {
-        content = String(ruEditorRef.current.getContent() || "");
-      } else {
-        // Fallback на значение из формы
-        content = String(values[contentField] || "");
-      }
+      const content = String(values[contentField] || "");
       
       if (!title && !content) {
         antdMessage.warning("Заполните поля для перевода");
@@ -92,16 +82,6 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         [contentTarget]: translatedContent,
       });
       
-      // Устанавливаем значения напрямую в редакторы через ref
-      // Важно: используем setTimeout для гарантии, что редактор готов
-      setTimeout(() => {
-        if (contentTarget === "contentTy" && tyvEditorRef.current) {
-          tyvEditorRef.current.setContent(translatedContent);
-        } else if (contentTarget === "contentRu" && ruEditorRef.current) {
-          ruEditorRef.current.setContent(translatedContent);
-        }
-      }, 100);
-      
       antdMessage.success("Перевод выполнен");
     } catch (error) {
       console.error("Translation error:", error);
@@ -113,9 +93,11 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
     try {
       const values = await form.validateFields();
       
-      // Получаем контент из редакторов
-      const contentRu = ruEditorRef.current ? ruEditorRef.current.getContent() : (values.contentRu || "");
-      const contentTy = tyvEditorRef.current ? tyvEditorRef.current.getContent() : (values.contentTy || "");
+      // Получаем контент из текстовых полей (raw HTML)
+      const contentRu = decodeHtmlEntities(values.contentRu || "");
+      const contentTy = decodeHtmlEntities(values.contentTy || "");
+      const shortRu = decodeHtmlEntities(values.shortDescriptionRu || "");
+      const shortTy = decodeHtmlEntities(values.shortDescriptionTy || "");
       
       // Формируем массив локализованного контента
       const contentArray = [];
@@ -126,7 +108,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
           locale: "ru",
           title: values.titleRu || "",
           content: contentRu || "",
-          shortDescription: values.shortDescriptionRu || "",
+          shortDescription: shortRu || "",
         });
       }
       
@@ -136,7 +118,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
           locale: "tyv",
           title: values.titleTy || "",
           content: contentTy || "",
-          shortDescription: values.shortDescriptionTy || "",
+          shortDescription: shortTy || "",
         });
       }
       
@@ -238,7 +220,11 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
               name="shortDescriptionRu"
               tooltip="Краткое описание новости на русском языке"
             >
-              <Input.TextArea placeholder="Краткое описание новости" autoSize={{ minRows: 2, maxRows: 4 }} />
+              <Input.TextArea
+                placeholder="<p>Краткое описание</p>"
+                autoSize={{ minRows: 6, maxRows: 12 }}
+                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+              />
             </Form.Item>
           </div>
         </div>
@@ -272,8 +258,9 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
               tooltip="Краткое описание новости на тувинском языке"
             >
               <Input.TextArea
-                placeholder="Краткое описание новости"
-                autoSize={{ minRows: 2, maxRows: 4 }}
+                placeholder="<p>Краткое описание</p>"
+                autoSize={{ minRows: 6, maxRows: 12 }}
+                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
               />
             </Form.Item>
             <Form.Item
@@ -281,21 +268,10 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
               name="contentTy"
               rules={[{ required: false, message: "Укажите контент" }]}
             >
-              <Editor 
-                apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-                onInit={(evt, editor) => {
-                  tyvEditorRef.current = editor;
-                }}
-                initialValue=""
-                onEditorChange={(content) => {
-                  if (typeof content === "string") {
-                    form.setFieldsValue({
-                      contentTy: content,
-                    });
-                  }
-                }}
-                plugins={["lists", "link", "image", "media"]}
-                toolbar="lists link image media"
+              <Input.TextArea
+                placeholder="<p>Контент (TY)</p>"
+                autoSize={{ minRows: 12, maxRows: 24 }}
+                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
               />
             </Form.Item>
           </div>
@@ -326,21 +302,10 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
               name="contentRu"
               rules={[{ required: true, message: "Укажите контент" }]}
             >
-              <Editor 
-                apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-                onInit={(evt, editor) => {
-                  ruEditorRef.current = editor;
-                }}
-                initialValue=""
-                onEditorChange={(content) => {
-                  if (typeof content === "string") {
-                    form.setFieldsValue({
-                      contentRu: content,
-                    });
-                  }
-                }}
-                plugins={["lists", "link", "image", "media"]}
-                toolbar="lists link image media"
+              <Input.TextArea
+                placeholder="<p>Контент (RU)</p>"
+                autoSize={{ minRows: 12, maxRows: 24 }}
+                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
               />
             </Form.Item>
           </div>
