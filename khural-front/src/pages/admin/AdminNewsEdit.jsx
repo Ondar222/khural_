@@ -4,6 +4,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
 import dayjs from "dayjs";
+import { useData } from "../../context/DataContext.jsx";
 import { decodeHtmlEntities } from "../../utils/html.js";
 
 export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
@@ -17,6 +18,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const [loadingNews, setLoadingNews] = React.useState(true);
   const [newsData, setNewsData] = React.useState(null);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
+  const { reload: reloadPublicData } = useData();
 
   // Загружаем категории при монтировании
   React.useEffect(() => {
@@ -390,7 +392,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         <div className="admin-card">
           <div className="admin-news-editor__section-title">Обложка</div>
           <Upload
-            accept="image/*"
+            accept={undefined}
             maxCount={1}
             listType="picture-card"
             beforeUpload={(file) => {
@@ -407,6 +409,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
                 try {
                   await NewsApi.deleteCover(newsId);
                   antdMessage.success("Обложка удалена");
+                  reloadPublicData?.();
                 } catch (error) {
                   antdMessage.error("Не удалось удалить обложку");
                   return; // Не удаляем из состояния, если ошибка
@@ -438,7 +441,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         <div className="admin-card">
           <div className="admin-news-editor__section-title">Галерея</div>
           <Upload
-            accept="image/*"
+            accept={undefined}
             multiple
             listType="picture-card"
             beforeUpload={(file) => {
@@ -458,6 +461,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
                   try {
                     await NewsApi.deleteGalleryImage(newsId, galleryItem.id);
                     antdMessage.success("Изображение удалено");
+                    reloadPublicData?.();
                   } catch (error) {
                     antdMessage.error("Не удалось удалить изображение");
                     return; // Не удаляем из состояния, если ошибка
