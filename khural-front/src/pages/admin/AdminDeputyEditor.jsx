@@ -1,6 +1,5 @@
 import React from "react";
 import { App, Button, Form, Input, Select, Space, Upload, Modal } from "antd";
-import { Editor } from "@tinymce/tinymce-react";
 import { useHashRoute } from "../../Router.jsx";
 import { PersonsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
@@ -70,7 +69,7 @@ function normalizeInitial(d) {
     convocationNumber: row.convocationNumber || row.convocation || row.convocation_number || "",
     structureType: row.structureType || row.structure_type || "",
     role: row.role || "",
-    biography: row.biography || row.bio || "",
+    biography: row.biography || row.bio || row.description || "",
     email: row.email || row.contacts?.email || "",
     phoneNumber: row.phoneNumber || row.phone_number || row.contacts?.phone || row.phone || "",
     address: row.address || row.contacts?.address || "",
@@ -147,8 +146,9 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       const values = await form.validateFields();
       const body = {
         ...values,
-        // Keep compatibility with public rendering
-        bio: values.biography || "",
+        // Для API отправляем description, локально храним biography
+        description: values.biography || "",
+        bio: undefined,
       };
 
       if (mode === "create") {
@@ -292,14 +292,15 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
 
         <div className="admin-card">
           <div className="admin-deputy-editor__section-title">Биография</div>
-          <Form.Item label="Биография (HTML)" name="biography">
-            <Editor
-              apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-              value={typeof biographyHtml === "string" ? biographyHtml : ""}
-              onEditorChange={(content) => form.setFieldValue("biography", content)}
-              init={{ height: 460, menubar: true }}
-              plugins={["lists", "link", "image", "media"]}
-              toolbar="lists link image media"
+          <Form.Item
+            label="Биография (HTML)"
+            name="biography"
+            tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a, img и т.д. Сохраняется как есть."
+          >
+            <Input.TextArea
+              autoSize={{ minRows: 12, maxRows: 28 }}
+              placeholder="<p>Биография</p>\n<h2>Заголовок блока</h2>\n<ul><li>Пункт</li></ul>"
+              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
             />
           </Form.Item>
         </div>

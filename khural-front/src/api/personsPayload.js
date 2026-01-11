@@ -15,6 +15,15 @@ function withFallback(obj, key, fallbackKey) {
 export function toPersonsApiBody(input) {
   const body = isObj(input) ? { ...input } : {};
 
+  // Map biography/bio → description (API expects description)
+  if (body.biography !== undefined) {
+    body.description = body.biography;
+  } else if (body.bio !== undefined) {
+    body.description = body.bio;
+  }
+  delete body.biography;
+  delete body.bio;
+
   // Normalize known fields
   const structureType = withFallback(body, "structureType", "structure_type");
   const convocationNumber = withFallback(body, "convocationNumber", "convocation_number");
