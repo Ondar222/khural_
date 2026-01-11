@@ -158,7 +158,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
 
           <Form.Item label="Картинка слайда" tooltip="Загружается через API /slider/{id}/image">
             <Upload
-              accept="image/*"
+              accept={undefined}
               maxCount={1}
               beforeUpload={(file) => {
                 setImageFile(file);

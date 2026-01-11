@@ -208,7 +208,7 @@ export default function AdminSliderList({
 
           <Upload
             showUploadList={false}
-            accept="image/*"
+            accept={undefined}
             beforeUpload={(file) => {
               if (!canWrite) return false;
               onUploadImage?.(row.id, file);
