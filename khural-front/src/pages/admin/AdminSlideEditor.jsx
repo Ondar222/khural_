@@ -2,7 +2,6 @@ import React from "react";
 import { App, Button, Form, Input, Space, Switch, Upload } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { SliderApi } from "../../api/client.js";
-import { Editor } from "@tinymce/tinymce-react";
 
 function splitDateAndDescription(desc) {
   const s = String(desc || "");
@@ -29,7 +28,6 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
   const [imageFile, setImageFile] = React.useState(null);
   const titleValue = Form.useWatch("title", form);
   const descriptionHtml = Form.useWatch("description", form);
-  const editorRef = React.useRef(null);
 
   React.useEffect(() => {
     if (mode !== "edit") return;
@@ -65,13 +63,9 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
     setSaving(true);
     try {
       const values = await form.validateFields();
-      const html =
-        editorRef.current && typeof editorRef.current.getContent === "function"
-          ? String(editorRef.current.getContent() || "")
-          : "";
       const payload = {
         title: values.title,
-        description: joinDateAndDescription(values.date, html || values.description),
+        description: joinDateAndDescription(values.date, values.description || ""),
         url: values.url,
         isActive: values.isActive,
       };
@@ -141,18 +135,15 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
             </Form.Item>
           </div>
 
-          <Form.Item label="Описание" name="description">
-            <Editor
-              apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-              disabled={loading || saving}
-              onInit={(_, editor) => {
-                editorRef.current = editor;
-              }}
-              value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
-              onEditorChange={(content) => form.setFieldValue("description", content)}
-              init={{ height: 320, menubar: true }}
-              plugins={["lists", "link", "image", "media"]}
-              toolbar="lists link image media"
+          <Form.Item
+            label="Описание (HTML)"
+            name="description"
+            tooltip="Вставьте HTML (p, h1-h6, strong/em, a, ul/ol/li, img и т.д.)"
+          >
+            <Input.TextArea
+              autoSize={{ minRows: 10, maxRows: 24 }}
+              placeholder="<p>Описание</p>"
+              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
             />
           </Form.Item>
 
