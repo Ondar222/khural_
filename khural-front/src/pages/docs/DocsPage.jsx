@@ -41,6 +41,7 @@ export default function DocsPage() {
   const { documents } = useData();
   const { route } = useHashRoute();
   const [docs, setDocs] = React.useState([]);
+  const [query, setQuery] = React.useState("");
   const [preview, setPreview] = React.useState(null); // {url, title}
 
   const slug = React.useMemo(() => {
@@ -104,14 +105,59 @@ export default function DocsPage() {
     );
   }, [documents, slug]);
 
+  const visibleDocs = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return docs;
+    return docs.filter((d) => {
+      const title = String(d?.title || "").toLowerCase();
+      const desc = String(d?.desc || "").toLowerCase();
+      const number = String(d?.number || "").toLowerCase();
+      return title.includes(q) || desc.includes(q) || number.includes(q);
+    });
+  }, [docs, query]);
+
   return (
     <section className="section">
       <div className="container">
         <div className="page-grid">
           <div>
             <h1>{cat.title}</h1>
+            <div
+              style={{
+                margin: "12px 0 24px",
+                maxWidth: 460,
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Поиск по названию, номеру, описанию"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  border: "1px solid #dfe3eb",
+                  background: "#fff",
+                  color: "#111827",
+                  fontSize: 14,
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.04)",
+                  transition: "all 0.15s ease",
+                  outline: "none",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#003366";
+                  e.target.style.boxShadow = "0 10px 24px rgba(0,0,0,0.08)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#dfe3eb";
+                  e.target.style.boxShadow = "0 6px 18px rgba(0,0,0,0.04)";
+                }}
+                aria-label="Поиск документов"
+              />
+            </div>
             <div className="law-list">
-              {docs.map((d) => (
+              {visibleDocs.map((d) => (
                 <div key={d.id || d.url} className="law-item card">
                   <div className="law-left">
                     <div className="law-ico">📄</div>

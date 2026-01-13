@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import "./setApiBaseUrl.js";
 import App from "./App.jsx";
 import "./styles/index.css";
 

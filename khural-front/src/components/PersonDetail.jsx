@@ -3,10 +3,16 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import PdfPreviewModal from "./PdfPreviewModal.jsx";
 
+function stripTags(v) {
+  return String(v ?? "").replace(/<[^>]*>/g, "").trim();
+}
+
 export default function PersonDetail({ item, type, backHref }) {
   const { t } = useI18n();
   const isDeputy = type === "dep";
   const title = item.name || item.title;
+  const bioHtml = item.biography || item.bio || item.description || item.position || item.role || "";
+  const bioPlain = stripTags(bioHtml);
   const phone = isDeputy ? item.contacts?.phone : item.phone;
   const email = isDeputy ? item.contacts?.email : item.email;
   const avatarSrc =
@@ -98,23 +104,26 @@ export default function PersonDetail({ item, type, backHref }) {
             <div className="person-meta">
               {isDeputy ? (
                 <>
-                  {(item.position || item.role) && (
-                    <div>{typeof (item.position || item.role) === "string" ? (item.position || item.role) : String(item.position || item.role || "")}</div>
-                  )}
+                  {stripTags(item.position || item.role) &&
+                  stripTags(item.position || item.role) !== bioPlain ? (
+                    <div>{stripTags(item.position || item.role)}</div>
+                  ) : null}
                   {(item.convocationNumber || item.convocation) && (
-                    <div>созыв {typeof (item.convocationNumber || item.convocation) === "string" ? (item.convocationNumber || item.convocation) : String(item.convocationNumber || item.convocation || "")}</div>
+                    <div>созыв {stripTags(item.convocationNumber || item.convocation)}</div>
                   )}
                   {item.district && (
-                    <div>Избирательный округ: {typeof item.district === "string" ? item.district : String(item.district || "")}</div>
+                    <div>Избирательный округ: {stripTags(item.district)}</div>
                   )}
                   {item.faction && (
-                    <div>Фракция: «{typeof item.faction === "string" ? item.faction : String(item.faction || "")}»</div>
+                    <div>Фракция: «{stripTags(item.faction)}»</div>
                   )}
                 </>
               ) : (
                 <>
-                  <div>{typeof item.role === "string" ? item.role : String(item.role || "")}</div>
-                  {item.agency && <div>{item.agency}</div>}
+                  {stripTags(item.role) && stripTags(item.role) !== bioPlain ? (
+                    <div>{stripTags(item.role)}</div>
+                  ) : null}
+                  {item.agency && <div>{stripTags(item.agency)}</div>}
                 </>
               )}
             </div>
@@ -187,8 +196,8 @@ export default function PersonDetail({ item, type, backHref }) {
         <div id="bio" className="person-block">
           <h2>Биография</h2>
           <div className="prose">
-            {item.biography || item.bio ? (
-              <div dangerouslySetInnerHTML={{ __html: item.biography || item.bio }} />
+            {bioPlain ? (
+              <div dangerouslySetInnerHTML={{ __html: bioHtml }} />
             ) : (
               <p>Биография не указана</p>
             )}

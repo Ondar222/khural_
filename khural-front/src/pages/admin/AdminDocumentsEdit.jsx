@@ -2,7 +2,6 @@ import React from "react";
 import { App, Button, Input, Form, Upload, Space, Select, Switch, Card, Divider, Alert } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { DocumentsApi, TranslationApi } from "../../api/client.js";
-import { Editor } from "@tinymce/tinymce-react";
 
 const TYPE_OPTIONS = [
   { value: "laws", label: "Законы" },
@@ -26,7 +25,6 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
   const [translationJob, setTranslationJob] = React.useState(null);
   const [translationStatus, setTranslationStatus] = React.useState(null);
   const descriptionHtml = Form.useWatch("description", form);
-  const editorRef = React.useRef(null);
 
   // Загружаем данные документа
   React.useEffect(() => {
@@ -102,11 +100,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
         antdMessage.error("Загрузите хотя бы один файл (русская или тувинская версия)");
         return;
       }
-      const html =
-        editorRef.current && typeof editorRef.current.getContent === "function"
-          ? String(editorRef.current.getContent() || "")
-          : "";
-      await onUpdate?.(documentId, { ...values, description: html || values.description || "", fileRu, fileTy });
+      await onUpdate?.(documentId, { ...values, description: values.description || "", fileRu, fileTy });
       navigate("/admin/documents");
     } catch (error) {
       if (error?.errorFields) return;
@@ -339,17 +333,12 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
             </Form.Item>
 
             <Form.Item label="Описание" name="description">
-              <Editor
-                apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-                disabled={loading || busy || !canWrite}
-                onInit={(_, editor) => {
-                  editorRef.current = editor;
-                }}
+              <Input.TextArea
+                autoSize={{ minRows: 6, maxRows: 18 }}
+                placeholder="<p>Описание</p>"
                 value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
-                onEditorChange={(content) => form.setFieldValue("description", content)}
-                init={{ height: 320, menubar: true }}
-                plugins={["lists", "link", "image", "media"]}
-                toolbar="lists link image media"
+                onChange={(e) => form.setFieldValue("description", e.target.value)}
+                disabled={loading || busy || !canWrite}
               />
             </Form.Item>
           </div>

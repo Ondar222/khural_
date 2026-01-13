@@ -6,6 +6,7 @@ import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
 import dayjs from "dayjs";
 import { decodeHtmlEntities } from "../../utils/html.js";
+import { useData } from "../../context/DataContext.jsx";
 
 export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
   const { navigate } = useHashRoute();
@@ -16,17 +17,38 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
   const [categories, setCategories] = React.useState([]);
   const [loadingCategories, setLoadingCategories] = React.useState(false);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
+  const { news: publicNews } = useData();
 
   // Загружаем категории при монтировании
   React.useEffect(() => {
     const loadCategories = async () => {
       setLoadingCategories(true);
       try {
+        const fallbackFromNews = () => {
+          const unique = new Map();
+          (Array.isArray(publicNews) ? publicNews : []).forEach((n) => {
+            const name = (n?.category || "").trim();
+            if (name) unique.set(name, { id: String(name), name });
+          });
+          const arr = Array.from(unique.values());
+          if (arr.length) setCategories(arr);
+        };
+
         const cats = await NewsApi.getAllCategories();
-        setCategories(Array.isArray(cats) ? cats : []);
+        if (Array.isArray(cats) && cats.length) {
+          setCategories(cats);
+        } else {
+          fallbackFromNews();
+        }
       } catch (error) {
         console.error("Failed to load categories:", error);
-        setCategories([]);
+        // Попробуем подставить категории из публичных новостей, чтобы дать выбор
+        const unique = new Map();
+        (Array.isArray(publicNews) ? publicNews : []).forEach((n) => {
+          const name = (n?.category || "").trim();
+          if (name) unique.set(name, { id: String(name), name });
+        });
+        setCategories(Array.from(unique.values()));
       } finally {
         setLoadingCategories(false);
       }
@@ -317,7 +339,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         <div className="admin-card">
           <div className="admin-news-editor__section-title">Обложка</div>
           <Upload
-            accept="image/*"
+            accept={undefined}
             maxCount={1}
             listType="picture-card"
             beforeUpload={(file) => {
@@ -352,7 +374,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         <div className="admin-card">
           <div className="admin-news-editor__section-title">Галерея</div>
           <Upload
-            accept="image/*"
+            accept={undefined}
             multiple
             listType="picture-card"
             beforeUpload={(file) => {

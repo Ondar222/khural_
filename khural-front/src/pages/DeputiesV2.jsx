@@ -61,10 +61,11 @@ function mergeDeputies(base, overrides) {
 
 function toDisplay(v) {
   if (v === undefined || v === null) return "";
-  if (typeof v === "string") return v;
+  const stripTags = (s) => String(s || "").replace(/<[^>]*>/g, "").trim();
+  if (typeof v === "string") return stripTags(v);
   if (typeof v === "number") return String(v);
-  if (typeof v === "object") return v.name || v.title || v.label || v.fullName || String(v);
-  return String(v);
+  if (typeof v === "object") return stripTags(v.name || v.title || v.label || v.fullName || String(v));
+  return stripTags(String(v));
 }
 
 function normalizeApiDeputy(p) {
@@ -81,6 +82,7 @@ function normalizeApiDeputy(p) {
   const district = toText(p.electoralDistrict || p.electoral_district || p.district);
   const faction = toText(p.faction);
   const convocation = toText(p.convocationNumber || p.convocation || p.convocation_number);
+  const biography = p.biography || p.bio || p.description || "";
   const contacts = {
     phone: toText(p.phoneNumber || p.phone_number || p.phone || p.contacts?.phone),
     email: toText(p.email || p.contacts?.email),
@@ -90,7 +92,7 @@ function normalizeApiDeputy(p) {
     toText(p?.image?.url) ||
     toText(p?.photoUrl || p?.photo_url || p?.photo) ||
     "";
-  const position = toText(p.position || p.role || p.description);
+  const position = toText(p.position || p.role);
 
   return {
     ...p,
@@ -105,6 +107,9 @@ function normalizeApiDeputy(p) {
     contacts,
     photo,
     position,
+    biography,
+    bio: p.bio || biography,
+    description: p.description || biography,
   };
 }
 

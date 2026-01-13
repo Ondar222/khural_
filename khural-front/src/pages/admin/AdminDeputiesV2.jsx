@@ -307,6 +307,7 @@ export default function AdminDeputiesV2({
     const fullName = p.fullName || p.full_name || p.name || "";
     const district = p.electoralDistrict || p.electoral_district || p.district || "";
     const convocation = p.convocationNumber || p.convocation || p.convocation_number || "";
+    const biography = p.biography || p.bio || p.description || "";
     return {
       ...p,
       id: id || p.id,
@@ -316,6 +317,9 @@ export default function AdminDeputiesV2({
       district: p.district || district,
       convocationNumber: p.convocationNumber || convocation,
       convocation: p.convocation || convocation,
+      biography,
+      bio: p.bio || biography,
+      description: p.description || biography,
       contacts: p.contacts || {
         phone: p.phoneNumber || p.phone || "",
         email: p.email || "",

@@ -18,18 +18,37 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const [loadingNews, setLoadingNews] = React.useState(true);
   const [newsData, setNewsData] = React.useState(null);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
-  const { reload: reloadPublicData } = useData();
+  const { reload: reloadPublicData, news: publicNews } = useData();
 
   // Загружаем категории при монтировании
   React.useEffect(() => {
     const loadCategories = async () => {
       setLoadingCategories(true);
       try {
+        const fallbackFromNews = () => {
+          const unique = new Map();
+          (Array.isArray(publicNews) ? publicNews : []).forEach((n) => {
+            const name = (n?.category || "").trim();
+            if (name) unique.set(name, { id: String(name), name });
+          });
+          const arr = Array.from(unique.values());
+          if (arr.length) setCategories(arr);
+        };
+
         const cats = await NewsApi.getAllCategories();
-        setCategories(Array.isArray(cats) ? cats : []);
+        if (Array.isArray(cats) && cats.length) {
+          setCategories(cats);
+        } else {
+          fallbackFromNews();
+        }
       } catch (error) {
         console.error("Failed to load categories:", error);
-        setCategories([]);
+        const unique = new Map();
+        (Array.isArray(publicNews) ? publicNews : []).forEach((n) => {
+          const name = (n?.category || "").trim();
+          if (name) unique.set(name, { id: String(name), name });
+        });
+        setCategories(Array.from(unique.values()));
       } finally {
         setLoadingCategories(false);
       }
@@ -70,18 +89,22 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
           // Если есть обложка, создаем объект для отображения
           setCoverImage({
             uid: news.coverImage.id,
-            name: 'cover.jpg',
-            status: 'done',
+            fileId: news.coverImage.id,
+            name: news.coverImage.name || "cover",
+            status: "done",
             url: news.coverImage.link,
           });
         }
         if (news.gallery && Array.isArray(news.gallery)) {
-          setImages(news.gallery.map((file, index) => ({
-            uid: file.id || `gallery-${index}`,
-            name: `gallery-${index}.jpg`,
-            status: 'done',
-            url: file.link,
-          })));
+          setImages(
+            news.gallery.map((file, index) => ({
+              uid: file.id || `gallery-${index}`,
+              fileId: file.id,
+              name: file.name || `gallery-${index}.jpg`,
+              status: "done",
+              url: file.link,
+            }))
+          );
         }
       } catch (error) {
         console.error("Failed to load news:", error);
@@ -327,7 +350,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               />
             </Form.Item>
             <Form.Item
-              label="Контент (TY)"
+              label="Подробное описание (TY)"
               name="contentTy"
               rules={[{ required: false, message: "Укажите контент" }]}
             >
@@ -373,7 +396,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
             </Form.Item>
 
             <Form.Item
-              label="Контент (RU) *"
+              label="Подробное описание (RU) *"
               name="contentRu"
               rules={[{ required: true, message: "Укажите контент" }]}
             >
@@ -403,40 +426,80 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               });
               return false;
             }}
-            onRemove={async () => {
-              // Если это существующее изображение (есть url и нет originFileObj), удаляем через API
-              if (coverImage && coverImage.url && !coverImage.originFileObj) {
-                try {
-                  await NewsApi.deleteCover(newsId);
-                  antdMessage.success("Обложка удалена");
-                  reloadPublicData?.();
-                } catch (error) {
-                  antdMessage.error("Не удалось удалить обложку");
-                  return; // Не удаляем из состояния, если ошибка
-                }
+            onRemove={async (file) => {
+              if (!canWrite) return false;
+              // Новая (ещё не отправленная) — просто убираем из стейта
+              if (file?.originFileObj) {
+                setCoverImage(null);
+                return true;
               }
-              setCoverImage(null);
+              const fileId = file?.fileId || file?.uid;
+              if (!fileId) {
+                setCoverImage(null);
+                return true;
+              }
+              try {
+                await NewsApi.deleteCover(newsId);
+                antdMessage.success("Обложка удалена");
+                reloadPublicData?.();
+                setCoverImage(null);
+                return true;
+              } catch (error) {
+                antdMessage.error(error?.message || "Не удалось удалить обложку");
+                return false;
+              }
             }}
             fileList={coverImage ? [coverImage] : []}
             itemRender={(originNode, file) => {
-              return (
-                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+              const url = file.url || file.thumbUrl || (file.originFileObj ? URL.createObjectURL(file.originFileObj) : null);
+              return url ? (
+                <div style={{ position: "relative", width: "100%", height: "100%" }}>
                   <img
-                    src={file.url || (file.thumbUrl)}
+                    src={url}
                     alt={file.name}
                     style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      borderRadius: '8px',
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      borderRadius: "8px",
                     }}
                   />
                 </div>
-              );
+              ) : originNode;
             }}
           >
             {!coverImage && <div><div className="ant-upload-text">Загрузить</div></div>}
           </Upload>
+          <div style={{ marginTop: 8 }}>
+            <Button
+              danger
+              size="small"
+              disabled={!coverImage || !canWrite}
+              onClick={async () => {
+                if (!coverImage) return;
+                // Новая (ещё не отправленная) — просто убираем из стейта
+                if (coverImage?.originFileObj) {
+                  setCoverImage(null);
+                  return;
+                }
+                const fileId = coverImage?.fileId || coverImage?.uid;
+                if (!fileId) {
+                  setCoverImage(null);
+                  return;
+                }
+                try {
+                  await NewsApi.deleteCover(newsId);
+                  antdMessage.success("Обложка удалена");
+                  reloadPublicData?.();
+                  setCoverImage(null);
+                } catch (error) {
+                  antdMessage.error(error?.message || "Не удалось удалить обложку");
+                }
+              }}
+            >
+              Удалить обложку
+            </Button>
+          </div>
         </div>
         <div className="admin-card">
           <div className="admin-news-editor__section-title">Галерея</div>
@@ -453,48 +516,76 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               return false;
             }}
             onRemove={async (file) => {
-              // Если это существующее изображение (есть url и нет originFileObj), удаляем через API
-              if (file.url && !file.originFileObj && newsData?.gallery) {
-                // Находим файл по URL
-                const galleryItem = newsData.gallery.find(g => g.link === file.url);
-                if (galleryItem) {
-                  try {
-                    await NewsApi.deleteGalleryImage(newsId, galleryItem.id);
-                    antdMessage.success("Изображение удалено");
-                    reloadPublicData?.();
-                  } catch (error) {
-                    antdMessage.error("Не удалось удалить изображение");
-                    return; // Не удаляем из состояния, если ошибка
-                  }
-                }
+              if (!canWrite) return false;
+              // Новые файлы — просто убираем локально
+              if (file?.originFileObj) {
+                setImages((prev) => prev.filter((f) => f.uid !== file.uid));
+                return true;
               }
-              setImages((prev) => {
-                if (file.uid) {
-                  return prev.filter((f) => f.uid !== file.uid);
-                }
-                return prev.filter((f) => f.name !== file.name);
-              });
+              const fileId = file?.fileId || file?.uid;
+              if (!fileId) {
+                setImages((prev) => prev.filter((f) => f.uid !== file.uid));
+                return true;
+              }
+              try {
+                await NewsApi.deleteGalleryImage(newsId, fileId);
+                setImages((prev) => prev.filter((f) => f.uid !== file.uid));
+                antdMessage.success("Изображение удалено");
+                reloadPublicData?.();
+                return true;
+              } catch (error) {
+                antdMessage.error(error?.message || "Не удалось удалить изображение");
+                return false;
+              }
             }}
             fileList={images}
             itemRender={(originNode, file) => {
-              return (
-                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+              const url = file.url || file.thumbUrl || (file.originFileObj ? URL.createObjectURL(file.originFileObj) : null);
+              return url ? (
+                <div style={{ position: "relative", width: "100%", height: "100%" }}>
                   <img
-                    src={file.url || (file.thumbUrl)}
+                    src={url}
                     alt={file.name}
                     style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      borderRadius: '8px',
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      borderRadius: "8px",
                     }}
                   />
                 </div>
-              );
+              ) : originNode;
             }}
           >
             {images.length < 10 && <div><div className="ant-upload-text">Загрузить</div></div>}
           </Upload>
+          <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Button
+              danger
+              size="small"
+              disabled={!images.length || !canWrite}
+              onClick={async () => {
+                // Удаляем все старые изображения (с id) на сервере и локально
+                const serverIds = images
+                  .map((f) => f.fileId || f.uid)
+                  .filter((id) => id && !images.find((x) => x.uid === id && x.originFileObj));
+                try {
+                  await Promise.all(
+                    serverIds.map((id) =>
+                      NewsApi.deleteGalleryImage(newsId, id).catch(() => null)
+                    )
+                  );
+                } catch {
+                  // игнорируем частичные ошибки, очищаем локально
+                }
+                setImages([]);
+                reloadPublicData?.();
+                antdMessage.success("Галерея очищена");
+              }}
+            >
+              Удалить все
+            </Button>
+          </div>
         </div>
       </div>
 

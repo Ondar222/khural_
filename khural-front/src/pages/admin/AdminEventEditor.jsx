@@ -1,7 +1,6 @@
 import React from "react";
 import { App, Button, Form, Input } from "antd";
 import { useHashRoute } from "../../Router.jsx";
-import { Editor } from "@tinymce/tinymce-react";
 
 export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpdate, busy, canWrite }) {
   const { message } = App.useApp();
@@ -9,7 +8,6 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
   const [form] = Form.useForm();
   const [saving, setSaving] = React.useState(false);
   const [loading, setLoading] = React.useState(mode === "edit");
-  const editorRef = React.useRef(null);
 
   const titleValue = Form.useWatch("title", form);
   const descHtml = Form.useWatch("desc", form);
@@ -39,11 +37,7 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
     setSaving(true);
     try {
       const values = await form.validateFields();
-      // Ensure TinyMCE HTML is captured even if Form didn't sync yet
-      const html = editorRef.current && typeof editorRef.current.getContent === "function"
-        ? String(editorRef.current.getContent() || "")
-        : "";
-      const payload = { ...values, desc: html || values.desc || "" };
+      const payload = { ...values, desc: values.desc || "" };
       if (mode === "create") {
         await onCreate?.(payload);
         message.success("Событие создано");
@@ -107,17 +101,12 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
           </Form.Item>
 
           <Form.Item label="Описание" name="desc">
-            <Editor
-              apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-              disabled={loading || saving}
-              onInit={(_, editor) => {
-                editorRef.current = editor;
-              }}
+            <Input.TextArea
+              autoSize={{ minRows: 6, maxRows: 18 }}
+              placeholder="<p>Описание</p>"
               value={typeof descHtml === "string" ? descHtml : ""}
-              onEditorChange={(content) => form.setFieldValue("desc", content)}
-              init={{ height: 320, menubar: true }}
-              plugins={["lists", "link", "image", "media"]}
-              toolbar="lists link image media"
+              onChange={(e) => form.setFieldValue("desc", e.target.value)}
+              disabled={loading || saving}
             />
           </Form.Item>
         </Form>

@@ -30,6 +30,7 @@ export default function AdminDashboard({ stats }) {
         <StatCard label="Слайдер" value={stats.slides || 0} />
         <StatCard label="Новости" value={stats.news} />
         <StatCard label="События" value={stats.events || 0} />
+        <StatCard label="Обращения" value={stats.appeals || 0} />
       </div>
 
       <div className="admin-cards admin-cards--actions">
@@ -62,6 +63,11 @@ export default function AdminDashboard({ stats }) {
           title="Слайдер: важное объявление"
           description="Добавьте слайд для важных анонсов на главной"
           href="/admin/slider"
+        />
+        <QuickAction
+          title="Обращения граждан"
+          description="Просмотр и обработка обращений"
+          href="/admin/appeals"
         />
       </div>
 

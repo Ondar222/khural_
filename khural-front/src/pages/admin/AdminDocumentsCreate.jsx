@@ -1,7 +1,6 @@
 import React from "react";
 import { App, Button, Input, Form, Upload, Space, Select, Switch } from "antd";
 import { useHashRoute } from "../../Router.jsx";
-import { Editor } from "@tinymce/tinymce-react";
 
 const TYPE_OPTIONS = [
   { value: "laws", label: "Законы" },
@@ -20,7 +19,6 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
   const [fileRu, setFileRu] = React.useState(null);
   const [fileTy, setFileTy] = React.useState(null);
   const descriptionHtml = Form.useWatch("description", form);
-  const editorRef = React.useRef(null);
 
   const handleSubmit = async () => {
     try {
@@ -29,11 +27,7 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
         antdMessage.error("Загрузите хотя бы один файл (русская или тувинская версия)");
         return;
       }
-      const html =
-        editorRef.current && typeof editorRef.current.getContent === "function"
-          ? String(editorRef.current.getContent() || "")
-          : "";
-      await onCreate({ ...values, description: html || values.description || "", fileRu, fileTy });
+      await onCreate({ ...values, description: values.description || "", fileRu, fileTy });
       navigate("/admin/documents");
     } catch (error) {
       if (error?.errorFields) return;
@@ -85,17 +79,12 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
             </Form.Item>
 
             <Form.Item label="Описание" name="description">
-              <Editor
-                apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-                disabled={busy || !canWrite}
-                onInit={(_, editor) => {
-                  editorRef.current = editor;
-                }}
+              <Input.TextArea
+                autoSize={{ minRows: 6, maxRows: 18 }}
+                placeholder="<p>Описание</p>"
                 value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
-                onEditorChange={(content) => form.setFieldValue("description", content)}
-                init={{ height: 320, menubar: true }}
-                plugins={["lists", "link", "image", "media"]}
-                toolbar="lists link image media"
+                onChange={(e) => form.setFieldValue("description", e.target.value)}
+                disabled={busy || !canWrite}
               />
             </Form.Item>
           </div>
