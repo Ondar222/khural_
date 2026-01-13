@@ -30,9 +30,9 @@ export default function Footer() {
               </div>
             </div>
             <div className="footer-copyright">
-              <p>© 2025 ВЕРХОВНЫЙ ХУРАЛ РТ.</p>
-              <p>ВСЕ ПРАВА ЗАЩИЩЕНЫ.</p>
-              <p className="footer-dev">Разработано Lana Soft</p>
+              <p>{t("© 2025 ВЕРХОВНЫЙ ХУРАЛ РТ.")}</p>
+              <p>{t("ВСЕ ПРАВА ЗАЩИЩЕНЫ.")}</p>
+              <p className="footer-dev">{t("Разработано Lana Soft")}</p>
             </div>
           </div>
 
@@ -78,11 +78,12 @@ export default function Footer() {
 
           {/* Contact Information */}
           <div className="footer-contacts">
-            <h4>Контакты</h4>
+            <h4>{t("Контакты")}</h4>
             <div className="contact-item">
               <EnvironmentOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
-                <strong>Адрес:</strong> <span>667000, г. Кызыл, ул. Чульдум, д. 18</span>
+                <strong>{t("Адрес:")}</strong>{" "}
+                <span>{t("667000, г. Кызыл, ул. Чульдум, д. 18")}</span>
               </div>
             </div>
             <div className="contact-item">

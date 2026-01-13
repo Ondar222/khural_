@@ -3,9 +3,11 @@ import { useData } from "../context/DataContext.jsx";
 import { Select } from "antd";
 import PersonDetail from "../components/PersonDetail.jsx";
 import SideNav from "../components/SideNav.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function Government() {
   const { government, deputies, committees } = useData();
+  const { t } = useI18n();
 
   const [section, setSection] = React.useState(() => {
     const sp = new URLSearchParams(window.location.search || "");
@@ -119,20 +121,20 @@ export default function Government() {
           />
           <div className="person-card__body">
             <div className="person-card__name">{leader.name}</div>
-            <div className="person-card__role">{leader.role || "Представитель Комитета"}</div>
+            <div className="person-card__role">{leader.role || t("Комитеты")}</div>
             <ul className="person-card__meta">
               {leader.phone && <li>+ {leader.phone}</li>}
               {leader.email && <li>{leader.email}</li>}
               {leader.address && <li>{leader.address}</li>}
             </ul>
             <a className="btn btn--primary btn--compact" href={`/committee?id=${id}`}>
-              Подробнее
+              {t("Подробнее")}
             </a>
           </div>
         </div>
         <div className="orgv2__actions">
           <a href={`/committee?id=${id}`} className="btn btn--primary">
-            Подробнее о комитете
+            {t("Подробнее")} {t("Комитеты")}
           </a>
         </div>
       </div>
@@ -163,7 +165,7 @@ export default function Government() {
         <div className={`page-grid ${section === "Структура" ? "page-grid--structure" : ""}`}>
           <div className="page-grid__main">
             <div className="gov-toolbar">
-              <h1 className="gov-toolbar__title">Парламент</h1>
+              <h1 className="gov-toolbar__title">{t("Парламент")}</h1>
               {section !== "Структура" ? (
                 <div className="gov-toolbar__controls">
                   <Select
@@ -171,8 +173,8 @@ export default function Government() {
                     onChange={setSection}
                     dropdownMatchSelectWidth={false}
                     options={[
-                      { value: "Парламент", label: "Парламент" },
-                      { value: "Депутаты", label: "Депутаты" },
+                      { value: "Парламент", label: t("Парламент") },
+                      { value: "Депутаты", label: t("Депутаты") },
                     ]}
                     style={{ minWidth: 220 }}
                   />
@@ -183,21 +185,21 @@ export default function Government() {
                         value={district}
                         onChange={setDistrict}
                         dropdownMatchSelectWidth={false}
-                        options={districts.map((x) => ({ value: x, label: x }))}
+                        options={districts.map((x) => ({ value: x, label: t(x) }))}
                         style={{ minWidth: 220 }}
                       />
                       <Select
                         value={convocation}
                         onChange={setConvocation}
                         dropdownMatchSelectWidth={false}
-                        options={convocations.map((x) => ({ value: x, label: x }))}
+                        options={convocations.map((x) => ({ value: x, label: t(x) }))}
                         style={{ minWidth: 220 }}
                       />
                       <Select
                         value={faction}
                         onChange={setFaction}
                         dropdownMatchSelectWidth={false}
-                        options={factions.map((x) => ({ value: x, label: x }))}
+                        options={factions.map((x) => ({ value: x, label: t(x) }))}
                         style={{ minWidth: 220 }}
                       />
                     </>
@@ -209,14 +211,14 @@ export default function Government() {
                         value={agency}
                         onChange={setAgency}
                         dropdownMatchSelectWidth={false}
-                        options={agencies.map((x) => ({ value: x, label: x }))}
+                        options={agencies.map((x) => ({ value: x, label: t(x) }))}
                         style={{ minWidth: 240 }}
                       />
                       <Select
                         value={role}
                         onChange={setRole}
                         dropdownMatchSelectWidth={false}
-                        options={roles.map((x) => ({ value: x, label: x }))}
+                        options={roles.map((x) => ({ value: x, label: t(x) }))}
                         style={{ minWidth: 240 }}
                       />
                     </>
@@ -227,20 +229,20 @@ export default function Government() {
 
             {section === "Структура" ? (
               <>
-                <h3 id="focus-overview">О Верховном Хурале Республики Тыва</h3>
+                <h3 id="focus-overview">{t("О Верховном Хурале Республики Тыва")}</h3>
                 <div className="tabs" style={{ marginBottom: 10 }}>
                   <a className="pill" href="/about">
-                    Общие сведения
+                    {t("Общие сведения")}
                   </a>
                   <span className="pill pill--solid" aria-current="page">
-                    Структура органов управления
+                    {t("Структура органов управления")}
                   </span>
                 </div>
                 {/* Blue diagram per provided reference (Image 2) */}
                 <div className="org org--khural">
                   <div className="org__row org__row--center">
                     <div className="org__item org__item--blue org__item--xl">
-                      Председатель Верховного Хурала (парламента) Республики Тыва
+                      {t("Председатель Верховного Хурала (парламента) Республики Тыва")}
                     </div>
                   </div>
                   <div className="org__row org__row--factions" id="focus-factions">
@@ -262,7 +264,7 @@ export default function Government() {
                         className="org__item org__item--blue"
                         href={"/section?title=" + encodeURIComponent("Комитеты")}
                       >
-                        Комитеты Верховного Хурала (парламента) Республики Тыва
+                        {t("Комитеты Верховного Хурала (парламента) Республики Тыва")}
                       </a>
                       {(committees || []).map((c) => (
                         <a
@@ -284,8 +286,7 @@ export default function Government() {
                           )
                         }
                       >
-                        Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным
-                        связям
+                        {t("Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям")}
                       </a>
                       <a
                         className="org__item org__item--blue"
@@ -296,8 +297,7 @@ export default function Government() {
                           )
                         }
                       >
-                        Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со
-                        средствами массовой информации и общественными организациями
+                        {t("Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями")}
                       </a>
                     </div>
                     <div className="org__col org__col--span2" id="focus-commissions">
@@ -313,7 +313,7 @@ export default function Government() {
                           className="org__item org__item--blue"
                           href={`/section?title=${encodeURIComponent(title)}`}
                         >
-                          {title}
+                          {t(title)}
                         </a>
                       ))}
                     </div>
@@ -321,12 +321,12 @@ export default function Government() {
                   <div id="focus-councils" style={{ height: 1 }} />
                   <div className="org__row org__row--center">
                     <a className="org__item org__item--xl org__item--blue" href="/apparatus">
-                      Аппарат Верховного Хурала (парламента) Республики Тыва
+                      {t("Аппарат Верховного Хурала (парламента) Республики Тыва")}
                     </a>
                   </div>
                 </div>
                 <h2 style={{ marginTop: 0 }}>
-                  Структура Верховного Хурала (парламента) Республики Тыва
+                  {t("Структура органов управления")}
                 </h2>
                 <div className="orgv2">
                   <div className="orgv2__chain">
@@ -354,19 +354,19 @@ export default function Government() {
                             className="btn btn--primary btn--compact"
                             href={`/government?type=gov&id=${p.id}`}
                           >
-                            Подробнее
+                            {t("Подробнее")}
                           </a>
                         </div>
                       </div>
                     ))}
                   </div>
                   <div className="orgv2__strip">
-                    <span className="pill pill--solid">Фракция «Единая Россия»</span>
-                    <span className="pill pill--solid">Фракция ЛДПР</span>
-                    <span className="pill pill--solid">Фракция КПРФ</span>
-                    <span className="pill pill--solid">Фракция «Новые люди»</span>
+                    <span className="pill pill--solid">{t("Фракция Единая Россия")}</span>
+                    <span className="pill pill--solid">{t("Фракция ЛДПР")}</span>
+                    <span className="pill pill--solid">{t("Фракция КПРФ")}</span>
+                    <span className="pill pill--solid">{t("Фракция Новые люди")}</span>
                     <a href="/committee?id=agro" className="btn btn--primary orgv2__strip_btn">
-                      Подробнее о комитете
+                      {t("Подробнее")} {t("Комитеты")}
                     </a>
                   </div>
                   <div className="orgv2__list">
@@ -376,8 +376,9 @@ export default function Government() {
                       }`}
                       onClick={() => setOpenCommittee(openCommittee === "agro" ? null : "agro")}
                     >
-                      Комитет по аграрной политике, земельным отношениям, природопользованию,
-                      экологии и делам коренных малочисленных народов
+                      {t(
+                        "Комитет по аграрной политике, земельным отношениям, природопользованию, экологии и делам коренных малочисленных народов"
+                      )}
                     </div>
                     {openCommittee === "agro" ? renderCommittee("agro") : null}
                     <div
@@ -386,7 +387,7 @@ export default function Government() {
                       }`}
                       onClick={() => setOpenCommittee(openCommittee === "infra" ? null : "infra")}
                     >
-                      Комитет по развитию инфраструктуры и промышленной политике
+                      {t("Комитет по развитию инфраструктуры и промышленной политике")}
                     </div>
                     {openCommittee === "infra" ? renderCommittee("infra") : null}
                     <div
@@ -395,8 +396,9 @@ export default function Government() {
                       }`}
                       onClick={() => setOpenCommittee(openCommittee === "youth" ? null : "youth")}
                     >
-                      Комитет по молодежной, информационной политике, физической культуре и спорту,
-                      развитию институтов гражданского общества
+                      {t(
+                        "Комитет по молодежной, информационной политике, физической культуре и спорту, развитию институтов гражданского общества"
+                      )}
                     </div>
                     {openCommittee === "youth" ? renderCommittee("youth") : null}
                     <div
@@ -407,7 +409,7 @@ export default function Government() {
                         setOpenCommittee(openCommittee === "security" ? null : "security")
                       }
                     >
-                      Комитет по безопасности и правопорядку
+                      {t("Комитет по безопасности и правопорядку")}
                     </div>
                     {openCommittee === "security" ? renderCommittee("security") : null}
                     <div
@@ -416,7 +418,7 @@ export default function Government() {
                       }`}
                       onClick={() => setOpenCommittee(openCommittee === "health" ? null : "health")}
                     >
-                      Комитет по охране здоровья, занятости населения и социальной политике
+                      {t("Комитет по охране здоровья, занятости населения и социальной политике")}
                     </div>
                     {openCommittee === "health" ? renderCommittee("health") : null}
                     <div
@@ -425,7 +427,7 @@ export default function Government() {
                       }`}
                       onClick={() => setOpenCommittee(openCommittee === "const" ? null : "const")}
                     >
-                      Комитет по конституционно‑правовой политике и местному самоуправлению
+                      {t("Комитет по конституционно‑правовой политике и местному самоуправлению")}
                     </div>
                     {openCommittee === "const" ? renderCommittee("const") : null}
                     <div
@@ -434,8 +436,9 @@ export default function Government() {
                       }`}
                       onClick={() => setOpenCommittee(openCommittee === "econ" ? null : "econ")}
                     >
-                      Комитет по экономической, финансово‑бюджетной и налоговой политике,
-                      предпринимательству, туризму и государственной собственности
+                      {t(
+                        "Комитет по экономической, финансово‑бюджетной и налоговой политике, предпринимательству, туризму и государственной собственности"
+                      )}
                     </div>
                     {openCommittee === "econ" ? renderCommittee("econ") : null}
                     <div
@@ -444,7 +447,7 @@ export default function Government() {
                       }`}
                       onClick={() => setOpenCommittee(openCommittee === "edu" ? null : "edu")}
                     >
-                      Комитет по образованию, культуре, науке и национальной политике
+                      {t("Комитет по образованию, культуре, науке и национальной политике")}
                     </div>
                     {openCommittee === "edu" ? renderCommittee("edu") : null}
                   </div>
@@ -473,13 +476,15 @@ export default function Government() {
                         {d.position ? (
                           <div className="gov-card__role">{d.position}</div>
                         ) : (
-                          <div className="gov-card__role">Депутат</div>
+                          <div className="gov-card__role">{t("Депутат")}</div>
                         )}
                         <ul className="gov-meta">
                           {d.reception && (
                             <li>
                               <span>⏰</span>
-                              <span>Приём: {d.reception}</span>
+                              <span>
+                                {t("Приём:")} {d.reception}
+                              </span>
                             </li>
                           )}
                           {d.district && (
@@ -516,7 +521,7 @@ export default function Government() {
                       </div>
                       <div className="gov-card__actions">
                         <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
-                          Подробнее
+                          {t("Подробнее")}
                         </a>
                       </div>
                     </div>
@@ -550,7 +555,9 @@ export default function Government() {
                           {p.reception && (
                             <li>
                               <span>⏰</span>
-                              <span>Приём: {p.reception}</span>
+                              <span>
+                                {t("Приём:")} {p.reception}
+                              </span>
                             </li>
                           )}
                           {p.phone && (
@@ -569,7 +576,7 @@ export default function Government() {
                       </div>
                       <div className="gov-card__actions">
                         <a className="gov-card__btn" href={`/government?type=gov&id=${p.id}`}>
-                          Подробнее
+                          {t("Подробнее")}
                         </a>
                       </div>
                     </div>

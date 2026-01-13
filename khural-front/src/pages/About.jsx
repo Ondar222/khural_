@@ -7,7 +7,7 @@ import { AboutApi } from "../api/client.js";
 export default function About() {
   const { committees, aboutPages: cachedPages, aboutStructure: cachedStructure, government } = useData();
   // NOTE: government is used to link Chairman in the structure diagram.
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [activeTab, setActiveTab] = React.useState("general"); // general | structure
   const [pages, setPages] = React.useState(() => (Array.isArray(cachedPages) ? cachedPages : []));
   const [structure, setStructure] = React.useState(() =>
@@ -87,7 +87,7 @@ export default function About() {
       <div className="container">
         <div className="page-grid">
           <div>
-            <h3>О Верховном Хурале Республики Тыва</h3>
+            <h3>{t("О Верховном Хурале Республики Тыва")}</h3>
 
             <div className="tabs" style={{ marginTop: 8 }}>
               <a
@@ -101,7 +101,7 @@ export default function About() {
                   scrollToBlock("about-general");
                 }}
               >
-                Общие сведения
+                {t("Общие сведения")}
               </a>
               <a
                 className={`pill ${activeTab === "structure" ? "pill--solid" : ""}`}
@@ -114,12 +114,12 @@ export default function About() {
                   scrollToBlock("about-structure");
                 }}
               >
-                Структура органов управления
+                {t("Структура органов управления")}
               </a>
             </div>
 
             <div id="about-general" className="person-block">
-              <h3>Общие сведения</h3>
+              <h3>{t("Общие сведения")}</h3>
               {generalPage?.content ? (
                 <div
                   className="tile"
@@ -228,11 +228,8 @@ export default function About() {
 
             <div id="about-structure" className="person-block about-structure" style={{ marginTop: 22 }}>
               <div id="focus-overview" style={{ height: 1 }} />
-              <h3 className="about-structure__title">Структура органов управления</h3>
-              <p style={{ marginTop: 0 }}>
-                Ниже — схема структуры. Нажмите на фракции/комитеты, чтобы перейти к соответствующим
-                разделам.
-              </p>
+              <h3 className="about-structure__title">{t("Структура органов управления")}</h3>
+              <p style={{ marginTop: 0 }}>{t("Ниже — схема структуры. Нажмите на фракции/комитеты, чтобы перейти к соответствующим разделам.")}</p>
 
               <div className="org org--khural">
                 <div className="org__row org__row--center">
@@ -250,13 +247,13 @@ export default function About() {
                           className="org__item org__item--blue org__item--xl"
                           href={`/government?type=gov&id=${encodeURIComponent(chairman.id)}`}
                         >
-                          Председатель Верховного Хурала (парламента) Республики Тыва
+                        {t("Председатель Верховного Хурала (парламента) Республики Тыва")}
                         </a>
                       );
                     }
                     return (
                       <div className="org__item org__item--blue org__item--xl">
-                        Председатель Верховного Хурала (парламента) Республики Тыва
+                      {t("Председатель Верховного Хурала (парламента) Республики Тыва")}
                       </div>
                     );
                   })()}
@@ -282,7 +279,7 @@ export default function About() {
                       className="org__item org__item--blue"
                       href={"/section?title=" + encodeURIComponent("Комитеты")}
                     >
-                      Комитеты Верховного Хурала (парламента) Республики Тыва
+                      {t("Комитеты Верховного Хурала (парламента) Республики Тыва")}
                     </a>
                     {(committees || []).map((c) => (
                       <a
@@ -299,11 +296,10 @@ export default function About() {
                       className="org__item org__item--blue"
                       href="/commission?id=mezhregionalnye-svyazi"
                     >
-                      Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям
+                      {t("Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям")}
                     </a>
                     <a className="org__item org__item--blue" href="/commission?id=smi-obshestvo">
-                      Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со
-                      средствами массовой информации и общественными организациями
+                      {t("Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями")}
                     </a>
                   </div>
                   <div className="org__col org__col--span2" id="focus-commissions">
@@ -337,7 +333,7 @@ export default function About() {
                         className="org__item org__item--blue"
                         href={`/commission?id=${item.id}`}
                       >
-                        {item.title}
+                        {t(item.title)}
                       </a>
                     ))}
                   </div>
@@ -346,7 +342,7 @@ export default function About() {
                 <div id="focus-councils" style={{ height: 1 }} />
                 <div className="org__row org__row--center">
                   <a className="org__item org__item--xl org__item--blue" href="/apparatus">
-                    Аппарат Верховного Хурала (парламента) Республики Тыва
+                    {t("Аппарат Верховного Хурала (парламента) Республики Тыва")}
                   </a>
                 </div>
               </div>
@@ -354,7 +350,7 @@ export default function About() {
               {/* NOTE: ниже ничего не рендерим — схема должна совпадать с /section */}
             </div>
           </div>
-          <SideNav className="sidenav--about" title="О Верховном Хурале" />
+          <SideNav className="sidenav--about" title={t("О Верховном Хурале")} />
         </div>
       </div>
     </section>

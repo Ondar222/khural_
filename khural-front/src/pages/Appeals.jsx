@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Form, Input, Button, Result, Alert, Tabs, Tag, Checkbox } from "antd";
 import { useAuth } from "../context/AuthContext.jsx";
 import { AppealsApi } from "../api/client.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 function storageKey(user) {
   const id = user?.id || user?.email || "anon";
@@ -79,7 +80,7 @@ function normalizeAppeal(a) {
 }
 
 // AppealDetailModal component in SpectrUM style
-function AppealDetailModal({ open, onClose, appeal }) {
+function AppealDetailModal({ open, onClose, appeal, t }) {
   React.useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     return () => {
@@ -98,19 +99,19 @@ function AppealDetailModal({ open, onClose, appeal }) {
   return createPortal(
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "800px" }}>
-        <button className="modal__close icon-btn" onClick={onClose} aria-label="Закрыть">
+        <button className="modal__close icon-btn" onClick={onClose} aria-label={t("Закрыть")}>
           ✕
         </button>
         <div className="modal__content">
           <h3 style={{ marginTop: 0, marginBottom: 16 }}>
-            {appeal.subject || "Обращение"}{" "}
+            {appeal.subject || t("Обращения")}{" "}
             {appeal.number ? <span style={{ opacity: 0.7, fontWeight: 400 }}>({appeal.number})</span> : null}
           </h3>
           
           {(appeal.fullName || appeal.userEmail) && (
             <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ marginBottom: 8 }}>
-                <strong>Автор обращения:</strong>
+                <strong>{t("Автор обращения:")}</strong>
               </div>
               {appeal.fullName && (
                 <div style={{ marginBottom: 4, fontSize: 15 }}>{appeal.fullName}</div>
@@ -123,11 +124,11 @@ function AppealDetailModal({ open, onClose, appeal }) {
 
           <div style={{ marginBottom: 16 }}>
             <div style={{ marginBottom: 8 }}>
-              <strong>Статус:</strong>{" "}
+              <strong>{t("Статус:")}</strong>{" "}
               <Tag color={getStatusColor(appeal.status)}>{appeal.status}</Tag>
             </div>
             <div style={{ opacity: 0.7, fontSize: 13, marginTop: 4 }}>
-              <strong>Дата создания:</strong>{" "}
+              <strong>{t("Дата создания:")}</strong>{" "}
               {appeal.createdAt
                 ? new Date(appeal.createdAt).toLocaleString("ru-RU")
                 : ""}
@@ -135,7 +136,7 @@ function AppealDetailModal({ open, onClose, appeal }) {
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <strong style={{ display: "block", marginBottom: 8 }}>Текст обращения:</strong>
+            <strong style={{ display: "block", marginBottom: 8 }}>{t("Текст обращения")}:</strong>
             <div
               style={{
                 whiteSpace: "pre-wrap",
@@ -153,7 +154,7 @@ function AppealDetailModal({ open, onClose, appeal }) {
 
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
             <button className="btn btn--primary" onClick={onClose}>
-              Закрыть
+              {t("Закрыть")}
             </button>
           </div>
         </div>
@@ -165,6 +166,7 @@ function AppealDetailModal({ open, onClose, appeal }) {
 
 export default function Appeals() {
   const { isAuthenticated, user } = useAuth();
+  const { t } = useI18n();
   const [tab, setTab] = React.useState("create");
   const [ok, setOk] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -251,17 +253,17 @@ export default function Appeals() {
   return (
     <section className="section">
       <div className="container">
-        <h1 className="h1-compact">Обращения граждан</h1>
+        <h1 className="h1-compact">{t("Обращения граждан")}</h1>
 
         {!isAuthenticated ? (
           <Alert
             type="info"
             showIcon
-            message="Для отправки обращения требуется авторизация"
+            message={t("Для отправки обращения требуется авторизация")}
             description={
               <span>
-                Перейдите на страницу <a href="/login">входа</a> или{" "}
-                <a href="/register">регистрации</a>, затем вернитесь сюда.
+                {t("Перейдите на страницу")} <a href="/login">{t("входа")}</a> {t("или")}{" "}
+                <a href="/register">{t("регистрации")}</a>, {t("затем вернитесь сюда.")}
               </span>
             }
             style={{ marginBottom: 16 }}
@@ -274,7 +276,7 @@ export default function Appeals() {
           items={[
             {
               key: "create",
-              label: "Подать обращение",
+              label: t("Подать обращение"),
               children: (
                 <>
         {ok ? (
@@ -301,30 +303,30 @@ export default function Appeals() {
                     >
                       <div className="admin-split">
                         <Form.Item
-                          label="Фамилия"
+                          label={t("Фамилия")}
                           name="surname"
-                          rules={[{ required: true, message: "Укажите фамилию" }]}
+                          rules={[{ required: true, message: t("Укажите фамилию") }]}
                         >
                           <Input />
                         </Form.Item>
                         <Form.Item
-                          label="Имя"
+                          label={t("Имя")}
                           name="name"
-                          rules={[{ required: true, message: "Укажите имя" }]}
+                          rules={[{ required: true, message: t("Укажите имя") }]}
                         >
                           <Input />
                         </Form.Item>
                       </div>
 
-                      <Form.Item label="Отчество (если есть)" name="patronymic">
+                      <Form.Item label={t("Отчество (если есть)") || "Отчество (если есть)"} name="patronymic">
                         <Input />
                       </Form.Item>
 
                       <div className="admin-split">
                         <Form.Item
-                          label="Телефон"
+                          label={t("Телефон")}
                           name="phone"
-                          rules={[{ required: true, message: "Укажите телефон" }]}
+                          rules={[{ required: true, message: t("Укажите телефон") }]}
                         >
                           <Input placeholder="+7..." />
                         </Form.Item>
@@ -332,8 +334,8 @@ export default function Appeals() {
                           label="Email"
                           name="email"
                           rules={[
-                            { required: true, message: "Укажите email" },
-                            { type: "email", message: "Некорректный email" },
+                            { required: true, message: t("Укажите email") },
+                            { type: "email", message: t("Некорректный email") },
                           ]}
                         >
                           <Input type="email" />
@@ -341,17 +343,17 @@ export default function Appeals() {
                       </div>
 
             <Form.Item
-              label="Тема"
+              label={t("Тема")}
               name="subject"
-              rules={[{ required: true, message: "Укажите тему" }]}
+              rules={[{ required: true, message: t("Укажите тему") }]}
             >
                         <Input />
             </Form.Item>
 
             <Form.Item
-              label="Текст обращения"
+              label={t("Текст обращения")}
               name="message"
-              rules={[{ required: true, message: "Введите текст обращения" }]}
+              rules={[{ required: true, message: t("Введите текст обращения") }]}
             >
                         <Input.TextArea rows={8} />
                       </Form.Item>
@@ -362,33 +364,39 @@ export default function Appeals() {
                         rules={[
                           {
                             validator: (_, v) =>
-                              v ? Promise.resolve() : Promise.reject(new Error("Требуется согласие")),
+                              v ? Promise.resolve() : Promise.reject(new Error(t("Требуется согласие"))),
                           },
                         ]}
                       >
                         <Checkbox disabled={!isAuthenticated}>
                           <span style={{ lineHeight: 1.35 }}>
-                            Я согласен(на) на обработку персональных данных и подтверждаю достоверность
-                            сведений.{" "}
+                            {t(
+                              "Я согласен(на) на обработку персональных данных и подтверждаю достоверность сведений."
+                            )}{" "}
                             <a className="link" href="/pd-policy">
-                              Политика обработки ПДн
+                              {t("Политика обработки ПДн")}
                             </a>
                           </span>
                         </Checkbox>
             </Form.Item>
 
                       <Form.Item style={{ marginBottom: 0 }}>
-              <Button type="primary" htmlType="submit" disabled={!isAuthenticated} loading={busy}>
-                Отправить
-              </Button>
-              {!isAuthenticated && (
-                <div style={{ marginTop: 12, fontSize: 13, color: "#6b7280" }}>
-                  Для отправки обращения необходимо{" "}
-                  <a href="/login" className="link">войти</a> или{" "}
-                  <a href="/register" className="link">зарегистрироваться</a>
-                </div>
-              )}
-            </Form.Item>
+                        <Button type="primary" htmlType="submit" disabled={!isAuthenticated} loading={busy}>
+                          {t("Отправить")}
+                        </Button>
+                        {!isAuthenticated && (
+                          <div style={{ marginTop: 12, fontSize: 13, color: "#6b7280" }}>
+                            {t("Для отправки обращения необходимо войти или зарегистрироваться")}{" "}
+                            <a href="/login" className="link">
+                              {t("войти")}
+                            </a>{" "}
+                            {t("или")}{" "}
+                            <a href="/register" className="link">
+                              {t("зарегистрироваться")}
+                            </a>
+                          </div>
+                        )}
+                      </Form.Item>
           </Form>
         )}
                 </>
@@ -396,12 +404,12 @@ export default function Appeals() {
             },
             {
               key: "history",
-              label: "Мои обращения",
+              label: t("Мои обращения"),
               children: (
                 <div className="tile">
                   {!isAuthenticated ? (
                     <div style={{ opacity: 0.8 }}>
-                      Войдите, чтобы видеть историю обращений.
+                      {t("Войдите, чтобы видеть историю обращений.")}
                     </div>
                   ) : (
                     <>
@@ -495,11 +503,11 @@ export default function Appeals() {
         />
 
         <div style={{ marginTop: 12 }}>
-        <a href="/feedback">Правила о приеме обращений граждан</a>
+          <a href="/feedback">{t("Правила о приеме обращений граждан")}</a>
         </div>
       </div>
 
-      <AppealDetailModal open={!!selectedAppeal} onClose={closeModal} appeal={selectedAppeal} />
+      <AppealDetailModal open={!!selectedAppeal} onClose={closeModal} appeal={selectedAppeal} t={t} />
     </section>
   );
 }

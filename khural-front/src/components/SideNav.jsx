@@ -1,4 +1,5 @@
 import React from "react";
+import { useI18n } from "../context/I18nContext.jsx";
 
 // Reusable right-side navigation with links to key subpages
 export default function SideNav({
@@ -6,6 +7,7 @@ export default function SideNav({
   links: overrideLinks,
   className = "sidenav--card",
 }) {
+  const { t } = useI18n();
   const defaultLinks = [
     { label: "Общие сведения", href: "/about" },
     { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
@@ -40,16 +42,17 @@ export default function SideNav({
   ];
 
   const links = Array.isArray(overrideLinks) && overrideLinks.length ? overrideLinks : defaultLinks;
+  const titleText = typeof title === "string" ? t(title) : title;
 
   return (
     <aside className={`sidenav ${className || ""}`.trim()} aria-label="Ссылки раздела">
-      <h3 style={{ marginTop: 0 }}>{title}</h3>
+      <h3 style={{ marginTop: 0 }}>{titleText}</h3>
       <div className="sidenav__list">
         {links.map((l, i) => (
           <a key={i} className="tile link" href={l.href}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
               <span aria-hidden="true">‹</span>
-              {l.label}
+              {typeof l.label === "string" ? t(l.label) : l.label}
             </span>
           </a>
         ))}

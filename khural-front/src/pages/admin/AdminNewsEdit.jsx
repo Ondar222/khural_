@@ -206,36 +206,36 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         });
       }
 
-      // Формируем FormData для multipart/form-data
-      const formData = new FormData();
+      // JSON-патч для текстовых данных
+      const payload = {
+        categoryId: values.categoryId,
+        slug: values.slug || undefined,
+        publishedAt: values.publishedAt
+          ? (values.publishedAt && typeof values.publishedAt.valueOf === "function"
+              ? values.publishedAt.valueOf()
+              : new Date(values.publishedAt).getTime())
+          : undefined,
+        isPublished: values.isPublished ?? false,
+        content: contentArray,
+      };
 
-      // Добавляем JSON поля
-      formData.append("categoryId", String(values.categoryId));
-      if (values.slug) {
-        formData.append("slug", values.slug);
-      }
-      if (values.publishedAt) {
-        const timestamp = values.publishedAt && typeof values.publishedAt.valueOf === 'function'
-          ? values.publishedAt.valueOf()
-          : new Date(values.publishedAt).getTime();
-        formData.append("publishedAt", String(timestamp));
-      }
-      formData.append("isPublished", String(values.isPublished ?? false));
-      formData.append("content", JSON.stringify(contentArray));
+      await NewsApi.patch(newsId, payload);
 
-      // Добавляем файлы (только новые, не из URL)
-      if (coverImage && coverImage.originFileObj) {
-        formData.append("cover", coverImage.originFileObj);
-      }
-      if (images && images.length > 0) {
-        images.forEach((file) => {
-          if (file.originFileObj) {
-            formData.append("gallery", file.originFileObj);
-          }
-        });
+      // Обложка (только новые файлы)
+      if (coverImage?.originFileObj) {
+        await NewsApi.uploadCover(newsId, coverImage.originFileObj);
       }
 
-      await onUpdate(newsId, formData);
+      // Новые картинки галереи (добавляем)
+      const newGalleryFiles = (images || [])
+        .filter((f) => f.originFileObj)
+        .map((f) => f.originFileObj);
+      if (newGalleryFiles.length) {
+        await NewsApi.uploadGallery(newsId, newGalleryFiles);
+      }
+
+      antdMessage.success("Новость обновлена");
+      reloadPublicData?.();
       navigate("/admin/news");
     } catch (error) {
       if (error?.errorFields) return;
