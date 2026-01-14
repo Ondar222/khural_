@@ -2,6 +2,7 @@ import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import PdfPreviewModal from "./PdfPreviewModal.jsx";
+import { decodeHtmlEntities } from "../utils/html.js";
 
 function stripTags(v) {
   return String(v ?? "").replace(/<[^>]*>/g, "").trim();
@@ -11,7 +12,9 @@ export default function PersonDetail({ item, type, backHref }) {
   const { t } = useI18n();
   const isDeputy = type === "dep";
   const title = item.name || item.title;
-  const bioHtml = item.biography || item.bio || item.description || item.position || item.role || "";
+  const bioHtmlRaw = item.biography || item.bio || item.description || item.position || item.role || "";
+  // Backend may store biography HTML-escaped (e.g. "&lt;p&gt;..."), so decode first.
+  const bioHtml = decodeHtmlEntities(bioHtmlRaw);
   const bioPlain = stripTags(bioHtml);
   const phone = isDeputy ? item.contacts?.phone : item.phone;
   const email = isDeputy ? item.contacts?.email : item.email;
@@ -197,7 +200,7 @@ export default function PersonDetail({ item, type, backHref }) {
           <h2>Биография</h2>
           <div className="prose">
             {bioPlain ? (
-              <div dangerouslySetInnerHTML={{ __html: bioHtml }} />
+              <div dangerouslySetInnerHTML={{ __html: String(bioHtml) }} />
             ) : (
               <p>Биография не указана</p>
             )}

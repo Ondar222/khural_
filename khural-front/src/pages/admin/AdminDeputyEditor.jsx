@@ -5,6 +5,7 @@ import { PersonsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { toPersonsApiBody } from "../../api/personsPayload.js";
 import { readDeputiesOverrides, writeDeputiesOverrides } from "./deputiesOverrides.js";
+import { decodeHtmlEntities } from "../../utils/html.js";
 
 const STRUCTURE_TYPE_OPTIONS = [
   { value: "committee", label: "Комитет" },
@@ -62,6 +63,7 @@ function getLocalDeputyById(list, id) {
 
 function normalizeInitial(d) {
   const row = d && typeof d === "object" ? d : {};
+  const biographyRaw = row.biography || row.bio || row.description || "";
   return {
     fullName: row.fullName || row.full_name || row.name || "",
     faction: row.faction || "",
@@ -69,7 +71,8 @@ function normalizeInitial(d) {
     convocationNumber: row.convocationNumber || row.convocation || row.convocation_number || "",
     structureType: row.structureType || row.structure_type || "",
     role: row.role || "",
-    biography: row.biography || row.bio || row.description || "",
+    // API can store HTML as escaped text; decode so admin sees real tags (<p>..</p>).
+    biography: decodeHtmlEntities(biographyRaw),
     email: row.email || row.contacts?.email || "",
     phoneNumber: row.phoneNumber || row.phone_number || row.contacts?.phone || row.phone || "",
     address: row.address || row.contacts?.address || "",
