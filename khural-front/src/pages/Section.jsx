@@ -2,6 +2,7 @@ import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import PersonDetail from "../components/PersonDetail.jsx";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 function useQuery() {
   const [q, setQ] = React.useState(() => {
@@ -93,8 +94,6 @@ function getDeputyTitle(d, structureType) {
 }
 
 function DeputyGrid({ deputies, structureType, backHref }) {
-  const PLACEHOLDER =
-    "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg";
   const filtered = React.useMemo(() => {
     const list = Array.isArray(deputies) ? deputies : [];
     return list
@@ -122,13 +121,17 @@ function DeputyGrid({ deputies, structureType, backHref }) {
       {filtered.map((d) => (
         <div key={d.id} className="gov-card">
           <div className="gov-card__top">
-            <img
-              className="gov-card__avatar"
-              src={d.photo || (d.image && d.image.link) || PLACEHOLDER}
-              alt=""
-              loading="lazy"
-              decoding="async"
-            />
+            {normalizeFilesUrl(d.photo || (d.image && d.image.link) || "") ? (
+              <img
+                className="gov-card__avatar"
+                src={normalizeFilesUrl(d.photo || (d.image && d.image.link) || "")}
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div className="gov-card__avatar" aria-hidden="true" />
+            )}
           </div>
           <div className="gov-card__body">
             <div className="gov-card__name">{d.name}</div>

@@ -4,6 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { Select, Button, Dropdown } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
 
@@ -224,21 +225,30 @@ export default function Deputies() {
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
                 <div className="grid cols-3">
-                  {filtered.map((d) => (
-                    <div key={d.id} className="gov-card">
-                      <div className="gov-card__top">
-                        <img
-                          className="gov-card__avatar"
-                          src={
-                            d.photo ||
-                            (d.image && d.image.link) ||
-                            "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                          }
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </div>
+                  {filtered.map((d) => {
+                    const photo = normalizeFilesUrl(d.photo || (d.image && d.image.link) || "");
+                    const receptionText =
+                      typeof d.reception === "string"
+                        ? d.reception
+                        : d.reception && typeof d.reception === "object" && typeof d.reception.notes === "string"
+                          ? d.reception.notes
+                          : "";
+                    const receptionPlain = String(receptionText || "").replace(/<[^>]*>/g, "").trim();
+                    return (
+                      <div key={d.id} className="gov-card">
+                        <div className="gov-card__top">
+                          {photo ? (
+                            <img
+                              className="gov-card__avatar"
+                              src={photo}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <div className="gov-card__avatar" aria-hidden="true" />
+                          )}
+                        </div>
                       <div className="gov-card__body">
                         <div className="gov-card__name">{d.name}</div>
                         {d.position ? (
@@ -247,10 +257,10 @@ export default function Deputies() {
                           <div className="gov-card__role">Депутат</div>
                         )}
                         <ul className="gov-meta">
-                          {d.reception && (
+                          {receptionPlain && (
                             <li>
                               <span>⏰</span>
-                              <span>Приём: {d.reception}</span>
+                              <span>Приём: {receptionPlain}</span>
                             </li>
                           )}
                           {d.district && (
@@ -291,7 +301,8 @@ export default function Deputies() {
                         </a>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </DataState>
             </DataState>

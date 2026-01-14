@@ -219,7 +219,24 @@ export default function NewsArchive() {
                     aria-label="Одноклассники"
                     title="Одноклассники"
                   >
-                    <img src="/img/ok.png" alt="" aria-hidden="true" />
+                    {/* Avoid frontend static images; keep icon inline */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="100"
+                      height="100"
+                      viewBox="0 0 48 48"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path
+                        fill="#f97316"
+                        d="M24 4A20 20 0 1 0 24 44A20 20 0 1 0 24 4Z"
+                      />
+                      <path
+                        fill="#fff"
+                        d="M24 13a5 5 0 1 0 0 10a5 5 0 0 0 0-10zm0 2.5a2.5 2.5 0 1 1 0 5a2.5 2.5 0 0 1 0-5zm-7.7 12.8a1.25 1.25 0 0 1 1.77.1c1.5 1.7 3.8 2.7 5.93 2.7c2.12 0 4.44-1 5.93-2.7a1.25 1.25 0 1 1 1.88 1.65c-1.2 1.38-2.78 2.34-4.5 2.88l2.8 2.8a1.25 1.25 0 1 1-1.77 1.77L24 36.72l-4.33 4.33a1.25 1.25 0 1 1-1.77-1.77l2.8-2.8c-1.72-.54-3.3-1.5-4.5-2.88a1.25 1.25 0 0 1 .1-1.77z"
+                      />
+                    </svg>
                   </a>
 
                   <a

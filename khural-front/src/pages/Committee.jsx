@@ -2,6 +2,7 @@ import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 export default function Committee() {
   const { committees, deputies, loading, errors, reload } = useData();
@@ -119,13 +120,15 @@ export default function Committee() {
       const target = m.name.trim().toLowerCase();
       d = (deputies || []).find((x) => x && x.name && typeof x.name === "string" && x.name.trim().toLowerCase() === target);
     }
-    const PLACEHOLDER =
-      "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg";
     return {
       id: m.id || d?.id || (typeof m.name === "string" ? m.name : String(m.id || "")),
       name: (d?.name && typeof d.name === "string") ? d.name : (typeof m.name === "string" ? m.name : ""),
       role: typeof m.role === "string" ? m.role : "",
-      photo: (d?.photo && typeof d.photo === "string") ? d.photo : ((typeof m.photo === "string" && m.photo) ? m.photo : PLACEHOLDER),
+      photo: normalizeFilesUrl(
+        (d?.photo && typeof d.photo === "string" ? d.photo : "") ||
+          (typeof m.photo === "string" ? m.photo : "") ||
+          ""
+      ),
       phone: (d?.contacts?.phone && typeof d.contacts.phone === "string") ? d.contacts.phone : (typeof m.phone === "string" ? m.phone : ""),
       email: (d?.contacts?.email && typeof d.contacts.email === "string") ? d.contacts.email : (typeof m.email === "string" ? m.email : ""),
       address: (d?.address && typeof d.address === "string") ? d.address : (typeof m.address === "string" ? m.address : ""),
@@ -167,7 +170,11 @@ export default function Committee() {
                 <div className="orgv2__chain" style={{ marginTop: 8 }}>
                   <div className="orgv2__line" />
                   <div className="person-card person-card--committee">
-                    <img className="person-card__photo" src={leader.photo} alt="" loading="lazy" />
+                    {leader.photo ? (
+                      <img className="person-card__photo" src={leader.photo} alt="" loading="lazy" />
+                    ) : (
+                      <div className="person-card__photo" aria-hidden="true" />
+                    )}
                     <div className="person-card__body">
                       <div className="person-card__name">{leader.name}</div>
                       <div className="person-card__role">{leader.role || "Председатель Комитета"}</div>
@@ -198,7 +205,11 @@ export default function Committee() {
                   {rest.map((m, idx) => (
                     <div key={m.id || idx} className="gov-card">
                       <div className="gov-card__top">
-                        <img className="gov-card__avatar" src={m.photo} alt="" loading="lazy" />
+                        {m.photo ? (
+                          <img className="gov-card__avatar" src={m.photo} alt="" loading="lazy" />
+                        ) : (
+                          <div className="gov-card__avatar" aria-hidden="true" />
+                        )}
                       </div>
                       <div className="gov-card__body">
                         <div className="gov-card__name">{m.name}</div>

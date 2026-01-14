@@ -3,6 +3,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import PdfPreviewModal from "./PdfPreviewModal.jsx";
 import { decodeHtmlEntities } from "../utils/html.js";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 function stripTags(v) {
   return String(v ?? "").replace(/<[^>]*>/g, "").trim();
@@ -18,12 +19,7 @@ export default function PersonDetail({ item, type, backHref }) {
   const bioPlain = stripTags(bioHtml);
   const phone = isDeputy ? item.contacts?.phone : item.phone;
   const email = isDeputy ? item.contacts?.email : item.email;
-  const avatarSrc =
-    (isDeputy &&
-      (item.photo ||
-        "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg")) ||
-    item.photo ||
-    "/img/ok.png";
+  const avatarSrc = normalizeFilesUrl(item.photo);
   const address = item.address || "г. Кызыл, ул. Ленина, 40";
   // Используем legislativeActivity из API, если есть, иначе laws из локальных данных
   const laws = Array.isArray(item.legislativeActivity) && item.legislativeActivity.length 
@@ -34,19 +30,29 @@ export default function PersonDetail({ item, type, backHref }) {
     ? item.incomeDeclarations
     : (Array.isArray(item.incomeDocs) && item.incomeDocs.length ? item.incomeDocs : []);
   // Используем receptionSchedule из API, если есть, иначе schedule из локальных данных
-  const schedule = item.receptionSchedule 
-    ? (typeof item.receptionSchedule === 'string' 
-        ? item.receptionSchedule.split('\n').map(line => {
-            const parts = line.split(/[:\-]/);
-            if (parts.length >= 2) {
-              return [parts[0].trim(), parts.slice(1).join(':').trim()];
-            }
-            return [line.trim(), ''];
-          })
-        : (Array.isArray(item.receptionSchedule) ? item.receptionSchedule : []))
-    : (Array.isArray(item.schedule) && item.schedule.length
-        ? item.schedule
-        : []);
+  const receptionScheduleObj =
+    item.receptionSchedule && typeof item.receptionSchedule === "object" && !Array.isArray(item.receptionSchedule)
+      ? item.receptionSchedule
+      : null;
+  const scheduleHtmlRaw =
+    (receptionScheduleObj && typeof receptionScheduleObj.notes === "string" && receptionScheduleObj.notes) ||
+    (typeof item.receptionSchedule === "string" ? item.receptionSchedule : "");
+  const scheduleHtml = decodeHtmlEntities(scheduleHtmlRaw);
+  const schedulePlain = stripTags(scheduleHtml);
+  const schedule =
+    typeof item.receptionSchedule === "string"
+      ? item.receptionSchedule.split("\n").map((line) => {
+          const parts = line.split(/[:\-]/);
+          if (parts.length >= 2) {
+            return [parts[0].trim(), parts.slice(1).join(":").trim()];
+          }
+          return [line.trim(), ""];
+        })
+      : Array.isArray(item.receptionSchedule)
+        ? item.receptionSchedule
+        : Array.isArray(item.schedule) && item.schedule.length
+          ? item.schedule
+          : [];
 
   const [active, setActive] = React.useState("bio");
   const [preview, setPreview] = React.useState(null); // {url, title}
@@ -101,7 +107,11 @@ export default function PersonDetail({ item, type, backHref }) {
         )}
 
         <div className="card person-hero">
-          <img className="person-portrait" src={avatarSrc} alt={title} loading="lazy" />
+          {avatarSrc ? (
+            <img className="person-portrait" src={avatarSrc} alt={title} loading="lazy" />
+          ) : (
+            <div className="person-portrait" aria-hidden="true" />
+          )}
           <div className="person-hero__body">
             <h1 className="person-name">{title}</h1>
             <div className="person-meta">
@@ -339,9 +349,9 @@ export default function PersonDetail({ item, type, backHref }) {
                 )
               )}
             </div>
-          ) : typeof item.receptionSchedule === 'string' && item.receptionSchedule.trim() ? (
+          ) : schedulePlain ? (
             <div className="prose">
-              <p style={{ whiteSpace: "pre-wrap" }}>{item.receptionSchedule}</p>
+              <div dangerouslySetInnerHTML={{ __html: String(scheduleHtml) }} />
             </div>
           ) : (
             <p>График приема граждан не указан</p>

@@ -4,6 +4,82 @@ import { Select } from "antd";
 import PersonDetail from "../components/PersonDetail.jsx";
 import SideNav from "../components/SideNav.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { PersonsApi } from "../api/client.js";
+
+function pickFirstLink(v) {
+  if (!v) return "";
+  if (typeof v === "string") return v.trim();
+  if (Array.isArray(v)) {
+    for (const item of v) {
+      const got = pickFirstLink(item);
+      if (got) return got;
+    }
+    return "";
+  }
+  if (typeof v === "object") {
+    const direct =
+      v.link ||
+      v.url ||
+      v.src ||
+      v.path ||
+      v.file?.link ||
+      v.file?.url ||
+      v.image?.link ||
+      v.image?.url ||
+      "";
+    if (direct) return String(direct).trim();
+    const id = v.id || v.file?.id || v.imageId || v.image_id || v.photoId || v.photo_id || v.avatarId || v.avatar_id;
+    if (id) return `/files/v2/${String(id).trim()}`;
+  }
+  return "";
+}
+
+function normalizeApiDeputyForDetail(p) {
+  if (!p || typeof p !== "object") return null;
+  const id = String(p.id ?? p._id ?? p.personId ?? "");
+  if (!id) return null;
+  const name = String(p.fullName || p.full_name || p.name || "").trim();
+  const district =
+    String(p.electoralDistrict || p.electoral_district || p.district || "").trim() ||
+    (Array.isArray(p.districts) && p.districts[0]?.name ? String(p.districts[0].name).trim() : "");
+  const faction =
+    String(p.faction || "").trim() ||
+    (Array.isArray(p.factions) && p.factions[0]?.name ? String(p.factions[0].name).trim() : "");
+  const convocation =
+    String(p.convocationNumber || p.convocation || p.convocation_number || "").trim() ||
+    (Array.isArray(p.convocations) && p.convocations[0]?.name ? String(p.convocations[0].name).trim() : "");
+  const photo = normalizeFilesUrl(
+    pickFirstLink(p.image) ||
+      pickFirstLink(p.photo) ||
+      pickFirstLink(p.avatar) ||
+      pickFirstLink(p.media) ||
+      pickFirstLink(p.files) ||
+      pickFirstLink(p.attachments) ||
+      String(p.photoUrl || p.photo_url || "").trim()
+  );
+
+  return {
+    ...p,
+    id,
+    name: name || p.name || "",
+    fullName: name,
+    district,
+    electoralDistrict: district,
+    faction,
+    convocation,
+    convocationNumber: convocation,
+    photo,
+    contacts: {
+      phone: String(p.phoneNumber || p.phone_number || p.phone || p.contacts?.phone || "").trim(),
+      email: String(p.email || p.contacts?.email || "").trim(),
+    },
+    biography: p.biography || p.bio || p.description || "",
+    bio: p.bio || (p.biography || p.description || ""),
+    description: p.description || (p.biography || p.bio || ""),
+    position: String(p.position || p.role || "").trim(),
+  };
+}
 
 export default function Government() {
   const { government, deputies, committees } = useData();
@@ -32,6 +108,25 @@ export default function Government() {
     const id = sp.get("id");
     return id || null;
   });
+  const [selectedDeputy, setSelectedDeputy] = React.useState(null);
+
+  // When user opens a deputy detail page, fetch fresh data by id to avoid stale DataContext cache
+  // (important after uploading a new photo in admin).
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!selected || section !== "Депутаты") {
+        if (alive) setSelectedDeputy(null);
+        return;
+      }
+      const res = await PersonsApi.getById(String(selected)).catch(() => null);
+      const normalized = normalizeApiDeputyForDetail(res);
+      if (alive) setSelectedDeputy(normalized);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [selected, section]);
   React.useEffect(() => {
     const onNav = () => {
       const sp = new URLSearchParams(window.location.search || "");
@@ -102,23 +197,31 @@ export default function Government() {
     [deputies, district, convocation, faction]
   );
 
+  const toReceptionPlain = React.useCallback((v) => {
+    const raw =
+      typeof v === "string"
+        ? v
+        : v && typeof v === "object" && typeof v.notes === "string"
+          ? v.notes
+          : "";
+    return String(raw || "").replace(/<[^>]*>/g, "").trim();
+  }, []);
+
   // Committees expand/collapse (Структура)
   const [openCommittee, setOpenCommittee] = React.useState(null);
   const renderCommittee = (id) => {
     const committee = (committees || []).find((c) => c.id === id) || null;
     const leader = committee?.members?.[0] || null;
     if (!leader) return null;
-    const PLACEHOLDER =
-      "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg";
+    const leaderPhoto = normalizeFilesUrl(leader.photo);
     return (
       <div className="orgv2__committee">
         <div className="person-card person-card--committee">
-          <img
-            className="person-card__photo"
-            src={leader.photo || PLACEHOLDER}
-            alt=""
-            loading="lazy"
-          />
+          {leaderPhoto ? (
+            <img className="person-card__photo" src={leaderPhoto} alt="" loading="lazy" />
+          ) : (
+            <div className="person-card__photo" aria-hidden="true" />
+          )}
           <div className="person-card__body">
             <div className="person-card__name">{leader.name}</div>
             <div className="person-card__role">{leader.role || t("Комитеты")}</div>
@@ -143,7 +246,9 @@ export default function Government() {
 
   if (selected) {
     const dataset = section === "Депутаты" ? deputies : government;
-    const item = dataset.find((p) => p.id === selected);
+    const item =
+      (section === "Депутаты" && selectedDeputy) ||
+      dataset.find((p) => p.id === selected);
     if (!item) return null;
     const sp = new URLSearchParams(window.location.search || "");
     const backParam = sp.get("back");
@@ -333,15 +438,11 @@ export default function Government() {
                     <div className="orgv2__line" />
                     {[government[0], government[1]].filter(Boolean).map((p) => (
                       <div key={p.id} className="person-card person-card--round-xl">
-                        <img
-                          className="person-card__photo"
-                          src={
-                            p.photo ||
-                            "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                          }
-                          alt=""
-                          loading="lazy"
-                        />
+                        {normalizeFilesUrl(p.photo) ? (
+                          <img className="person-card__photo" src={normalizeFilesUrl(p.photo)} alt="" loading="lazy" />
+                        ) : (
+                          <div className="person-card__photo" aria-hidden="true" />
+                        )}
                         <div className="person-card__body">
                           <div className="person-card__name">{p.name}</div>
                           <div className="person-card__role">{p.role}</div>
@@ -459,17 +560,17 @@ export default function Government() {
                   {filteredDeps.map((d) => (
                     <div key={d.id} className="gov-card">
                       <div className="gov-card__top">
-                        <img
-                          className="gov-card__avatar"
-                          src={
-                            d.photo ||
-                            (d.image && d.image.link) ||
-                            "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                          }
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                        />
+                        {normalizeFilesUrl(d.photo || (d.image && d.image.link)) ? (
+                          <img
+                            className="gov-card__avatar"
+                            src={normalizeFilesUrl(d.photo || (d.image && d.image.link))}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <div className="gov-card__avatar" aria-hidden="true" />
+                        )}
                       </div>
                       <div className="gov-card__body">
                         <div className="gov-card__name">{d.name}</div>
@@ -479,11 +580,11 @@ export default function Government() {
                           <div className="gov-card__role">{t("Депутат")}</div>
                         )}
                         <ul className="gov-meta">
-                          {d.reception && (
+                          {toReceptionPlain(d.reception) && (
                             <li>
                               <span>⏰</span>
                               <span>
-                                {t("Приём:")} {d.reception}
+                                {t("Приём:")} {toReceptionPlain(d.reception)}
                               </span>
                             </li>
                           )}
@@ -534,13 +635,17 @@ export default function Government() {
                   {filtered.map((p) => (
                     <div key={p.id} className="gov-card">
                       <div className="gov-card__top">
-                        <img
-                          className="gov-card__avatar"
-                          src={p.photo || "/img/ok.png"}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                        />
+                        {normalizeFilesUrl(p.photo) ? (
+                          <img
+                            className="gov-card__avatar"
+                            src={normalizeFilesUrl(p.photo)}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <div className="gov-card__avatar" aria-hidden="true" />
+                        )}
                       </div>
                       <div className="gov-card__body">
                         <div className="gov-card__name">{p.name}</div>

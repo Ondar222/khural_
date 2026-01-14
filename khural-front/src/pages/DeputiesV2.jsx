@@ -5,6 +5,7 @@ import { Select, Button, Dropdown } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { PersonsApi } from "../api/client.js";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
 const STORAGE_KEY = "khural_deputies_overrides_v1";
@@ -64,7 +65,11 @@ function toDisplay(v) {
   const stripTags = (s) => String(s || "").replace(/<[^>]*>/g, "").trim();
   if (typeof v === "string") return stripTags(v);
   if (typeof v === "number") return String(v);
-  if (typeof v === "object") return stripTags(v.name || v.title || v.label || v.fullName || String(v));
+  if (typeof v === "object") {
+    // receptionSchedule may be stored as object with notes
+    if (typeof v?.notes === "string") return stripTags(v.notes);
+    return stripTags(v.name || v.title || v.label || v.fullName || String(v));
+  }
   return stripTags(String(v));
 }
 
@@ -74,6 +79,33 @@ function normalizeApiDeputy(p) {
     if (typeof v === "string") return v.trim();
     if (typeof v === "object") return String(v?.name || v?.title || v?.label || "").trim();
     return String(v).trim();
+  };
+  const toLink = (v) => {
+    if (!v) return "";
+    if (typeof v === "string") return v.trim();
+    if (Array.isArray(v)) {
+      for (const item of v) {
+        const got = toLink(item);
+        if (got) return got;
+      }
+      return "";
+    }
+    if (typeof v === "object") {
+      const direct =
+        v.link ||
+        v.url ||
+        v.src ||
+        v.path ||
+        v.file?.link ||
+        v.file?.url ||
+        v.image?.link ||
+        v.image?.url ||
+        "";
+      if (direct) return String(direct).trim();
+      const id = v.id || v.file?.id || v.imageId || v.image_id || v.photoId || v.photo_id || v.avatarId || v.avatar_id;
+      if (id) return `/files/v2/${String(id).trim()}`;
+    }
+    return "";
   };
   if (!p || typeof p !== "object") return null;
   const id = String(p.id ?? p._id ?? p.personId ?? "");
@@ -87,11 +119,16 @@ function normalizeApiDeputy(p) {
     phone: toText(p.phoneNumber || p.phone_number || p.phone || p.contacts?.phone),
     email: toText(p.email || p.contacts?.email),
   };
-  const photo =
-    toText(p?.image?.link) ||
-    toText(p?.image?.url) ||
-    toText(p?.photoUrl || p?.photo_url || p?.photo) ||
-    "";
+  const photo = normalizeFilesUrl(
+    toLink(p?.image) ||
+      toLink(p?.photo) ||
+      toLink(p?.avatar) ||
+      toLink(p?.media) ||
+      toLink(p?.files) ||
+      toLink(p?.attachments) ||
+      toText(p?.photoUrl || p?.photo_url) ||
+      ""
+  );
   const position = toText(p.position || p.role);
 
   return {
@@ -376,23 +413,25 @@ export default function DeputiesV2() {
               >
                 <div className="grid cols-3">
                   {filtered.map((d) => {
-                    const photo =
+                    const photoRaw =
                       typeof d.photo === "string"
                         ? d.photo
                         : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || "";
+                    const photo = normalizeFilesUrl(photoRaw);
                     return (
                       <div key={d.id} className="gov-card">
                         <div className="gov-card__top">
-                          <img
-                            className="gov-card__avatar"
-                            src={
-                              photo ||
-                              "https://www.shutterstock.com/image-vector/default-avatar-profile-icon-vector-600nw-2027875490.jpg"
-                            }
-                            alt=""
-                            loading="lazy"
-                            decoding="async"
-                          />
+                          {photo ? (
+                            <img
+                              className="gov-card__avatar"
+                              src={photo}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <div className="gov-card__avatar" aria-hidden="true" />
+                          )}
                         </div>
                         <div className="gov-card__body">
                           <div className="gov-card__name">{toDisplay(d.name)}</div>

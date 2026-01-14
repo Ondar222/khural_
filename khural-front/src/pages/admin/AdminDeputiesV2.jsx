@@ -17,6 +17,9 @@ function normKey(v) {
 
 function toReceptionScheduleText(schedule) {
   if (typeof schedule === "string") return schedule;
+  if (schedule && typeof schedule === "object" && !Array.isArray(schedule)) {
+    return typeof schedule.notes === "string" ? schedule.notes : "";
+  }
   if (!Array.isArray(schedule)) return "";
   return schedule
     .map((x) => {
@@ -260,7 +263,12 @@ export default function AdminDeputiesV2({
                 convocationNumber: row.convocationNumber || row.convocation || "",
                 structureType: row.structureType || "",
                 role: row.role || "",
-                receptionSchedule: row.receptionSchedule || "",
+                receptionSchedule:
+                  typeof row.receptionSchedule === "string"
+                    ? row.receptionSchedule
+                    : row.receptionSchedule && typeof row.receptionSchedule === "object"
+                      ? row.receptionSchedule.notes || ""
+                      : "",
                 legislativeActivity: legislativeActivity.length > 0 ? legislativeActivity : undefined,
                 incomeDeclarations: incomeDeclarations.length > 0 ? incomeDeclarations : undefined,
               });
@@ -647,8 +655,16 @@ export default function AdminDeputiesV2({
             </Form.Item>
           </div>
 
-          <Form.Item label="График приема граждан" name="receptionSchedule">
-            <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} placeholder="Текст графика приема" />
+          <Form.Item
+            label="График приема граждан (HTML)"
+            name="receptionSchedule"
+            tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+          >
+            <Input.TextArea
+              autoSize={{ minRows: 3, maxRows: 8 }}
+              placeholder="<p>Пн–Пт: 09:00–18:00</p>\n<p>Сб: 10:00–14:00</p>"
+              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+            />
           </Form.Item>
 
           <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: "16px", marginTop: "16px" }}>
@@ -850,8 +866,16 @@ export default function AdminDeputiesV2({
             </Form.Item>
           </div>
 
-          <Form.Item label="График приема граждан" name="receptionSchedule">
-            <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} placeholder="Текст графика приема" />
+          <Form.Item
+            label="График приема граждан (HTML)"
+            name="receptionSchedule"
+            tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+          >
+            <Input.TextArea
+              autoSize={{ minRows: 3, maxRows: 8 }}
+              placeholder="<p>Пн–Пт: 09:00–18:00</p>\n<p>Сб: 10:00–14:00</p>"
+              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+            />
           </Form.Item>
 
           <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: "16px", marginTop: "16px" }}>

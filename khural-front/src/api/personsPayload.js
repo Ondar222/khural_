@@ -12,6 +12,26 @@ function withFallback(obj, key, fallbackKey) {
   return undefined;
 }
 
+function normalizePhoneE164(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return "";
+  // Keep leading + if present, otherwise strip everything except digits.
+  const digits = raw.replace(/[^\d+]/g, "");
+  const plus = digits.startsWith("+");
+  const nums = digits.replace(/[^\d]/g, "");
+  if (!nums) return "";
+
+  // Russia common formats:
+  // - 8XXXXXXXXXX -> +7XXXXXXXXXX
+  // - 7XXXXXXXXXX -> +7XXXXXXXXXX
+  // - XXXXXXXXXX  -> +7XXXXXXXXXX
+  if (nums.length === 11 && nums.startsWith("8")) return `+7${nums.slice(1)}`;
+  if (nums.length === 11 && nums.startsWith("7")) return `+${nums}`;
+  if (nums.length === 10) return `+7${nums}`;
+  // fallback: if original had + keep it, else return digits only (may still be rejected by backend)
+  return plus ? `+${nums}` : nums;
+}
+
 export function toPersonsApiBody(input) {
   const body = isObj(input) ? { ...input } : {};
 
@@ -44,12 +64,32 @@ export function toPersonsApiBody(input) {
     body.electoral_district = electoralDistrict;
   }
   if (phoneNumber !== undefined) {
-    body.phoneNumber = phoneNumber;
-    body.phone_number = phoneNumber;
+    const normalized = normalizePhoneE164(phoneNumber);
+    // If we can't normalize, don't send invalid value (backend validates IsPhoneNumber)
+    if (normalized) {
+      body.phoneNumber = normalized;
+      body.phone_number = normalized;
+    } else {
+      delete body.phoneNumber;
+      delete body.phone_number;
+    }
   }
   if (receptionSchedule !== undefined) {
-    body.receptionSchedule = receptionSchedule;
-    body.reception_schedule = receptionSchedule;
+    // Backend expects an object. Admin UI may send a string; store it as notes.
+    if (typeof receptionSchedule === "string") {
+      const s = receptionSchedule.trim();
+      if (s) {
+        const obj = { notes: s };
+        body.receptionSchedule = obj;
+        body.reception_schedule = obj;
+      } else {
+        delete body.receptionSchedule;
+        delete body.reception_schedule;
+      }
+    } else {
+      body.receptionSchedule = receptionSchedule;
+      body.reception_schedule = receptionSchedule;
+    }
   }
 
   return body;

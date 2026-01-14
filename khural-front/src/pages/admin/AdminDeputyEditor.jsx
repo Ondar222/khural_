@@ -64,6 +64,13 @@ function getLocalDeputyById(list, id) {
 function normalizeInitial(d) {
   const row = d && typeof d === "object" ? d : {};
   const biographyRaw = row.biography || row.bio || row.description || "";
+  const receptionRaw = row.receptionSchedule || row.reception_schedule || "";
+  const receptionText =
+    typeof receptionRaw === "string"
+      ? receptionRaw
+      : receptionRaw && typeof receptionRaw === "object" && typeof receptionRaw.notes === "string"
+        ? receptionRaw.notes
+        : "";
   return {
     fullName: row.fullName || row.full_name || row.name || "",
     faction: row.faction || "",
@@ -76,7 +83,7 @@ function normalizeInitial(d) {
     email: row.email || row.contacts?.email || "",
     phoneNumber: row.phoneNumber || row.phone_number || row.contacts?.phone || row.phone || "",
     address: row.address || row.contacts?.address || "",
-    receptionSchedule: row.receptionSchedule || row.reception_schedule || "",
+    receptionSchedule: decodeHtmlEntities(receptionText),
   };
 }
 
@@ -182,6 +189,18 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         reload();
         navigate("/admin/deputies");
       } catch (e) {
+        // If data patch fails (often due to validation), still try to upload photo so it appears on the site.
+        if (photoFile) {
+          try {
+            await PersonsApi.uploadMedia(id, photoFile);
+            message.success("Фото загружено");
+            reload();
+            navigate("/admin/deputies");
+            return;
+          } catch {
+            // fall through to local override warning
+          }
+        }
         saveOverridesUpdate(id, { ...body, id });
         message.warning("Обновлено локально (сервер недоступен или нет прав)");
         reload();
@@ -326,8 +345,17 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
 
           <div className="admin-card">
             <div className="admin-deputy-editor__section-title">Приём граждан</div>
-            <Form.Item label="График приема граждан" name="receptionSchedule">
-              <Input.TextArea disabled={loading || saving} autoSize={{ minRows: 6, maxRows: 10 }} />
+            <Form.Item
+              label="График приема граждан (HTML)"
+              name="receptionSchedule"
+              tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+            >
+              <Input.TextArea
+                disabled={loading || saving}
+                autoSize={{ minRows: 6, maxRows: 14 }}
+                placeholder="<p>Пн–Пт: 09:00–18:00</p>\n<p>Сб: 10:00–14:00</p>"
+                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+              />
             </Form.Item>
           </div>
         </div>
