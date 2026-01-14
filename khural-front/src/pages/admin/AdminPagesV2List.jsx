@@ -10,22 +10,40 @@ function normalizeList(res) {
 }
 
 async function listPagesWithFallback({ locale, authPreferred } = {}) {
-  // Public list endpoint (auth: false) is preferred for prod compatibility.
-  // Some backends might restrict it => retry with auth: true.
-  try {
-    if (!authPreferred) {
-      const res = await AboutApi.listPages({ locale });
-      return normalizeList(res);
-    }
-  } catch {
-    // fallthrough
-  }
+  // Используем auth: true для админки, чтобы получить все страницы
   const qs = new URLSearchParams();
   if (locale) qs.set("locale", locale);
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
-  const res = await apiFetch(`/pages${suffix}`, { method: "GET", auth: true });
-  return normalizeList(res);
+  
+  try {
+    // Пробуем с авторизацией сначала
+    const res = await apiFetch(`/pages${suffix}`, { method: "GET", auth: true });
+    return normalizeList(res);
+  } catch (e) {
+    // Если не получилось с авторизацией, пробуем без неё
+    if (authPreferred) {
+      throw e;
+    }
+    try {
+      const res = await AboutApi.listPages({ locale });
+      return normalizeList(res);
+    } catch (e2) {
+      throw e; // Возвращаем первую ошибку
+    }
+  }
 }
+
+// Список существующих страниц сайта для импорта
+const EXISTING_PAGES = [
+  { slug: "code-of-honor", title: "Кодекс чести мужчины Тувы", menuTitle: "Кодекс чести мужчины Тувы" },
+  { slug: "mothers-commandments", title: "Свод заповедей матерей Тувы", menuTitle: "Свод заповедей матерей Тувы" },
+  { slug: "news-subscription", title: "Подписка на новости", menuTitle: "Подписка на новости" },
+  { slug: "for-media", title: "Для СМИ", menuTitle: "Для СМИ" },
+  { slug: "photos", title: "Фотографии", menuTitle: "Фотографии" },
+  { slug: "videos", title: "Видеозаписи", menuTitle: "Видеозаписи" },
+  { slug: "pd-policy", title: "Политика обработки персональных данных", menuTitle: "Политика обработки ПДн" },
+  { slug: "license", title: "Лицензия", menuTitle: "Лицензия" },
+];
 
 export default function AdminPagesV2List({
   canWrite,
@@ -39,14 +57,27 @@ export default function AdminPagesV2List({
   const [localeMode, setLocaleMode] = React.useState("all"); // all | ru | tyv
   const [busy, setBusy] = React.useState(false);
   const [items, setItems] = React.useState([]);
+  const [importing, setImporting] = React.useState(false);
 
   const load = React.useCallback(async () => {
     setBusy(true);
     try {
       const locales = localeMode === "all" ? ["ru", "tyv"] : [localeMode];
-      const results = await Promise.all(
-        locales.map((loc) => listPagesWithFallback({ locale: loc }).catch(() => []))
-      );
+      // Загружаем последовательно, чтобы избежать 429 ошибок
+      const results = [];
+      for (const loc of locales) {
+        try {
+          const res = await listPagesWithFallback({ locale: loc, authPreferred: true });
+          results.push(Array.isArray(res) ? res : []);
+          // Небольшая задержка между запросами
+          if (locales.length > 1) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        } catch (e) {
+          console.warn(`Failed to load pages for locale ${loc}:`, e);
+          results.push([]);
+        }
+      }
       const merged = results.flat();
       setItems(Array.isArray(merged) ? merged : []);
     } catch (e) {
@@ -58,8 +89,9 @@ export default function AdminPagesV2List({
   }, [localeMode, onMessage]);
 
   React.useEffect(() => {
+    // Загружаем страницы при монтировании и при изменении режима языка
     load();
-  }, [load]);
+  }, [localeMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = React.useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -99,6 +131,65 @@ export default function AdminPagesV2List({
     },
     [canWrite, load, onMessage, reloadData]
   );
+
+  const importExistingPages = React.useCallback(async () => {
+    if (!canWrite) return;
+    setImporting(true);
+    let imported = 0;
+    let skipped = 0;
+    let errors = 0;
+    try {
+      // Сначала загружаем текущий список страниц
+      await load();
+      const existingSlugs = new Set((items || []).map((p) => String(p.slug || "").toLowerCase()));
+
+      // Импортируем страницы последовательно с задержками, чтобы избежать 429
+      for (let i = 0; i < EXISTING_PAGES.length; i++) {
+        const pageData = EXISTING_PAGES[i];
+        const slugLower = pageData.slug.toLowerCase();
+        
+        // Проверяем, не существует ли уже страница
+        if (existingSlugs.has(slugLower)) {
+          skipped++;
+          continue;
+        }
+
+        try {
+          await AboutApi.createPage({
+            title: pageData.title,
+            menuTitle: pageData.menuTitle || pageData.title,
+            slug: pageData.slug,
+            locale: "ru",
+            content: `<p>Страница "${pageData.title}"</p>`,
+          });
+          imported++;
+          existingSlugs.add(slugLower); // Добавляем в список, чтобы не создавать дубликаты
+          
+          // Задержка между запросами, чтобы избежать 429
+          if (i < EXISTING_PAGES.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+        } catch (e) {
+          console.error(`Failed to import page ${pageData.slug}:`, e);
+          errors++;
+          // Продолжаем импорт других страниц даже если одна не удалась
+        }
+      }
+
+      const message = `Импорт завершен: создано ${imported} страниц, пропущено ${skipped} (уже существуют)${errors > 0 ? `, ошибок: ${errors}` : ""}`;
+      onMessage?.(errors > 0 ? "warning" : "success", message);
+      
+      // Перезагружаем список страниц
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Задержка перед перезагрузкой
+      reloadData();
+      await load();
+    } catch (e) {
+      console.error("Import error:", e);
+      onMessage?.("error", e?.message || "Не удалось импортировать страницы");
+    } finally {
+      setImporting(false);
+    }
+  }, [canWrite, items, load, onMessage, reloadData]);
 
   const columns = [
     {
@@ -168,6 +259,14 @@ export default function AdminPagesV2List({
           </Button>
           <Button onClick={load} loading={busy}>
             Обновить
+          </Button>
+          <Button
+            onClick={importExistingPages}
+            loading={importing}
+            disabled={!canWrite || importing}
+            type="default"
+          >
+            Импортировать существующие страницы
           </Button>
           <Button type="primary" onClick={() => onCreate?.()} disabled={!canWrite}>
             + Создать страницу

@@ -1,8 +1,8 @@
 import React from "react";
-import { Button, Form, Input, Select } from "antd";
-import { AboutApi } from "../../api/client.js";
+import { Button, Form, Input, Select, Space, Card, message as antdMessage } from "antd";
+import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
+import { AboutApi, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
-import { Editor } from "@tinymce/tinymce-react";
 
 function slugify(input) {
   return String(input || "")
@@ -14,12 +14,20 @@ function slugify(input) {
     .replace(/^-+|-+$/g, "");
 }
 
+const BLOCK_TYPES = [
+  { value: "text", label: "Текст" },
+  { value: "link", label: "Ссылка" },
+  { value: "file", label: "Документ" },
+];
+
 export default function AdminPagesV2Create({ canWrite, onDone }) {
   const { reload } = useData();
   const [form] = Form.useForm();
   const [busy, setBusy] = React.useState(false);
   const [parents, setParents] = React.useState([]);
-  const contentHtml = Form.useWatch("content", form);
+  const [documents, setDocuments] = React.useState([]);
+  const [loadingDocs, setLoadingDocs] = React.useState(false);
+  const blocks = Form.useWatch("blocks", form) || [];
 
   const prefillParent = React.useMemo(() => {
     const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
@@ -29,6 +37,24 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   const prefillTitle = React.useMemo(() => {
     const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
     return sp.get("title") ? decodeURIComponent(sp.get("title")) : "";
+  }, []);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      setLoadingDocs(true);
+      try {
+        const docs = await DocumentsApi.listAll().catch(() => []);
+        if (alive) setDocuments(Array.isArray(docs) ? docs : []);
+      } catch (e) {
+        console.error("Failed to load documents:", e);
+      } finally {
+        if (alive) setLoadingDocs(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   React.useEffect(() => {
@@ -75,18 +101,82 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       const parentSlug = String(values.parentSlug || "").trim().replace(/^\/+|\/+$/g, "");
       const leaf = String(values.slugLeaf || "").trim().replace(/^\/+|\/+$/g, "");
       const fullSlug = parentSlug ? `${parentSlug}/${leaf}` : leaf;
+
+      // Формируем блоки контента
+      const contentBlocks = (values.blocks || []).map((block, index) => ({
+        type: block.type || "text",
+        order: block.order !== undefined ? block.order : index,
+        content: block.content || null,
+        caption: block.caption || null,
+        alt: block.alt || null,
+        fileId: block.fileId || null,
+        metadata: block.metadata || null,
+      }));
+
       await AboutApi.createPage({
         title: values.title,
+        menuTitle: values.menuTitle || null,
         slug: fullSlug,
         locale: values.locale || "ru",
-        content: values.content || "",
+        content: [
+          {
+            locale: values.locale || "ru",
+            title: values.title,
+            content: values.content || "",
+            blocks: contentBlocks,
+          },
+        ],
       });
+      antdMessage.success("Страница создана");
       reload();
       onDone?.();
+    } catch (error) {
+      console.error("Failed to create page:", error);
+      antdMessage.error(error?.message || "Не удалось создать страницу");
     } finally {
       setBusy(false);
     }
   }, [canWrite, form, onDone, reload]);
+
+  const addBlock = React.useCallback(() => {
+    const currentBlocks = form.getFieldValue("blocks") || [];
+    form.setFieldValue("blocks", [
+      ...currentBlocks,
+      {
+        type: "text",
+        order: currentBlocks.length,
+        content: "",
+        caption: "",
+        alt: "",
+        fileId: null,
+      },
+    ]);
+  }, [form]);
+
+  const removeBlock = React.useCallback(
+    (index) => {
+      const currentBlocks = form.getFieldValue("blocks") || [];
+      form.setFieldValue(
+        "blocks",
+        currentBlocks.filter((_, i) => i !== index)
+      );
+    },
+    [form]
+  );
+
+  const moveBlock = React.useCallback(
+    (index, direction) => {
+      const currentBlocks = form.getFieldValue("blocks") || [];
+      const newIndex = direction === "up" ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= currentBlocks.length) return;
+      const newBlocks = [...currentBlocks];
+      [newBlocks[index], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[index]];
+      newBlocks[index].order = index;
+      newBlocks[newIndex].order = newIndex;
+      form.setFieldValue("blocks", newBlocks);
+    },
+    [form]
+  );
 
   const parentSlug = Form.useWatch("parentSlug", form);
   const slugLeaf = Form.useWatch("slugLeaf", form);
@@ -116,9 +206,13 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
       <div className="admin-card admin-page-editor__card">
 
-        <Form layout="vertical" form={form} initialValues={{ locale: "ru" }}>
-          <Form.Item label="Название" name="title" rules={[{ required: true, message: "Введите название" }]}>
-            <Input onChange={onTitleChange} />
+        <Form layout="vertical" form={form} initialValues={{ locale: "ru", blocks: [] }}>
+          <Form.Item label="Название страницы" name="title" rules={[{ required: true, message: "Введите название" }]}>
+            <Input onChange={onTitleChange} placeholder="Название страницы" />
+          </Form.Item>
+
+          <Form.Item label="Название в меню" name="menuTitle">
+            <Input placeholder="Название в меню (если отличается от названия страницы)" />
           </Form.Item>
           <Form.Item label="Родитель (опционально)" name="parentSlug">
             <Select
@@ -149,18 +243,118 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
               ]}
             />
           </Form.Item>
-          <Form.Item label="Содержимое (HTML)" name="content">
-            <Editor
-              apiKey={"qu8gahwqf4sz5j8567k7fmk76nqedf655jhu2c0d9bhvc0as"}
-              value={typeof contentHtml === "string" ? contentHtml : ""}
-              onEditorChange={(content) => form.setFieldValue("content", content)}
-              init={{
-                height: 520,
-                menubar: true,
-              }}
-              plugins={["lists", "link", "image", "media"]}
-              toolbar="lists link image media"
+          <Form.Item
+            label="Содержимое (HTML)"
+            name="content"
+            tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a, img и т.д. Сохраняется как есть."
+          >
+            <Input.TextArea
+              autoSize={{ minRows: 12, maxRows: 28 }}
+              placeholder="<p>Содержимое страницы</p>\n<h2>Заголовок</h2>\n<ul><li>Пункт списка</li></ul>"
+              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
             />
+          </Form.Item>
+
+          <Form.Item label="Блоки контента">
+            <Form.List name="blocks">
+              {(fields, { add, remove }) => (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {fields.map((field, index) => {
+                    const blockType = form.getFieldValue(["blocks", field.name, "type"]) || "text";
+                    return (
+                      <Card
+                        key={field.key}
+                        size="small"
+                        title={
+                          <Space>
+                            <span>Блок {index + 1}</span>
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<ArrowUpOutlined />}
+                              onClick={() => moveBlock(index, "up")}
+                              disabled={index === 0}
+                            />
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<ArrowDownOutlined />}
+                              onClick={() => moveBlock(index, "down")}
+                              disabled={index === fields.length - 1}
+                            />
+                            <Button
+                              type="text"
+                              danger
+                              size="small"
+                              icon={<DeleteOutlined />}
+                              onClick={() => remove(field.name)}
+                            />
+                          </Space>
+                        }
+                      >
+                        <Form.Item name={[field.name, "type"]} label="Тип блока" rules={[{ required: true }]}>
+                          <Select options={BLOCK_TYPES} />
+                        </Form.Item>
+
+                        {blockType === "text" && (
+                          <>
+                            <Form.Item name={[field.name, "content"]} label="Текст (HTML)">
+                              <Input.TextArea
+                                autoSize={{ minRows: 4, maxRows: 12 }}
+                                placeholder="<p>Текст блока...</p>"
+                              />
+                            </Form.Item>
+                          </>
+                        )}
+
+                        {blockType === "link" && (
+                          <>
+                            <Form.Item name={[field.name, "content"]} label="URL ссылки" rules={[{ required: true }]}>
+                              <Input placeholder="https://example.com" />
+                            </Form.Item>
+                            <Form.Item name={[field.name, "caption"]} label="Текст ссылки">
+                              <Input placeholder="Текст ссылки" />
+                            </Form.Item>
+                          </>
+                        )}
+
+                        {blockType === "file" && (
+                          <>
+                            <Form.Item name={[field.name, "fileId"]} label="Документ">
+                              <Select
+                                placeholder="Выберите документ"
+                                loading={loadingDocs}
+                                showSearch
+                                allowClear
+                                filterOption={(input, option) =>
+                                  String(option?.label || "")
+                                    .toLowerCase()
+                                    .includes(String(input || "").toLowerCase())
+                                }
+                                options={documents.map((doc) => ({
+                                  value: doc.id,
+                                  label: `${doc.title || doc.name || "Документ"} (${doc.type || "—"})`,
+                                }))}
+                              />
+                            </Form.Item>
+                            <Form.Item name={[field.name, "caption"]} label="Подпись к документу">
+                              <Input placeholder="Подпись к документу" />
+                            </Form.Item>
+                          </>
+                        )}
+
+                        <Form.Item name={[field.name, "order"]} hidden>
+                          <Input type="number" />
+                        </Form.Item>
+                      </Card>
+                    );
+                  })}
+                  <Button type="dashed" onClick={addBlock} icon={<PlusOutlined />} block>
+                    Добавить блок
+                  </Button>
+                </div>
+              )}
+            </Form.List>
           </Form.Item>
         </Form>
       </div>
