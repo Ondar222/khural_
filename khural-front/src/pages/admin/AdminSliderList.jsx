@@ -36,15 +36,18 @@ export default function AdminSliderList({
 
   const applyReorder = React.useCallback(
     async (nextRows) => {
+      const prevRows = rows;
       setRows(nextRows);
       const ids = nextRows.map((r) => String(r.id));
       try {
         await onReorder?.(ids);
       } catch (e) {
         message.error(e?.message || "Не удалось сохранить порядок");
+        // Revert UI if backend reorder failed (we require persistence)
+        setRows(prevRows);
       }
     },
-    [onReorder, message]
+    [onReorder, message, rows]
   );
 
   const moveRow = React.useCallback(
