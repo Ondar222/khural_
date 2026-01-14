@@ -1,37 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-
-const SLIDES = [
-  {
-    title: "Минцифры региона составило карту точек бесплатного Wi‑Fi в Республике Тыва",
-    desc: "Краткое описание события",
-    link: "/news",
-    image: "/img/slide-1.svg",
-  },
-  {
-    title: "Республика Тыва — регион возможностей",
-    desc: "Инвестиции, развитие и новые проекты региона.",
-    link: "/news",
-    image: "/img/slider1.jpg",
-  },
-  {
-    title: "Инновации, туризм и открытый диалог",
-    desc: "Ключевые инициативы и события недели.",
-    link: "/news",
-    image: "/img/slider2.jpg",
-  },
-];
-
-function normalizeSlideImage(image) {
-  const src = String(image || "").trim();
-  if (!src) return "";
-  // Keep browser-managed URLs intact
-  if (/^(data|blob):/i.test(src)) return src;
-  if (/^https?:\/\//i.test(src)) return src;
-  if (src.startsWith("/")) return src;
-  return "/" + src;
-}
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 export default function HeroCarousel() {
   const { slides: dataSlides } = useData();
@@ -39,9 +9,9 @@ export default function HeroCarousel() {
   const [active, setActive] = React.useState(0);
 
   const baseSlides = React.useMemo(() => {
-    const base = dataSlides && dataSlides.length ? dataSlides : SLIDES;
-    // Normalize to expected shape
-    return (Array.isArray(base) ? base : []).map((s) => ({
+    // Slider must come from backend/admin only (no code fallbacks)
+    const base = Array.isArray(dataSlides) ? dataSlides : [];
+    return base.map((s) => ({
       title: String(s?.title || "").trim(),
       desc: String(s?.desc || "").trim(),
       link: s?.link ? String(s.link) : "/news",
@@ -53,6 +23,8 @@ export default function HeroCarousel() {
     () => baseSlides.filter((s) => s.title && s.image).slice(0, 5),
     [baseSlides]
   );
+
+  if (!slides.length) return null;
 
   React.useEffect(() => {
     const len = slides.length || 1;
@@ -81,7 +53,7 @@ export default function HeroCarousel() {
             <div
               key={i}
               className={`slide ${i === active ? "active" : ""}`}
-              style={{ backgroundImage: `url(${normalizeSlideImage(s.image)})` }}
+              style={{ backgroundImage: `url(${normalizeFilesUrl(s.image)})` }}
             />
           ))}
           <div className="overlay" />

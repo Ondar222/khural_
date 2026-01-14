@@ -7,6 +7,14 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://someshit.yurta.site/:path*"
+    },
+    {
+      "source": "/files/:path*",
+      "destination": "https://someshit.yurta.site/files/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

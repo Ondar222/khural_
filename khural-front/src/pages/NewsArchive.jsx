@@ -4,6 +4,7 @@ import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
@@ -135,7 +136,7 @@ export default function NewsArchive() {
               {item?.image ? (
                 <div style={{ height: 340, overflow: "hidden", borderRadius: 12 }}>
                   <img
-                    src={item.image}
+                    src={normalizeFilesUrl(item.image)}
                     alt=""
                     loading="lazy"
                     decoding="async"
@@ -405,7 +406,7 @@ export default function NewsArchive() {
                       {n?.image ? (
                         <div style={{ height: 180, overflow: "hidden" }}>
                           <img
-                            src={n.image}
+                            src={normalizeFilesUrl(n.image)}
                             alt=""
                             loading="lazy"
                             decoding="async"

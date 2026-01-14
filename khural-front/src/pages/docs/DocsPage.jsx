@@ -3,6 +3,7 @@ import PdfPreviewModal from "../../components/PdfPreviewModal.jsx";
 import SideNav from "../../components/SideNav.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useHashRoute } from "../../Router.jsx";
+import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 
 const CATEGORIES = [
   {
@@ -100,7 +101,7 @@ export default function DocsPage() {
           return raw ? String(raw) : "";
         })(),
         number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
-        url: typeof d.url === "string" ? d.url : d.url ? String(d.url) : "",
+        url: normalizeFilesUrl(typeof d.url === "string" ? d.url : d.url ? String(d.url) : ""),
       }))
     );
   }, [documents, slug]);

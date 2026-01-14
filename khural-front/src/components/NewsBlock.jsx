@@ -2,6 +2,7 @@ import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "./DataState.jsx";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 export default function NewsBlock() {
   const { news, loading, errors, reload } = useData();
@@ -101,7 +102,7 @@ export default function NewsBlock() {
                 {n?.image ? (
                   <div style={{ height: 180, overflow: "hidden" }}>
                     <img
-                      src={n.image}
+                      src={normalizeFilesUrl(n.image)}
                       alt=""
                       loading="lazy"
                       decoding="async"

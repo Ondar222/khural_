@@ -4,6 +4,7 @@ import { Input, Select, Space, Switch } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 function norm(v) {
   return String(v ?? "")
@@ -188,7 +189,7 @@ export default function Documents() {
                         </summary>
                         <div className="law-list" style={{ marginTop: 10 }}>
                           {items.map((d) => {
-                            const url = d.url || d.file?.link || "";
+                            const url = normalizeFilesUrl(d.url || d.file?.link || "");
                             const isPdf = looksLikePdf(url);
                             return (
                               <div key={d.id || url || d.title} className="law-item card">
@@ -239,7 +240,7 @@ export default function Documents() {
                 ) : (
                   <div className="law-list">
                     {filtered.map((d) => {
-                      const url = d.url || d.file?.link || "";
+                      const url = normalizeFilesUrl(d.url || d.file?.link || "");
                       const isPdf = looksLikePdf(url);
                       return (
                         <div key={d.id || url || d.title} className="law-item card">
