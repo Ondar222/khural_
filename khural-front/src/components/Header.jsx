@@ -505,7 +505,7 @@ export default function Header() {
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
                     href="/admin"
                     onClick={() => setMobileOpen(false)}
-                    style={{ width: "100%" }}
+                    style={{ width: "80%" }}
                   >
                     {t("Панель управления") || "Панель управления"}
                   </a>
@@ -515,7 +515,7 @@ export default function Header() {
                       logout();
                       setMobileOpen(false);
                     }}
-                    style={{ width: "100%" }}
+                    style={{ width: "80%" }}
                   >
                     {t("Выйти") || "Выйти"}
                   </button>
