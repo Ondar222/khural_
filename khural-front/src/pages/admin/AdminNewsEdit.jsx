@@ -15,10 +15,43 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const [coverImage, setCoverImage] = React.useState(null);
   const [categories, setCategories] = React.useState([]);
   const [loadingCategories, setLoadingCategories] = React.useState(false);
+  const [creatingCategory, setCreatingCategory] = React.useState(false);
+  const [newCategoryName, setNewCategoryName] = React.useState("");
   const [loadingNews, setLoadingNews] = React.useState(true);
   const [newsData, setNewsData] = React.useState(null);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
   const { reload: reloadPublicData, news: publicNews } = useData();
+  
+  const handleCreateCategory = React.useCallback(async () => {
+    if (!newCategoryName || !newCategoryName.trim()) {
+      antdMessage.warning("Введите название категории");
+      return;
+    }
+    const trimmed = newCategoryName.trim();
+    const exists = categories.some((cat) => 
+      String(cat.name || "").toLowerCase() === trimmed.toLowerCase()
+    );
+    if (exists) {
+      antdMessage.warning(`Категория "${trimmed}" уже существует`);
+      return;
+    }
+    
+    setCreatingCategory(true);
+    try {
+      const newCategory = await NewsApi.createCategory({ name: trimmed });
+      if (newCategory && newCategory.id) {
+        setCategories((prev) => [...prev, newCategory]);
+        form.setFieldValue("categoryId", newCategory.id);
+        setNewCategoryName("");
+        antdMessage.success(`Категория "${trimmed}" создана`);
+      }
+    } catch (error) {
+      console.error("Failed to create category:", error);
+      antdMessage.error(`Не удалось создать категорию: ${error?.message || "Неизвестная ошибка"}`);
+    } finally {
+      setCreatingCategory(false);
+    }
+  }, [newCategoryName, categories, form, antdMessage]);
 
   // Загружаем категории при монтировании
   React.useEffect(() => {
@@ -284,7 +317,37 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
             >
               <Select
                 placeholder="Выберите категорию"
-                loading={loadingCategories}
+                loading={loadingCategories || creatingCategory}
+                showSearch
+                allowClear
+                filterOption={(input, option) =>
+                  String(option?.label || "").toLowerCase().includes(String(input || "").toLowerCase())
+                }
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    <div style={{ padding: 8, borderTop: "1px solid #f0f0f0" }}>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <Input
+                          placeholder="Новая категория"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          onPressEnter={handleCreateCategory}
+                          style={{ flex: 1 }}
+                        />
+                        <Button
+                          type="primary"
+                          size="small"
+                          onClick={handleCreateCategory}
+                          loading={creatingCategory}
+                          disabled={!canWrite || creatingCategory}
+                        >
+                          Создать
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
                 options={categories.map((cat) => ({
                   value: cat.id,
                   label: cat.name,

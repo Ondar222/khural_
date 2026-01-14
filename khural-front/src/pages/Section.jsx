@@ -1,5 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
+import { AboutApi } from "../api/client.js";
+import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import PersonDetail from "../components/PersonDetail.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
@@ -532,16 +534,124 @@ export default function SectionPage() {
       );
     }
 
+    // Проверяем, есть ли страница в админке для этого раздела
+    const [pageFromAdmin, setPageFromAdmin] = React.useState(null);
+    const [loadingPage, setLoadingPage] = React.useState(true);
+    const { lang } = useI18n();
+    
+    // Маппинг названий на slug'и
+    const titleToSlug = React.useMemo(() => {
+      const map = {
+        "Кодекс чести мужчины Тувы": "code-of-honor",
+        "Свод заповедей матерей Тувы": "mothers-commandments",
+        "Подписка на новости": "news-subscription",
+        "Для СМИ": "for-media",
+      };
+      return map[title] || slugify(title);
+    }, [title]);
+    
+    function slugify(input) {
+      return String(input || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]+/g, "-")
+        .replace(/[^a-z0-9\-а-яё]+/gi, "")
+        .replace(/-+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+    
+    React.useEffect(() => {
+      let alive = true;
+      (async () => {
+        setLoadingPage(true);
+        try {
+          const locale = lang === "ty" ? "tyv" : "ru";
+          const page = await AboutApi.getPageBySlug(titleToSlug, { locale }).catch(() => null);
+          if (alive) setPageFromAdmin(page);
+        } catch {
+          if (alive) setPageFromAdmin(null);
+        } finally {
+          if (alive) setLoadingPage(false);
+        }
+      })();
+      return () => {
+        alive = false;
+      };
+    }, [titleToSlug, lang]);
+    
+    // Если страница найдена в админке - показываем её
+    if (pageFromAdmin && !loadingPage) {
+      const html = String(pageFromAdmin?.content || pageFromAdmin?.body || "");
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div>
+                <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>
+                  {pageFromAdmin.title || pageFromAdmin.name || title}
+                </h1>
+                <div className="card" style={{ padding: 18, marginTop: 20 }}>
+                  {html ? (
+                    <div dangerouslySetInnerHTML={{ __html: html }} />
+                  ) : (
+                    <div>—</div>
+                  )}
+                </div>
+                <div style={{ marginTop: 20 }}>
+                  <a href={`/admin/pages`} className="btn" style={{ fontSize: 14 }}>
+                    Редактировать в админке →
+                  </a>
+                </div>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+    
+    // Если загрузка - показываем индикатор
+    if (loadingPage) {
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div>
+                <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
+                <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>
+                  Загрузка...
+                </div>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+    
+    // Если страница не найдена - показываем заглушку с кнопкой создания
     return (
       <section className="section section-page">
         <div className="container">
           <div className="page-grid">
             <div>
               <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
-              <p>
-                Раздел «{title}» пока не заполнен. Если это важный пункт меню — скажи, и я добавлю
-                содержимое/данные.
-              </p>
+              <div className="card" style={{ padding: 24, marginTop: 20 }}>
+                <p style={{ marginTop: 0, marginBottom: 16 }}>
+                  Раздел «{title}» пока не заполнен. Вы можете создать страницу в админке.
+                </p>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  <a href={`/admin/pages/create?title=${encodeURIComponent(title)}`} className="btn btn--primary">
+                    Создать страницу в админке
+                  </a>
+                  <a href="/admin/pages" className="btn">
+                    Перейти в админку страниц
+                  </a>
+                </div>
+                <div style={{ marginTop: 20, padding: 16, background: "#f9fafb", borderRadius: 8, fontSize: 14, color: "#6b7280" }}>
+                  <strong>Рекомендуемый slug:</strong> <code>{titleToSlug}</code>
+                </div>
+              </div>
             </div>
             <SideNav title="Разделы" />
           </div>

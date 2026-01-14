@@ -391,53 +391,74 @@ export default function NewsArchive() {
             >
               <div className="filters">
                 <Space
-                  size={8}
-                  style={{ margin: "12px 0 20px", width: "100%", display: "flex" }}
-                  wrap={false}
+                  size={12}
+                  style={{ margin: "12px 0 20px", width: "100%", display: "flex", flexWrap: "wrap" }}
                 >
-                  <Select
-                    value={category}
-                    onChange={(newCategory) => {
-                      setCategory(newCategory);
-                      const h = window.location.pathname;
-                      const params = new URLSearchParams(window.location.search || "");
-                      if (newCategory === "Все") {
-                        params.delete("category");
-                        params.delete("speaker");
-                      } else if (newCategory === "Председатель") {
-                        params.set("speaker", "true");
-                        params.delete("category");
-                      } else {
-                        params.set("category", newCategory);
-                        params.delete("speaker");
+                  <div style={{ minWidth: 250, flex: "1 1 auto" }}>
+                    <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
+                      Категория
+                    </label>
+                    <Select
+                      value={category}
+                      onChange={(newCategory) => {
+                        setCategory(newCategory);
+                        const h = window.location.pathname;
+                        const params = new URLSearchParams(window.location.search || "");
+                        if (newCategory === "Все") {
+                          params.delete("category");
+                          params.delete("speaker");
+                        } else if (newCategory === "Председатель") {
+                          params.set("speaker", "true");
+                          params.delete("category");
+                        } else {
+                          params.set("category", newCategory);
+                          params.delete("speaker");
+                        }
+                        if (date) params.set("date", date);
+                        const newHash = params.toString() ? `${h}?${params.toString()}` : h;
+                        window.history.pushState({}, "", newHash);
+                        window.dispatchEvent(new Event("app:navigate"));
+                      }}
+                      placeholder="Выберите категорию"
+                      showSearch
+                      allowClear
+                      style={{ width: "100%" }}
+                      filterOption={(input, option) =>
+                        String(option?.label || "").toLowerCase().includes(String(input || "").toLowerCase())
                       }
-                      if (date) params.set("date", date);
-                      const newHash = params.toString() ? `${h}?${params.toString()}` : h;
-                      window.history.pushState({}, "", newHash);
-                      window.dispatchEvent(new Event("app:navigate"));
-                    }}
-                    popupMatchSelectWidth={false}
-                    options={categories.map((c) => ({ value: c, label: c }))}
-                  />
-                  <Input
-                    type="date"
-                    value={date || ""}
-                    onChange={(e) => {
-                      const newDate = e.target.value || "";
-                      setDate(newDate);
-                      const h = window.location.pathname;
-                      const params = new URLSearchParams(window.location.search || "");
-                      if (category && category !== "Все") params.set("category", category);
-                      if (newDate) params.set("date", newDate);
-                      else params.delete("date");
-                      const next = params.toString() ? `${h}?${params.toString()}` : h;
-                      window.history.pushState({}, "", next);
-                      window.dispatchEvent(new Event("app:navigate"));
-                    }}
-                    style={{ minWidth: 220 }}
-                    placeholder="Дата"
-                    aria-label="Фильтр новостей по дате"
-                  />
+                      options={categories.map((c) => ({ value: c, label: c }))}
+                    />
+                  </div>
+                  <div style={{ minWidth: 200, flex: "0 0 auto" }}>
+                    <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
+                      Дата
+                    </label>
+                    <Input
+                      type="date"
+                      value={date || ""}
+                      onChange={(e) => {
+                        const newDate = e.target.value || "";
+                        setDate(newDate);
+                        const h = window.location.pathname;
+                        const params = new URLSearchParams(window.location.search || "");
+                        if (category && category !== "Все") {
+                          if (category === "Председатель") {
+                            params.set("speaker", "true");
+                          } else {
+                            params.set("category", category);
+                          }
+                        }
+                        if (newDate) params.set("date", newDate);
+                        else params.delete("date");
+                        const next = params.toString() ? `${h}?${params.toString()}` : h;
+                        window.history.pushState({}, "", next);
+                        window.dispatchEvent(new Event("app:navigate"));
+                      }}
+                      style={{ width: "100%" }}
+                      placeholder="Выберите дату"
+                      aria-label="Фильтр новостей по дате"
+                    />
+                  </div>
                 </Space>
               </div>
 
@@ -523,19 +544,19 @@ export default function NewsArchive() {
               },
               { 
                 label: "Кодекс чести мужчины Тувы", 
-                href: "/section?title=Кодекс чести мужчины Тувы"
+                href: "/p/code-of-honor"
               },
               { 
                 label: "Свод заповедей матерей Тувы", 
-                href: "/section?title=Свод заповедей матерей Тувы"
+                href: "/p/mothers-commandments"
               },
               { 
                 label: "Подписка на новости", 
-                href: "/section?title=Подписка на новости"
+                href: "/p/news-subscription"
               },
               { 
                 label: "Для СМИ", 
-                href: "/section?title=Для СМИ"
+                href: "/p/for-media"
               },
               { 
                 label: "Трансляции", 

@@ -25,10 +25,19 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
     const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
     return sp.get("parent") ? decodeURIComponent(sp.get("parent")) : "";
   }, []);
+  
+  const prefillTitle = React.useMemo(() => {
+    const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
+    return sp.get("title") ? decodeURIComponent(sp.get("title")) : "";
+  }, []);
 
   React.useEffect(() => {
     form.setFieldValue("parentSlug", prefillParent || "");
-  }, [form, prefillParent]);
+    if (prefillTitle) {
+      form.setFieldValue("title", prefillTitle);
+      form.setFieldValue("slugLeaf", slugify(prefillTitle));
+    }
+  }, [form, prefillParent, prefillTitle]);
 
   React.useEffect(() => {
     let alive = true;
