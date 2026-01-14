@@ -509,6 +509,21 @@ export default function AdminDeputiesV2({
         message.success("Депутат обновлён");
         reloadPublicData();
       } catch (e) {
+        // If patch fails due to validation, still try to upload photo so it appears on the site.
+        if (imageFile) {
+          try {
+            await PersonsApi.uploadMedia(id, imageFile);
+            message.success("Фото загружено");
+            reloadPublicData();
+            setEditOpen(false);
+            setEditing(null);
+            editForm.resetFields();
+            setEditFile(null);
+            return;
+          } catch {
+            // fall through to local-only update
+          }
+        }
         // Local-only update (offline / no rights)
         setLocalUpdated((prev) => ({ ...prev, [id]: uiItem }));
         message.warning("Обновлено локально (сервер недоступен или нет прав)");

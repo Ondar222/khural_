@@ -32,6 +32,14 @@ function normalizePhoneE164(input) {
   return plus ? `+${nums}` : nums;
 }
 
+function normalizeEmail(input) {
+  const s = String(input || "").trim();
+  if (!s) return "";
+  // Very light sanity check; backend will still validate IsEmail.
+  if (!s.includes("@")) return "";
+  return s;
+}
+
 export function toPersonsApiBody(input) {
   const body = isObj(input) ? { ...input } : {};
 
@@ -50,6 +58,7 @@ export function toPersonsApiBody(input) {
   const electoralDistrict = withFallback(body, "electoralDistrict", "electoral_district");
   const phoneNumber = withFallback(body, "phoneNumber", "phone_number");
   const receptionSchedule = withFallback(body, "receptionSchedule", "reception_schedule");
+  const email = withFallback(body, "email", "email");
 
   if (structureType !== undefined) {
     body.structureType = structureType;
@@ -72,6 +81,14 @@ export function toPersonsApiBody(input) {
     } else {
       delete body.phoneNumber;
       delete body.phone_number;
+    }
+  }
+  if (email !== undefined) {
+    const normalized = normalizeEmail(email);
+    if (normalized) {
+      body.email = normalized;
+    } else {
+      delete body.email;
     }
   }
   if (receptionSchedule !== undefined) {
