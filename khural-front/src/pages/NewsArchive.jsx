@@ -1,7 +1,7 @@
 import React from "react";
+import { Input, Select, Space } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { Input, Select, Space } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 
@@ -12,20 +12,24 @@ function looksLikeHtml(s) {
 export default function NewsArchive() {
   const { news, loading, errors, reload } = useData();
   const { t } = useI18n();
+
   const getInitialCategory = () => {
     const categoryParam = new URLSearchParams(window.location.search || "").get("category");
     return categoryParam || "Все";
   };
   const [category, setCategory] = React.useState(getInitialCategory);
+
   const getInitialDate = () => {
     const dateParam = new URLSearchParams(window.location.search || "").get("date");
     return dateParam || "";
   };
   const [date, setDate] = React.useState(getInitialDate);
+
   const [selected, setSelected] = React.useState(() => {
     const id = new URLSearchParams(window.location.search || "").get("id");
     return id || null;
   });
+
   React.useEffect(() => {
     const onNav = () => {
       const params = new URLSearchParams(window.location.search || "");
@@ -50,13 +54,13 @@ export default function NewsArchive() {
   }, []);
 
   const categories = React.useMemo(
-    () => ["Все", ...Array.from(new Set(news.map((n) => n.category)))],
+    () => ["Все", ...Array.from(new Set((news || []).map((n) => n.category).filter(Boolean)))],
     [news]
   );
 
   const filtered = React.useMemo(
     () =>
-      news.filter(
+      (news || []).filter(
         (n) =>
           (category === "Все" || n.category === category) &&
           (!date || String(n.date || "").slice(0, 10) === date)
@@ -64,20 +68,9 @@ export default function NewsArchive() {
     [news, category, date]
   );
 
-  const getImage = (i) => {
-    const imgs = [
-      "/img/news1.jpeg",
-      "/img/news2.jpeg",
-      "/img/news3.jpeg",
-      "/img/news4.jpeg",
-      "/img/news5.jpeg",
-    ];
-    return imgs[i % imgs.length];
-  };
-
   if (selected) {
-    const idx = news.findIndex((n) => n.id === selected);
-    const item = idx >= 0 ? news[idx] : null;
+    const idx = (news || []).findIndex((n) => n.id === selected);
+    const item = idx >= 0 ? (news || [])[idx] : null;
     if (!item) {
       return (
         <section className="section">
@@ -100,11 +93,13 @@ export default function NewsArchive() {
         </section>
       );
     }
+
     const shareUrl =
       typeof window !== "undefined"
         ? `${window.location.origin}/news?id=${encodeURIComponent(item.id)}`
         : `/news?id=${encodeURIComponent(item.id)}`;
     const shareTitle = String(item.title || "").trim();
+
     return (
       <section className="section">
         <div className="container">
@@ -133,28 +128,28 @@ export default function NewsArchive() {
               </div>
             </div>
           </div>
+
           <div className="news-detail">
             <article className="card" style={{ padding: 16 }}>
-              <div style={{ height: 340, overflow: "hidden", borderRadius: 12 }}>
-                <img
-                  src={item?.image || getImage(Math.max(0, idx))}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                          onError={(e) => {
-                            const img = e.currentTarget;
-                            img.onerror = null;
-                            img.src = getImage(Math.max(0, idx));
-                          }}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              </div>
+              {/* Images must come from backend/admin only */}
+              {item?.image ? (
+                <div style={{ height: 340, overflow: "hidden", borderRadius: 12 }}>
+                  <img
+                    src={item.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </div>
+              ) : null}
+
               <div className="prose" style={{ marginTop: 16 }}>
                 {item.excerpt ? (
                   looksLikeHtml(item.excerpt) ? (
                     <div dangerouslySetInnerHTML={{ __html: String(item.excerpt) }} />
                   ) : (
-                <p>{item.excerpt}</p>
+                    <p>{item.excerpt}</p>
                   )
                 ) : null}
 
@@ -186,9 +181,9 @@ export default function NewsArchive() {
                 <div className="share-icons" aria-label="Поделиться">
                   <a
                     className="share-sbtn share-sbtn--vk"
-                    href={`https://vk.com/share.php?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(
-                      shareTitle
-                    )}`}
+                    href={`https://vk.com/share.php?url=${encodeURIComponent(
+                      shareUrl
+                    )}&title=${encodeURIComponent(shareTitle)}`}
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Поделиться во ВКонтакте"
@@ -228,9 +223,9 @@ export default function NewsArchive() {
 
                   <a
                     className="share-sbtn share-sbtn--tg"
-                    href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(
-                      shareTitle
-                    )}`}
+                    href={`https://t.me/share/url?url=${encodeURIComponent(
+                      shareUrl
+                    )}&text=${encodeURIComponent(shareTitle)}`}
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Поделиться в Telegram"
@@ -304,10 +299,11 @@ export default function NewsArchive() {
                 </div>
               </div>
             </article>
+
             <aside>
               <h3 style={{ marginBottom: 8 }}>{t("otherNews")}</h3>
               <div className="grid">
-                {news
+                {(news || [])
                   .filter((n) => n.id !== item.id)
                   .slice(0, 6)
                   .map((n) => (
@@ -361,7 +357,6 @@ export default function NewsArchive() {
                       } else {
                         params.set("category", newCategory);
                       }
-                      // preserve date filter
                       if (date) params.set("date", date);
                       const newHash = params.toString() ? `${h}?${params.toString()}` : h;
                       window.history.pushState({}, "", newHash);
@@ -391,6 +386,7 @@ export default function NewsArchive() {
                   />
                 </Space>
               </div>
+
               <DataState
                 loading={false}
                 error={null}
@@ -398,26 +394,30 @@ export default function NewsArchive() {
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
                 <div className="grid cols-3">
-                  {filtered.map((n, i) => (
+                  {filtered.map((n) => (
                     <a
                       key={n.id}
                       className="tile"
                       href={`/news?id=${n.id}`}
                       style={{ overflow: "hidden", padding: 0 }}
                     >
-                      <div style={{ height: 180, overflow: "hidden" }}>
-                        <img
-                          src={n.image || getImage(i)}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      </div>
+                      {/* Images must come from backend/admin only */}
+                      {n?.image ? (
+                        <div style={{ height: 180, overflow: "hidden" }}>
+                          <img
+                            src={n.image}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        </div>
+                      ) : null}
+
                       <div style={{ padding: 16 }}>
                         <div
                           style={{
@@ -445,6 +445,7 @@ export default function NewsArchive() {
               </DataState>
             </DataState>
           </div>
+
           <SideNav
             title="Новости"
             links={[
@@ -458,3 +459,5 @@ export default function NewsArchive() {
     </section>
   );
 }
+
+

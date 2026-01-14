@@ -39,17 +39,6 @@ export default function NewsBlock() {
     [news, category, normalizeCategoryKey]
   );
 
-  const getImage = (i) => {
-    const imgs = [
-      "/img/news1.jpeg",
-      "/img/news2.jpeg",
-      "/img/news3.jpeg",
-      "/img/news4.jpeg",
-      "/img/news5.jpeg",
-    ];
-    return imgs[i % imgs.length];
-  };
-
   return (
     <section className="section">
       <div className="container">
@@ -109,21 +98,17 @@ export default function NewsBlock() {
                 href={`/news?id=${n.id}`}
                 style={{ overflow: "hidden", padding: 0 }}
               >
-                <div style={{ height: 180, overflow: "hidden" }}>
-                  <img
-                    src={n?.image || getImage(i)}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      // fallback for any unsupported/broken/cross-origin image
-                      const img = e.currentTarget;
-                      img.onerror = null;
-                      img.src = getImage(i);
-                    }}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                </div>
+                {n?.image ? (
+                  <div style={{ height: 180, overflow: "hidden" }}>
+                    <img
+                      src={n.image}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  </div>
+                ) : null}
                 <div style={{ padding: 16 }}>
                   <div
                     style={{
