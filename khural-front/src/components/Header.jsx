@@ -526,7 +526,7 @@ export default function Header() {
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
                     href="/login"
                     onClick={() => setMobileOpen(false)}
-                    style={{ width: "100%" }}
+                    style={{ width: "80%" }}
                   >
                     {t("login")}
                   </a>
@@ -534,7 +534,7 @@ export default function Header() {
                     className="btn mobile-auth__btn mobile-auth__btn--outline"
                     href="/register"
                     onClick={() => setMobileOpen(false)}
-                    style={{ width: "100%" }}
+                    style={{ width: "80%" }}
                   >
                     {t("register")}
                   </a>

@@ -2815,8 +2815,9 @@ a {
   color: #111827;
   justify-content: center;
   text-align: center;
-  font-size: 24px !important;
-  font-weight: 700 !important;
+  /* Keep menu items compact on mobile; media queries below can adjust freely */
+  font-size: 16px;
+  font-weight: 700;
   line-height: 1.4;
   min-height: auto;
   width: 100%;
@@ -2887,7 +2888,7 @@ a {
   }
   .mobile-drawer .tile.link {
     padding: 10px 12px;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.4;
   }
   .mobile-drawer .tile.link span[aria-hidden="true"] {
@@ -2918,7 +2919,7 @@ a {
   }
   .mobile-drawer .tile.link {
     padding: 8px 10px;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.35;
   }
   .mobile-drawer .tile.link > span {
@@ -2980,12 +2981,12 @@ a {
 }
 /* Override mobile-auth__btn padding in mobile drawer */
 .mobile-drawer .mobile-auth__btn {
-  padding: 14px 20px;
-  font-size: 16px;
+  padding: 12px 16px;
+  font-size: 15px;
   font-weight: 800;
   flex: 1 1 auto;
   min-width: 0;
-  height: 48px;
+  height: 44px;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -2995,9 +2996,46 @@ a {
 }
 @media (max-width: 480px) {
   .mobile-drawer .mobile-auth__btn {
-    padding: 12px 18px;
-    font-size: 15px;
-    height: 46px;
+    padding: 9px 12px;
+    font-size: 13px;
+    height: 40px;
+  }
+}
+
+/* Header: slightly larger brand on small screens */
+@media (max-width: 959px) {
+  .brand .logo {
+    width: 52px;
+    height: 52px;
+  }
+  .brand .logo img {
+    width: 52px;
+    height: 52px;
+  }
+  .brand .brand-mobile-title {
+    max-width: 220px;
+  }
+  .brand-mobile-title__top,
+  .brand-mobile-title__mid {
+    font-size: 12px;
+  }
+  .brand-mobile-title__bottom {
+    font-size: 13px;
+  }
+}
+
+/* Mobile drawer: slightly larger logo/text in toolbar without inflating menu tiles */
+@media (max-width: 480px) {
+  .mobile-drawer .logo img {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .mobile-drawer .mobile-toolbar .mobile-brand-text > div:first-child,
+  .mobile-drawer .mobile-toolbar .mobile-brand-text > div:nth-child(2) {
+    font-size: 13px !important;
+  }
+  .mobile-drawer .mobile-toolbar .mobile-brand-text > div:last-child {
+    font-size: 14px !important;
   }
 }
 .mobile-auth__btn--primary {

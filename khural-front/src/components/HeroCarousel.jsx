@@ -24,9 +24,8 @@ export default function HeroCarousel() {
     [baseSlides]
   );
 
-  if (!slides.length) return null;
-
   React.useEffect(() => {
+    if (!slides.length) return;
     const len = slides.length || 1;
     const id = setInterval(() => {
       setActive((i) => (i + 1) % len);
@@ -36,8 +35,11 @@ export default function HeroCarousel() {
 
   React.useEffect(() => {
     // If slides length changed and active is out of bounds — reset.
+    if (!slides.length) return;
     if (active >= slides.length) setActive(0);
   }, [active, slides.length]);
+
+  if (!slides.length) return null;
 
   const current = slides[active] || slides[0];
   const href = current?.link ? String(current.link) : "/news";

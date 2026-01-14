@@ -42,7 +42,7 @@ export default function PersonDetail({ item, type, backHref }) {
   const schedule =
     typeof item.receptionSchedule === "string"
       ? item.receptionSchedule.split("\n").map((line) => {
-          const parts = line.split(/[:\-]/);
+          const parts = line.split(/[:-]/);
           if (parts.length >= 2) {
             return [parts[0].trim(), parts.slice(1).join(":").trim()];
           }

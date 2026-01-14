@@ -221,9 +221,10 @@ const dict = {
     factions: "Депутаттар фракциялары",
     senateRep: "Федерация Чөвүлелинге төлээ чери",
     apparatus: "Аппарат",
-    brandTop: "Тыва Республиканың Дээди Хуралы",
+    // Keep header brand split into 3 lines without repeating "Тыва Республиканың"
+    brandTop: "Дээди Хурал",
     brandParliament: "(парламентизи)",
-    brandBottom: "Тыва Республиканың",
+    brandBottom: "Тыва Республиказы",
     more: "Тодаргайы-биле",
     news: "Медээлер",
     calendar: "Календарь",
