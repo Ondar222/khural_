@@ -19,6 +19,7 @@ import A11yProvider from "./context/A11yContext.jsx";
 import CalendarPage from "./pages/Calendar.jsx";
 import About from "./pages/About.jsx";
 import Documents from "./pages/Documents.jsx";
+import DocumentDetail from "./pages/DocumentDetail.jsx";
 import Deputies from "./pages/DeputiesV2.jsx";
 import PagesIndex from "./pages/PagesIndex.jsx";
 import PageBySlug from "./pages/PageBySlug.jsx";
@@ -110,6 +111,7 @@ export default function App() {
                           "/news": NewsArchive,
                           "/calendar": CalendarPage,
                           "/documents": Documents,
+                          "/documents/:id": DocumentDetail,
                           "/docs/laws": DocsPage,
                           "/docs/resolutions": DocsPage,
                           "/docs/initiatives": DocsPage,

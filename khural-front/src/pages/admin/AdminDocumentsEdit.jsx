@@ -25,7 +25,6 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
   const [translating, setTranslating] = React.useState(false);
   const [translationJob, setTranslationJob] = React.useState(null);
   const [translationStatus, setTranslationStatus] = React.useState(null);
-  const descriptionHtml = Form.useWatch("description", form);
 
   // Загружаем данные документа
   React.useEffect(() => {
@@ -42,6 +41,8 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
           type: doc.type || "laws",
           // Show tags in admin (e.g. "<p>...</p>") even if backend stored them HTML-escaped.
           description: decodeHtmlEntities(doc.content || ""),
+          descriptionRu: decodeHtmlEntities(doc.descriptionRu || ""),
+          descriptionTy: decodeHtmlEntities(doc.descriptionTy || ""),
           category: doc.metadata?.category || "",
           number: doc.number || "",
           date: doc.publishedAt ? new Date(doc.publishedAt).toLocaleDateString("ru-RU") : "",
@@ -102,7 +103,13 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
         antdMessage.error("Загрузите хотя бы один файл (русская или тувинская версия)");
         return;
       }
-      await onUpdate?.(documentId, { ...values, description: values.description || "", fileRu, fileTy });
+      await onUpdate?.(documentId, {
+        ...values,
+        descriptionRu: values.descriptionRu || "",
+        descriptionTy: values.descriptionTy || "",
+        fileRu,
+        fileTy,
+      });
       navigate("/admin/documents");
     } catch (error) {
       if (error?.errorFields) return;
@@ -334,12 +341,17 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
               <Select options={TYPE_OPTIONS} />
             </Form.Item>
 
-            <Form.Item label="Описание" name="description">
+            <Form.Item label="Описание (русский)" name="descriptionRu">
               <Input.TextArea
                 autoSize={{ minRows: 6, maxRows: 18 }}
-                placeholder="<p>Описание</p>"
-                value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
-                onChange={(e) => form.setFieldValue("description", e.target.value)}
+                placeholder="<p>Описание на русском языке</p>"
+                disabled={loading || busy || !canWrite}
+              />
+            </Form.Item>
+            <Form.Item label="Описание (тувинский)" name="descriptionTy">
+              <Input.TextArea
+                autoSize={{ minRows: 6, maxRows: 18 }}
+                placeholder="<p>Описание на тувинском языке</p>"
                 disabled={loading || busy || !canWrite}
               />
             </Form.Item>

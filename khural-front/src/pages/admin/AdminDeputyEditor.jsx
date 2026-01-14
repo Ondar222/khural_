@@ -1,5 +1,5 @@
 import React from "react";
-import { App, Button, Form, Input, Select, Space, Upload, Modal } from "antd";
+import { App, Button, Form, Input, Select, Space, Upload, Modal, Checkbox } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { PersonsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
@@ -75,7 +75,18 @@ function normalizeInitial(d) {
     fullName: row.fullName || row.full_name || row.name || "",
     faction: row.faction || "",
     electoralDistrict: row.electoralDistrict || row.electoral_district || row.district || "",
-    convocationNumber: row.convocationNumber || row.convocation || row.convocation_number || "",
+    convocations: (() => {
+      const fromRel = Array.isArray(row.convocations)
+        ? row.convocations
+            .map((c) => (typeof c === "string" ? c : c?.name || c?.title || c?.label || ""))
+            .map((x) => String(x || "").trim())
+            .filter(Boolean)
+        : [];
+      const one = String(row.convocationNumber || row.convocation || row.convocation_number || "").trim();
+      return [...new Set([...fromRel, ...(one ? [one] : [])])];
+    })(),
+    mandateEnded: Boolean(row.mandateEnded ?? row.mandate_ended),
+    isDeceased: Boolean(row.isDeceased ?? row.is_deceased),
     structureType: row.structureType || row.structure_type || "",
     role: row.role || "",
     // API can store HTML as escaped text; decode so admin sees real tags (<p>..</p>).
@@ -90,16 +101,143 @@ function normalizeInitial(d) {
 export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
-  const { reload, deputies, factions, districts, setFactions } = useData();
+  const { reload, deputies, factions, districts, convocations: structureConvocations, setFactions } = useData();
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(mode === "edit");
   const [saving, setSaving] = React.useState(false);
   const [photoFile, setPhotoFile] = React.useState(null);
   const structureType = Form.useWatch("structureType", form);
+  const isDeceased = Form.useWatch("isDeceased", form);
   const biographyHtml = Form.useWatch("biography", form);
   const fullNameValue = Form.useWatch("fullName", form);
   const [newFactionOpen, setNewFactionOpen] = React.useState(false);
   const [newFactionName, setNewFactionName] = React.useState("");
+  const [lookupBusy, setLookupBusy] = React.useState(false);
+  const [factionEntities, setFactionEntities] = React.useState([]);
+  const [districtEntities, setDistrictEntities] = React.useState([]);
+  const [convocationEntities, setConvocationEntities] = React.useState([]);
+
+  const refreshLookups = React.useCallback(async () => {
+    setLookupBusy(true);
+    try {
+      const [fs, ds, cs] = await Promise.all([
+        PersonsApi.listFactionsAll().catch(() => []),
+        PersonsApi.listDistrictsAll().catch(() => []),
+        PersonsApi.listConvocationsAll().catch(() => []),
+      ]);
+      setFactionEntities(Array.isArray(fs) ? fs : []);
+      setDistrictEntities(Array.isArray(ds) ? ds : []);
+      setConvocationEntities(Array.isArray(cs) ? cs : []);
+    } finally {
+      setLookupBusy(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    refreshLookups();
+  }, [refreshLookups]);
+
+  React.useEffect(() => {
+    if (isDeceased) form.setFieldValue("mandateEnded", true);
+  }, [isDeceased, form]);
+
+  const normKey = React.useCallback((v) => {
+    return String(v || "")
+      .replace(/\u00A0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }, []);
+
+  const findEntityByName = React.useCallback(
+    (list, name) => {
+      const n = normKey(name);
+      if (!n) return null;
+      const arr = Array.isArray(list) ? list : [];
+      return arr.find((x) => normKey(x?.name) === n) || null;
+    },
+    [normKey]
+  );
+
+  const ensureFaction = React.useCallback(
+    async (name) => {
+      const s = String(name || "").trim();
+      if (!s) return null;
+      const found = findEntityByName(factionEntities, s);
+      if (found) return found;
+      if (!canWrite) return null;
+      await PersonsApi.createFaction({ name: s });
+      await refreshLookups();
+      return findEntityByName(factionEntities, s);
+    },
+    [canWrite, factionEntities, findEntityByName, refreshLookups]
+  );
+
+  const ensureDistrict = React.useCallback(
+    async (name) => {
+      const s = String(name || "").trim();
+      if (!s) return null;
+      const found = findEntityByName(districtEntities, s);
+      if (found) return found;
+      if (!canWrite) return null;
+      await PersonsApi.createDistrict({ name: s });
+      await refreshLookups();
+      return findEntityByName(districtEntities, s);
+    },
+    [canWrite, districtEntities, findEntityByName, refreshLookups]
+  );
+
+  const ensureConvocation = React.useCallback(
+    async (name) => {
+      const s = String(name || "").trim();
+      if (!s) return null;
+      const found = findEntityByName(convocationEntities, s);
+      if (found) return found;
+      if (!canWrite) return null;
+      await PersonsApi.createConvocation({ name: s });
+      await refreshLookups();
+      return findEntityByName(convocationEntities, s);
+    },
+    [canWrite, convocationEntities, findEntityByName, refreshLookups]
+  );
+
+  const enrichRelations = React.useCallback(
+    async (raw) => {
+      const body = raw && typeof raw === "object" ? { ...raw } : {};
+
+      // Explicitly preserve status fields as booleans
+      body.mandateEnded = Boolean(body.mandateEnded);
+      body.isDeceased = Boolean(body.isDeceased);
+      if (body.isDeceased) body.mandateEnded = true;
+
+      // factionIds
+      const factionName = String(body.faction || "").trim();
+      if (factionName) {
+        const f = await ensureFaction(factionName).catch(() => null);
+        if (f?.id) body.factionIds = [String(f.id)];
+      }
+
+      // districtIds
+      const districtName = String(body.electoralDistrict || "").trim();
+      if (districtName) {
+        const d = await ensureDistrict(districtName).catch(() => null);
+        if (d?.id) body.districtIds = [String(d.id)];
+      }
+
+      // convocationIds (multi)
+      const convNames = Array.isArray(body.convocations)
+        ? body.convocations.map((x) => String(x || "").trim()).filter(Boolean)
+        : [];
+      if (convNames.length) {
+        const ensured = await Promise.all(convNames.map((n) => ensureConvocation(n).catch(() => null)));
+        const ids = ensured.filter((x) => x?.id).map((x) => String(x.id));
+        if (ids.length) body.convocationIds = ids;
+      }
+
+      return body;
+    },
+    [ensureFaction, ensureDistrict, ensureConvocation]
+  );
 
   React.useEffect(() => {
     if (mode !== "edit") return;
@@ -154,12 +292,13 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     setSaving(true);
     try {
       const values = await form.validateFields();
-      const body = {
+      const bodyRaw = {
         ...values,
         // Для API отправляем description, локально храним biography
         description: values.biography || "",
         bio: undefined,
       };
+      const body = await enrichRelations(bodyRaw);
 
       if (mode === "create") {
         try {
@@ -183,7 +322,9 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       const id = String(deputyId || "");
       if (!id) throw new Error("Не удалось определить ID депутата");
       try {
-        await PersonsApi.patch(id, toPersonsApiBody(body));
+        const payload = toPersonsApiBody(body);
+        console.log("[AdminDeputyEditor] Sending PATCH payload:", { mandateEnded: payload.mandateEnded, isDeceased: payload.isDeceased, ...payload });
+        await PersonsApi.patch(id, payload);
         if (photoFile) await PersonsApi.uploadMedia(id, photoFile);
         message.success("Депутат обновлён");
         reload();
@@ -236,7 +377,14 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       <Form
         layout="vertical"
         form={form}
-        initialValues={{ biography: "", structureType: undefined, role: undefined }}
+        initialValues={{
+          biography: "",
+          structureType: undefined,
+          role: undefined,
+          convocations: [],
+          mandateEnded: false,
+          isDeceased: false,
+        }}
       >
         <div className="admin-deputy-editor__grid">
           <div className="admin-card">
@@ -285,8 +433,29 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           <div className="admin-card">
             <div className="admin-deputy-editor__section-title">Статус</div>
             <div className="admin-split">
-              <Form.Item label="Созыв (номер)" name="convocationNumber">
-                <Input disabled={loading || saving} />
+              <Form.Item
+                label="Созывы"
+                name="convocations"
+                tooltip="Можно выбрать несколько созывов. Теги можно вводить вручную."
+              >
+                <Select
+                  disabled={loading || saving || lookupBusy}
+                  mode="tags"
+                  tokenSeparators={[","]}
+                  placeholder="Например: VIII, VII"
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  options={(
+                    Array.isArray(convocationEntities) && convocationEntities.length
+                      ? convocationEntities.map((c) => c?.name)
+                      : Array.isArray(structureConvocations)
+                        ? structureConvocations
+                        : []
+                  )
+                    .filter((x) => x && String(x).trim() !== "")
+                    .map((x) => ({ value: String(x), label: String(x) }))}
+                />
               </Form.Item>
               <Form.Item label="Тип структуры" name="structureType">
                 <Select disabled={loading || saving} placeholder="Выберите тип структуры" allowClear>
@@ -296,6 +465,14 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                     </Select.Option>
                   ))}
                 </Select>
+              </Form.Item>
+            </div>
+            <div className="admin-split" style={{ marginTop: 6 }}>
+              <Form.Item name="mandateEnded" valuePropName="checked" style={{ marginBottom: 0 }}>
+                <Checkbox disabled={loading || saving}>Созыв завершен (прекратил полномочия)</Checkbox>
+              </Form.Item>
+              <Form.Item name="isDeceased" valuePropName="checked" style={{ marginBottom: 0 }}>
+                <Checkbox disabled={loading || saving}>Умер</Checkbox>
               </Form.Item>
             </div>
             {structureType ? (

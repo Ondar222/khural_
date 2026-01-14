@@ -228,10 +228,10 @@ export default function Documents() {
                                   ) : null}
                                   <a
                                     className="btn"
-                                    href={url || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                                    href={d.id ? `#/documents/${d.id}` : url || "#"}
+                                    target={d.id ? "_blank" : "_blank"}
+                                    rel="noopener noreferrer"
+                                  >
                                     Открыть ↗
                                   </a>
                                 </div>
@@ -271,7 +271,12 @@ export default function Documents() {
                                 Предпросмотр
                               </button>
                             ) : null}
-                            <a className="btn" href={url || "#"} target="_blank" rel="noopener noreferrer">
+                            <a
+                              className="btn"
+                              href={d.id ? `#/documents/${d.id}` : url || "#"}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
                               Открыть ↗
                             </a>
                           </div>

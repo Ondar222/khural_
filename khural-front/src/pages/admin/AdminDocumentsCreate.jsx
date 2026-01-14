@@ -18,7 +18,6 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
   const [form] = Form.useForm();
   const [fileRu, setFileRu] = React.useState(null);
   const [fileTy, setFileTy] = React.useState(null);
-  const descriptionHtml = Form.useWatch("description", form);
 
   const handleSubmit = async () => {
     try {
@@ -27,7 +26,13 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
         antdMessage.error("Загрузите хотя бы один файл (русская или тувинская версия)");
         return;
       }
-      await onCreate({ ...values, description: values.description || "", fileRu, fileTy });
+      await onCreate({
+        ...values,
+        descriptionRu: values.descriptionRu || "",
+        descriptionTy: values.descriptionTy || "",
+        fileRu,
+        fileTy,
+      });
       navigate("/admin/documents");
     } catch (error) {
       if (error?.errorFields) return;
@@ -78,12 +83,17 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
               <Select options={TYPE_OPTIONS} />
             </Form.Item>
 
-            <Form.Item label="Описание" name="description">
+            <Form.Item label="Описание (русский)" name="descriptionRu">
               <Input.TextArea
                 autoSize={{ minRows: 6, maxRows: 18 }}
-                placeholder="<p>Описание</p>"
-                value={typeof descriptionHtml === "string" ? descriptionHtml : ""}
-                onChange={(e) => form.setFieldValue("description", e.target.value)}
+                placeholder="<p>Описание на русском языке</p>"
+                disabled={busy || !canWrite}
+              />
+            </Form.Item>
+            <Form.Item label="Описание (тувинский)" name="descriptionTy">
+              <Input.TextArea
+                autoSize={{ minRows: 6, maxRows: 18 }}
+                placeholder="<p>Описание на тувинском языке</p>"
                 disabled={busy || !canWrite}
               />
             </Form.Item>

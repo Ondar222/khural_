@@ -9,6 +9,11 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
 const STORAGE_KEY = "khural_deputies_overrides_v1";
+const STATUS_OPTIONS = [
+  { value: "active", label: "Действующие" },
+  { value: "ended", label: "Прекратившие полномочия" },
+  { value: "all", label: "Все" },
+];
 
 function safeParse(json) {
   try {
@@ -44,7 +49,11 @@ function mergeDeputies(base, overrides) {
     if (!id) continue;
     if (deleted.has(id)) continue;
     const patch = updatedById[id];
-    out.push(patch ? { ...d, ...patch } : d);
+    const merged = patch ? { ...d, ...patch } : d;
+    // Ensure status fields are preserved as booleans
+    merged.mandateEnded = Boolean(merged.mandateEnded ?? merged.mandate_ended);
+    merged.isDeceased = Boolean(merged.isDeceased ?? merged.is_deceased);
+    out.push(merged);
     seen.add(id);
   }
 
@@ -53,6 +62,9 @@ function mergeDeputies(base, overrides) {
     if (!id) continue;
     if (deleted.has(id)) continue;
     if (seen.has(id)) continue;
+    // Ensure status fields are preserved as booleans
+    d.mandateEnded = Boolean(d.mandateEnded ?? d.mandate_ended);
+    d.isDeceased = Boolean(d.isDeceased ?? d.is_deceased);
     out.push(d);
     seen.add(id);
   }
@@ -111,9 +123,24 @@ function normalizeApiDeputy(p) {
   const id = String(p.id ?? p._id ?? p.personId ?? "");
   if (!id) return null;
   const name = toText(p.fullName || p.full_name || p.name);
-  const district = toText(p.electoralDistrict || p.electoral_district || p.district);
-  const faction = toText(p.faction);
-  const convocation = toText(p.convocationNumber || p.convocation || p.convocation_number);
+  const district = toText(
+    p.electoralDistrict ||
+      p.electoral_district ||
+      (Array.isArray(p.districts) && p.districts[0]?.name) ||
+      p.district
+  );
+  const faction = toText(p.faction || (Array.isArray(p.factions) && p.factions[0]?.name));
+  const convocations = (() => {
+    const arr = Array.isArray(p.convocations) ? p.convocations : [];
+    const names = arr
+      .map((c) => (c && typeof c === "object" ? c.name : c))
+      .map((x) => String(x || "").trim())
+      .filter(Boolean);
+    const single = toText(p.convocationNumber || p.convocation || p.convocation_number);
+    const merged = [...new Set([...names, ...(single ? [single] : [])])];
+    return merged;
+  })();
+  const convocation = convocations[0] || toText(p.convocationNumber || p.convocation || p.convocation_number);
   const biography = p.biography || p.bio || p.description || "";
   const contacts = {
     phone: toText(p.phoneNumber || p.phone_number || p.phone || p.contacts?.phone),
@@ -141,6 +168,9 @@ function normalizeApiDeputy(p) {
     faction,
     convocation,
     convocationNumber: convocation,
+    convocations,
+    mandateEnded: Boolean(p.mandateEnded ?? p.mandate_ended),
+    isDeceased: Boolean(p.isDeceased ?? p.is_deceased),
     contacts,
     photo,
     position,
@@ -161,13 +191,20 @@ function mergeByIdPreferApi(baseDeputies, apiDeputies) {
     const id = String(d?.id ?? "");
     if (!id) continue;
     const apiD = apiById.get(id);
-    out.push(apiD ? { ...d, ...apiD } : d);
+    const merged = apiD ? { ...d, ...apiD } : d;
+    // Ensure status fields are preserved as booleans (prefer API values)
+    merged.mandateEnded = Boolean(merged.mandateEnded ?? merged.mandate_ended);
+    merged.isDeceased = Boolean(merged.isDeceased ?? merged.is_deceased);
+    out.push(merged);
     seen.add(id);
   }
   for (const d of api) {
     const id = String(d?.id ?? "");
     if (!id) continue;
     if (seen.has(id)) continue;
+    // Ensure status fields are preserved as booleans
+    d.mandateEnded = Boolean(d.mandateEnded ?? d.mandate_ended);
+    d.isDeceased = Boolean(d.isDeceased ?? d.is_deceased);
     out.push(d);
     seen.add(id);
   }
@@ -232,19 +269,33 @@ export default function DeputiesV2() {
     return mergeDeputies(withApi, overrides);
   }, [baseDeputies, apiDeputies, overrides]);
 
+  const getDeputyConvocations = React.useCallback((d) => {
+    const list = Array.isArray(d?.convocations) ? d.convocations : [];
+    const stringItems = list
+      .map((x) => (typeof x === "string" ? x : x?.name || x?.title || x?.label || ""))
+      .map((x) => String(x || "").trim())
+      .filter(Boolean);
+    const fallback = String(d?.convocation || "").trim();
+    const out = [...new Set([...stringItems, ...(fallback ? [fallback] : [])])];
+    return out;
+  }, []);
+
+  const isEndedDeputy = React.useCallback((d) => Boolean(d?.mandateEnded || d?.isDeceased), []);
+
   // Filters per structure
   const [convocation, setConvocation] = React.useState("Все");
   const [committeeId, setCommitteeId] = React.useState("Все");
   const [faction, setFaction] = React.useState("Все");
   const [district, setDistrict] = React.useState("Все");
   const [openConv, setOpenConv] = React.useState(false);
+  const [status, setStatus] = React.useState("active");
 
   React.useEffect(() => {
     if (convocation === "Все") return;
     if (!Array.isArray(deputies) || deputies.length === 0) return;
-    const hasAny = deputies.some((d) => d?.convocation === convocation);
+    const hasAny = deputies.some((d) => getDeputyConvocations(d).includes(convocation));
     if (!hasAny) setConvocation("Все");
-  }, [convocation, deputies]);
+  }, [convocation, deputies, getDeputyConvocations]);
 
   const districts = React.useMemo(() => {
     const items = Array.isArray(structureDistricts) ? structureDistricts : [];
@@ -312,8 +363,12 @@ export default function DeputiesV2() {
   }, [committeeId, committees]);
 
   const filtered = React.useMemo(() => {
-    return deputies.filter((d) => {
-      if (convocation !== "Все" && d.convocation !== convocation) return false;
+    const base = Array.isArray(deputies) ? deputies : [];
+    return base.filter((d) => {
+      const ended = isEndedDeputy(d);
+      if (status === "active" && ended) return false;
+      if (status === "ended" && !ended) return false;
+
       if (faction !== "Все" && d.faction !== faction) return false;
       if (district !== "Все" && d.district !== district) return false;
       if (committeeMatcher) {
@@ -323,7 +378,45 @@ export default function DeputiesV2() {
       }
       return true;
     });
-  }, [deputies, convocation, faction, district, committeeMatcher]);
+  }, [deputies, status, faction, district, committeeMatcher, isEndedDeputy]);
+
+  const filteredByConvocation = React.useMemo(() => {
+    if (convocation === "Все") return filtered;
+    return filtered.filter((d) => getDeputyConvocations(d).includes(convocation));
+  }, [filtered, convocation, getDeputyConvocations]);
+
+  const groupedByConvocation = React.useMemo(() => {
+    if (convocation !== "Все") return null;
+    const list = Array.isArray(filtered) ? filtered : [];
+    const convs = (Array.isArray(convocations) ? convocations : []).filter((c) => c && c !== "Все");
+    const preferred = CONVOCATION_ORDER.filter((c) => c !== "Все" && convs.includes(c));
+    const rest = convs.filter((c) => !preferred.includes(c)).sort();
+    const ordered = [...preferred, ...rest];
+
+    const by = new Map();
+    ordered.forEach((c) => by.set(c, []));
+    by.set("Без созыва", []);
+
+    for (const d of list) {
+      const ds = getDeputyConvocations(d);
+      if (!ds.length) {
+        by.get("Без созыва").push(d);
+        continue;
+      }
+      ds.forEach((c) => {
+        if (!by.has(c)) by.set(c, []);
+        by.get(c).push(d);
+      });
+    }
+
+    // Remove empty sections except "Без созыва" (keep only if non-empty)
+    const out = [];
+    for (const [key, arr] of by.entries()) {
+      if (!arr || arr.length === 0) continue;
+      out.push([key, arr]);
+    }
+    return out;
+  }, [filtered, convocation, convocations, getDeputyConvocations]);
 
   React.useEffect(() => {
     const applyFromHash = () => {
@@ -352,6 +445,13 @@ export default function DeputiesV2() {
         <div className="page-grid">
           <div className="page-grid__main">
             <h1>{t("deputies")}</h1>
+            <div style={{ marginTop: -6, marginBottom: 14, color: "var(--muted, #6b7280)" }}>
+              {status === "ended"
+                ? "Раздел: Депутаты прекратившие полномочия"
+                : status === "active"
+                  ? "Раздел: Действующие депутаты"
+                  : "Раздел: Все депутаты"}
+            </div>
             <DataState
               loading={Boolean(loading?.deputies) && (!deputies || deputies.length === 0)}
               error={errors?.deputies}
@@ -370,6 +470,15 @@ export default function DeputiesV2() {
                     </span>
                   </Button>
                 </Dropdown>
+                <Select
+                  value={status}
+                  onChange={setStatus}
+                  dropdownMatchSelectWidth={false}
+                  options={STATUS_OPTIONS.map((x) => ({
+                    value: x.value,
+                    label: `Статус: ${x.label}`,
+                  }))}
+                />
                 <Select
                   value={committeeId}
                   onChange={setCommitteeId}
@@ -406,88 +515,188 @@ export default function DeputiesV2() {
               </div>
 
               <DataState
-                loading={apiBusy && filtered.length === 0}
+                loading={apiBusy && filteredByConvocation.length === 0}
                 error={null}
-                empty={filtered.length === 0}
+                empty={filteredByConvocation.length === 0}
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
-                <div className="grid cols-3">
-                  {filtered.map((d) => {
-                    const photoRaw =
-                      typeof d.photo === "string"
-                        ? d.photo
-                        : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || "";
-                    const photo = normalizeFilesUrl(photoRaw);
-                    return (
-                      <div key={d.id} className="gov-card">
-                        <div className="gov-card__top">
-                          {photo ? (
-                            <img
-                              className="gov-card__avatar"
-                              src={photo}
-                              alt=""
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          ) : (
-                            <div className="gov-card__avatar" aria-hidden="true" />
-                          )}
-                        </div>
-                        <div className="gov-card__body">
-                          <div className="gov-card__name">{toDisplay(d.name)}</div>
-                          {d.position ? (
-                            <div className="gov-card__role">{toDisplay(d.position)}</div>
-                          ) : (
-                            <div className="gov-card__role">Депутат</div>
-                          )}
-                          <ul className="gov-meta">
-                            {d.reception && (
-                              <li>
-                                <span>⏰</span>
-                                <span>Приём: {toDisplay(d.reception)}</span>
-                              </li>
-                            )}
-                            {d.district && (
-                              <li>
-                                <span>🏛️</span>
-                                <span>{toDisplay(d.district)}</span>
-                              </li>
-                            )}
-                            {d.faction && (
-                              <li>
-                                <span>👥</span>
-                                <span>{toDisplay(d.faction)}</span>
-                              </li>
-                            )}
-                            {d.convocation && (
-                              <li>
-                                <span>🎖️</span>
-                                <span>Созыв: {toDisplay(d.convocation)}</span>
-                              </li>
-                            )}
-                            {d.contacts?.phone && (
-                              <li>
-                                <span>📞</span>
-                                <span>{toDisplay(d.contacts.phone)}</span>
-                              </li>
-                            )}
-                            {d.contacts?.email && (
-                              <li>
-                                <span>✉️</span>
-                                <span>{toDisplay(d.contacts.email)}</span>
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                        <div className="gov-card__actions">
-                          <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
-                            Подробнее
-                          </a>
+                {groupedByConvocation ? (
+                  <div style={{ display: "grid", gap: 18 }}>
+                    {groupedByConvocation.map(([c, list]) => (
+                      <div key={c}>
+                        <h2 style={{ margin: "10px 0 12px" }}>{c === "Без созыва" ? c : `${c} созыв`}</h2>
+                        <div className="grid cols-3">
+                          {list.map((d) => {
+                            const photoRaw =
+                              typeof d.photo === "string"
+                                ? d.photo
+                                : d.photo?.link ||
+                                  d.photo?.url ||
+                                  (d.image && (d.image.link || d.image.url)) ||
+                                  "";
+                            const photo = normalizeFilesUrl(photoRaw);
+                            const ended = isEndedDeputy(d);
+                            const convs = getDeputyConvocations(d);
+                            return (
+                              <div key={`${c}-${d.id}`} className="gov-card">
+                                <div className="gov-card__top">
+                                  {photo ? (
+                                    <img
+                                      className="gov-card__avatar"
+                                      src={photo}
+                                      alt=""
+                                      loading="lazy"
+                                      decoding="async"
+                                    />
+                                  ) : (
+                                    <div className="gov-card__avatar" aria-hidden="true" />
+                                  )}
+                                </div>
+                                <div className="gov-card__body">
+                                  <div className="gov-card__name">{toDisplay(d.name)}</div>
+                                  {d.position ? (
+                                    <div className="gov-card__role">{toDisplay(d.position)}</div>
+                                  ) : (
+                                    <div className="gov-card__role">Депутат</div>
+                                  )}
+                                  <ul className="gov-meta">
+                                    {ended && (
+                                      <li>
+                                        <span>✅</span>
+                                        <span>Созыв завершен</span>
+                                      </li>
+                                    )}
+                                    {d.reception && (
+                                      <li>
+                                        <span>⏰</span>
+                                        <span>Приём: {toDisplay(d.reception)}</span>
+                                      </li>
+                                    )}
+                                    {d.district && (
+                                      <li>
+                                        <span>🏛️</span>
+                                        <span>{toDisplay(d.district)}</span>
+                                      </li>
+                                    )}
+                                    {d.faction && (
+                                      <li>
+                                        <span>👥</span>
+                                        <span>{toDisplay(d.faction)}</span>
+                                      </li>
+                                    )}
+                                    {convs.length ? (
+                                      <li>
+                                        <span>🎖️</span>
+                                        <span>Созыв: {convs.map(toDisplay).join(", ")}</span>
+                                      </li>
+                                    ) : null}
+                                    {d.contacts?.phone && (
+                                      <li>
+                                        <span>📞</span>
+                                        <span>{toDisplay(d.contacts.phone)}</span>
+                                      </li>
+                                    )}
+                                    {d.contacts?.email && (
+                                      <li>
+                                        <span>✉️</span>
+                                        <span>{toDisplay(d.contacts.email)}</span>
+                                      </li>
+                                    )}
+                                  </ul>
+                                </div>
+                                <div className="gov-card__actions">
+                                  <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
+                                    Подробнее
+                                  </a>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid cols-3">
+                    {filteredByConvocation.map((d) => {
+                      const photoRaw =
+                        typeof d.photo === "string"
+                          ? d.photo
+                          : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || "";
+                      const photo = normalizeFilesUrl(photoRaw);
+                      const ended = isEndedDeputy(d);
+                      const convs = getDeputyConvocations(d);
+                      return (
+                        <div key={d.id} className="gov-card">
+                          <div className="gov-card__top">
+                            {photo ? (
+                              <img className="gov-card__avatar" src={photo} alt="" loading="lazy" decoding="async" />
+                            ) : (
+                              <div className="gov-card__avatar" aria-hidden="true" />
+                            )}
+                          </div>
+                          <div className="gov-card__body">
+                            <div className="gov-card__name">{toDisplay(d.name)}</div>
+                            {d.position ? (
+                              <div className="gov-card__role">{toDisplay(d.position)}</div>
+                            ) : (
+                              <div className="gov-card__role">Депутат</div>
+                            )}
+                            <ul className="gov-meta">
+                              {ended && (
+                                <li>
+                                  <span>✅</span>
+                                  <span>Созыв завершен</span>
+                                </li>
+                              )}
+                              {d.reception && (
+                                <li>
+                                  <span>⏰</span>
+                                  <span>Приём: {toDisplay(d.reception)}</span>
+                                </li>
+                              )}
+                              {d.district && (
+                                <li>
+                                  <span>🏛️</span>
+                                  <span>{toDisplay(d.district)}</span>
+                                </li>
+                              )}
+                              {d.faction && (
+                                <li>
+                                  <span>👥</span>
+                                  <span>{toDisplay(d.faction)}</span>
+                                </li>
+                              )}
+                              {convs.length ? (
+                                <li>
+                                  <span>🎖️</span>
+                                  <span>Созыв: {convs.map(toDisplay).join(", ")}</span>
+                                </li>
+                              ) : null}
+                              {d.contacts?.phone && (
+                                <li>
+                                  <span>📞</span>
+                                  <span>{toDisplay(d.contacts.phone)}</span>
+                                </li>
+                              )}
+                              {d.contacts?.email && (
+                                <li>
+                                  <span>✉️</span>
+                                  <span>{toDisplay(d.contacts.email)}</span>
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                          <div className="gov-card__actions">
+                            <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
+                              Подробнее
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </DataState>
             </DataState>
           </div>

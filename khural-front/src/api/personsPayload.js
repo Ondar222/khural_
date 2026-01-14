@@ -40,6 +40,22 @@ function normalizeEmail(input) {
   return s;
 }
 
+function normalizeBool(input) {
+  if (input === true || input === false) return input;
+  if (input === 1 || input === 0) return Boolean(input);
+  const s = String(input ?? "").trim().toLowerCase();
+  if (!s) return undefined;
+  if (["true", "1", "yes", "y", "да"].includes(s)) return true;
+  if (["false", "0", "no", "n", "нет"].includes(s)) return false;
+  return undefined;
+}
+
+function normalizeStringArray(input) {
+  const arr = Array.isArray(input) ? input : input ? [input] : [];
+  const out = arr.map((x) => String(x ?? "").trim()).filter(Boolean);
+  return out.length ? out : undefined;
+}
+
 export function toPersonsApiBody(input) {
   const body = isObj(input) ? { ...input } : {};
 
@@ -59,6 +75,14 @@ export function toPersonsApiBody(input) {
   const phoneNumber = withFallback(body, "phoneNumber", "phone_number");
   const receptionSchedule = withFallback(body, "receptionSchedule", "reception_schedule");
   const email = withFallback(body, "email", "email");
+  const mandateEnded = withFallback(body, "mandateEnded", "mandate_ended");
+  const isDeceased = withFallback(body, "isDeceased", "is_deceased");
+  const mandateEndDate = withFallback(body, "mandateEndDate", "mandate_end_date");
+  const mandateEndReason = withFallback(body, "mandateEndReason", "mandate_end_reason");
+  const factionIds = withFallback(body, "factionIds", "faction_ids");
+  const districtIds = withFallback(body, "districtIds", "district_ids");
+  const convocationIds = withFallback(body, "convocationIds", "convocation_ids");
+  const categoryIds = withFallback(body, "categoryIds", "category_ids");
 
   if (structureType !== undefined) {
     body.structureType = structureType;
@@ -106,6 +130,61 @@ export function toPersonsApiBody(input) {
     } else {
       body.receptionSchedule = receptionSchedule;
       body.reception_schedule = receptionSchedule;
+    }
+  }
+
+  // Relations (IDs)
+  const fIds = normalizeStringArray(factionIds);
+  if (fIds) {
+    body.factionIds = fIds;
+    body.faction_ids = fIds;
+  }
+  const dIds = normalizeStringArray(districtIds);
+  if (dIds) {
+    body.districtIds = dIds;
+    body.district_ids = dIds;
+  }
+  const cIds = normalizeStringArray(convocationIds);
+  if (cIds) {
+    body.convocationIds = cIds;
+    body.convocation_ids = cIds;
+  }
+  const catIds = normalizeStringArray(categoryIds);
+  if (catIds) {
+    body.categoryIds = catIds;
+    body.category_ids = catIds;
+  }
+
+  // Status fields
+  const ended = normalizeBool(mandateEnded);
+  if (ended !== undefined) {
+    body.mandateEnded = ended;
+    body.mandate_ended = ended;
+  }
+  const deceased = normalizeBool(isDeceased);
+  if (deceased !== undefined) {
+    body.isDeceased = deceased;
+    body.is_deceased = deceased;
+    if (deceased) {
+      body.mandateEnded = true;
+      body.mandate_ended = true;
+    }
+  }
+  if (mandateEndDate !== undefined && mandateEndDate !== null && mandateEndDate !== "") {
+    const n = Number(mandateEndDate);
+    if (!Number.isNaN(n)) {
+      body.mandateEndDate = n;
+      body.mandate_end_date = n;
+    }
+  }
+  if (mandateEndReason !== undefined) {
+    const s = String(mandateEndReason || "").trim();
+    if (s) {
+      body.mandateEndReason = s;
+      body.mandate_end_reason = s;
+    } else {
+      delete body.mandateEndReason;
+      delete body.mandate_end_reason;
     }
   }
 

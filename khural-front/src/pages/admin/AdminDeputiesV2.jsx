@@ -1,5 +1,5 @@
 import React from "react";
-import { App, Button, Input, Modal, Form, Upload, Space, Table, Select } from "antd";
+import { App, Button, Input, Modal, Form, Upload, Space, Table, Select, Checkbox } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { PersonsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
@@ -131,7 +131,14 @@ export default function AdminDeputiesV2({
   canWrite,
 }) {
   const { message } = App.useApp();
-  const { reload: reloadPublicData, deputies: publicDeputies, factions, districts, setFactions } = useData();
+  const {
+    reload: reloadPublicData,
+    deputies: publicDeputies,
+    factions,
+    districts,
+    convocations: structureConvocations,
+    setFactions,
+  } = useData();
   const [open, setOpen] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
   const [q, setQ] = React.useState("");
@@ -150,6 +157,90 @@ export default function AdminDeputiesV2({
 
   const structureType = Form.useWatch("structureType", editForm);
   const createStructureType = Form.useWatch("structureType", form);
+  const createIsDeceased = Form.useWatch("isDeceased", form);
+  const editIsDeceased = Form.useWatch("isDeceased", editForm);
+
+  const [lookupBusy, setLookupBusy] = React.useState(false);
+  const [factionEntities, setFactionEntities] = React.useState([]);
+  const [districtEntities, setDistrictEntities] = React.useState([]);
+  const [convocationEntities, setConvocationEntities] = React.useState([]);
+
+  const refreshLookups = React.useCallback(async () => {
+    setLookupBusy(true);
+    try {
+      const [fs, ds, cs] = await Promise.all([
+        PersonsApi.listFactionsAll().catch(() => []),
+        PersonsApi.listDistrictsAll().catch(() => []),
+        PersonsApi.listConvocationsAll().catch(() => []),
+      ]);
+      setFactionEntities(Array.isArray(fs) ? fs : []);
+      setDistrictEntities(Array.isArray(ds) ? ds : []);
+      setConvocationEntities(Array.isArray(cs) ? cs : []);
+    } finally {
+      setLookupBusy(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    refreshLookups();
+  }, [refreshLookups]);
+
+  // If "deceased" is checked, auto-mark mandate as ended ("Созыв завершен")
+  React.useEffect(() => {
+    if (createIsDeceased) form.setFieldValue("mandateEnded", true);
+  }, [createIsDeceased, form]);
+  React.useEffect(() => {
+    if (editIsDeceased) editForm.setFieldValue("mandateEnded", true);
+  }, [editIsDeceased, editForm]);
+
+  const findEntityByName = React.useCallback((list, name) => {
+    const n = normKey(name);
+    if (!n) return null;
+    const arr = Array.isArray(list) ? list : [];
+    return arr.find((x) => normKey(x?.name) === n) || null;
+  }, []);
+
+  const ensureFaction = React.useCallback(
+    async (name) => {
+      const s = String(name || "").trim();
+      if (!s) return null;
+      const found = findEntityByName(factionEntities, s);
+      if (found) return found;
+      if (!canWrite) return null;
+      const created = await PersonsApi.createFaction({ name: s });
+      await refreshLookups();
+      return created || findEntityByName(factionEntities, s);
+    },
+    [canWrite, factionEntities, findEntityByName, refreshLookups]
+  );
+
+  const ensureDistrict = React.useCallback(
+    async (name) => {
+      const s = String(name || "").trim();
+      if (!s) return null;
+      const found = findEntityByName(districtEntities, s);
+      if (found) return found;
+      if (!canWrite) return null;
+      const created = await PersonsApi.createDistrict({ name: s });
+      await refreshLookups();
+      return created || findEntityByName(districtEntities, s);
+    },
+    [canWrite, districtEntities, findEntityByName, refreshLookups]
+  );
+
+  const ensureConvocation = React.useCallback(
+    async (name) => {
+      const s = String(name || "").trim();
+      if (!s) return null;
+      const found = findEntityByName(convocationEntities, s);
+      if (found) return found;
+      if (!canWrite) return null;
+      const created = await PersonsApi.createConvocation({ name: s });
+      await refreshLookups();
+      return created || findEntityByName(convocationEntities, s);
+    },
+    [canWrite, convocationEntities, findEntityByName, refreshLookups]
+  );
 
   // Persist overrides so public site can show newly created/updated deputies immediately.
   React.useEffect(() => {
@@ -260,7 +351,18 @@ export default function AdminDeputiesV2({
                 phoneNumber: row.phoneNumber || row.contacts?.phone || row.phone || "",
                 address: row.address || row.contacts?.address || "",
                 description: row.biography || row.bio || row.description || row.position || "",
-                convocationNumber: row.convocationNumber || row.convocation || "",
+                convocations: (() => {
+                  const arr = Array.isArray(row.convocations)
+                    ? row.convocations
+                        .map((x) => (typeof x === "string" ? x : x?.name || x?.title || ""))
+                        .map((x) => String(x || "").trim())
+                        .filter(Boolean)
+                    : [];
+                  const one = String(row.convocationNumber || row.convocation || "").trim();
+                  return [...new Set([...arr, ...(one ? [one] : [])])];
+                })(),
+                mandateEnded: Boolean(row.mandateEnded),
+                isDeceased: Boolean(row.isDeceased),
                 structureType: row.structureType || "",
                 role: row.role || "",
                 receptionSchedule:
@@ -314,7 +416,19 @@ export default function AdminDeputiesV2({
     const id = String(p.id ?? p._id ?? p.personId ?? "");
     const fullName = p.fullName || p.full_name || p.name || "";
     const district = p.electoralDistrict || p.electoral_district || p.district || "";
-    const convocation = p.convocationNumber || p.convocation || p.convocation_number || "";
+    const convocationSingle = p.convocationNumber || p.convocation || p.convocation_number || "";
+    const convocationList = (() => {
+      const fromArr = Array.isArray(p.convocations)
+        ? p.convocations
+            .map((x) => (typeof x === "string" ? x : x?.name || x?.title || ""))
+            .map((x) => String(x || "").trim())
+            .filter(Boolean)
+        : [];
+      const fromOne = String(convocationSingle || "").trim();
+      const merged = [...new Set([...fromArr, ...(fromOne ? [fromOne] : [])])];
+      return merged;
+    })();
+    const convocation = String(convocationSingle || convocationList[0] || "").trim();
     const biography = p.biography || p.bio || p.description || "";
     return {
       ...p,
@@ -325,6 +439,9 @@ export default function AdminDeputiesV2({
       district: p.district || district,
       convocationNumber: p.convocationNumber || convocation,
       convocation: p.convocation || convocation,
+      convocations: convocationList,
+      mandateEnded: Boolean(p.mandateEnded ?? p.mandate_ended),
+      isDeceased: Boolean(p.isDeceased ?? p.is_deceased),
       biography,
       bio: p.bio || biography,
       description: p.description || biography,
@@ -335,6 +452,54 @@ export default function AdminDeputiesV2({
       },
     };
   }, []);
+
+  const enrichRelations = React.useCallback(
+    async (raw) => {
+      const body = raw && typeof raw === "object" ? { ...raw } : {};
+
+      // Business rule: if deputy is marked as deceased => mandate ended.
+      if (body.isDeceased) body.mandateEnded = true;
+
+      // Faction relation
+      const factionName = String(body.faction || "").trim();
+      if (factionName) {
+        const f = await ensureFaction(factionName).catch(() => null);
+        if (f?.id) body.factionIds = [String(f.id)];
+      }
+
+      // District relation (we still keep electoralDistrict string for UI)
+      const districtName = String(body.electoralDistrict || "").trim();
+      if (districtName) {
+        const d = await ensureDistrict(districtName).catch(() => null);
+        if (d?.id) body.districtIds = [String(d.id)];
+      }
+
+      // Convocations (multi)
+      const convNames = Array.isArray(body.convocations)
+        ? body.convocations.map((x) => String(x || "").trim()).filter(Boolean)
+        : [];
+      if (convNames.length) {
+        const ensured = await Promise.all(convNames.map((n) => ensureConvocation(n).catch(() => null)));
+        const ids = ensured.filter((x) => x?.id).map((x) => String(x.id));
+        if (ids.length) body.convocationIds = ids;
+        // For legacy UI, keep a single convocation string too
+        if (!body.convocation) body.convocation = convNames[0];
+        if (!body.convocationNumber) body.convocationNumber = body.convocation;
+      } else if (body.convocationNumber || body.convocation) {
+        const one = String(body.convocationNumber || body.convocation || "").trim();
+        if (one) {
+          const c = await ensureConvocation(one).catch(() => null);
+          if (c?.id) body.convocationIds = [String(c.id)];
+          body.convocation = one;
+          body.convocationNumber = one;
+          body.convocations = [one];
+        }
+      }
+
+      return body;
+    },
+    [ensureFaction, ensureDistrict, ensureConvocation]
+  );
 
   const syncFromCodeToApi = React.useCallback(() => {
     if (!canWrite) return;
@@ -382,7 +547,7 @@ export default function AdminDeputiesV2({
               continue;
             }
 
-            const body = toPersonsApiBody({
+            const basePayload = {
               fullName,
               electoralDistrict: district,
               faction: d?.faction || "",
@@ -391,7 +556,15 @@ export default function AdminDeputiesV2({
               address: d?.address || "",
               biography: d?.biography || d?.bio || "",
               description: d?.description || d?.position || "",
-              convocationNumber: d?.convocationNumber || d?.convocation || "",
+              convocations: (() => {
+                const arr = Array.isArray(d?.convocations)
+                  ? d.convocations.map((x) => String(x || "").trim()).filter(Boolean)
+                  : [];
+                const one = String(d?.convocationNumber || d?.convocation || "").trim();
+                return [...new Set([...arr, ...(one ? [one] : [])])];
+              })(),
+              mandateEnded: Boolean(d?.mandateEnded),
+              isDeceased: Boolean(d?.isDeceased),
               structureType: d?.structureType || "",
               role: d?.role || "",
               receptionSchedule: d?.receptionSchedule || toReceptionScheduleText(d?.schedule),
@@ -399,10 +572,11 @@ export default function AdminDeputiesV2({
                 ? d.legislativeActivity
                 : toLegislativeActivity(d?.laws),
               incomeDeclarations: Array.isArray(d?.incomeDeclarations) ? d.incomeDeclarations : [],
-            });
+            };
 
             try {
-              const created = await PersonsApi.create(body);
+              const enriched = await enrichRelations(basePayload);
+              const created = await PersonsApi.create(toPersonsApiBody(enriched));
               const createdId = created?.id ?? created?._id ?? created?.personId;
               createdCount += 1;
               existing.add(k);
@@ -438,7 +612,7 @@ export default function AdminDeputiesV2({
         }
       },
     });
-  }, [canWrite, message, publicDeputies, reloadPublicData]);
+  }, [canWrite, message, publicDeputies, reloadPublicData, enrichRelations]);
 
   const submit = async () => {
     try {
@@ -455,11 +629,12 @@ export default function AdminDeputiesV2({
 
       let uiItem = null;
       try {
-        const created = await PersonsApi.create(toPersonsApiBody(body));
+        const enriched = await enrichRelations(body);
+        const created = await PersonsApi.create(toPersonsApiBody(enriched));
         const createdId = created?.id ?? created?._id ?? created?.personId;
         if (createdId && imageFile) await PersonsApi.uploadMedia(createdId, imageFile);
         uiItem = normalizeForUi({
-          ...body,
+          ...enriched,
           ...created,
           id: String(createdId || created?.id || `tmp-${Date.now()}`),
         });
@@ -501,9 +676,10 @@ export default function AdminDeputiesV2({
       if (!body.biography) body.biography = body.description || "";
       if (!body.bio) body.bio = body.biography || "";
 
-      const uiItem = normalizeForUi({ ...body, id });
+      const enriched = await enrichRelations(body);
+      const uiItem = normalizeForUi({ ...enriched, id });
       try {
-        await PersonsApi.patch(id, toPersonsApiBody(body));
+        await PersonsApi.patch(id, toPersonsApiBody(enriched));
         if (imageFile) await PersonsApi.uploadMedia(id, imageFile);
         setLocalUpdated((prev) => ({ ...prev, [id]: uiItem }));
         message.success("Депутат обновлён");
@@ -629,8 +805,24 @@ export default function AdminDeputiesV2({
           </div>
 
           <div className="admin-split">
-            <Form.Item label="Созыв (номер)" name="convocationNumber">
-              <Input type="number" placeholder="Номер созыва" />
+            <Form.Item label="Созывы" name="convocations" tooltip="Можно выбрать несколько созывов для одного депутата">
+              <Select
+                mode="tags"
+                placeholder="Например: VIII, VII"
+                tokenSeparators={[","]}
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                options={(
+                  Array.isArray(convocationEntities) && convocationEntities.length
+                    ? convocationEntities.map((c) => c?.name)
+                    : Array.isArray(structureConvocations)
+                      ? structureConvocations
+                      : []
+                )
+                  .filter((x) => x && String(x).trim() !== "")
+                  .map((x) => ({ value: String(x), label: String(x) }))}
+              />
             </Form.Item>
             <Form.Item label="Тип структуры" name="structureType">
               <Select placeholder="Выберите тип структуры" allowClear>
@@ -640,6 +832,15 @@ export default function AdminDeputiesV2({
                   </Select.Option>
                 ))}
               </Select>
+            </Form.Item>
+          </div>
+
+          <div className="admin-split" style={{ marginTop: -8 }}>
+            <Form.Item name="mandateEnded" valuePropName="checked" style={{ marginBottom: 0 }}>
+              <Checkbox>Созыв завершен (прекратил полномочия)</Checkbox>
+            </Form.Item>
+            <Form.Item name="isDeceased" valuePropName="checked" style={{ marginBottom: 0 }}>
+              <Checkbox>Умер</Checkbox>
             </Form.Item>
           </div>
 
@@ -840,8 +1041,24 @@ export default function AdminDeputiesV2({
           </div>
 
           <div className="admin-split">
-            <Form.Item label="Созыв (номер)" name="convocationNumber">
-              <Input type="number" placeholder="Номер созыва" />
+            <Form.Item label="Созывы" name="convocations" tooltip="Можно выбрать несколько созывов для одного депутата">
+              <Select
+                mode="tags"
+                placeholder="Например: VIII, VII"
+                tokenSeparators={[","]}
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                options={(
+                  Array.isArray(convocationEntities) && convocationEntities.length
+                    ? convocationEntities.map((c) => c?.name)
+                    : Array.isArray(structureConvocations)
+                      ? structureConvocations
+                      : []
+                )
+                  .filter((x) => x && String(x).trim() !== "")
+                  .map((x) => ({ value: String(x), label: String(x) }))}
+              />
             </Form.Item>
             <Form.Item label="Тип структуры" name="structureType">
               <Select placeholder="Выберите тип структуры" allowClear>
@@ -851,6 +1068,15 @@ export default function AdminDeputiesV2({
                   </Select.Option>
                 ))}
               </Select>
+            </Form.Item>
+          </div>
+
+          <div className="admin-split" style={{ marginTop: -8 }}>
+            <Form.Item name="mandateEnded" valuePropName="checked" style={{ marginBottom: 0 }}>
+              <Checkbox>Созыв завершен (прекратил полномочия)</Checkbox>
+            </Form.Item>
+            <Form.Item name="isDeceased" valuePropName="checked" style={{ marginBottom: 0 }}>
+              <Checkbox>Умер</Checkbox>
             </Form.Item>
           </div>
 
@@ -999,6 +1225,7 @@ export default function AdminDeputiesV2({
           if (!name) return;
           try {
             await PersonsApi.createFaction({ name });
+            await refreshLookups();
             setFactions((prev) => {
               const arr = Array.isArray(prev) ? prev : [];
               const next = Array.from(new Set([...arr.map(String), name]));
