@@ -7,6 +7,16 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 export default function Committee() {
   const { committees, deputies, loading, errors, reload } = useData();
   const [committee, setCommittee] = React.useState(null);
+  
+  // Get current section from URL hash or default to "about"
+  const [currentSection, setCurrentSection] = React.useState(() => {
+    const hash = window.location.hash;
+    if (hash.includes("#reports")) return "reports";
+    if (hash.includes("#plans")) return "plans";
+    if (hash.includes("#activities")) return "activities";
+    if (hash.includes("#staff")) return "staff";
+    return "about";
+  });
 
   React.useEffect(() => {
     const sp = new URLSearchParams(window.location.search || "");
@@ -38,6 +48,47 @@ export default function Committee() {
     };
   }, [committees]);
 
+  React.useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash.includes("#reports")) setCurrentSection("reports");
+      else if (hash.includes("#plans")) setCurrentSection("plans");
+      else if (hash.includes("#activities")) setCurrentSection("activities");
+      else if (hash.includes("#staff")) setCurrentSection("staff");
+      else setCurrentSection("about");
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  // Resolve members only if committee exists (moved before conditional return)
+  const resolveMember = React.useCallback((m) => {
+    if (!m || typeof m !== "object") return null;
+    // Try resolve by id first, then by full name (case-insensitive)
+    let d = m.id ? (deputies || []).find((x) => x && x.id === m.id) : null;
+    if (!d && m.name && typeof m.name === "string") {
+      const target = m.name.trim().toLowerCase();
+      d = (deputies || []).find((x) => x && x.name && typeof x.name === "string" && x.name.trim().toLowerCase() === target);
+    }
+    return {
+      id: m.id || d?.id || (typeof m.name === "string" ? m.name : String(m.id || "")),
+      name: (d?.name && typeof d.name === "string") ? d.name : (typeof m.name === "string" ? m.name : ""),
+      role: typeof m.role === "string" ? m.role : "",
+      photo: normalizeFilesUrl(
+        (d?.photo && typeof d.photo === "string" ? d.photo : "") ||
+          (typeof m.photo === "string" ? m.photo : "") ||
+          ""
+      ),
+      phone: (d?.contacts?.phone && typeof d.contacts.phone === "string") ? d.contacts.phone : (typeof m.phone === "string" ? m.phone : ""),
+      email: (d?.contacts?.email && typeof d.contacts.email === "string") ? d.contacts.email : (typeof m.email === "string" ? m.email : ""),
+      address: (d?.address && typeof d.address === "string") ? d.address : (typeof m.address === "string" ? m.address : ""),
+      faction: typeof d?.faction === "string" ? d.faction : "",
+      district: typeof d?.district === "string" ? d.district : "",
+      convocation: typeof d?.convocation === "string" ? d.convocation : "",
+      position: typeof d?.position === "string" ? d.position : "",
+    };
+  }, [deputies]);
+
   // Если нет id - показываем список комитетов
   if (!committee) {
     const getChairman = (c) => {
@@ -62,9 +113,9 @@ export default function Committee() {
                 emptyDescription="Комитеты не найдены"
               >
                 <div className="grid cols-2" style={{ marginTop: 20, gap: 16 }}>
-                  {(committees || []).filter((c) => c && c.id && c.title).map((c) => {
+                  {(committees || []).filter((c) => c && c.id && (c.name || c.title)).map((c) => {
                     const chairman = getChairman(c);
-                    const title = typeof c.title === "string" ? c.title : "Комитет";
+                    const title = typeof c.name === "string" ? c.name : (typeof c.title === "string" ? c.title : "Комитет");
                     return (
                       <a
                         key={c.id}
@@ -112,42 +163,20 @@ export default function Committee() {
     );
   }
 
-  const resolveMember = (m) => {
-    if (!m || typeof m !== "object") return null;
-    // Try resolve by id first, then by full name (case-insensitive)
-    let d = m.id ? (deputies || []).find((x) => x && x.id === m.id) : null;
-    if (!d && m.name && typeof m.name === "string") {
-      const target = m.name.trim().toLowerCase();
-      d = (deputies || []).find((x) => x && x.name && typeof x.name === "string" && x.name.trim().toLowerCase() === target);
-    }
-    return {
-      id: m.id || d?.id || (typeof m.name === "string" ? m.name : String(m.id || "")),
-      name: (d?.name && typeof d.name === "string") ? d.name : (typeof m.name === "string" ? m.name : ""),
-      role: typeof m.role === "string" ? m.role : "",
-      photo: normalizeFilesUrl(
-        (d?.photo && typeof d.photo === "string" ? d.photo : "") ||
-          (typeof m.photo === "string" ? m.photo : "") ||
-          ""
-      ),
-      phone: (d?.contacts?.phone && typeof d.contacts.phone === "string") ? d.contacts.phone : (typeof m.phone === "string" ? m.phone : ""),
-      email: (d?.contacts?.email && typeof d.contacts.email === "string") ? d.contacts.email : (typeof m.email === "string" ? m.email : ""),
-      address: (d?.address && typeof d.address === "string") ? d.address : (typeof m.address === "string" ? m.address : ""),
-      faction: typeof d?.faction === "string" ? d.faction : "",
-      district: typeof d?.district === "string" ? d.district : "",
-      convocation: typeof d?.convocation === "string" ? d.convocation : "",
-      position: typeof d?.position === "string" ? d.position : "",
-    };
-  };
-
-  const members = (committee.members || []).map(resolveMember).filter(Boolean);
+  // Resolve members only if committee exists
+  const members = committee ? ((committee.members || []).map(resolveMember).filter(Boolean)) : [];
   // Находим председателя (тот, у кого роль содержит "председатель")
   const leader = members.find((m) => 
     m.role && m.role.toLowerCase().includes("председатель")
   ) || members[0];
   // Остальные члены (исключаем председателя)
   const rest = members.filter((m) => m.id !== leader?.id);
-  const staff = Array.isArray(committee.staff) ? committee.staff : [];
-  const backToCommittee = encodeURIComponent(`/committee?id=${encodeURIComponent(committee.id)}`);
+  // Get reports, plans, activities, staff (only if committee exists)
+  const reports = committee ? (Array.isArray(committee.reports) ? committee.reports : []) : [];
+  const plans = committee ? (Array.isArray(committee.plans) ? committee.plans : []) : [];
+  const activities = committee ? (Array.isArray(committee.activities) ? committee.activities : []) : [];
+  const staff = committee ? (Array.isArray(committee.staff) ? committee.staff : []) : [];
+  const backToCommittee = committee ? encodeURIComponent(`/committee?id=${encodeURIComponent(committee.id)}`) : "";
 
   return (
     <section className="section">
@@ -161,9 +190,21 @@ export default function Committee() {
             >
               ← К списку комитетов
             </a>
-            <h1 className="h1-compact">{committee.title}</h1>
+            <h1 className="h1-compact">{committee.name || committee.title}</h1>
 
-            {/* Председатель */}
+            {/* Краткая информация о комитете */}
+            {committee.shortDescription && (
+              <div style={{ marginTop: 16, padding: 20, background: "#f9fafb", borderRadius: 8 }}>
+                <div style={{ fontSize: 16, lineHeight: 1.6, color: "#374151" }}>
+                  {committee.shortDescription}
+                </div>
+              </div>
+            )}
+
+            {/* Контент в зависимости от выбранной секции */}
+            {currentSection === "about" && (
+              <>
+                {/* Председатель */}
             {leader ? (
               <>
                 <h2 style={{ marginTop: 24 }}>Председатель</h2>
@@ -268,21 +309,189 @@ export default function Committee() {
                 </div>
               </>
             ) : null}
-            {staff.length ? (
-              <>
-                <h3 style={{ marginTop: 16 }}>Сотрудники комитета</h3>
-                <ul className="person-card__meta">
-                  {staff.map((s, i) => (
-                    <li key={i}>
-                      <strong>{s.name}</strong>
-                      {s.role ? ` — ${s.role}` : ""}
-                    </li>
-                  ))}
-                </ul>
               </>
-            ) : null}
+            )}
+
+            {/* Отчеты */}
+            {currentSection === "reports" && (
+              <div>
+                <h2 style={{ marginTop: 24 }}>Отчеты комитета</h2>
+                {reports.length > 0 ? (
+                  <div style={{ marginTop: 16 }}>
+                    {reports.map((report, idx) => (
+                      <div key={idx} className="card" style={{ marginBottom: 16, padding: 20 }}>
+                        <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>
+                          {report.title || `Отчет ${idx + 1}`}
+                        </div>
+                        {report.date && (
+                          <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
+                            Дата: {report.date}
+                          </div>
+                        )}
+                        {report.description && (
+                          <div style={{ marginBottom: 12, lineHeight: 1.6 }}>
+                            {report.description}
+                          </div>
+                        )}
+                        {(report.fileLink || report.fileId) && (
+                          <a
+                            href={report.fileLink || `/files/${report.fileId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn--primary"
+                          >
+                            Скачать отчет
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
+                    Отчеты пока не добавлены
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Планы */}
+            {currentSection === "plans" && (
+              <div>
+                <h2 style={{ marginTop: 24 }}>Планы комитета</h2>
+                {plans.length > 0 ? (
+                  <div style={{ marginTop: 16 }}>
+                    {plans.map((plan, idx) => (
+                      <div key={idx} className="card" style={{ marginBottom: 16, padding: 20 }}>
+                        <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>
+                          {plan.title || `План ${idx + 1}`}
+                        </div>
+                        {plan.date && (
+                          <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
+                            Дата: {plan.date}
+                          </div>
+                        )}
+                        {plan.description && (
+                          <div style={{ marginBottom: 12, lineHeight: 1.6 }}>
+                            {plan.description}
+                          </div>
+                        )}
+                        {(plan.fileLink || plan.fileId) && (
+                          <a
+                            href={plan.fileLink || `/files/${plan.fileId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn--primary"
+                          >
+                            Скачать план
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
+                    Планы пока не добавлены
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Деятельность */}
+            {currentSection === "activities" && (
+              <div>
+                <h2 style={{ marginTop: 24 }}>Деятельность комитета</h2>
+                {activities.length > 0 ? (
+                  <div style={{ marginTop: 16 }}>
+                    {activities.map((activity, idx) => (
+                      <div key={idx} className="card" style={{ marginBottom: 16, padding: 20 }}>
+                        <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>
+                          {activity.title || `Деятельность ${idx + 1}`}
+                        </div>
+                        {activity.date && (
+                          <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
+                            Дата: {activity.date}
+                          </div>
+                        )}
+                        {activity.type && (
+                          <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
+                            Тип: {activity.type}
+                          </div>
+                        )}
+                        {activity.description && (
+                          <div style={{ lineHeight: 1.6 }}>
+                            {activity.description}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
+                    Информация о деятельности пока не добавлена
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Сотрудники */}
+            {currentSection === "staff" && (
+              <div>
+                <h2 style={{ marginTop: 24 }}>Сотрудники комитета</h2>
+                {staff.length > 0 ? (
+                  <div className="grid cols-3" style={{ marginTop: 16, gap: 16 }}>
+                    {staff.map((s, i) => (
+                      <div key={i} className="gov-card">
+                        <div className="gov-card__body">
+                          <div className="gov-card__name">{s.name || "Сотрудник"}</div>
+                          {s.role && <div className="gov-card__role">{s.role}</div>}
+                          {s.phone && (
+                            <ul className="gov-meta">
+                              <li>
+                                <span>📞</span>
+                                <span>{s.phone}</span>
+                              </li>
+                            </ul>
+                          )}
+                          {s.email && (
+                            <ul className="gov-meta">
+                              <li>
+                                <span>✉️</span>
+                                <span>{s.email}</span>
+                              </li>
+                            </ul>
+                          )}
+                        </div>
+                        {s.id && (
+                          <div className="gov-card__actions">
+                            <a
+                              className="gov-card__btn"
+                              href={`/committee/staff/${s.id}?committee=${encodeURIComponent(committee.id)}`}
+                            >
+                              Подробнее
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
+                    Сотрудники пока не добавлены
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <SideNav />
+          <SideNav
+            title={committee.name || committee.title}
+            links={[
+              { label: "О комитете", href: `/committee?id=${committee.id}#about` },
+              { label: "Отчеты", href: `/committee?id=${committee.id}#reports` },
+              { label: "Планы", href: `/committee?id=${committee.id}#plans` },
+              { label: "Деятельность", href: `/committee?id=${committee.id}#activities` },
+              { label: "Сотрудники", href: `/committee?id=${committee.id}#staff` },
+            ]}
+          />
         </div>
       </div>
     </section>

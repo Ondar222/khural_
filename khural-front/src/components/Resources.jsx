@@ -1,5 +1,6 @@
 import React from "react";
 import GosWidget from "./GosWidget.jsx";
+import BroadcastWidget from "./BroadcastWidget.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 
 const LINKS = [
@@ -92,6 +93,14 @@ export default function Resources() {
           </div>
           <div className="grid" style={{ gap: 24 }}>
             <GosWidget id="gos-widget-3" src="/js/gos_pos_cit.js" variant={3} />
+          </div>
+        </div>
+        
+        {/* Раздел Трансляции */}
+        <div style={{ marginTop: 48 }}>
+          <h2 className="portals-title" style={{ marginBottom: 24 }}>Трансляции</h2>
+          <div style={{ marginTop: 16 }}>
+            <BroadcastWidget />
           </div>
         </div>
       </div>

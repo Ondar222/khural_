@@ -8,6 +8,7 @@ import Government from "./pages/Government.jsx";
 import Authorities from "./pages/Authorities.jsx";
 import Wifi from "./pages/Wifi.jsx";
 import Committee from "./pages/Committee.jsx";
+import CommitteeStaffDetail from "./pages/CommitteeStaffDetail.jsx";
 import { Feedback, Press, Docs } from "./pages/TopbarStubs.jsx";
 import Contacts from "./pages/Contacts.jsx";
 import ActivityPage from "./pages/Activity.jsx";
@@ -20,6 +21,7 @@ import CalendarPage from "./pages/Calendar.jsx";
 import About from "./pages/About.jsx";
 import Documents from "./pages/Documents.jsx";
 import DocumentDetail from "./pages/DocumentDetail.jsx";
+import Broadcast from "./pages/Broadcast.jsx";
 import Deputies from "./pages/DeputiesV2.jsx";
 import PagesIndex from "./pages/PagesIndex.jsx";
 import PageBySlug from "./pages/PageBySlug.jsx";
@@ -61,6 +63,7 @@ import AdminSliderPage from "./pages/admin/AdminSliderPage.jsx";
 import AdminSliderCreatePage from "./pages/admin/AdminSliderCreatePage.jsx";
 import AdminSliderEditPage from "./pages/admin/AdminSliderEditPage.jsx";
 import AdminProfilePage from "./pages/admin/AdminProfilePage.jsx";
+import AdminBroadcastPage from "./pages/admin/AdminBroadcastPage.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
@@ -112,6 +115,7 @@ export default function App() {
                           "/calendar": CalendarPage,
                           "/documents": Documents,
                           "/documents/:id": DocumentDetail,
+                          "/broadcast": Broadcast,
                           "/docs/laws": DocsPage,
                           "/docs/resolutions": DocsPage,
                           "/docs/initiatives": DocsPage,
@@ -125,6 +129,7 @@ export default function App() {
                           "/activity/statistics": ActivitySectionPage,
                           "/activity/schet_palata": ActivitySectionPage,
                           "/committee": Committee,
+                          "/committee/staff/:id": CommitteeStaffDetail,
                           "/commission": Commission,
                           "/apparatus": Apparatus,
                           "/section": SectionPage,
@@ -158,6 +163,7 @@ export default function App() {
                           "/admin/slider/edit/:id": AdminProtected(AdminSliderEditPage),
                           "/admin/appeals": AdminProtected(AdminAppealsPage),
                           "/admin/env": AdminProtected(AdminEnvDocsPage),
+                          "/admin/broadcast": AdminProtected(AdminBroadcastPage),
                           "/feedback": Feedback,
                           "/press": Press,
                           "/activity": ActivityPage,
