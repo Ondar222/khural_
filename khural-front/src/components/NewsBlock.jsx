@@ -8,6 +8,9 @@ export default function NewsBlock() {
   const { news, loading, errors, reload } = useData();
   const { t } = useI18n();
   const [category, setCategory] = React.useState("Все");
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 6; // Показываем 6 новостей на странице
+  
   const normalizeCategoryKey = React.useCallback((v) => {
     return String(v ?? "")
       .replace(/\u00A0/g, " ") // NBSP
@@ -16,6 +19,7 @@ export default function NewsBlock() {
       .trim()
       .toLowerCase();
   }, []);
+  
   const categories = React.useMemo(
     () => {
       const byKey = new Map();
@@ -29,16 +33,29 @@ export default function NewsBlock() {
     },
     [news, normalizeCategoryKey]
   );
-  const filtered = React.useMemo(
+  
+  const allFiltered = React.useMemo(
     () =>
-      (category === "Все"
+      category === "Все"
         ? news
         : (news || []).filter(
             (n) => normalizeCategoryKey(n?.category) === normalizeCategoryKey(category)
-          )
-      ).slice(0, 5),
+          ),
     [news, category, normalizeCategoryKey]
   );
+  
+  const totalPages = Math.ceil((allFiltered?.length || 0) / itemsPerPage);
+  
+  const filtered = React.useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return (allFiltered || []).slice(start, end);
+  }, [allFiltered, currentPage, itemsPerPage]);
+  
+  // Сброс на первую страницу при смене категории
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [category]);
 
   return (
     <section className="section">
@@ -132,6 +149,74 @@ export default function NewsBlock() {
               </a>
             ))}
           </div>
+          
+          {/* Пагинация */}
+          {totalPages > 1 && (
+            <div style={{ marginTop: 32, display: "flex", justifyContent: "center", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <button
+                className="btn"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                style={{
+                  opacity: currentPage === 1 ? 0.5 : 1,
+                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                }}
+                aria-label="Предыдущая страница"
+              >
+                ← Назад
+              </button>
+              
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      className="btn"
+                      onClick={() => setCurrentPage(pageNum)}
+                      style={{
+                        background: currentPage === pageNum ? "#003366" : "#fff",
+                        color: currentPage === pageNum ? "#fff" : "#003366",
+                        border: "1px solid #003366",
+                        minWidth: 40,
+                      }}
+                      aria-label={`Страница ${pageNum}`}
+                      aria-current={currentPage === pageNum ? "page" : undefined}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <button
+                className="btn"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                style={{
+                  opacity: currentPage === totalPages ? 0.5 : 1,
+                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                }}
+                aria-label="Следующая страница"
+              >
+                Вперёд →
+              </button>
+              
+              <div style={{ fontSize: 14, color: "#6b7280", marginLeft: 8 }}>
+                Страница {currentPage} из {totalPages}
+              </div>
+            </div>
+          )}
         </DataState>
       </div>
     </section>

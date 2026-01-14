@@ -16,9 +16,17 @@ export default function NewsArchive() {
 
   const getInitialCategory = () => {
     const categoryParam = new URLSearchParams(window.location.search || "").get("category");
+    const speakerParam = new URLSearchParams(window.location.search || "").get("speaker");
+    if (speakerParam === "true") return "Председатель";
     return categoryParam || "Все";
   };
   const [category, setCategory] = React.useState(getInitialCategory);
+  
+  // Определяем, показываем ли новости председателя
+  const isSpeakerNews = React.useMemo(() => {
+    const sp = new URLSearchParams(window.location.search || "");
+    return sp.get("speaker") === "true" || category === "Председатель";
+  }, [category]);
 
   const getInitialDate = () => {
     const dateParam = new URLSearchParams(window.location.search || "").get("date");
@@ -55,18 +63,41 @@ export default function NewsArchive() {
   }, []);
 
   const categories = React.useMemo(
-    () => ["Все", ...Array.from(new Set((news || []).map((n) => n.category).filter(Boolean)))],
+    () => {
+      const cats = ["Все", "Председатель", ...Array.from(new Set((news || []).map((n) => n.category).filter(Boolean)))];
+      // Убираем дубликаты
+      return Array.from(new Set(cats));
+    },
     [news]
   );
 
   const filtered = React.useMemo(
-    () =>
-      (news || []).filter(
-        (n) =>
-          (category === "Все" || n.category === category) &&
-          (!date || String(n.date || "").slice(0, 10) === date)
-      ),
-    [news, category, date]
+    () => {
+      let result = news || [];
+      
+      // Фильтр по новостям председателя
+      if (isSpeakerNews) {
+        const speakerKeywords = ["председатель", "председателя", "председателю", "speaker", "chairman"];
+        result = result.filter((n) => {
+          const title = String(n?.title || "").toLowerCase();
+          const category = String(n?.category || "").toLowerCase();
+          const content = String(n?.excerpt || n?.content || "").toLowerCase();
+          return speakerKeywords.some((keyword) => 
+            title.includes(keyword) || category.includes(keyword) || content.includes(keyword)
+          );
+        });
+      } else if (category !== "Все") {
+        result = result.filter((n) => n.category === category);
+      }
+      
+      // Фильтр по дате
+      if (date) {
+        result = result.filter((n) => String(n.date || "").slice(0, 10) === date);
+      }
+      
+      return result;
+    },
+    [news, category, date, isSpeakerNews]
   );
 
   if (selected) {
@@ -372,8 +403,13 @@ export default function NewsArchive() {
                       const params = new URLSearchParams(window.location.search || "");
                       if (newCategory === "Все") {
                         params.delete("category");
+                        params.delete("speaker");
+                      } else if (newCategory === "Председатель") {
+                        params.set("speaker", "true");
+                        params.delete("category");
                       } else {
                         params.set("category", newCategory);
+                        params.delete("speaker");
                       }
                       if (date) params.set("date", date);
                       const newHash = params.toString() ? `${h}?${params.toString()}` : h;
@@ -467,9 +503,44 @@ export default function NewsArchive() {
           <SideNav
             title="Новости"
             links={[
-              { label: "Актуальные новости", href: "/news" },
-              { label: "Все новости", href: "/news" },
-              { label: "Медиа", href: "/news" },
+              { 
+                label: "Новости", 
+                href: "/news",
+                active: !isSpeakerNews && category === "Все"
+              },
+              { 
+                label: "Новости Председателя", 
+                href: "/news?speaker=true",
+                active: isSpeakerNews
+              },
+              { 
+                label: "Фотографии", 
+                href: "/news?category=Фотографии"
+              },
+              { 
+                label: "Видеозаписи", 
+                href: "/news?category=Видеозаписи"
+              },
+              { 
+                label: "Кодекс чести мужчины Тувы", 
+                href: "/section?title=Кодекс чести мужчины Тувы"
+              },
+              { 
+                label: "Свод заповедей матерей Тувы", 
+                href: "/section?title=Свод заповедей матерей Тувы"
+              },
+              { 
+                label: "Подписка на новости", 
+                href: "/section?title=Подписка на новости"
+              },
+              { 
+                label: "Для СМИ", 
+                href: "/section?title=Для СМИ"
+              },
+              { 
+                label: "Трансляции", 
+                href: "/broadcast"
+              },
             ]}
           />
         </div>
