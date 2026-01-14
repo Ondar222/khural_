@@ -119,14 +119,33 @@ export default function Government() {
         if (alive) setSelectedDeputy(null);
         return;
       }
-      const res = await PersonsApi.getById(String(selected)).catch(() => null);
-      const normalized = normalizeApiDeputyForDetail(res);
-      if (alive) setSelectedDeputy(normalized);
+      const selectedId = String(selected).trim();
+      if (!selectedId || selectedId === "undefined" || selectedId === "null") {
+        if (alive) setSelectedDeputy(null);
+        return;
+      }
+      try {
+        const res = await PersonsApi.getById(selectedId);
+        if (!alive) return;
+        const normalized = normalizeApiDeputyForDetail(res);
+        if (alive) setSelectedDeputy(normalized);
+      } catch (error) {
+        console.error("Failed to fetch deputy:", error);
+        // Fallback: try to find in local deputies array
+        if (alive) {
+          const localDeputy = (deputies || []).find((d) => String(d?.id) === selectedId);
+          if (localDeputy) {
+            setSelectedDeputy(normalizeApiDeputyForDetail(localDeputy));
+          } else {
+            setSelectedDeputy(null);
+          }
+        }
+      }
     })();
     return () => {
       alive = false;
     };
-  }, [selected, section]);
+  }, [selected, section, deputies]);
   React.useEffect(() => {
     const onNav = () => {
       const sp = new URLSearchParams(window.location.search || "");
@@ -248,8 +267,33 @@ export default function Government() {
     const dataset = section === "Депутаты" ? deputies : government;
     const item =
       (section === "Депутаты" && selectedDeputy) ||
-      dataset.find((p) => p.id === selected);
-    if (!item) return null;
+      dataset.find((p) => String(p?.id) === String(selected));
+    if (!item) {
+      // Если депутат не найден, показываем загрузку или ошибку
+      if (section === "Депутаты" && !selectedDeputy) {
+        return (
+          <section className="section">
+            <div className="container">
+              <div style={{ padding: 40, textAlign: "center" }}>
+                <div style={{ fontSize: 18, marginBottom: 16 }}>Загрузка информации о депутате...</div>
+              </div>
+            </div>
+          </section>
+        );
+      }
+      return (
+        <section className="section">
+          <div className="container">
+            <div style={{ padding: 40, textAlign: "center" }}>
+              <div style={{ fontSize: 18, marginBottom: 16 }}>Депутат не найден</div>
+              <a href="/deputies" className="btn btn--primary">
+                Вернуться к списку депутатов
+              </a>
+            </div>
+          </div>
+        </section>
+      );
+    }
     const sp = new URLSearchParams(window.location.search || "");
     const backParam = sp.get("back");
     // If caller provided an explicit "back" target, honor it.

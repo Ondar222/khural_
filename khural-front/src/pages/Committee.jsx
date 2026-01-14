@@ -71,7 +71,7 @@ export default function Committee() {
       d = (deputies || []).find((x) => x && x.name && typeof x.name === "string" && x.name.trim().toLowerCase() === target);
     }
     return {
-      id: m.id || d?.id || (typeof m.name === "string" ? m.name : String(m.id || "")),
+      id: d?.id || m.id || (typeof m.name === "string" ? m.name : String(m.id || "")),
       name: (d?.name && typeof d.name === "string") ? d.name : (typeof m.name === "string" ? m.name : ""),
       role: typeof m.role === "string" ? m.role : "",
       photo: normalizeFilesUrl(
