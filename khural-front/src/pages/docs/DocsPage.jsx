@@ -4,6 +4,11 @@ import SideNav from "../../components/SideNav.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
+import { decodeHtmlEntities } from "../../utils/html.js";
+
+function looksLikeHtml(s) {
+  return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
+}
 
 const CATEGORIES = [
   {
@@ -164,7 +169,17 @@ export default function DocsPage() {
                     <div className="law-ico">📄</div>
                     <div>
                       <div className="law-title">{d.title}</div>
-                      {d.desc && <div className="law-desc">{d.desc}</div>}
+                      {d.desc ? (
+                        (() => {
+                          const decoded = decodeHtmlEntities(d.desc);
+                          if (!decoded) return null;
+                          return looksLikeHtml(decoded) ? (
+                            <div className="law-desc" dangerouslySetInnerHTML={{ __html: String(decoded) }} />
+                          ) : (
+                            <div className="law-desc">{decoded}</div>
+                          );
+                        })()
+                      ) : null}
                       {d.number && <div className="law-status">№ {d.number}</div>}
                     </div>
                   </div>

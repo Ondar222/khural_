@@ -2,6 +2,7 @@ import React from "react";
 import { App, Button, Input, Form, Upload, Space, Select, Switch, Card, Divider, Alert } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { DocumentsApi, TranslationApi } from "../../api/client.js";
+import { decodeHtmlEntities } from "../../utils/html.js";
 
 const TYPE_OPTIONS = [
   { value: "laws", label: "Законы" },
@@ -39,7 +40,8 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
         form.setFieldsValue({
           title: doc.title || "",
           type: doc.type || "laws",
-          description: doc.content || "",
+          // Show tags in admin (e.g. "<p>...</p>") even if backend stored them HTML-escaped.
+          description: decodeHtmlEntities(doc.content || ""),
           category: doc.metadata?.category || "",
           number: doc.number || "",
           date: doc.publishedAt ? new Date(doc.publishedAt).toLocaleDateString("ru-RU") : "",

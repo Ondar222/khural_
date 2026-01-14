@@ -5,6 +5,7 @@ import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { decodeHtmlEntities } from "../utils/html.js";
 
 function norm(v) {
   return String(v ?? "")
@@ -21,6 +22,16 @@ function looksLikePdf(url) {
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
+}
+
+function renderDocDesc(raw) {
+  const decoded = decodeHtmlEntities(raw);
+  if (!decoded) return null;
+  return looksLikeHtml(decoded) ? (
+    <div className="law-desc" dangerouslySetInnerHTML={{ __html: String(decoded) }} />
+  ) : (
+    <div className="law-desc">{decoded}</div>
+  );
 }
 
 export default function Documents() {
@@ -197,13 +208,7 @@ export default function Documents() {
                                   <div className="law-ico">📄</div>
                                   <div>
                                     <div className="law-title">{d.title}</div>
-                                    {d.desc ? (
-                                      looksLikeHtml(d.desc) ? (
-                                        <div className="law-desc" dangerouslySetInnerHTML={{ __html: String(d.desc) }} />
-                                      ) : (
-                                        <div className="law-desc">{d.desc}</div>
-                                      )
-                                    ) : null}
+                                    {renderDocDesc(d.desc)}
                                     <div className="card-subtitle">
                                       {d.number ? `${d.number} • ` : ""}
                                       {d.date || d.createdAt || ""}
@@ -248,13 +253,7 @@ export default function Documents() {
                         <div className="law-ico">📄</div>
                         <div>
                           <div className="law-title">{d.title}</div>
-                              {d.desc ? (
-                                looksLikeHtml(d.desc) ? (
-                                  <div className="law-desc" dangerouslySetInnerHTML={{ __html: String(d.desc) }} />
-                                ) : (
-                                  <div className="law-desc">{d.desc}</div>
-                                )
-                              ) : null}
+                              {renderDocDesc(d.desc)}
                           <div className="card-subtitle">
                             {d.number ? `${d.number} • ` : ""}
                             {d.date || d.createdAt || ""}
