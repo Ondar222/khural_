@@ -234,6 +234,27 @@ export default function Deputies() {
                           ? d.reception.notes
                           : "";
                     const receptionPlain = String(receptionText || "").replace(/<[^>]*>/g, "").trim();
+                    
+                    // Получаем комитеты депутата
+                    const committeeIds = Array.isArray(d.committeeIds) 
+                      ? d.committeeIds 
+                      : (Array.isArray(d.committees) 
+                        ? d.committees.map((c) => (typeof c === "string" ? c : c?.id || c?.name || ""))
+                        : []);
+                    const deputyCommittees = (() => {
+                      if (!committeeIds.length || !committees || !Array.isArray(committees)) return [];
+                      return committees
+                        .filter((c) => {
+                          const cId = String(c?.id || "");
+                          const cName = String(c?.name || c?.title || "");
+                          return committeeIds.some((id) => 
+                            String(id || "") === cId || 
+                            String(id || "").toLowerCase() === cName.toLowerCase()
+                          );
+                        })
+                        .map((c) => c?.name || c?.title || c?.id || "");
+                    })();
+                    
                     return (
                       <div key={d.id} className="gov-card">
                         <div className="gov-card__top">
@@ -263,6 +284,12 @@ export default function Deputies() {
                               <span>Приём: {receptionPlain}</span>
                             </li>
                           )}
+                          {deputyCommittees.length > 0 && (
+                            <li>
+                              <span>📋</span>
+                              <span>Комитеты: {deputyCommittees.join(", ")}</span>
+                            </li>
+                          )}
                           {d.district && (
                             <li>
                               <span>🏛️</span>
@@ -275,12 +302,18 @@ export default function Deputies() {
                               <span>{typeof d.faction === "string" ? d.faction : String(d.faction || "")}</span>
                             </li>
                           )}
-                          {d.convocation && (
-                            <li>
-                              <span>🎖️</span>
-                              <span>Созыв: {d.convocation}</span>
-                            </li>
-                          )}
+                          {(() => {
+                            // Обрабатываем созывы - могут быть массивом или строкой
+                            const convocations = Array.isArray(d.convocations) 
+                              ? d.convocations.map((c) => (typeof c === "string" ? c : c?.name || c?.title || String(c || "")))
+                              : (d.convocation ? [String(d.convocation)] : []);
+                            return convocations.length > 0 ? (
+                              <li>
+                                <span>🎖️</span>
+                                <span>Созывы: {convocations.join(", ")}</span>
+                              </li>
+                            ) : null;
+                          })()}
                           {d.contacts?.phone && (
                             <li>
                               <span>📞</span>

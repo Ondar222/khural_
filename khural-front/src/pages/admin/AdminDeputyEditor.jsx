@@ -85,8 +85,19 @@ function normalizeInitial(d) {
       const one = String(row.convocationNumber || row.convocation || row.convocation_number || "").trim();
       return [...new Set([...fromRel, ...(one ? [one] : [])])];
     })(),
+    committeeIds: (() => {
+      if (Array.isArray(row.committeeIds)) return row.committeeIds.map(String);
+      if (Array.isArray(row.committees)) {
+        return row.committees
+          .map((c) => (typeof c === "string" ? c : c?.id || c?.name || ""))
+          .map((x) => String(x || "").trim())
+          .filter(Boolean);
+      }
+      return [];
+    })(),
     mandateEnded: Boolean(row.mandateEnded ?? row.mandate_ended),
     isDeceased: Boolean(row.isDeceased ?? row.is_deceased),
+    isActive: row.isActive !== undefined ? Boolean(row.isActive) : (row.is_active !== undefined ? Boolean(row.is_active) : true),
     structureType: row.structureType || row.structure_type || "",
     role: row.role || "",
     // API can store HTML as escaped text; decode so admin sees real tags (<p>..</p>).
@@ -101,7 +112,7 @@ function normalizeInitial(d) {
 export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
-  const { reload, deputies, factions, districts, convocations: structureConvocations, setFactions } = useData();
+  const { reload, deputies, factions, districts, convocations: structureConvocations, committees, setFactions, setCommittees } = useData();
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(mode === "edit");
   const [saving, setSaving] = React.useState(false);
@@ -112,6 +123,12 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const fullNameValue = Form.useWatch("fullName", form);
   const [newFactionOpen, setNewFactionOpen] = React.useState(false);
   const [newFactionName, setNewFactionName] = React.useState("");
+  const [newDistrictOpen, setNewDistrictOpen] = React.useState(false);
+  const [newDistrictName, setNewDistrictName] = React.useState("");
+  const [newConvocationOpen, setNewConvocationOpen] = React.useState(false);
+  const [newConvocationName, setNewConvocationName] = React.useState("");
+  const [newCommitteeOpen, setNewCommitteeOpen] = React.useState(false);
+  const [newCommitteeName, setNewCommitteeName] = React.useState("");
   const [lookupBusy, setLookupBusy] = React.useState(false);
   const [factionEntities, setFactionEntities] = React.useState([]);
   const [districtEntities, setDistrictEntities] = React.useState([]);
@@ -137,9 +154,20 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     refreshLookups();
   }, [refreshLookups]);
 
+  const isActive = Form.useWatch("isActive", form);
+  
   React.useEffect(() => {
-    if (isDeceased) form.setFieldValue("mandateEnded", true);
+    if (isDeceased) {
+      form.setFieldValue("mandateEnded", true);
+      form.setFieldValue("isActive", false);
+    }
   }, [isDeceased, form]);
+  
+  React.useEffect(() => {
+    if (isActive === false) {
+      form.setFieldValue("mandateEnded", true);
+    }
+  }, [isActive, form]);
 
   const normKey = React.useCallback((v) => {
     return String(v || "")
@@ -208,7 +236,14 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       // Explicitly preserve status fields as booleans
       body.mandateEnded = Boolean(body.mandateEnded);
       body.isDeceased = Boolean(body.isDeceased);
-      if (body.isDeceased) body.mandateEnded = true;
+      body.isActive = body.isActive !== undefined ? Boolean(body.isActive) : true;
+      if (body.isDeceased) {
+        body.mandateEnded = true;
+        body.isActive = false;
+      }
+      if (!body.isActive) {
+        body.mandateEnded = true;
+      }
 
       // factionIds
       const factionName = String(body.faction || "").trim();
@@ -232,6 +267,11 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         const ensured = await Promise.all(convNames.map((n) => ensureConvocation(n).catch(() => null)));
         const ids = ensured.filter((x) => x?.id).map((x) => String(x.id));
         if (ids.length) body.convocationIds = ids;
+      }
+
+      // committeeIds (multi) - сохраняем как есть, если это массив ID
+      if (Array.isArray(body.committeeIds)) {
+        body.committeeIds = body.committeeIds.map(String).filter(Boolean);
       }
 
       return body;
@@ -382,8 +422,10 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           structureType: undefined,
           role: undefined,
           convocations: [],
+          committeeIds: [],
           mandateEnded: false,
           isDeceased: false,
+          isActive: true,
         }}
       >
         <div className="admin-deputy-editor__grid">
@@ -425,6 +467,16 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                   options={(Array.isArray(districts) ? districts : [])
                     .filter((x) => x && String(x).trim() !== "")
                     .map((x) => ({ value: String(x), label: String(x) }))}
+                  dropdownRender={(menu) => (
+                    <div>
+                      {menu}
+                      <div style={{ padding: 8, borderTop: "1px solid #f0f0f0" }}>
+                        <Button type="dashed" block onClick={() => setNewDistrictOpen(true)} disabled={!canWrite}>
+                          + Добавить округ
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 />
               </Form.Item>
             </div>
@@ -455,6 +507,16 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                   )
                     .filter((x) => x && String(x).trim() !== "")
                     .map((x) => ({ value: String(x), label: String(x) }))}
+                  dropdownRender={(menu) => (
+                    <div>
+                      {menu}
+                      <div style={{ padding: 8, borderTop: "1px solid #f0f0f0" }}>
+                        <Button type="dashed" block onClick={() => setNewConvocationOpen(true)} disabled={!canWrite}>
+                          + Добавить созыв
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 />
               </Form.Item>
               <Form.Item label="Тип структуры" name="structureType">
@@ -471,9 +533,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
               <Form.Item name="mandateEnded" valuePropName="checked" style={{ marginBottom: 0 }}>
                 <Checkbox disabled={loading || saving}>Созыв завершен (прекратил полномочия)</Checkbox>
               </Form.Item>
-              <Form.Item name="isDeceased" valuePropName="checked" style={{ marginBottom: 0 }}>
-                <Checkbox disabled={loading || saving}>Умер</Checkbox>
-              </Form.Item>
+        
             </div>
             {structureType ? (
               <Form.Item label="Роль" name="role">
@@ -486,6 +546,36 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                 </Select>
               </Form.Item>
             ) : null}
+            <Form.Item
+              label="Комитеты"
+              name="committeeIds"
+              tooltip="Можно выбрать несколько комитетов"
+            >
+              <Select
+                disabled={loading || saving}
+                mode="multiple"
+                placeholder="Выберите комитеты"
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                options={(Array.isArray(committees) ? committees : [])
+                  .filter((c) => c && (c.id || c.name || c.title))
+                  .map((c) => ({
+                    value: String(c.id || c.name || c.title),
+                    label: String(c.name || c.title || c.id),
+                  }))}
+                dropdownRender={(menu) => (
+                  <div>
+                    {menu}
+                    <div style={{ padding: 8, borderTop: "1px solid #f0f0f0" }}>
+                      <Button type="dashed" block onClick={() => setNewCommitteeOpen(true)} disabled={!canWrite}>
+                        + Добавить комитет
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              />
+            </Form.Item>
           </div>
         </div>
 
@@ -577,6 +667,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           if (!name) return;
           try {
             await PersonsApi.createFaction({ name });
+            await refreshLookups();
             setFactions((prev) => {
               const arr = Array.isArray(prev) ? prev : [];
               const next = Array.from(new Set([...arr.map(String), name]));
@@ -601,6 +692,140 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         />
         <div className="admin-hint" style={{ marginTop: 8 }}>
           Фракция будет сохранена в API и появится в выпадающем списке.
+        </div>
+      </Modal>
+
+      <Modal
+        title="Добавить округ"
+        open={newDistrictOpen}
+        onCancel={() => {
+          setNewDistrictOpen(false);
+          setNewDistrictName("");
+        }}
+        okText="Добавить"
+        cancelText="Отмена"
+        okButtonProps={{ disabled: !canWrite || !String(newDistrictName || "").trim() }}
+        onOk={async () => {
+          const name = String(newDistrictName || "").trim();
+          if (!name) return;
+          try {
+            await PersonsApi.createDistrict({ name });
+            await refreshLookups();
+            form.setFieldValue("electoralDistrict", name);
+            message.success("Округ добавлен");
+            setNewDistrictOpen(false);
+            setNewDistrictName("");
+          } catch (e) {
+            message.error(e?.message || "Не удалось добавить округ");
+          }
+        }}
+      >
+        <Input
+          placeholder="Например: Тере-Холь"
+          value={newDistrictName}
+          onChange={(e) => setNewDistrictName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.preventDefault();
+          }}
+        />
+        <div className="admin-hint" style={{ marginTop: 8 }}>
+          Округ будет сохранен в API и появится в выпадающем списке.
+        </div>
+      </Modal>
+
+      <Modal
+        title="Добавить созыв"
+        open={newConvocationOpen}
+        onCancel={() => {
+          setNewConvocationOpen(false);
+          setNewConvocationName("");
+        }}
+        okText="Добавить"
+        cancelText="Отмена"
+        okButtonProps={{ disabled: !canWrite || !String(newConvocationName || "").trim() }}
+        onOk={async () => {
+          const name = String(newConvocationName || "").trim();
+          if (!name) return;
+          try {
+            await PersonsApi.createConvocation({ name });
+            await refreshLookups();
+            const currentConvocations = form.getFieldValue("convocations") || [];
+            form.setFieldValue("convocations", [...currentConvocations, name]);
+            message.success("Созыв добавлен");
+            setNewConvocationOpen(false);
+            setNewConvocationName("");
+          } catch (e) {
+            message.error(e?.message || "Не удалось добавить созыв");
+          }
+        }}
+      >
+        <Input
+          placeholder="Например: VIII"
+          value={newConvocationName}
+          onChange={(e) => setNewConvocationName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.preventDefault();
+          }}
+        />
+        <div className="admin-hint" style={{ marginTop: 8 }}>
+          Созыв будет сохранен в API и появится в выпадающем списке.
+        </div>
+      </Modal>
+
+      <Modal
+        title="Добавить комитет"
+        open={newCommitteeOpen}
+        onCancel={() => {
+          setNewCommitteeOpen(false);
+          setNewCommitteeName("");
+        }}
+        okText="Добавить"
+        cancelText="Отмена"
+        okButtonProps={{ disabled: !canWrite || !String(newCommitteeName || "").trim() }}
+        onOk={async () => {
+          const name = String(newCommitteeName || "").trim();
+          if (!name) return;
+          try {
+            // Коммитеты обычно хранятся в DataContext, добавим в локальный список
+            const newCommittee = {
+              id: `committee-${Date.now()}`,
+              name: name,
+              title: name,
+            };
+            // Обновим список комитетов в контексте
+            setCommittees((prev) => {
+              const arr = Array.isArray(prev) ? prev : [];
+              // Проверяем, не существует ли уже такой комитет
+              const exists = arr.some(
+                (c) =>
+                  String(c?.id || "") === String(newCommittee.id) ||
+                  String(c?.name || "").toLowerCase() === name.toLowerCase() ||
+                  String(c?.title || "").toLowerCase() === name.toLowerCase()
+              );
+              if (exists) return prev;
+              return [...arr, newCommittee];
+            });
+            // Добавим выбранный комитет в форму
+            const currentCommittees = form.getFieldValue("committeeIds") || [];
+            form.setFieldValue("committeeIds", [...currentCommittees, newCommittee.id]);
+            message.success("Комитет добавлен");
+            setNewCommitteeOpen(false);
+            setNewCommitteeName("");
+          } catch (e) {
+            message.error(e?.message || "Не удалось добавить комитет");
+          }
+        }}
+      >
+        <Input
+          placeholder="Например: Комитет по экономике"
+          value={newCommitteeName}
+          onChange={(e) => setNewCommitteeName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.preventDefault();
+          }}
+        />
+        <div className="admin-hint" style={{ marginTop: 8 }}>
+          Комитет будет добавлен в список и появится в выпадающем списке.
         </div>
       </Modal>
     </div>

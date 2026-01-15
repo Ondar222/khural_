@@ -49,6 +49,35 @@ function normalizeApiDeputyForDetail(p) {
   const convocation =
     String(p.convocationNumber || p.convocation || p.convocation_number || "").trim() ||
     (Array.isArray(p.convocations) && p.convocations[0]?.name ? String(p.convocations[0].name).trim() : "");
+  // Множественные созывы
+  const convocations = Array.isArray(p.convocations) && p.convocations.length
+    ? p.convocations.map((c) => (typeof c === "string" ? c : c?.name || c?.title || String(c || "")))
+    : (convocation ? [convocation] : []);
+  // Комитеты - обрабатываем разные форматы из API
+  const committeeIds = (() => {
+    // Если есть массив ID
+    if (Array.isArray(p.committeeIds)) {
+      return p.committeeIds.map(String).filter(Boolean);
+    }
+    // Если есть массив объектов комитетов
+    if (Array.isArray(p.committees)) {
+      return p.committees
+        .map((c) => {
+          if (typeof c === "string") return c;
+          if (c && typeof c === "object") return c?.id || c?.name || "";
+          return "";
+        })
+        .map(String)
+        .filter(Boolean);
+    }
+    // Если комитеты приходят как связанные сущности
+    if (p.committees && typeof p.committees === "object" && !Array.isArray(p.committees)) {
+      const ids = p.committees.id || p.committees.ids;
+      if (Array.isArray(ids)) return ids.map(String).filter(Boolean);
+      if (ids) return [String(ids)];
+    }
+    return [];
+  })();
   const photo = normalizeFilesUrl(
     pickFirstLink(p.image) ||
       pickFirstLink(p.photo) ||
@@ -69,6 +98,8 @@ function normalizeApiDeputyForDetail(p) {
     faction,
     convocation,
     convocationNumber: convocation,
+    convocations,
+    committeeIds,
     photo,
     contacts: {
       phone: String(p.phoneNumber || p.phone_number || p.phone || p.contacts?.phone || "").trim(),
@@ -304,7 +335,7 @@ export default function Government() {
         ? "/deputies"
         : `/government?type=${section === "Парламент" ? "gov" : "org"}`;
     return (
-      <PersonDetail item={item} type={section === "Депутаты" ? "dep" : "gov"} backHref={backHref} />
+      <PersonDetail item={item} type={section === "Депутаты" ? "dep" : "gov"} backHref={backHref} committees={committees} />
     );
   }
 

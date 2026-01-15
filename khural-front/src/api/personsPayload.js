@@ -77,11 +77,13 @@ export function toPersonsApiBody(input) {
   const email = withFallback(body, "email", "email");
   const mandateEnded = withFallback(body, "mandateEnded", "mandate_ended");
   const isDeceased = withFallback(body, "isDeceased", "is_deceased");
+  const isActive = withFallback(body, "isActive", "is_active");
   const mandateEndDate = withFallback(body, "mandateEndDate", "mandate_end_date");
   const mandateEndReason = withFallback(body, "mandateEndReason", "mandate_end_reason");
   const factionIds = withFallback(body, "factionIds", "faction_ids");
   const districtIds = withFallback(body, "districtIds", "district_ids");
   const convocationIds = withFallback(body, "convocationIds", "convocation_ids");
+  const committeeIds = withFallback(body, "committeeIds", "committee_ids");
   const categoryIds = withFallback(body, "categoryIds", "category_ids");
 
   if (structureType !== undefined) {
@@ -132,7 +134,6 @@ export function toPersonsApiBody(input) {
       body.reception_schedule = receptionSchedule;
     }
   }
-
   // Relations (IDs)
   const fIds = normalizeStringArray(factionIds);
   if (fIds) {
@@ -148,6 +149,11 @@ export function toPersonsApiBody(input) {
   if (cIds) {
     body.convocationIds = cIds;
     body.convocation_ids = cIds;
+  }
+  const comIds = normalizeStringArray(committeeIds);
+  if (comIds) {
+    body.committeeIds = comIds;
+    body.committee_ids = comIds;
   }
   const catIds = normalizeStringArray(categoryIds);
   if (catIds) {
@@ -166,6 +172,17 @@ export function toPersonsApiBody(input) {
     body.isDeceased = deceased;
     body.is_deceased = deceased;
     if (deceased) {
+      body.mandateEnded = true;
+      body.mandate_ended = true;
+      body.isActive = false;
+      body.is_active = false;
+    }
+  }
+  const active = normalizeBool(isActive);
+  if (active !== undefined) {
+    body.isActive = active;
+    body.is_active = active;
+    if (!active) {
       body.mandateEnded = true;
       body.mandate_ended = true;
     }

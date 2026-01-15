@@ -9,7 +9,7 @@ function stripTags(v) {
   return String(v ?? "").replace(/<[^>]*>/g, "").trim();
 }
 
-export default function PersonDetail({ item, type, backHref }) {
+export default function PersonDetail({ item, type, backHref, committees = [] }) {
   const { t } = useI18n();
   const isDeputy = type === "dep";
   const title = item.name || item.title;
@@ -34,13 +34,35 @@ export default function PersonDetail({ item, type, backHref }) {
     item.receptionSchedule && typeof item.receptionSchedule === "object" && !Array.isArray(item.receptionSchedule)
       ? item.receptionSchedule
       : null;
+  
+  // Обрабатываем новый формат с workingDays
+  const workingDays = receptionScheduleObj?.workingDays;
+  const scheduleFromWorkingDays = Array.isArray(workingDays)
+    ? workingDays
+        .filter((day) => day?.isWorking === true)
+        .map((day) => {
+          const dayNames = {
+            monday: "Понедельник",
+            tuesday: "Вторник",
+            wednesday: "Среда",
+            thursday: "Четверг",
+            friday: "Пятница",
+            saturday: "Суббота",
+            sunday: "Воскресенье",
+          };
+          const dayName = dayNames[day.dayOfWeek] || day.dayOfWeek;
+          const time = day.startTime && day.endTime ? `${day.startTime}-${day.endTime}` : "";
+          return [dayName, time];
+        })
+    : null;
+
   const scheduleHtmlRaw =
     (receptionScheduleObj && typeof receptionScheduleObj.notes === "string" && receptionScheduleObj.notes) ||
     (typeof item.receptionSchedule === "string" ? item.receptionSchedule : "");
   const scheduleHtml = decodeHtmlEntities(scheduleHtmlRaw);
   const schedulePlain = stripTags(scheduleHtml);
-  const schedule =
-    typeof item.receptionSchedule === "string"
+  const schedule = scheduleFromWorkingDays ||
+    (typeof item.receptionSchedule === "string"
       ? item.receptionSchedule.split("\n").map((line) => {
           const parts = line.split(/[:-]/);
           if (parts.length >= 2) {
@@ -52,7 +74,7 @@ export default function PersonDetail({ item, type, backHref }) {
         ? item.receptionSchedule
         : Array.isArray(item.schedule) && item.schedule.length
           ? item.schedule
-          : [];
+          : []);
 
   const [active, setActive] = React.useState("bio");
   const [preview, setPreview] = React.useState(null); // {url, title}
@@ -121,15 +143,55 @@ export default function PersonDetail({ item, type, backHref }) {
                   stripTags(item.position || item.role) !== bioPlain ? (
                     <div>{stripTags(item.position || item.role)}</div>
                   ) : null}
-                  {(item.convocationNumber || item.convocation) && (
-                    <div>созыв {stripTags(item.convocationNumber || item.convocation)}</div>
-                  )}
+                  {(() => {
+                    // Обрабатываем множественные созывы
+                    const convocations = Array.isArray(item.convocations) && item.convocations.length
+                      ? item.convocations.map((c) => (typeof c === "string" ? c : c?.name || c?.title || String(c || "")))
+                      : ((item.convocationNumber || item.convocation) ? [String(item.convocationNumber || item.convocation)] : []);
+                    return convocations.length > 0 ? (
+                      <div>Созывы: {convocations.join(", ")}</div>
+                    ) : null;
+                  })()}
                   {item.district && (
                     <div>Избирательный округ: {stripTags(item.district)}</div>
                   )}
                   {item.faction && (
                     <div>Фракция: «{stripTags(item.faction)}»</div>
                   )}
+                  {(() => {
+                    // Получаем комитеты депутата
+                    const committeeIds = (() => {
+                      if (Array.isArray(item.committeeIds)) {
+                        return item.committeeIds.map(String).filter(Boolean);
+                      }
+                      if (Array.isArray(item.committees)) {
+                        return item.committees
+                          .map((c) => {
+                            if (typeof c === "string") return c;
+                            if (c && typeof c === "object") return c?.id || c?.name || "";
+                            return "";
+                          })
+                          .map(String)
+                          .filter(Boolean);
+                      }
+                      return [];
+                    })();
+                    if (!committeeIds.length || !committees || !Array.isArray(committees)) return null;
+                    const deputyCommittees = committees
+                      .filter((c) => {
+                        const cId = String(c?.id || "");
+                        const cName = String(c?.name || c?.title || "").toLowerCase();
+                        return committeeIds.some((id) => {
+                          const idStr = String(id || "").toLowerCase();
+                          return idStr === cId.toLowerCase() || idStr === cName;
+                        });
+                      })
+                      .map((c) => c?.name || c?.title || c?.id || "")
+                      .filter(Boolean);
+                    return deputyCommittees.length > 0 ? (
+                      <div>Комитеты: {deputyCommittees.join(", ")}</div>
+                    ) : null;
+                  })()}
                 </>
               ) : (
                 <>
@@ -338,16 +400,23 @@ export default function PersonDetail({ item, type, backHref }) {
 
         <div id="schedule" className="person-block">
           <h2>График приема граждан</h2>
-          {schedule && schedule.length > 0 ? (
+          {schedule && schedule.length > 0 && Array.isArray(schedule[0]) ? (
             <div className="sched-grid">
-              {(Array.isArray(schedule[0]) ? schedule : schedule.map((s) => [s.day, s.time])).map(
-                ([day, time], i) => (
-                  <React.Fragment key={day || i}>
-                    <div className="sched-cell tile">{day || ""}</div>
-                    <div className="sched-cell tile">{time || ""}</div>
-                  </React.Fragment>
-                )
-              )}
+              {schedule.map(([day, time], i) => (
+                <React.Fragment key={day || i}>
+                  <div className="sched-cell tile">{day || ""}</div>
+                  <div className="sched-cell tile">{time || ""}</div>
+                </React.Fragment>
+              ))}
+            </div>
+          ) : schedule && schedule.length > 0 ? (
+            <div className="sched-grid">
+              {schedule.map((s, i) => (
+                <React.Fragment key={i}>
+                  <div className="sched-cell tile">{s.day || ""}</div>
+                  <div className="sched-cell tile">{s.time || ""}</div>
+                </React.Fragment>
+              ))}
             </div>
           ) : schedulePlain ? (
             <div className="prose">
