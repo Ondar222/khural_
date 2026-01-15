@@ -499,36 +499,37 @@ export default function Header() {
             justifyContent: "space-between",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, paddingLeft: 12 }}>
           <a
             href="/"
             className="logo"
             aria-label={t("goHome")}
             onClick={() => setMobileOpen(false)}
-            style={{ textDecoration: "none" }}
+            style={{ textDecoration: "none", flexShrink: 0 }}
           >
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
               alt=""
-              width={48}
-              height={48}
+              width={40}
+              height={40}
+              style={{ display: "block" }}
             />
           </a>
             <div
               className="mobile-brand-text"
-              style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}
+              style={{ display: "flex", flexDirection: "column", lineHeight: 1.2, justifyContent: "center", minWidth: 0 }}
             >
               {tyBrandLines ? (
                 <>
-                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[0]}</div>
-                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[1]}</div>
-                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[2]}</div>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: "#003366" }}>{tyBrandLines[0]}</div>
+                  <div style={{ fontSize: 8, fontWeight: 800, color: "#003366" }}>{tyBrandLines[1]}</div>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: "#003366" }}>{tyBrandLines[2]}</div>
                 </>
               ) : (
                 <>
-                  <div style={{ fontSize: 8, color: "#6b7280" }}>{brandLine1}</div>
-                  <div style={{ fontSize: 8, color: "#6b7280" }}>{brandLine2}</div>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: "#003366" }}>{brandLine3}</div>
+                  <div style={{ fontSize: 10, color: "#6b7280" }}>{brandLine1}</div>
+                  <div style={{ fontSize: 9, color: "#6b7280" }}>{brandLine2}</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#003366" }}>{brandLine3}</div>
                 </>
               )}
             </div>

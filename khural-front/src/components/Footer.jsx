@@ -15,34 +15,38 @@ export default function Footer() {
         <div className="footer-content">
           {/* Brand and Copyright Section */}
           <div className="footer-brand">
-            <div className="brand" style={{ color: "#fff" }}>
-              <div className="logo" style={{ borderColor: "#fff", color: "#fff" }}>
+            <div className="brand" style={{ color: "#fff", display: "flex", alignItems: "center", gap: 12 }}>
+              <div className="logo" style={{ borderColor: "#fff", color: "#fff", flexShrink: 0 }}>
                 <img
                   src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
                   alt=""
-                  width={40}
-                  height={40}
+                  width={56}
+                  height={56}
+                  style={{ display: "block" }}
                 />
               </div>
-              <div style={{ minWidth: 0, overflowWrap: "break-word" }}>
+              <div style={{ minWidth: 0, overflowWrap: "break-word", display: "flex", flexDirection: "column", justifyContent: "center", lineHeight: 1.1 }}>
                 {tyBrandLines ? (
                   <>
-                    <div style={{ fontSize: 13, lineHeight: 1.2, fontWeight: 800, color: "#fff" }}>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
                       {tyBrandLines[0]}
                     </div>
-                    <div style={{ fontSize: 12, lineHeight: 1.2, opacity: 0.9, color: "#fff" }}>
+                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "#fff", opacity: 0.9 }}>
                       {tyBrandLines[1]}
                     </div>
-                    <div style={{ fontSize: 15, lineHeight: 1.2, fontWeight: 800, marginTop: 3, color: "#fff" }}>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
                       {tyBrandLines[2]}
                     </div>
                   </>
                 ) : (
                   <>
-                    <div style={{ fontSize: 13, lineHeight: 1.2, opacity: 0.9 }}>
-                      {t("brandTop")} <br /> {t("brandParliament")}
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 900, color: "#fff", opacity: 0.9 }}>
+                      {t("brandTop")}
                     </div>
-                    <div style={{ fontSize: 15, lineHeight: 1.2, fontWeight: 800, marginTop: 3 }}>
+                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "#fff", opacity: 0.9 }}>
+                      {t("brandParliament")}
+                    </div>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
                       {t("brandBottom")}
                     </div>
                   </>
