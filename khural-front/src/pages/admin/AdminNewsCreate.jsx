@@ -4,6 +4,11 @@ import { App, Button, Input, Form, Upload, Select, DatePicker, Switch } from "an
 import { useHashRoute } from "../../Router.jsx";
 import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
+
+// Проверка, что метод существует при загрузке модуля
+if (typeof NewsApi.createCategory !== 'function') {
+  console.error('NewsApi.createCategory is missing! Available methods:', Object.keys(NewsApi));
+}
 import dayjs from "dayjs";
 import { decodeHtmlEntities } from "../../utils/html.js";
 import { useData } from "../../context/DataContext.jsx";
@@ -37,11 +42,39 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
     
     setCreatingCategory(true);
     try {
+      console.log("Creating news category:", trimmed);
+      console.log("NewsApi object:", NewsApi);
+      console.log("NewsApi.createCategory:", typeof NewsApi.createCategory);
+      
+      // Проверяем, что метод существует
+      if (typeof NewsApi.createCategory !== 'function') {
+        throw new Error('NewsApi.createCategory is not a function. Available methods: ' + Object.keys(NewsApi).join(', '));
+      }
+      
       const newCategory = await NewsApi.createCategory({ name: trimmed });
+      console.log("Category created:", newCategory);
       if (newCategory && newCategory.id) {
-        setCategories((prev) => [...prev, newCategory]);
+        // Добавляем новую категорию в список
+        setCategories((prev) => {
+          const updated = [...(prev || []), newCategory];
+          console.log("Updated categories list:", updated);
+          return updated;
+        });
         form.setFieldValue("categoryId", newCategory.id);
         setNewCategoryName("");
+        antdMessage.success(`Категория "${trimmed}" создана`);
+      } else {
+        // Если API вернул категорию без id, попробуем перезагрузить список
+        console.warn("Category created but no id returned, reloading categories...");
+        const cats = await NewsApi.getAllCategories();
+        if (Array.isArray(cats)) {
+          setCategories(cats);
+          // Находим созданную категорию по имени
+          const found = cats.find(c => String(c.name || "").toLowerCase() === trimmed.toLowerCase());
+          if (found && found.id) {
+            form.setFieldValue("categoryId", found.id);
+          }
+        }
         antdMessage.success(`Категория "${trimmed}" создана`);
       }
     } catch (error) {
@@ -208,7 +241,20 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       navigate("/admin/news");
     } catch (error) {
       if (error?.errorFields) return;
-      antdMessage.error(error?.message || "Не удалось создать новость");
+      
+      // Обработка ошибок авторизации
+      if (error?.status === 401) {
+        antdMessage.error("Сессия истекла. Пожалуйста, войдите заново.");
+        // Перенаправляем на страницу входа
+        setTimeout(() => {
+          navigate("/login?next=" + encodeURIComponent("/admin/news/create"));
+        }, 1500);
+        return;
+      }
+      
+      const errorMsg = error?.message || error?.data?.message || "Не удалось создать новость";
+      console.error("Error creating news:", error);
+      antdMessage.error(errorMsg);
     }
   };
 

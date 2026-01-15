@@ -38,11 +38,39 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
     
     setCreatingCategory(true);
     try {
+      console.log("Creating news category:", trimmed);
+      console.log("NewsApi object:", NewsApi);
+      console.log("NewsApi.createCategory:", typeof NewsApi.createCategory);
+      
+      // Проверяем, что метод существует
+      if (typeof NewsApi.createCategory !== 'function') {
+        throw new Error('NewsApi.createCategory is not a function. Available methods: ' + Object.keys(NewsApi).join(', '));
+      }
+      
       const newCategory = await NewsApi.createCategory({ name: trimmed });
+      console.log("Category created:", newCategory);
       if (newCategory && newCategory.id) {
-        setCategories((prev) => [...prev, newCategory]);
+        // Добавляем новую категорию в список
+        setCategories((prev) => {
+          const updated = [...(prev || []), newCategory];
+          console.log("Updated categories list:", updated);
+          return updated;
+        });
         form.setFieldValue("categoryId", newCategory.id);
         setNewCategoryName("");
+        antdMessage.success(`Категория "${trimmed}" создана`);
+      } else {
+        // Если API вернул категорию без id, попробуем перезагрузить список
+        console.warn("Category created but no id returned, reloading categories...");
+        const cats = await NewsApi.getAllCategories();
+        if (Array.isArray(cats)) {
+          setCategories(cats);
+          // Находим созданную категорию по имени
+          const found = cats.find(c => String(c.name || "").toLowerCase() === trimmed.toLowerCase());
+          if (found && found.id) {
+            form.setFieldValue("categoryId", found.id);
+          }
+        }
         antdMessage.success(`Категория "${trimmed}" создана`);
       }
     } catch (error) {

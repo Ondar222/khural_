@@ -35,6 +35,12 @@ function resolveApiBaseUrl() {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
+// Логируем базовый URL для отладки
+if (typeof window !== "undefined") {
+  console.log("API_BASE_URL resolved to:", API_BASE_URL);
+  console.log("VITE_API_BASE_URL from env:", import.meta.env.VITE_API_BASE_URL);
+}
+
 // Константы для хранения токенов в sessionStorage
 const ACCESS_TOKEN_STORAGE_KEY = "access_token";
 const REFRESH_TOKEN_STORAGE_KEY = "refresh_token";
@@ -166,6 +172,12 @@ export async function apiFetch(
   }
   
   const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
+  
+  // Логируем полный URL для отладки (только для запросов к convocations)
+  if (path.includes("convocations")) {
+    console.log(`[API] ${method} ${url} (API_BASE_URL: ${API_BASE_URL}, path: ${path})`);
+  }
+  
   const finalHeaders = {
     Accept: "application/json",
     ...(body ? { "Content-Type": "application/json" } : {}),
@@ -227,9 +239,13 @@ export async function apiFetch(
       if (nextAccess) {
         return apiFetch(path, { method, body, headers, auth, retry: false });
       }
-      // refresh failed => clear tokens
+      // refresh failed => clear tokens and trigger logout
       setAuthToken("");
       setRefreshToken("");
+      // Dispatch event to notify AuthContext about token expiration
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("auth:token-expired"));
+      }
     }
     
     // Улучшенные сообщения об ошибках
@@ -238,6 +254,8 @@ export async function apiFetch(
       errorMessage = `Метод не разрешен (405). Возможно, неправильный endpoint или метод запроса. API URL: ${url}`;
     } else if (res.status === 404) {
       errorMessage = `Endpoint не найден (404). Проверьте правильность URL API.`;
+    } else if (res.status === 401) {
+      errorMessage = data?.message || data?.error || "Токен авторизации истек. Пожалуйста, войдите заново.";
     } else if (data && (data.message || data.error)) {
       errorMessage = data.message || data.error;
     }
@@ -468,7 +486,7 @@ export const AboutApi = {
       if (locale) qs.set("locale", locale);
       const suffix = qs.toString() ? `?${qs.toString()}` : "";
       return await apiFetch(`/pages${suffix}`, { method: "GET", auth: false });
-    } catch (e) {
+    } catch {
       // Fallback на старый endpoint
     const qs = new URLSearchParams();
     if (locale) qs.set("locale", locale);
@@ -482,7 +500,7 @@ export const AboutApi = {
         method: "GET",
         auth: false,
       });
-    } catch (e) {
+    } catch {
       // Fallback на старый endpoint
     const qs = new URLSearchParams();
     if (locale) qs.set("locale", locale);
@@ -607,10 +625,18 @@ export const PersonsApi = {
     return apiFetch("/persons/districts/all", { method: "GET", auth: false });
   },
   async listConvocationsAll() {
-    return apiFetch("/persons/convocations/all", {
-      method: "GET",
-      auth: false,
-    });
+    try {
+      console.log("PersonsApi.listConvocationsAll: calling /persons/convocations/all");
+      const result = await apiFetch("/persons/convocations/all", {
+        method: "GET",
+        auth: false,
+      });
+      console.log("PersonsApi.listConvocationsAll: received:", result);
+      return result;
+    } catch (e) {
+      console.error("PersonsApi.listConvocationsAll: error:", e);
+      throw e;
+    }
   },
   async getDeclarations(id) {
     return apiFetch(`/persons/${id}/declarations`, {
@@ -781,6 +807,9 @@ export const NewsApi = {
   async getAllCategories() {
     return apiFetch("/news/categories/all", { method: "GET", auth: false });
   },
+  async createCategory(body) {
+    return apiFetch("/news/categories", { method: "POST", body, auth: true });
+  },
   async uploadCover(id, file) {
     const fd = new FormData();
     fd.append("cover", file);
@@ -892,5 +921,120 @@ export const EventsApi = {
   },
   async remove(id) {
     return apiFetch(`/calendar/${id}`, { method: "DELETE", auth: true });
+  },
+};
+
+// Convocations (Созывы) endpoints
+// API находится по пути /persons/convocations согласно Swagger
+export const ConvocationsApi = {
+  async list({ activeOnly = false } = {}) {
+    try {
+      // Пробуем использовать /persons/convocations/all
+      console.log("ConvocationsApi.list: trying /persons/convocations/all");
+      let all;
+      try {
+        all = await PersonsApi.listConvocationsAll();
+        console.log("ConvocationsApi.list: received from /all:", all);
+      } catch (e1) {
+        console.warn("ConvocationsApi.list: /all failed, trying direct GET:", e1);
+        // Fallback: пробуем прямой GET запрос
+        try {
+          const qs = new URLSearchParams();
+          if (activeOnly) qs.set("activeOnly", "true");
+          const suffix = qs.toString() ? `?${qs.toString()}` : "";
+          all = await apiFetch(`/persons/convocations${suffix}`, { method: "GET", auth: false });
+          console.log("ConvocationsApi.list: received from direct GET:", all);
+        } catch (e2) {
+          console.error("ConvocationsApi.list: both endpoints failed:", e2);
+          return [];
+        }
+      }
+      
+      if (!Array.isArray(all)) {
+        console.warn("ConvocationsApi.list: API returned non-array:", all);
+        // Попробуем нормализовать
+        // Попробуем извлечь данные из объекта
+        if (all && typeof all === 'object') {
+          if (Array.isArray(all.data)) {
+            all = all.data;
+          } else if (Array.isArray(all.items)) {
+            all = all.items;
+          } else if (Array.isArray(all.results)) {
+            all = all.results;
+          } else {
+            return [];
+          }
+        } else {
+          return [];
+        }
+      }
+      
+      // Фильтруем по активности, если нужно
+      if (activeOnly) {
+        return all.filter(c => c.isActive !== false);
+      }
+      return all;
+    } catch (e) {
+      console.error("ConvocationsApi.list: unexpected error:", e);
+      return [];
+    }
+  },
+  async getById(id) {
+    // Получаем все и находим нужный
+    const all = await this.list({ activeOnly: false });
+    return Array.isArray(all) ? all.find(c => String(c.id) === String(id)) : null;
+  },
+  async create(body) {
+    return apiFetch("/persons/convocations", { method: "POST", body, auth: true });
+  },
+  async patch(id, body) {
+    // API использует PUT, а не PATCH согласно Swagger
+    return apiFetch(`/persons/convocations/${id}`, { method: "PUT", body, auth: true });
+  },
+  async remove(id) {
+    return apiFetch(`/persons/convocations/${id}`, { method: "DELETE", auth: true });
+  },
+};
+
+// Committees (Комитеты) endpoints
+export const CommitteesApi = {
+  async list({ all = false, convocationId } = {}) {
+    const qs = new URLSearchParams();
+    if (all) qs.set("all", "true");
+    if (convocationId) qs.set("convocationId", String(convocationId));
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/committees${suffix}`, { method: "GET", auth: false });
+  },
+  async getById(id) {
+    return apiFetch(`/committees/${id}`, { method: "GET", auth: false });
+  },
+  async create(body) {
+    return apiFetch("/committees", { method: "POST", body, auth: true });
+  },
+  async patch(id, body) {
+    return apiFetch(`/committees/${id}`, { method: "PATCH", body, auth: true });
+  },
+  async remove(id) {
+    return apiFetch(`/committees/${id}`, { method: "DELETE", auth: true });
+  },
+  async addMembers(id, members) {
+    return apiFetch(`/committees/${id}/members`, {
+      method: "POST",
+      body: members,
+      auth: true,
+    });
+  },
+  async removeMember(id, memberId) {
+    return apiFetch(`/committees/${id}/members/${memberId}`, {
+      method: "DELETE",
+      auth: true,
+    });
+  },
+  async reorder(ids) {
+    return apiFetch("/committees/reorder", {
+      method: "POST",
+      body: { ids },
+      auth: true,
+    });
   },
 };

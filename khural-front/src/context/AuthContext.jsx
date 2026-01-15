@@ -121,6 +121,24 @@ export default function AuthProvider({ children }) {
     setRefreshToken(newRefresh);
   }, []);
 
+  // Listen for token expiration events from apiFetch
+  React.useEffect(() => {
+    const handleTokenExpired = () => {
+      setToken("");
+      setAuthToken("");
+      setRefresh("");
+      setRefreshToken("");
+      setUser(null);
+    };
+    
+    if (typeof window !== "undefined") {
+      window.addEventListener("auth:token-expired", handleTokenExpired);
+      return () => {
+        window.removeEventListener("auth:token-expired", handleTokenExpired);
+      };
+    }
+  }, []);
+
   // Load current user profile when we have an access token
   React.useEffect(() => {
     if (!token) {
