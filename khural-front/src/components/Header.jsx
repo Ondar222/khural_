@@ -172,13 +172,13 @@ export default function Header() {
               <a href="/" className="brand-mobile-title" style={{ textDecoration: "none" }}>
                 {tyBrandLines ? (
                   <>
-                    <div style={{ fontSize: 12, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
                       {tyBrandLines[0]}
                     </div>
-                    <div style={{ fontSize: 11, lineHeight: 1.1, color: "var(--muted)" }}>
+                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>
                       {tyBrandLines[1]}
                     </div>
-                    <div style={{ fontSize: 12, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
                       {tyBrandLines[2]}
                     </div>
                   </>
@@ -194,13 +194,13 @@ export default function Header() {
                 <a href="/" style={{ textDecoration: "none" }}>
                   {tyBrandLines ? (
                     <>
-                      <div style={{ fontSize: 12, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                      <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
                         {tyBrandLines[0]}
                       </div>
-                      <div style={{ fontSize: 11, lineHeight: 1.1, color: "var(--muted)" }}>
+                      <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>
                         {tyBrandLines[1]}
                       </div>
-                      <div style={{ fontSize: 12, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                      <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
                         {tyBrandLines[2]}
                       </div>
                     </>
@@ -521,9 +521,9 @@ export default function Header() {
             >
               {tyBrandLines ? (
                 <>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: "#003366" }}>{tyBrandLines[0]}</div>
-                  <div style={{ fontSize: 8, fontWeight: 800, color: "#003366" }}>{tyBrandLines[1]}</div>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: "#003366" }}>{tyBrandLines[2]}</div>
+                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[0]}</div>
+                  <div style={{ fontSize: 6, fontWeight: 800, color: "#003366" }}>{tyBrandLines[1]}</div>
+                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[2]}</div>
                 </>
               ) : (
                 <>
