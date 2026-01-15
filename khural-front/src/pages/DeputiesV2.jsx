@@ -525,68 +525,68 @@ export default function DeputiesV2() {
                     {groupedByConvocation.map(([c, list]) => (
                       <div key={c}>
                         <h2 style={{ margin: "10px 0 12px" }}>{c === "Без созыва" ? c : `${c} созыв`}</h2>
-                        <div className="grid cols-3">
+                <div className="grid cols-3">
                           {list.map((d) => {
-                            const photoRaw =
-                              typeof d.photo === "string"
-                                ? d.photo
+                    const photoRaw =
+                      typeof d.photo === "string"
+                        ? d.photo
                                 : d.photo?.link ||
                                   d.photo?.url ||
                                   (d.image && (d.image.link || d.image.url)) ||
                                   "";
-                            const photo = normalizeFilesUrl(photoRaw);
+                    const photo = normalizeFilesUrl(photoRaw);
                             const ended = isEndedDeputy(d);
                             const convs = getDeputyConvocations(d);
-                            return (
+                    return (
                               <div key={`${c}-${d.id}`} className="gov-card">
-                                <div className="gov-card__top">
-                                  {photo ? (
-                                    <img
-                                      className="gov-card__avatar"
-                                      src={photo}
-                                      alt=""
-                                      loading="lazy"
-                                      decoding="async"
-                                    />
-                                  ) : (
-                                    <div className="gov-card__avatar" aria-hidden="true" />
-                                  )}
-                                </div>
-                                <div className="gov-card__body">
-                                  <div className="gov-card__name">{toDisplay(d.name)}</div>
-                                  {d.position ? (
-                                    <div className="gov-card__role">{toDisplay(d.position)}</div>
-                                  ) : (
-                                    <div className="gov-card__role">Депутат</div>
-                                  )}
-                                  <ul className="gov-meta">
+                        <div className="gov-card__top">
+                          {photo ? (
+                            <img
+                              className="gov-card__avatar"
+                              src={photo}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <div className="gov-card__avatar" aria-hidden="true" />
+                          )}
+                        </div>
+                        <div className="gov-card__body">
+                          <div className="gov-card__name">{toDisplay(d.name)}</div>
+                          {d.position ? (
+                            <div className="gov-card__role">{toDisplay(d.position)}</div>
+                          ) : (
+                            <div className="gov-card__role">Депутат</div>
+                          )}
+                          <ul className="gov-meta">
                                     {ended && (
                                       <li>
                                         <span>✅</span>
                                         <span>Созыв завершен</span>
                                       </li>
                                     )}
-                                    {d.reception && (
-                                      <li>
-                                        <span>⏰</span>
-                                        <span>Приём: {toDisplay(d.reception)}</span>
-                                      </li>
-                                    )}
-                                    {d.district && (
-                                      <li>
-                                        <span>🏛️</span>
-                                        <span>{toDisplay(d.district)}</span>
-                                      </li>
-                                    )}
-                                    {d.faction && (
-                                      <li>
-                                        <span>👥</span>
-                                        <span>{toDisplay(d.faction)}</span>
-                                      </li>
-                                    )}
+                            {d.reception && (
+                              <li>
+                                <span>⏰</span>
+                                <span>Приём: {toDisplay(d.reception)}</span>
+                              </li>
+                            )}
+                            {d.district && (
+                              <li>
+                                <span>🏛️</span>
+                                <span>{toDisplay(d.district)}</span>
+                              </li>
+                            )}
+                            {d.faction && (
+                              <li>
+                                <span>👥</span>
+                                <span>{toDisplay(d.faction)}</span>
+                              </li>
+                            )}
                                     {convs.length ? (
-                                      <li>
-                                        <span>🎖️</span>
+                              <li>
+                                <span>🎖️</span>
                                         <span>Созыв: {convs.map(toDisplay).join(", ")}</span>
                                       </li>
                                     ) : null}
@@ -600,8 +600,8 @@ export default function DeputiesV2() {
                                       <li>
                                         <span>✉️</span>
                                         <span>{toDisplay(d.contacts.email)}</span>
-                                      </li>
-                                    )}
+                              </li>
+                            )}
                                   </ul>
                                 </div>
                                 <div className="gov-card__actions">
@@ -673,29 +673,29 @@ export default function DeputiesV2() {
                                   <span>Созыв: {convs.map(toDisplay).join(", ")}</span>
                                 </li>
                               ) : null}
-                              {d.contacts?.phone && (
-                                <li>
-                                  <span>📞</span>
-                                  <span>{toDisplay(d.contacts.phone)}</span>
-                                </li>
-                              )}
-                              {d.contacts?.email && (
-                                <li>
-                                  <span>✉️</span>
-                                  <span>{toDisplay(d.contacts.email)}</span>
-                                </li>
-                              )}
-                            </ul>
-                          </div>
-                          <div className="gov-card__actions">
-                            <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
-                              Подробнее
-                            </a>
-                          </div>
+                            {d.contacts?.phone && (
+                              <li>
+                                <span>📞</span>
+                                <span>{toDisplay(d.contacts.phone)}</span>
+                              </li>
+                            )}
+                            {d.contacts?.email && (
+                              <li>
+                                <span>✉️</span>
+                                <span>{toDisplay(d.contacts.email)}</span>
+                              </li>
+                            )}
+                          </ul>
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="gov-card__actions">
+                          <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
+                            Подробнее
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                 )}
               </DataState>
             </DataState>

@@ -13,7 +13,7 @@ function YandexMap({ constructorId, address }) {
       title="Карта"
       src={src}
       width="100%"
-      height="400"
+      height="100$"
       frameBorder="0"
       style={{ borderRadius: 12 }}
       allowFullScreen

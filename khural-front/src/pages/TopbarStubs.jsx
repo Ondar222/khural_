@@ -90,7 +90,7 @@ export function Press() {
           <h2 style={{ marginTop: 0 }}>Контактная информация</h2>
           <div style={{ marginTop: 20 }}>
             <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Адрес</div>
-            <div style={{ color: "#b91c1c" }}>667000, г. Кызыл, ул. Чульдум, д. 18</div>
+            <div style={{ color: "#b91c1c" }}>667000, г. Кызыл, ул. Ленина, д. 32</div>
           </div>
           <div style={{ marginTop: 20 }}>
             <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Телефон</div>

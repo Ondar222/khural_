@@ -3,8 +3,12 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined, PrinterOutlined } from "@ant-design/icons";
 
 export default function Footer() {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const phoneIconStyle = { transform: "scaleX(-1)" };
+  // Для тувинского языка - три строки с "(Парламентизи)" по середине
+  const tyBrandLines = lang === "ty" 
+    ? ["Тыва Республиканын", "(Парламентизи)", "Дээди Хуралы"] 
+    : null;
   return (
     <footer className="site-footer">
       <div className="container">
@@ -21,12 +25,28 @@ export default function Footer() {
                 />
               </div>
               <div style={{ minWidth: 0, overflowWrap: "break-word" }}>
-                <div style={{ fontSize: 13, lineHeight: 1.2, opacity: 0.9 }}>
-                  {t("brandTop")} <br /> {t("brandParliament")}
-                </div>
-                <div style={{ fontSize: 15, lineHeight: 1.2, fontWeight: 800, marginTop: 3 }}>
-                  {t("brandBottom")}
-                </div>
+                {tyBrandLines ? (
+                  <>
+                    <div style={{ fontSize: 13, lineHeight: 1.2, fontWeight: 800, color: "#fff" }}>
+                      {tyBrandLines[0]}
+                    </div>
+                    <div style={{ fontSize: 12, lineHeight: 1.2, opacity: 0.9, color: "#fff" }}>
+                      {tyBrandLines[1]}
+                    </div>
+                    <div style={{ fontSize: 15, lineHeight: 1.2, fontWeight: 800, marginTop: 3, color: "#fff" }}>
+                      {tyBrandLines[2]}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13, lineHeight: 1.2, opacity: 0.9 }}>
+                      {t("brandTop")} <br /> {t("brandParliament")}
+                    </div>
+                    <div style={{ fontSize: 15, lineHeight: 1.2, fontWeight: 800, marginTop: 3 }}>
+                      {t("brandBottom")}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             <div className="footer-copyright">
@@ -82,26 +102,29 @@ export default function Footer() {
             <div className="contact-item">
               <EnvironmentOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
-                <strong>{t("Адрес:")}</strong>{" "}
-                <span>{t("667000, г. Кызыл, ул. Чульдум, д. 18")}</span>
+                <strong>{lang === "ty" ? "АДРЕС:" : "Адрес:"}</strong>{" "}
+                <span>{lang === "ty" ? "667000, Кызыл хоорай, Ленина кудумчузу, 32 дугаар бажың." : "667000, г. Кызыл, ул. Ленина, д. 32"}</span>
               </div>
             </div>
             <div className="contact-item">
               <PhoneOutlined className="contact-icon" style={phoneIconStyle} aria-hidden="true" />
               <div className="contact-text">
-                <strong>Телефон:</strong> <a href="tel:+73942297295">+7 (39422) 9-72-95</a>
+                <strong>{lang === "ty" ? "ТЕЛЕФОН:" : "Телефон:"}</strong>{" "}
+                <a href="tel:+73942297295">+7 (39422) 2-10-43</a>
               </div>
             </div>
             <div className="contact-item">
               <PrinterOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
-                <strong>Факс:</strong> <span>+7 (39422) 9-72-95, 9-72-96</span>
+                <strong>{lang === "ty" ? "ФАКС:" : "Факс:"}</strong>{" "}
+                <span>+7 (39422) 2-16-32</span>
               </div>
             </div>
             <div className="contact-item">
               <MailOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
-                <strong>E-mail:</strong> <a href="mailto:ods@tuva.ru">ods@tuva.ru</a>
+                <strong>E-mail:</strong>{" "}
+                <a href="mailto:ods@tuva.ru">khural@inbox.ru  </a>
               </div>
             </div>
           </div>

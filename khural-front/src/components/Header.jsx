@@ -41,6 +41,10 @@ export default function Header() {
   const brandLine1 = lang === "ru" ? "Верховный Хурал" : t("brandTop");
   const brandLine2 = lang === "ru" ? "(парламент)" : t("brandParliament");
   const brandLine3 = lang === "ru" ? "Республика Тыва" : t("brandBottom");
+  // Для тувинского языка - три строки с "(Парламентизи)" по середине
+  const tyBrandLines = lang === "ty" 
+    ? ["Тыва Республиканын", "(Парламентизи)", "Дээди Хуралы"] 
+    : null;
 
   // Обработчик клика на иконку версии для слабовидящих
   const handleAccessibilityToggle = React.useCallback((e) => {
@@ -166,19 +170,51 @@ export default function Header() {
               </a>
               {/* Mobile-only title: desktop uses .brand-text, but it is hidden on mobile via CSS */}
               <a href="/" className="brand-mobile-title" style={{ textDecoration: "none" }}>
-                <div className="brand-mobile-title__top">{brandLine1}</div>
-                <div className="brand-mobile-title__mid">{brandLine2}</div>
-                <div className="brand-mobile-title__bottom">{brandLine3}</div>
+                {tyBrandLines ? (
+                  <>
+                    <div style={{ fontSize: 12, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                      {tyBrandLines[0]}
+                    </div>
+                    <div style={{ fontSize: 11, lineHeight: 1.1, color: "var(--muted)" }}>
+                      {tyBrandLines[1]}
+                    </div>
+                    <div style={{ fontSize: 12, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                      {tyBrandLines[2]}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="brand-mobile-title__top">{brandLine1}</div>
+                    <div className="brand-mobile-title__mid">{brandLine2}</div>
+                    <div className="brand-mobile-title__bottom">{brandLine3}</div>
+                  </>
+                )}
               </a>
               <div className="brand-text">
                 <a href="/" style={{ textDecoration: "none" }}>
-                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 900, color: "var(--muted)" }}>
-                    {brandLine1}
-                  </div>
-                  <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>{brandLine2}</div>
-                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
-                    {brandLine3}
-                  </div>
+                  {tyBrandLines ? (
+                    <>
+                      <div style={{ fontSize: 12, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                        {tyBrandLines[0]}
+                      </div>
+                      <div style={{ fontSize: 11, lineHeight: 1.1, color: "var(--muted)" }}>
+                        {tyBrandLines[1]}
+                      </div>
+                      <div style={{ fontSize: 12, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                        {tyBrandLines[2]}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 900, color: "var(--muted)" }}>
+                        {brandLine1}
+                      </div>
+                      <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>{brandLine2}</div>
+                      <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                        {brandLine3}
+                      </div>
+                    </>
+                  )}
                 </a>
               </div>
             </div>
@@ -338,9 +374,25 @@ export default function Header() {
               onClick={() => setSheetOpen(false)}
               style={{ textDecoration: "none" }}
             >
-              <div className="sheet-title__top">{brandLine1}</div>
-              <div className="sheet-title__mid">{brandLine2}</div>
-              <div className="sheet-title__bottom">{brandLine3}</div>
+              {tyBrandLines ? (
+                <>
+                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#003366" }}>
+                    {tyBrandLines[0]}
+                  </div>
+                  <div style={{ fontSize: 14, lineHeight: 1.1, color: "#6b7280" }}>
+                    {tyBrandLines[1]}
+                  </div>
+                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#003366" }}>
+                    {tyBrandLines[2]}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="sheet-title__top">{brandLine1}</div>
+                  <div className="sheet-title__mid">{brandLine2}</div>
+                  <div className="sheet-title__bottom">{brandLine3}</div>
+                </>
+              )}
             </a>
           <img 
             id="specialButton" 
@@ -458,17 +510,27 @@ export default function Header() {
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
               alt=""
-              width={36}
-              height={36}
+              width={48}
+              height={48}
             />
           </a>
             <div
               className="mobile-brand-text"
               style={{ display: "flex", flexDirection: "column", lineHeight: 1.1 }}
             >
-              <div style={{ fontSize: 12, color: "#6b7280" }}>{brandLine1}</div>
-              <div style={{ fontSize: 12, color: "#6b7280" }}>{brandLine2}</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#003366" }}>{brandLine3}</div>
+              {tyBrandLines ? (
+                <>
+                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[0]}</div>
+                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[1]}</div>
+                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[2]}</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 8, color: "#6b7280" }}>{brandLine1}</div>
+                  <div style={{ fontSize: 8, color: "#6b7280" }}>{brandLine2}</div>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: "#003366" }}>{brandLine3}</div>
+                </>
+              )}
             </div>
           </div>
           <img 
