@@ -64,6 +64,12 @@ import AdminSliderCreatePage from "./pages/admin/AdminSliderCreatePage.jsx";
 import AdminSliderEditPage from "./pages/admin/AdminSliderEditPage.jsx";
 import AdminProfilePage from "./pages/admin/AdminProfilePage.jsx";
 import AdminBroadcastPage from "./pages/admin/AdminBroadcastPage.jsx";
+import AdminConvocationsPage from "./pages/admin/AdminConvocationsPage.jsx";
+import AdminConvocationsCreatePage from "./pages/admin/AdminConvocationsCreatePage.jsx";
+import AdminConvocationsEditPage from "./pages/admin/AdminConvocationsEditPage.jsx";
+import AdminCommitteesPage from "./pages/admin/AdminCommitteesPage.jsx";
+import AdminCommitteesCreatePage from "./pages/admin/AdminCommitteesCreatePage.jsx";
+import AdminCommitteesEditPage from "./pages/admin/AdminCommitteesEditPage.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
@@ -155,6 +161,12 @@ export default function App() {
                           "/admin/documents": AdminProtected(AdminDocumentsPage),
                           "/admin/documents/create": AdminProtected(AdminDocumentsCreatePage),
                           "/admin/documents/:id": AdminProtected(AdminDocumentsEditPage),
+                          "/admin/convocations": AdminProtected(AdminConvocationsPage),
+                          "/admin/convocations/create": AdminProtected(AdminConvocationsCreatePage),
+                          "/admin/convocations/edit/:id": AdminProtected(AdminConvocationsEditPage),
+                          "/admin/committees": AdminProtected(AdminCommitteesPage),
+                          "/admin/committees/create": AdminProtected(AdminCommitteesCreatePage),
+                          "/admin/committees/edit/:id": AdminProtected(AdminCommitteesEditPage),
                           "/admin/events": AdminProtected(AdminEventsPage),
                           "/admin/events/create": AdminProtected(AdminEventsCreatePage),
                           "/admin/events/edit/:id": AdminProtected(AdminEventsEditPage),

@@ -7,6 +7,8 @@ const BRAND_LOGO_SRC =
 
 const NAV = [
   { key: "dashboard", label: "Панель управления", href: "/admin" },
+  { key: "convocations", label: "Созывы", href: "/admin/convocations" },
+  { key: "committees", label: "Комитеты", href: "/admin/committees" },
   { key: "deputies", label: "Депутаты", href: "/admin/deputies" },
   { key: "pages", label: "Страницы", href: "/admin/pages" },
   { key: "documents", label: "Документы", href: "/admin/documents" },
