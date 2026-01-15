@@ -41,9 +41,9 @@ export default function Header() {
   const brandLine1 = lang === "ru" ? "Верховный Хурал" : t("brandTop");
   const brandLine2 = lang === "ru" ? "(парламент)" : t("brandParliament");
   const brandLine3 = lang === "ru" ? "Республика Тыва" : t("brandBottom");
-  // Для тувинского языка - три строки с "(Парламентизи)" по середине
+  // Для тувинского языка - три строки
   const tyBrandLines = lang === "ty" 
-    ? ["Тыва Республиканын", "(Парламентизи)", "Дээди Хуралы"] 
+    ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"] 
     : null;
 
   // Обработчик клика на иконку версии для слабовидящих
@@ -175,10 +175,10 @@ export default function Header() {
                     <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
                       {tyBrandLines[0]}
                     </div>
-                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
                       {tyBrandLines[1]}
                     </div>
-                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>
                       {tyBrandLines[2]}
                     </div>
                   </>
@@ -197,10 +197,10 @@ export default function Header() {
                       <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
                         {tyBrandLines[0]}
                       </div>
-                      <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>
+                      <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
                         {tyBrandLines[1]}
                       </div>
-                      <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
+                      <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>
                         {tyBrandLines[2]}
                       </div>
                     </>
@@ -379,10 +379,10 @@ export default function Header() {
                   <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#003366" }}>
                     {tyBrandLines[0]}
                   </div>
-                  <div style={{ fontSize: 14, lineHeight: 1.1, color: "#6b7280" }}>
+                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#003366" }}>
                     {tyBrandLines[1]}
                   </div>
-                  <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#003366" }}>
+                  <div style={{ fontSize: 14, lineHeight: 1.1, color: "#6b7280" }}>
                     {tyBrandLines[2]}
                   </div>
                 </>
@@ -521,9 +521,9 @@ export default function Header() {
             >
               {tyBrandLines ? (
                 <>
-                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[0]}</div>
-                  <div style={{ fontSize: 6, fontWeight: 800, color: "#003366" }}>{tyBrandLines[1]}</div>
-                  <div style={{ fontSize: 7, fontWeight: 800, color: "#003366" }}>{tyBrandLines[2]}</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "#003366" }}>{tyBrandLines[0]}</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: "#003366" }}>{tyBrandLines[1]}</div>
+                  <div style={{ fontSize: 9, color: "#6b7280" }}>{tyBrandLines[2]}</div>
                 </>
               ) : (
                 <>

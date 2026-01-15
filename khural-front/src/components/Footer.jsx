@@ -5,9 +5,9 @@ import { EnvironmentOutlined, MailOutlined, PhoneOutlined, PrinterOutlined } fro
 export default function Footer() {
   const { lang, t } = useI18n();
   const phoneIconStyle = { transform: "scaleX(-1)" };
-  // Для тувинского языка - три строки с "(Парламентизи)" по середине
+  // Для тувинского языка - три строки
   const tyBrandLines = lang === "ty" 
-    ? ["Тыва Республиканын", "(Парламентизи)", "Дээди Хуралы"] 
+    ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"] 
     : null;
   return (
     <footer className="site-footer">
@@ -31,10 +31,10 @@ export default function Footer() {
                     <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
                       {tyBrandLines[0]}
                     </div>
-                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "#fff", opacity: 0.9 }}>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
                       {tyBrandLines[1]}
                     </div>
-                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
+                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "#fff", opacity: 0.9 }}>
                       {tyBrandLines[2]}
                     </div>
                   </>
