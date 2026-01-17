@@ -460,9 +460,9 @@ export const AppealsApi = {
     const qs = new URLSearchParams();
     qs.set("page", String(page));
     qs.set("limit", String(limit));
-    qs.set("all", "true"); // Параметр для получения всех обращений
+    // Убрали параметр "all=true", так как он вызывает ошибку валидации
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    // Сначала пробуем админский endpoint, если не работает - используем обычный с параметром all
+    // Сначала пробуем админский endpoint, если не работает - используем обычный
     try {
       return await apiFetch(`/appeals/admin${suffix}`, { method: "GET", auth: true });
     } catch {
@@ -929,21 +929,23 @@ export const EventsApi = {
 export const ConvocationsApi = {
   async list({ activeOnly = false } = {}) {
     try {
-      // Пробуем использовать /persons/convocations/all
-      console.log("ConvocationsApi.list: trying /persons/convocations/all");
+      // Сначала пробуем прямой GET запрос (основной эндпоинт согласно Swagger)
+      console.log("ConvocationsApi.list: trying GET /persons/convocations");
       let all;
       try {
-        all = await PersonsApi.listConvocationsAll();
-        console.log("ConvocationsApi.list: received from /all:", all);
+        const qs = new URLSearchParams();
+        if (activeOnly) qs.set("activeOnly", "true");
+        const suffix = qs.toString() ? `?${qs.toString()}` : "";
+        all = await apiFetch(`/persons/convocations${suffix}`, { method: "GET", auth: false });
+        console.log("ConvocationsApi.list: received from direct GET:", all);
       } catch (e1) {
-        console.warn("ConvocationsApi.list: /all failed, trying direct GET:", e1);
-        // Fallback: пробуем прямой GET запрос
+        console.warn("ConvocationsApi.list: direct GET failed, trying /all:", e1);
+        // Fallback: пробуем /persons/convocations/all
         try {
-          const qs = new URLSearchParams();
-          if (activeOnly) qs.set("activeOnly", "true");
-          const suffix = qs.toString() ? `?${qs.toString()}` : "";
-          all = await apiFetch(`/persons/convocations${suffix}`, { method: "GET", auth: false });
-          console.log("ConvocationsApi.list: received from direct GET:", all);
+          console.log("🔄 ConvocationsApi.list: calling PersonsApi.listConvocationsAll()...");
+          all = await PersonsApi.listConvocationsAll();
+          console.log("✅ ConvocationsApi.list: received from /all:", all);
+          console.log("✅ ConvocationsApi.list: all is array?", Array.isArray(all));
         } catch (e2) {
           console.error("ConvocationsApi.list: both endpoints failed:", e2);
           return [];
@@ -955,7 +957,10 @@ export const ConvocationsApi = {
         // Попробуем нормализовать
         // Попробуем извлечь данные из объекта
         if (all && typeof all === 'object') {
-          if (Array.isArray(all.data)) {
+          if (Array.isArray(all.convocations)) {
+            // Созывы могут быть в поле convocations (например, из /persons/{id})
+            all = all.convocations;
+          } else if (Array.isArray(all.data)) {
             all = all.data;
           } else if (Array.isArray(all.items)) {
             all = all.items;

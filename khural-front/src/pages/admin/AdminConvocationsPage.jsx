@@ -6,13 +6,6 @@ import { useAdminData } from "../../hooks/useAdminData.js";
 
 export default function AdminConvocationsPage() {
   const adminData = useAdminData();
-  const { message } = App.useApp();
-
-  // Отладка: логируем данные созывов
-  React.useEffect(() => {
-    console.log("AdminConvocationsPage - convocations:", adminData.convocations);
-    console.log("AdminConvocationsPage - convocations count:", Array.isArray(adminData.convocations) ? adminData.convocations.length : 0);
-  }, [adminData.convocations]);
 
   const loginCard = !adminData.isAuthenticated ? (
     <div className="admin-card" style={{ marginBottom: 16 }}>

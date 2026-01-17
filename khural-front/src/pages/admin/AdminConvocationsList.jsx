@@ -6,16 +6,11 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
   const { navigate } = useHashRoute();
   const [q, setQ] = React.useState("");
 
-  // Отладка: логируем данные
-  React.useEffect(() => {
-    console.log("AdminConvocationsList items:", items);
-    console.log("Items count:", Array.isArray(items) ? items.length : 0);
-  }, [items]);
-
   const filtered = React.useMemo(() => {
+    const itemsArray = Array.isArray(items) ? items : [];
     const qq = q.trim().toLowerCase();
-    if (!qq) return items;
-    return (items || []).filter(
+    if (!qq) return itemsArray;
+    return itemsArray.filter(
       (e) =>
         String(e.name || e.number || "").toLowerCase().includes(qq) ||
         String(e.description || "").toLowerCase().includes(qq)
