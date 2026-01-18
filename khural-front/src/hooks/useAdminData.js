@@ -11,6 +11,7 @@ import {
   AppealsApi,
   SliderApi,
   ConvocationsApi,
+  CommitteesApi,
   getAuthToken,
 } from "../api/client.js";
 import { addDeletedNewsId } from "../utils/newsOverrides.js";
@@ -222,6 +223,7 @@ export function useAdminData() {
   const [slider, setSlider] = React.useState([]);
   const [appeals, setAppeals] = React.useState([]);
   const [convocations, setConvocations] = React.useState([]);
+  const [committees, setCommittees] = React.useState([]);
 
   const canWrite = isAuthenticated;
 
@@ -236,12 +238,13 @@ export function useAdminData() {
 
   const loadAll = React.useCallback(async () => {
     const fb = fallbackRef.current || {};
-    const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations] = await Promise.all([
+    const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations, apiCommittees] = await Promise.all([
       NewsApi.list().catch(() => null),
       PersonsApi.list().catch(() => null),
       DocumentsApi.listAll().catch(() => null),
       SliderApi.list({ all: true }).catch(() => null),
       ConvocationsApi.list().catch(() => null),
+      CommitteesApi.list({ all: true }).catch(() => null),
     ]);
     setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(fb.news));
     setPersons(
@@ -268,6 +271,7 @@ export function useAdminData() {
     const apiAppeals = normalizeServerList(apiAppealsResponse);
     setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
     setConvocations(Array.isArray(apiConvocations) ? apiConvocations : []);
+    setCommittees(Array.isArray(apiCommittees) ? apiCommittees : []);
   }, []);
 
   React.useEffect(() => {
@@ -890,6 +894,44 @@ export function useAdminData() {
     }
   }, [message, reload]);
 
+  const createCommittee = React.useCallback(async (payload) => {
+    setBusy(true);
+    try {
+      await CommitteesApi.create(payload);
+      message.success("Комитет создан");
+      await reload();
+    } catch (error) {
+      console.error("Ошибка создания комитета:", error);
+      const errorMessage = error?.data?.message || error?.message || "Ошибка создания комитета";
+      message.error(`Не удалось создать комитет: ${errorMessage}`);
+      throw error;
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload]);
+
+  const updateCommittee = React.useCallback(async (id, payload) => {
+    setBusy(true);
+    try {
+      await CommitteesApi.patch(id, payload);
+      message.success("Комитет обновлён");
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload]);
+
+  const deleteCommittee = React.useCallback(async (id) => {
+    setBusy(true);
+    try {
+      await CommitteesApi.remove(id);
+      message.success("Комитет удалён");
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload]);
+
   const stats = React.useMemo(() => ({
     deputies: Array.isArray(persons) ? persons.length : 0,
     documents: Array.isArray(documents) ? documents.length : 0,
@@ -940,6 +982,7 @@ export function useAdminData() {
     slider,
     appeals,
     convocations,
+    committees,
     stats,
     apiBase,
     
@@ -977,6 +1020,11 @@ export function useAdminData() {
     createConvocation,
     updateConvocation,
     deleteConvocation,
+    
+    // CRUD Committees
+    createCommittee,
+    updateCommittee,
+    deleteCommittee,
     
     // State
     busy,
