@@ -10,6 +10,7 @@ import {
   EventsApi,
   AppealsApi,
   SliderApi,
+  ConvocationsApi,
   getAuthToken,
 } from "../api/client.js";
 import { addDeletedNewsId } from "../utils/newsOverrides.js";
@@ -220,6 +221,7 @@ export function useAdminData() {
   const [events, setEvents] = React.useState([]);
   const [slider, setSlider] = React.useState([]);
   const [appeals, setAppeals] = React.useState([]);
+  const [convocations, setConvocations] = React.useState([]);
 
   const canWrite = isAuthenticated;
 
@@ -234,11 +236,12 @@ export function useAdminData() {
 
   const loadAll = React.useCallback(async () => {
     const fb = fallbackRef.current || {};
-    const [apiNews, apiPersons, apiDocsResponse, apiSlider] = await Promise.all([
+    const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations] = await Promise.all([
       NewsApi.list().catch(() => null),
       PersonsApi.list().catch(() => null),
       DocumentsApi.listAll().catch(() => null),
       SliderApi.list({ all: true }).catch(() => null),
+      ConvocationsApi.list().catch(() => null),
     ]);
     setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(fb.news));
     setPersons(
@@ -264,6 +267,7 @@ export function useAdminData() {
     const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
     const apiAppeals = normalizeServerList(apiAppealsResponse);
     setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
+    setConvocations(Array.isArray(apiConvocations) ? apiConvocations : []);
   }, []);
 
   React.useEffect(() => {
@@ -853,6 +857,39 @@ export function useAdminData() {
     }
   }, [message, reload]);
 
+  const createConvocation = React.useCallback(async (payload) => {
+    setBusy(true);
+    try {
+      await ConvocationsApi.create(payload);
+      message.success("Созыв создан");
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload]);
+
+  const updateConvocation = React.useCallback(async (id, payload) => {
+    setBusy(true);
+    try {
+      await ConvocationsApi.patch(id, payload);
+      message.success("Созыв обновлён");
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload]);
+
+  const deleteConvocation = React.useCallback(async (id) => {
+    setBusy(true);
+    try {
+      await ConvocationsApi.remove(id);
+      message.success("Созыв удалён");
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload]);
+
   const stats = React.useMemo(() => ({
     deputies: Array.isArray(persons) ? persons.length : 0,
     documents: Array.isArray(documents) ? documents.length : 0,
@@ -902,6 +939,7 @@ export function useAdminData() {
     events,
     slider,
     appeals,
+    convocations,
     stats,
     apiBase,
     
@@ -934,6 +972,11 @@ export function useAdminData() {
     
     // CRUD Appeals
     updateAppealStatus,
+    
+    // CRUD Convocations
+    createConvocation,
+    updateConvocation,
+    deleteConvocation,
     
     // State
     busy,
