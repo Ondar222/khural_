@@ -730,9 +730,9 @@ export default function AdminDeputiesV2({
           <Button type="primary" onClick={() => setOpen(true)} disabled={!canWrite} loading={busy}>
             + Добавить депутата
           </Button>
-          <Button onClick={syncFromCodeToApi} disabled={!canWrite} loading={Boolean(busyLocal)}>
+          {/* <Button onClick={syncFromCodeToApi} disabled={!canWrite} loading={Boolean(busyLocal)}>
             Синхронизировать из кода в API
-          </Button>
+          </Button> */}
         </Space>
       </div>
 

@@ -92,9 +92,10 @@ export default function AdminSliderList({
 
   const columns = [
     {
-      title: "#",
+      title: "№",
       width: 64,
-      render: (_, __, i) => <span style={{ opacity: 0.75 }}>{i + 1}</span>,
+      align: 'center',
+      render: (_, __, i) => <span style={{ opacity: 0.75, display: 'block', textAlign: 'center' }}>{i + 1}</span>,
     },
     {
       title: "Картинка",
@@ -309,18 +310,23 @@ export default function AdminSliderList({
                       alignItems: 'center',
                       gap: '8px',
                       marginBottom: '4px',
+                      justifyContent: 'center',
                     }}>
                       <span style={{
                         opacity: 0.6,
                         fontSize: '12px',
                         fontWeight: 600,
-                      }}>#{index + 1}</span>
+                        textAlign: 'center',
+                        flexShrink: 0,
+                      }}>№{index + 1}</span>
                       <div style={{
                         fontWeight: 800,
                         fontSize: '16px',
                         lineHeight: 1.3,
                         wordWrap: 'break-word',
                         overflowWrap: 'break-word',
+                        textAlign: 'center',
+                        flex: 1,
                       }}>
                         {row.title || "(без заголовка)"}
                       </div>
@@ -333,6 +339,7 @@ export default function AdminSliderList({
                         marginTop: '4px',
                         wordWrap: 'break-word',
                         overflowWrap: 'break-word',
+                        textAlign: 'center',
                       }}>
                         {String(row.description).slice(0, 120)}
                         {String(row.description).length > 120 ? '...' : ''}
@@ -345,6 +352,7 @@ export default function AdminSliderList({
                         marginTop: '4px',
                         wordWrap: 'break-word',
                         overflowWrap: 'break-word',
+                        textAlign: 'center',
                       }}>
                         <code style={{
                           background: 'rgba(0,0,0,0.05)',

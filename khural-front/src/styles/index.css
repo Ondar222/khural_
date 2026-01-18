@@ -4828,25 +4828,39 @@ body.admin-mode[data-admin-theme="light"] .admin-nav::-webkit-scrollbar-thumb {
 
 .admin-grid {
   display: grid;
-  gap: 16px;
+  gap: 20px;
+}
+@media (min-width: 1200px) {
+  .admin-grid {
+    gap: 24px;
+  }
 }
 
 .admin-card {
   border-radius: 20px;
-  padding: 16px;
+  padding: 20px 24px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 body.admin-mode[data-admin-theme="light"] .admin-card {
   background: rgba(255, 255, 255, 0.8);
   border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+@media (min-width: 1200px) {
+  .admin-card {
+    padding: 24px 28px;
+  }
 }
 @media (max-width: 768px) {
   .admin-card {
     border-radius: 0;
     border-left: none;
     border-right: none;
+    padding: 16px;
   }
 }
 
@@ -4955,15 +4969,26 @@ body.admin-mode[data-admin-theme="light"] .admin-action__cta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
+  padding: 20px 24px;
+  border-radius: 20px;
   /* Warm header-like surface for list toolbars */
   background: radial-gradient(1100px 300px at 10% 0%, rgba(255, 215, 0, 0.16), transparent 62%),
     rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 body.admin-mode[data-admin-theme="light"] .admin-toolbar {
   background: radial-gradient(1100px 300px at 10% 0%, rgba(255, 215, 0, 0.22), transparent 62%),
     rgba(255, 255, 255, 0.88);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+@media (min-width: 1200px) {
+  .admin-toolbar {
+    padding: 24px 28px;
+  }
 }
 
 /* Note: list/table surfaces should NOT animate/scale (to avoid breaking interactions) */
@@ -5928,6 +5953,18 @@ body.admin-mode[data-admin-theme="dark"] .ant-pagination-jump-prev:hover,
 body.admin-mode[data-admin-theme="dark"] .ant-pagination-jump-next:hover {
   color: var(--gold) !important;
 }
+/* Сдвигаем селектор размера страницы немного влево и добавляем отступ справа */
+body.admin-mode .admin-table .ant-pagination {
+  padding-right: 24px !important;
+  margin-right: 0 !important;
+}
+body.admin-mode .ant-pagination-options {
+  margin-right: 0 !important;
+  margin-left: 16px;
+}
+body.admin-mode .ant-pagination-options-size-changer {
+  margin-right: 0;
+}
 body.admin-mode[data-admin-theme="dark"] .ant-table-container {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
@@ -6025,9 +6062,40 @@ body.admin-mode[data-admin-theme="dark"] .ant-btn-dangerous.ant-btn-disabled {
 /* Admin table responsiveness */
 .admin-table {
   overflow-x: auto;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+body.admin-mode[data-admin-theme="light"] .admin-table {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 body.admin-mode .admin-table .ant-table {
   min-width: 880px;
+  background: transparent;
+}
+body.admin-mode .admin-table .ant-table-container {
+  background: transparent;
+}
+body.admin-mode .admin-table .ant-table-thead > tr > th {
+  background: rgba(255, 215, 0, 0.08);
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+  font-weight: 700;
+  font-size: 14px;
+}
+body.admin-mode[data-admin-theme="light"] .admin-table .ant-table-thead > tr > th {
+  background: rgba(255, 215, 0, 0.12);
+  border-bottom-color: rgba(255, 215, 0, 0.25);
+  color: rgba(15, 23, 42, 0.9);
+}
+body.admin-mode .admin-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+body.admin-mode[data-admin-theme="light"] .admin-table .ant-table-tbody > tr > td {
+  border-bottom-color: rgba(15, 23, 42, 0.06);
 }
 @media (max-width: 959px) {
   body.admin-mode .admin-table .ant-table {

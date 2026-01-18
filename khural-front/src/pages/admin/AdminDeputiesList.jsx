@@ -73,6 +73,20 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
   const [q, setQ] = React.useState("");
   const [busyLocal, setBusyLocal] = React.useState(false);
   const [overrides, setOverrides] = React.useState(() => readDeputiesOverrides());
+  const [windowWidth, setWindowWidth] = React.useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1200
+  );
+
+  // Отслеживание размера окна для адаптивности
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+  const isTablet = windowWidth > 768 && windowWidth <= 1024;
 
   React.useEffect(() => {
     const onLocal = () => setOverrides(readDeputiesOverrides());
@@ -209,23 +223,61 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
     });
   }, [canWrite, message, publicDeputies, reloadPublicData]);
 
+  const handleDelete = React.useCallback((id, fullName) => {
+    Modal.confirm({
+      title: 'Удалить депутата?',
+      content: `Вы уверены, что хотите удалить депутата "${fullName || 'без имени'}"?`,
+      okText: 'Удалить',
+      okType: 'danger',
+      cancelText: 'Отмена',
+      onOk: async () => {
+        if (!id) return;
+        setBusyLocal(true);
+        try {
+          await PersonsApi.remove(id);
+          message.success("Депутат удалён");
+        } catch {
+          message.warning("Удалено локально (сервер недоступен или нет прав)");
+        } finally {
+          deleteLocal(id);
+          reloadPublicData();
+          setBusyLocal(false);
+        }
+      },
+    });
+  }, [deleteLocal, message, reloadPublicData]);
+
   const columns = [
+    {
+      title: "№",
+      key: "index",
+      width: 80,
+      align: 'center',
+      render: (_, __, index) => (
+        <span style={{ textAlign: 'center', display: 'block' }}>
+          {index + 1}
+        </span>
+      ),
+    },
     {
       title: "ФИО",
       dataIndex: "fullName",
-      render: (_, row) => row.fullName || row.full_name || row.name || "—",
+      align: 'center',
+      render: (_, row) => <span style={{ textAlign: 'center', display: 'block' }}>{row.fullName || row.full_name || row.name || "—"}</span>,
     },
     {
       title: "Фракция",
       dataIndex: "faction",
       width: 180,
-      render: (v) => v || "—",
+      align: 'center',
+      render: (v) => <span style={{ textAlign: 'center', display: 'block' }}>{v || "—"}</span>,
     },
     {
       title: "Округ",
       dataIndex: "electoralDistrict",
       width: 200,
-      render: (_, row) => row.electoralDistrict || row.electoral_district || row.district || "—",
+      align: 'center',
+      render: (_, row) => <span style={{ textAlign: 'center', display: 'block' }}>{row.electoralDistrict || row.electoral_district || row.district || "—"}</span>,
     },
     {
       title: "Действия",
@@ -233,27 +285,18 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
       width: 260,
       render: (_, row) => (
         <Space wrap>
-          <Button disabled={!canWrite} onClick={() => navigate(`/admin/deputies/edit/${encodeURIComponent(String(row.id))}`)}>
+          <Button
+            size={isTablet ? "small" : "middle"}
+            disabled={!canWrite}
+            onClick={() => navigate(`/admin/deputies/edit/${encodeURIComponent(String(row.id))}`)}
+          >
             Редактировать
           </Button>
           <Button
             danger
+            size={isTablet ? "small" : "middle"}
             disabled={!canWrite}
-            onClick={async () => {
-              const id = String(row?.id ?? "");
-              if (!id) return;
-              setBusyLocal(true);
-              try {
-                await PersonsApi.remove(id);
-                message.success("Депутат удалён");
-              } catch {
-                message.warning("Удалено локально (сервер недоступен или нет прав)");
-              } finally {
-                deleteLocal(id);
-                reloadPublicData();
-                setBusyLocal(false);
-              }
-            }}
+            onClick={() => handleDelete(row.id, row.fullName || row.full_name || row.name)}
           >
             Удалить
           </Button>
@@ -262,35 +305,238 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
     },
   ];
 
+  // Адаптивные карточки для мобильных
+  if (isMobile) {
+    return (
+      <div className="admin-grid" style={{
+        maxWidth: '100%',
+        width: '100%',
+        margin: 0,
+        padding: 0,
+        overflowX: 'hidden',
+        boxSizing: 'border-box',
+      }}>
+        <div className="admin-card admin-toolbar" style={{
+          padding: '16px',
+          marginBottom: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+        }}>
+          <Input
+            placeholder="Поиск по ФИО..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="admin-input"
+            size="large"
+            style={{ width: '100%' }}
+          />
+          <Button
+            type="primary"
+            onClick={() => navigate("/admin/deputies/create")}
+            disabled={!canWrite}
+            loading={busy}
+            block
+            size="large"
+            style={{ fontWeight: 600 }}
+          >
+            + Добавить депутата
+          </Button>
+          <Button
+            onClick={syncFromCodeToApi}
+            disabled={!canWrite}
+            loading={Boolean(busyLocal)}
+            block
+            size="large"
+          >
+            Синхронизировать из кода в API
+          </Button>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="admin-card" style={{
+            padding: '32px 16px',
+            textAlign: 'center',
+            opacity: 0.6,
+          }}>
+            {q ? 'Депутаты не найдены' : 'Депутаты отсутствуют'}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {filtered.map((row, index) => (
+              <div
+                key={String(row.id)}
+                className="admin-card"
+                style={{
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  marginBottom: '4px',
+                  flexWrap: 'wrap',
+                }}>
+                  <span style={{
+                    opacity: 0.6,
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    flexShrink: 0,
+                  }}>№{index + 1}</span>
+                  <div style={{
+                    fontWeight: 800,
+                    fontSize: '16px',
+                    lineHeight: 1.3,
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    textAlign: 'center',
+                    flex: 1,
+                    minWidth: 0,
+                  }}>
+                    {row.fullName || row.full_name || row.name || "—"}
+                  </div>
+                </div>
+
+                {(row.faction || row.electoralDistrict || row.electoral_district || row.district) && (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    paddingTop: '12px',
+                    borderTop: '1px solid rgba(0,0,0,0.08)',
+                    fontSize: '14px',
+                  }}>
+                    {row.faction && (
+                      <div style={{
+                        opacity: 0.75,
+                        textAlign: 'center',
+                      }}>
+                        <strong>Фракция:</strong> {row.faction}
+                      </div>
+                    )}
+                    {(row.electoralDistrict || row.electoral_district || row.district) && (
+                      <div style={{
+                        opacity: 0.75,
+                        textAlign: 'center',
+                      }}>
+                        <strong>Округ:</strong> {row.electoralDistrict || row.electoral_district || row.district}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  justifyContent: 'center',
+                  marginTop: '8px',
+                }}>
+                  <Button
+                    size="small"
+                    disabled={!canWrite}
+                    onClick={() => navigate(`/admin/deputies/edit/${encodeURIComponent(String(row.id))}`)}
+                    style={{ flex: '1 1 calc(50% - 4px)' }}
+                  >
+                    Редактировать
+                  </Button>
+                  <Button
+                    danger
+                    size="small"
+                    disabled={!canWrite}
+                    onClick={() => handleDelete(row.id, row.fullName || row.full_name || row.name)}
+                    style={{ flex: '1 1 calc(50% - 4px)' }}
+                  >
+                    Удалить
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="admin-grid">
-      <div className="admin-card admin-toolbar">
+    <div className="admin-grid" style={{
+      maxWidth: '100%',
+      width: '100%',
+      margin: 0,
+      padding: 0,
+      overflowX: 'hidden',
+      boxSizing: 'border-box',
+    }}>
+      <div className="admin-card admin-toolbar" style={{
+        padding: isTablet ? '16px' : '20px 24px',
+        marginBottom: '16px',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: '12px',
+        alignItems: isMobile ? 'stretch' : 'center',
+      }}>
         <Input
           placeholder="Поиск по ФИО..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"
+          size={isTablet ? "middle" : "large"}
+          style={{
+            flex: 1,
+            maxWidth: isMobile ? '100%' : '400px',
+            width: '100%',
+          }}
         />
         <Space wrap>
-          <Button type="primary" onClick={() => navigate("/admin/deputies/create")} disabled={!canWrite} loading={busy}>
+          <Button
+            type="primary"
+            onClick={() => navigate("/admin/deputies/create")}
+            disabled={!canWrite}
+            loading={busy}
+            size={isTablet ? "middle" : "large"}
+            style={{ fontWeight: 600 }}
+          >
             + Добавить депутата
           </Button>
-          <Button onClick={syncFromCodeToApi} disabled={!canWrite} loading={Boolean(busyLocal)}>
+          <Button
+            onClick={syncFromCodeToApi}
+            disabled={!canWrite}
+            loading={Boolean(busyLocal)}
+            size={isTablet ? "middle" : "large"}
+          >
             Синхронизировать из кода в API
           </Button>
         </Space>
       </div>
 
-      <div className="admin-card admin-table">
+      <div className="admin-card admin-table" style={{
+        padding: 0,
+        overflowX: 'auto',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+      }}>
         <Table
           rowKey={(r) => String(r.id)}
           columns={columns}
           dataSource={filtered}
-          pagination={{ pageSize: 10 }}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: !isTablet,
+            showQuickJumper: !isTablet,
+            size: isTablet ? 'small' : 'default',
+          }}
+          scroll={isTablet ? { x: 'max-content' } : undefined}
+          size={isTablet ? 'small' : 'middle'}
         />
       </div>
     </div>
   );
 }
-
-
