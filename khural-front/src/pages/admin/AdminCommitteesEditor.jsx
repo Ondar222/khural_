@@ -120,7 +120,7 @@ export default function AdminCommitteesEditor({
             >
               {(convocations || []).map((c) => (
                 <Select.Option key={c.id} value={c.id}>
-                  Созыв {c.number} {c.isActive ? "(активный)" : "(архив)"}
+                  {c.name || c.number || `Созыв ${c.id}`}
                 </Select.Option>
               ))}
             </Select>

@@ -45,10 +45,11 @@ export default function AdminConvocationsEditor({
     setSaving(true);
     try {
       const values = await form.validateFields();
-      // API ожидает только поле "name" согласно Swagger (например, "VIII созыв")
-      // Отправляем только name, остальные поля могут не поддерживаться API
+      // Отправляем все поля: name, description, isActive
       const payload = {
         name: values.name,
+        description: values.description || "",
+        isActive: values.isActive !== false,
       };
       if (mode === "create") {
         await onCreate?.(payload);

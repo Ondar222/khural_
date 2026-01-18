@@ -53,7 +53,7 @@ export default function AdminCommitteesList({
           </div>
           {row.convocation ? (
             <div style={{ opacity: 0.7, fontSize: 13 }}>
-              Созыв {row.convocation.number || row.convocation.name || ""}
+              {row.convocation.name || row.convocation.number || ""}
             </div>
           ) : null}
           {row.description ? (
@@ -70,7 +70,7 @@ export default function AdminCommitteesList({
       width: 120,
       render: (convocation) =>
         convocation ? (
-          <Tag>{convocation.number || convocation.name || ""}</Tag>
+          <Tag>{convocation.name || convocation.number || ""}</Tag>
         ) : (
           <Tag color="default">—</Tag>
         ),
@@ -122,7 +122,7 @@ export default function AdminCommitteesList({
             <Select.Option value="all">Все созывы</Select.Option>
             {(convocations || []).map((c) => (
               <Select.Option key={c.id} value={String(c.id)}>
-                Созыв {c.number} {c.isActive ? "(активный)" : "(архив)"}
+                {c.name || c.number || `Созыв ${c.id}`}
               </Select.Option>
             ))}
           </Select>
