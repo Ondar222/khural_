@@ -5302,6 +5302,73 @@ body.admin-mode[data-admin-theme="light"] .ant-table-tbody > tr:hover > td {
   }
 }
 
+/* Appeals list */
+.admin-appeals-list__toolbar {
+  gap: 14px;
+}
+.admin-appeals-list__toolbar-left {
+  flex: 1 1 720px;
+  min-width: min(720px, 100%);
+}
+.admin-appeals-list__subject {
+  display: grid;
+  gap: 6px;
+}
+.admin-appeals-list__subject-title {
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+.admin-appeals-list__subject-author {
+  opacity: 0.75;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.admin-appeals-list__message {
+  opacity: 0.9;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.admin-appeals-list__date {
+  font-size: 12px;
+  opacity: 0.85;
+  line-height: 1.35;
+}
+.admin-appeals-list__actions .ant-btn {
+  font-weight: 700;
+}
+.admin-appeals-list__cards {
+  gap: 12px;
+}
+.admin-appeals-list__card {
+  display: grid;
+  gap: 12px;
+}
+.admin-appeals-list__meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.admin-appeals-list__card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.admin-appeals-list__empty {
+  padding: 28px 16px;
+  text-align: center;
+  opacity: 0.7;
+}
+@media (max-width: 768px) {
+  .admin-appeals-list__toolbar {
+    padding: 16px;
+  }
+  .admin-appeals-list__card-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-split {
   display: grid;
   grid-template-columns: 1fr 1fr;

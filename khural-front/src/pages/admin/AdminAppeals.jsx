@@ -37,6 +37,17 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
   const [q, setQ] = React.useState("");
   const [selectedAppeal, setSelectedAppeal] = React.useState(null);
   const [detailModalOpen, setDetailModalOpen] = React.useState(false);
+  const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+  const isTablet = windowWidth > 768 && windowWidth <= 1024;
 
   const filtered = React.useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -74,99 +85,159 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
     return option?.color || "default";
   };
 
-  const columns = [
-    {
-      title: "Номер / Тема",
-      key: "subject",
-      render: (_, row) => (
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 800 }}>
-            {row.number ? `№ ${row.number}` : "—"} {row.subject ? `· ${row.subject}` : ""}
-          </div>
-          {row.userEmail || row.userName ? (
-            <div style={{ opacity: 0.75, fontSize: 13 }}>
-              {row.userName ? `${row.userName}` : ""}
-              {row.userName && row.userEmail ? " · " : ""}
-              {row.userEmail ? row.userEmail : ""}
-            </div>
-          ) : null}
-        </div>
-      ),
-    },
-    {
-      title: "Текст обращения",
-      dataIndex: "message",
-      width: 300,
-      render: (text) => (
-        <div
-          style={{
-            opacity: 0.9,
-            wordBreak: "break-word",
-            lineHeight: "1.5",
-            maxHeight: "100px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {text ? String(text).slice(0, 200) + (text.length > 200 ? "..." : "") : "—"}
-        </div>
-      ),
-    },
-    {
-      title: "Дата",
-      dataIndex: "createdAt",
-      width: 160,
-      render: (v) => {
-        const d = v ? new Date(v) : null;
-        return d && !isNaN(d.getTime()) ? d.toLocaleDateString("ru-RU") + " " + d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "—";
-      },
-    },
-    {
-      title: "Статус",
-      dataIndex: "status",
-      width: 180,
-      render: (status, row) => (
-        <Select
-          value={status}
-          onChange={(newStatus) => handleStatusChange(row.id, newStatus)}
-          disabled={!canWrite || busy}
-          style={{ width: "100%" }}
-          options={STATUS_OPTIONS.map((opt) => ({
-            value: opt.value,
-            label: opt.label,
-          }))}
-        />
-      ),
-    },
-    {
-      title: "Действия",
-      key: "actions",
-      width: 120,
-      render: (_, row) => (
-        <Space wrap>
-          <Button onClick={() => openDetailModal(row)}>Подробнее</Button>
-        </Space>
-      ),
-    },
-  ];
+  const formatDateTime = React.useCallback((v) => {
+    const d = v ? new Date(v) : null;
+    if (!d || Number.isNaN(d.getTime())) return "—";
+    return `${d.toLocaleDateString("ru-RU")} ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+  }, []);
 
-  return (
-    <div className="admin-grid">
-      <div className="admin-card admin-toolbar">
+  const renderSubjectCell = React.useCallback((row) => {
+    const title = `${row.number ? `№ ${row.number}` : "—"}${row.subject ? ` · ${row.subject}` : ""}`;
+    const author = [row.userName || "", row.userEmail || ""].filter(Boolean).join(" · ");
+    return (
+      <div className="admin-appeals-list__subject">
+        <div className="admin-appeals-list__subject-title">{title}</div>
+        {author ? <div className="admin-appeals-list__subject-author">{author}</div> : null}
+      </div>
+    );
+  }, []);
+
+  const renderMessagePreview = React.useCallback((text) => {
+    if (!text) return "—";
+    const t = String(text);
+    return t.slice(0, 220) + (t.length > 220 ? "…" : "");
+  }, []);
+
+  const statusOptions = React.useMemo(
+    () =>
+      STATUS_OPTIONS.map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+      })),
+    []
+  );
+
+  const columns = React.useMemo(() => {
+    const base = [
+      {
+        title: "Номер / Тема",
+        key: "subject",
+        render: (_, row) => renderSubjectCell(row),
+      },
+      !isTablet
+        ? {
+            title: "Текст обращения",
+            dataIndex: "message",
+            width: 340,
+            render: (text) => <div className="admin-appeals-list__message">{renderMessagePreview(text)}</div>,
+          }
+        : null,
+      {
+        title: "Дата",
+        dataIndex: "createdAt",
+        width: 170,
+        render: (v) => <div className="admin-appeals-list__date">{formatDateTime(v)}</div>,
+      },
+      {
+        title: "Статус",
+        dataIndex: "status",
+        width: 200,
+        render: (status, row) => (
+          <Select
+            value={status}
+            onChange={(newStatus) => handleStatusChange(row.id, newStatus)}
+            disabled={!canWrite || busy}
+            style={{ width: "100%" }}
+            options={statusOptions}
+            size={isTablet ? "small" : "middle"}
+          />
+        ),
+      },
+      {
+        title: "Действия",
+        key: "actions",
+        width: 140,
+        render: (_, row) => (
+          <Space wrap className="admin-appeals-list__actions">
+            <Button size={isTablet ? "small" : "middle"} onClick={() => openDetailModal(row)}>
+              Подробнее
+            </Button>
+          </Space>
+        ),
+      },
+    ].filter(Boolean);
+    return base;
+  }, [busy, canWrite, formatDateTime, isTablet, openDetailModal, renderMessagePreview, renderSubjectCell, statusOptions]);
+
+  const toolbar = (
+    <div className="admin-card admin-toolbar admin-appeals-list__toolbar">
+      <div className="admin-appeals-list__toolbar-left">
         <Input
           placeholder="Поиск по теме, тексту, номеру, email..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"
+          size={isMobile ? "large" : "middle"}
         />
       </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="admin-grid admin-appeals-list">
+        {toolbar}
+
+        {Array.isArray(filtered) && filtered.length ? (
+          <div className="admin-cards admin-appeals-list__cards">
+            {filtered.map((row) => (
+              <div key={String(row.id)} className="admin-card admin-appeals-list__card">
+                {renderSubjectCell(row)}
+                <div className="admin-appeals-list__message">{renderMessagePreview(row.message)}</div>
+
+                <div className="admin-appeals-list__meta-row">
+                  <div className="admin-appeals-list__date">{formatDateTime(row.createdAt)}</div>
+                  <Tag color={getStatusColor(row.status)}>{row.status}</Tag>
+                </div>
+
+                <div className="admin-appeals-list__card-actions">
+                  <Select
+                    value={row.status}
+                    onChange={(newStatus) => handleStatusChange(row.id, newStatus)}
+                    disabled={!canWrite || busy}
+                    options={statusOptions}
+                    size="large"
+                  />
+                  <Button onClick={() => openDetailModal(row)} block>
+                    Подробнее
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="admin-card admin-appeals-list__empty">Нет данных</div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="admin-grid admin-appeals-list">
+      {toolbar}
 
       <div className="admin-card admin-table">
         <Table
           rowKey={(r) => String(r.id)}
           columns={columns}
           dataSource={filtered}
-          pagination={{ pageSize: 10 }}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: !isTablet,
+            showQuickJumper: !isTablet,
+            size: isTablet ? "small" : "default",
+          }}
+          scroll={isTablet ? { x: "max-content" } : undefined}
         />
       </div>
 
