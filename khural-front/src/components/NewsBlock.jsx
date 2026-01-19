@@ -1,4 +1,6 @@
 import React from "react";
+import { LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { Button } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "./DataState.jsx";
@@ -10,6 +12,14 @@ export default function NewsBlock() {
   const [category, setCategory] = React.useState("Все");
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 6; // Показываем 6 новостей на странице
+
+  const listRef = React.useRef(null);
+  const scrollListBy = React.useCallback((dir) => {
+    const el = listRef.current;
+    if (!el) return;
+    const step = Math.max(260, Math.round(el.clientWidth * 0.85));
+    el.scrollBy({ left: dir * step, behavior: "smooth" });
+  }, []);
   
   const normalizeCategoryKey = React.useCallback((v) => {
     return String(v ?? "")
@@ -108,46 +118,67 @@ export default function NewsBlock() {
               </button>
             ))}
           </div>
-          <div className="grid cols-3">
-            {filtered.map((n, i) => (
-              <a
-                key={`${String(n?.id ?? "news")}-${String(n?.date ?? "")}-${i}`}
-                className="tile"
-                href={`/news?id=${n.id}`}
-                style={{ overflow: "hidden", padding: 0 }}
-              >
-                {n?.image ? (
-                  <div style={{ height: 180, overflow: "hidden" }}>
-                    <img
-                      src={normalizeFilesUrl(n.image)}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
+          <div className="home-news__scroller">
+            <Button
+              type="default"
+              shape="circle"
+              className="home-news__arrow home-news__arrow--left"
+              onClick={() => scrollListBy(-1)}
+              aria-label="Прокрутить новости влево"
+              title="Влево"
+              icon={<LeftOutlined />}
+            />
+            <Button
+              type="default"
+              shape="circle"
+              className="home-news__arrow home-news__arrow--right"
+              onClick={() => scrollListBy(1)}
+              aria-label="Прокрутить новости вправо"
+              title="Вправо"
+              icon={<RightOutlined />}
+            />
+
+            <div ref={listRef} className="grid cols-3 home-news__list">
+              {filtered.map((n, i) => (
+                <a
+                  key={`${String(n?.id ?? "news")}-${String(n?.date ?? "")}-${i}`}
+                  className="tile"
+                  href={`/news?id=${n.id}`}
+                  style={{ overflow: "hidden", padding: 0 }}
+                >
+                  {n?.image ? (
+                    <div style={{ height: 180, overflow: "hidden" }}>
+                      <img
+                        src={normalizeFilesUrl(n.image)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </div>
+                  ) : null}
+                  <div style={{ padding: 16 }}>
+                    <div
+                      style={{
+                        display: "inline-block",
+                        background: "#eef2ff",
+                        color: "#3730a3",
+                        borderRadius: 8,
+                        padding: "4px 10px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {n.category}
+                    </div>
+                    <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>{n.title}</div>
+                    <div style={{ color: "#6b7280", marginTop: 6 }}>
+                      {new Date(n.date).toLocaleDateString("ru-RU")}
+                    </div>
                   </div>
-                ) : null}
-                <div style={{ padding: 16 }}>
-                  <div
-                    style={{
-                      display: "inline-block",
-                      background: "#eef2ff",
-                      color: "#3730a3",
-                      borderRadius: 8,
-                      padding: "4px 10px",
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {n.category}
-                  </div>
-                  <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>{n.title}</div>
-                  <div style={{ color: "#6b7280", marginTop: 6 }}>
-                    {new Date(n.date).toLocaleDateString("ru-RU")}
-                  </div>
-                </div>
-              </a>
-            ))}
+                </a>
+              ))}
+            </div>
           </div>
           
           {/* Пагинация */}
