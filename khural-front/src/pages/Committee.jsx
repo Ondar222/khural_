@@ -258,14 +258,14 @@ export default function Committee() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
-            <a
-              href="/committee"
-              className="btn btn-back"
-              style={{ marginBottom: 24, display: "inline-block" }}
-            >
-              ← К списку комитетов
-            </a>
-            <h1 className="h1-compact">{committee.name || committee.title}</h1>
+            <div className="committee-detail__titlebar">
+              <a href="/committee" className="btn btn-back committee-detail__back">
+                ← К списку комитетов
+              </a>
+              <h1 className="h1-compact committee-detail__title">
+                {committee.name || committee.title}
+              </h1>
+            </div>
 
             {/* Краткая информация о комитете */}
             {(committee.shortDescription || committee.description) && (

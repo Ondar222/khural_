@@ -2579,6 +2579,28 @@ a {
   text-decoration: underline;
 }
 
+/* Committee detail title row (back + title) */
+.committee-detail__titlebar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.committee-detail__back {
+  margin: 0 !important;
+  display: inline-flex;
+  align-items: center;
+}
+.committee-detail__title {
+  margin: 0 !important;
+}
+@media (max-width: 560px) {
+  .committee-detail__titlebar {
+    margin-bottom: 14px;
+  }
+}
+
 @media (max-width: 959px) {
   .priority {
     min-height: 200px;
