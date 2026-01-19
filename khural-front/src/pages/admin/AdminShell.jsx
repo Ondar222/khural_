@@ -132,8 +132,16 @@ export default function AdminShell({
             >
               На сайт
             </a>
-            <button className="admin-pillbtn admin-pillbtn--theme" type="button" onClick={onToggleTheme}>
-              {themeMode === "light" ? "Тёмная" : "Светлая"}
+            <button
+              className="admin-pillbtn admin-pillbtn--theme"
+              type="button"
+              onClick={onToggleTheme}
+              aria-label={themeMode === "light" ? "Включить тёмную тему" : "Включить светлую тему"}
+              title={themeMode === "light" ? "Тёмная тема" : "Светлая тема"}
+            >
+              <span style={{ fontSize: 18, lineHeight: 1, display: "inline-block", transform: "translateY(1px)" }}>
+                {themeMode === "light" ? "☾" : "☀"}
+              </span>
             </button>
             <button
               className="admin-iconbtn admin-iconbtn--menu"
