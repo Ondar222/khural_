@@ -4881,7 +4881,7 @@ body.admin-mode[data-admin-theme="light"] .admin-card {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (max-width: 420px) {
+@media (max-width: 340px) {
   .admin-cards--stats {
     grid-template-columns: 1fr;
   }
@@ -4895,6 +4895,10 @@ body.admin-mode[data-admin-theme="light"] .admin-card {
   margin-top: 10px;
   opacity: 0.75;
   font-weight: 700;
+}
+.admin-stat--link {
+  text-decoration: none;
+  color: inherit;
 }
 
 .admin-cards--actions {
@@ -4932,7 +4936,7 @@ body.admin-mode[data-admin-theme="light"] .admin-card {
     border-radius: 18px;
     border-left: 1px solid rgba(255, 255, 255, 0.14);
     border-right: 1px solid rgba(255, 255, 255, 0.14);
-    padding: 14px 16px;
+    padding: 12px 14px;
   }
   body.admin-mode[data-admin-theme="light"] .admin-dashboard .admin-card {
     border-color: rgba(15, 23, 42, 0.08);
@@ -4949,7 +4953,7 @@ body.admin-mode[data-admin-theme="light"] .admin-card {
 }
 @media (max-width: 720px) {
   .admin-dashboard .admin-stat {
-    min-height: 88px;
+    min-height: 74px;
   }
   .admin-dashboard .admin-stat__label {
     margin-top: 8px;

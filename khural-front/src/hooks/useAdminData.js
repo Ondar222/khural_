@@ -1,5 +1,5 @@
 import React from "react";
-import { App, Button, Input } from "antd";
+import { App } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import {
@@ -13,6 +13,7 @@ import {
   ConvocationsApi,
   CommitteesApi,
   getAuthToken,
+  apiFetch,
 } from "../api/client.js";
 import { addDeletedNewsId } from "../utils/newsOverrides.js";
 import { addDeletedDocumentId, readDocumentsOverrides } from "../utils/documentsOverrides.js";
@@ -224,6 +225,7 @@ export function useAdminData() {
   const [appeals, setAppeals] = React.useState([]);
   const [convocations, setConvocations] = React.useState([]);
   const [committees, setCommittees] = React.useState([]);
+  const [pages, setPages] = React.useState([]);
 
   const canWrite = isAuthenticated;
 
@@ -238,13 +240,14 @@ export function useAdminData() {
 
   const loadAll = React.useCallback(async () => {
     const fb = fallbackRef.current || {};
-    const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations, apiCommittees] = await Promise.all([
+    const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations, apiCommittees, apiPages] = await Promise.all([
       NewsApi.list().catch(() => null),
       PersonsApi.list().catch(() => null),
       DocumentsApi.listAll().catch(() => null),
       SliderApi.list({ all: true }).catch(() => null),
       ConvocationsApi.list().catch(() => null),
       CommitteesApi.list({ all: true }).catch(() => null),
+      apiFetch("/pages", { method: "GET", auth: false }).catch(() => null),
     ]);
     setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(fb.news));
     setPersons(
@@ -272,6 +275,8 @@ export function useAdminData() {
     setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
     setConvocations(Array.isArray(apiConvocations) ? apiConvocations : []);
     setCommittees(Array.isArray(apiCommittees) ? apiCommittees : []);
+    const pagesList = normalizeServerList(apiPages);
+    setPages(Array.isArray(pagesList) ? pagesList : []);
   }, []);
 
   React.useEffect(() => {
@@ -292,7 +297,7 @@ export function useAdminData() {
   const createNews = React.useCallback(async (formData) => {
     setBusy(true);
     try {
-      const created = await NewsApi.createMultipart(formData);
+      await NewsApi.createMultipart(formData);
       message.success("Новость создана");
       await reload();
       // Обновляем публичные данные, чтобы новость сразу появилась на сайте
@@ -322,7 +327,7 @@ export function useAdminData() {
         message.success("Новость удалена");
         await reload();
         reloadDataContext();
-      } catch (e) {
+      } catch {
         // Fallback: allow local delete when API is unavailable (dev without backend / no rights)
         addDeletedNewsId(id);
         setNews((prev) =>
@@ -486,7 +491,7 @@ export function useAdminData() {
       try {
         await DocumentsApi.remove(id);
         message.success("Документ удалён");
-      } catch (e) {
+      } catch {
         // Second attempt via same-origin proxy path (helps when API base was misconfigured on prod)
         try {
           const token = getAuthToken();
@@ -580,7 +585,7 @@ export function useAdminData() {
       try {
         await EventsApi.patch(id, toCalendarDto(payload));
         message.success("Событие обновлено");
-      } catch (e) {
+      } catch {
         // allow local update if API is unavailable/no rights
         message.warning("Обновлено локально (сервер недоступен или нет прав)");
       }
@@ -635,7 +640,7 @@ export function useAdminData() {
       try {
         await EventsApi.remove(id);
         message.success("Событие удалено");
-      } catch (e) {
+      } catch {
         message.warning("Удалено локально (сервер недоступен или нет прав)");
       }
       addDeletedEventId(String(id));
@@ -671,7 +676,7 @@ export function useAdminData() {
         await reload();
         reloadDataContext();
         return created;
-      } catch (e) {
+      } catch {
         // Fallback: create locally (useful for dev without backend)
         const localId = `local-slide-${Date.now()}`;
         const local = {
@@ -711,7 +716,7 @@ export function useAdminData() {
           await reload();
           reloadDataContext();
           return;
-        } catch (e) {
+        } catch {
           // fall back below
         }
       }
@@ -753,7 +758,7 @@ export function useAdminData() {
           await reload();
           reloadDataContext();
           return;
-        } catch (e) {
+        } catch {
           // fall back below
         }
       }
@@ -777,7 +782,7 @@ export function useAdminData() {
           await reload();
           reloadDataContext();
           return;
-        } catch (e) {
+        } catch {
           // fall back below
         }
       }
@@ -816,7 +821,7 @@ export function useAdminData() {
           await reload();
           reloadDataContext();
           return;
-        } catch (e) {
+        } catch {
           // fall back below
         }
       }
@@ -932,13 +937,20 @@ export function useAdminData() {
     }
   }, [message, reload]);
 
-  const stats = React.useMemo(() => ({
-    deputies: Array.isArray(persons) ? persons.length : 0,
-    documents: Array.isArray(documents) ? documents.length : 0,
-    news: Array.isArray(news) ? news.length : 0,
-    events: Array.isArray(events) ? events.length : 0,
-    slides: Array.isArray(slider) ? slider.length : 0,
-  }), [persons, documents, news, events, slider]);
+  const stats = React.useMemo(
+    () => ({
+      deputies: Array.isArray(persons) ? persons.length : 0,
+      pages: Array.isArray(pages) ? pages.length : 0,
+      documents: Array.isArray(documents) ? documents.length : 0,
+      news: Array.isArray(news) ? news.length : 0,
+      events: Array.isArray(events) ? events.length : 0,
+      slides: Array.isArray(slider) ? slider.length : 0,
+      appeals: Array.isArray(appeals) ? appeals.length : 0,
+      convocations: Array.isArray(convocations) ? convocations.length : 0,
+      committees: Array.isArray(committees) ? committees.length : 0,
+    }),
+    [persons, pages, documents, news, events, slider, appeals, convocations, committees]
+  );
 
   const handleLogin = React.useCallback(async () => {
     setLoginBusy(true);
@@ -983,6 +995,7 @@ export function useAdminData() {
     appeals,
     convocations,
     committees,
+    pages,
     stats,
     apiBase,
     
