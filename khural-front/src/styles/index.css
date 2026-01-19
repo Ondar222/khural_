@@ -5112,9 +5112,6 @@ body.admin-mode[data-admin-theme="light"] .admin-pages-list__card--system {
     rgba(255, 255, 255, 0.92);
   border-color: rgba(2, 132, 199, 0.16);
 }
-.admin-pages-list__card--system-missing {
-  border-color: rgba(239, 68, 68, 0.26);
-}
 .admin-pages-list__card-title {
   font-weight: 900;
   font-size: 16px;
@@ -5150,14 +5147,8 @@ body.admin-mode[data-admin-theme="light"] .admin-pages-list__card--system {
 body.admin-mode .admin-pages-list__row--system > td {
   background: rgba(2, 132, 199, 0.06);
 }
-body.admin-mode .admin-pages-list__row--system-missing > td {
-  background: rgba(239, 68, 68, 0.06);
-}
 body.admin-mode[data-admin-theme="light"] .admin-pages-list__row--system > td {
   background: rgba(2, 132, 199, 0.05);
-}
-body.admin-mode[data-admin-theme="light"] .admin-pages-list__row--system-missing > td {
-  background: rgba(239, 68, 68, 0.06);
 }
 
 /* Documents list */

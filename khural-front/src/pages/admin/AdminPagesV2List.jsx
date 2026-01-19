@@ -22,16 +22,6 @@ function slugify(input) {
 // Pages that already exist on the public site (used in /section via title→slug mapping).
 // If backend /pages is empty, we still can seed these so they appear in admin.
 const SITE_SEED_PAGES = [
-  // System route pages (editable CMS snippets on corresponding routes)
-  { slug: "home", title: "Главная" },
-  { slug: "news", title: "Новости" },
-  { slug: "deputies", title: "Депутаты" },
-  { slug: "documents", title: "Документы" },
-  { slug: "contacts", title: "Контакты" },
-  { slug: "about", title: "О Хурале" },
-  { slug: "government", title: "Руководство" },
-  { slug: "section", title: "Разделы" },
-
   { slug: "code-of-honor", title: "Кодекс чести мужчины Тувы" },
   { slug: "mothers-commandments", title: "Свод заповедей матерей Тувы" },
   { slug: "news-subscription", title: "Подписка на новости" },
@@ -51,15 +41,23 @@ const SITE_SEED_PAGES = [
   },
 ];
 
+// Real site routes. These are NOT CMS pages.
+// Editing is done via corresponding admin modules (news/deputies/documents/slider/etc).
 const SYSTEM_ROUTE_DEFS = [
-  { route: "/", cmsSlug: "home", title: "Главная" },
-  { route: "/news", cmsSlug: "news", title: "Новости" },
-  { route: "/deputies", cmsSlug: "deputies", title: "Депутаты" },
-  { route: "/documents", cmsSlug: "documents", title: "Документы" },
-  { route: "/contacts", cmsSlug: "contacts", title: "Контакты" },
-  { route: "/about", cmsSlug: "about", title: "О Хурале" },
-  { route: "/government", cmsSlug: "government", title: "Руководство" },
-  { route: "/section", cmsSlug: "section", title: "Разделы" },
+  {
+    route: "/",
+    title: "Главная",
+    adminLinks: [
+      { label: "Слайдер", href: "/admin/slider" },
+      { label: "Новости", href: "/admin/news" },
+      { label: "События", href: "/admin/events" },
+    ],
+  },
+  { route: "/news", title: "Новости", adminLinks: [{ label: "Новости", href: "/admin/news" }] },
+  { route: "/deputies", title: "Депутаты", adminLinks: [{ label: "Депутаты", href: "/admin/deputies" }] },
+  { route: "/documents", title: "Документы", adminLinks: [{ label: "Документы", href: "/admin/documents" }] },
+  { route: "/contacts", title: "Контакты", adminLinks: [] },
+  { route: "/about", title: "О Хурале", adminLinks: [{ label: "Структура", href: "/admin/committees" }] },
 ];
 
 async function listPagesWithFallback({ locale, authPreferred } = {}) {
@@ -129,16 +127,6 @@ export default function AdminPagesV2List({
     }
   }, [localeMode, onMessage]);
 
-  const cmsBySlug = React.useMemo(() => {
-    const map = new Map();
-    for (const p of Array.isArray(items) ? items : []) {
-      const slug = String(p?.slug || "").trim();
-      if (!slug) continue;
-      map.set(slug.toLowerCase(), p);
-    }
-    return map;
-  }, [items]);
-
   React.useEffect(() => {
     // Загружаем страницы при монтировании и при изменении режима языка
     load();
@@ -148,15 +136,13 @@ export default function AdminPagesV2List({
     const qq = q.trim().toLowerCase();
 
     const systemRows = SYSTEM_ROUTE_DEFS.map((d) => {
-      const cms = cmsBySlug.get(String(d.cmsSlug).toLowerCase()) || null;
       return {
         id: `system:${d.route}`,
         title: d.title,
         slug: d.route,
         __isSystem: true,
         __href: d.route,
-        __cmsSlug: d.cmsSlug,
-        __cmsPage: cms,
+        __adminLinks: Array.isArray(d.adminLinks) ? d.adminLinks : [],
       };
     });
 
@@ -167,11 +153,7 @@ export default function AdminPagesV2List({
         ? base
         : base.filter((p) => {
             if (p?.__isSystem) {
-              const cms = p?.__cmsPage;
-              if (!cms) return true;
-              const c = cms?.content;
-              if (Array.isArray(c)) return c.some((x) => String(x?.locale || "").toLowerCase() === localeMode);
-              return localeMode === "ru";
+              return true;
             }
             const c = p?.content;
             if (Array.isArray(c)) return c.some((x) => String(x?.locale || "").toLowerCase() === localeMode);
@@ -183,11 +165,10 @@ export default function AdminPagesV2List({
       ? byLocale
       : byLocale.filter((p) => {
           const title = String(
-            (p?.__isSystem ? p?.__cmsPage?.title : p?.title) || p?.name || ""
+            (p?.__isSystem ? p?.title : p?.title) || p?.name || ""
           ).toLowerCase();
           const slug = String(p.slug || "").toLowerCase();
-          const cmsSlug = p?.__isSystem ? String(p?.__cmsSlug || "").toLowerCase() : "";
-          return title.includes(qq) || slug.includes(qq) || (cmsSlug && cmsSlug.includes(qq));
+          return title.includes(qq) || slug.includes(qq);
         });
 
     return list
@@ -204,7 +185,7 @@ export default function AdminPagesV2List({
         if (as !== bs) return as ? 1 : -1; // CMS first, system routes last
         return String(a.slug || "").localeCompare(String(b.slug || ""));
       });
-  }, [items, q, localeMode, cmsBySlug]);
+  }, [items, q, localeMode]);
 
   const deletePage = React.useCallback(
     async (id) => {
@@ -224,37 +205,31 @@ export default function AdminPagesV2List({
     [canWrite, load, onMessage, reloadData]
   );
 
-  const ensureSystemCms = React.useCallback(
-    async (row) => {
-      if (!canWrite) return;
-      const cmsSlug = String(row?.__cmsSlug || "").trim();
-      const title = String(row?.title || "").trim();
-      if (!cmsSlug || !title) return;
-
-      setBusy(true);
-      try {
-        const localesToCreate = localeMode === "all" ? ["ru", "tyv"] : [localeMode];
-        await AboutApi.createPage({
-          slug: cmsSlug,
-          title,
-          isPublished: true,
-          content: localesToCreate.map((loc) => ({
-            locale: loc,
-            title,
-            content: `<p>${title}</p>`,
-          })),
-        });
-        onMessage?.("success", `CMS-страница создана: ${cmsSlug}`);
-        reloadData();
-        await load();
-      } catch (e) {
-        onMessage?.("error", e?.message || "Не удалось создать страницу");
-      } finally {
-        setBusy(false);
+  const cleanupSystemCmsPages = React.useCallback(async () => {
+    if (!canWrite) return;
+    setBusy(true);
+    try {
+      const systemSlugs = new Set(["home", "news", "deputies", "documents", "contacts", "about", "government", "section"]);
+      const toDelete = (Array.isArray(items) ? items : []).filter((p) =>
+        systemSlugs.has(String(p?.slug || "").toLowerCase())
+      );
+      if (!toDelete.length) {
+        onMessage?.("success", "Пустых системных CMS-страниц не найдено");
+        return;
       }
-    },
-    [canWrite, load, localeMode, onMessage, reloadData]
-  );
+      for (const p of toDelete) {
+        await AboutApi.deletePage(p.id);
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      onMessage?.("success", `Удалено: ${toDelete.length}`);
+      reloadData();
+      await load();
+    } catch (e) {
+      onMessage?.("error", e?.message || "Не удалось удалить");
+    } finally {
+      setBusy(false);
+    }
+  }, [canWrite, items, load, onMessage, reloadData]);
 
   const importFromPublicSite = React.useCallback(async () => {
     if (!canWrite) return;
@@ -349,25 +324,9 @@ export default function AdminPagesV2List({
           <div className="admin-pages-list__metarow">
             <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
             {row?.__isSystem ? (
-              <>
-                <Tag className="admin-pages-list__tag" color="gold">
-                  ROUTE
-                </Tag>
-                <Tag className="admin-pages-list__tag" color="cyan">
-                  CMS: {row.__cmsSlug}
-                </Tag>
-                <Tag className="admin-pages-list__tag" color={row.__cmsPage ? "blue" : "default"}>
-                  {(() => {
-                    const c = row?.__cmsPage?.content;
-                    const locales = Array.isArray(c)
-                      ? Array.from(new Set(c.map((x) => String(x?.locale || "").toLowerCase()).filter(Boolean)))
-                      : row.__cmsPage
-                        ? ["ru"]
-                        : [];
-                    return locales.length ? locales.join(" + ").toUpperCase() : "—";
-                  })()}
-                </Tag>
-              </>
+              <Tag className="admin-pages-list__tag" color="gold">
+                ROUTE
+              </Tag>
             ) : (
               <Tag className="admin-pages-list__tag" color="blue">
                 {(() => {
@@ -397,44 +356,15 @@ export default function AdminPagesV2List({
               >
                 Открыть
               </Button>
-              {row.__cmsPage ? (
-                <>
-                  <Button
-                    size={isTablet ? "small" : "middle"}
-                    onClick={() => onCreate?.(row.__cmsSlug)}
-                    disabled={!canWrite}
-                  >
-                    + Подстраница
-                  </Button>
-                  <Button
-                    size={isTablet ? "small" : "middle"}
-                    onClick={() => onEdit?.(row.__cmsPage?.id)}
-                    disabled={!canWrite}
-                  >
-                    Редактировать
-                  </Button>
-                  <Popconfirm
-                    title="Удалить CMS-страницу?"
-                    description="Это действие нельзя отменить."
-                    okText="Удалить"
-                    cancelText="Отмена"
-                    onConfirm={() => deletePage(row.__cmsPage?.id)}
-                    disabled={!canWrite}
-                  >
-                    <Button size={isTablet ? "small" : "middle"} danger disabled={!canWrite}>
-                      Удалить
-                    </Button>
-                  </Popconfirm>
-                </>
-              ) : (
+              {(Array.isArray(row.__adminLinks) ? row.__adminLinks : []).map((l) => (
                 <Button
+                  key={l.href}
                   size={isTablet ? "small" : "middle"}
-                  onClick={() => ensureSystemCms(row)}
-                  disabled={!canWrite}
+                  onClick={() => (window.location.href = l.href)}
                 >
-                  Создать CMS
+                  {l.label}
                 </Button>
-              )}
+              ))}
             </>
           ) : (
             <>
@@ -490,6 +420,18 @@ export default function AdminPagesV2List({
         >
           Импортировать с сайта
         </Button>
+        <Popconfirm
+          title="Удалить пустые системные CMS-страницы?"
+          description="Удалит slug: home, news, deputies, documents, contacts, about, government, section."
+          okText="Удалить"
+          cancelText="Отмена"
+          onConfirm={cleanupSystemCmsPages}
+          disabled={!canWrite}
+        >
+          <Button danger disabled={!canWrite} size={isMobile ? "large" : "middle"}>
+            Удалить пустые
+          </Button>
+        </Popconfirm>
         <Button
           onClick={() => setLocaleMode((x) => (x === "all" ? "ru" : x === "ru" ? "tyv" : "all"))}
           size={isMobile ? "large" : "middle"}
@@ -527,7 +469,7 @@ export default function AdminPagesV2List({
                   "admin-card",
                   "admin-pages-list__card",
                   row?.__isSystem ? "admin-pages-list__card--system" : "",
-                  row?.__isSystem && !row?.__cmsPage ? "admin-pages-list__card--system-missing" : "",
+                  "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -539,25 +481,9 @@ export default function AdminPagesV2List({
                   <div className="admin-pages-list__metarow">
                     <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
                     {row?.__isSystem ? (
-                      <>
-                        <Tag className="admin-pages-list__tag" color="gold">
-                          ROUTE
-                        </Tag>
-                        <Tag className="admin-pages-list__tag" color="cyan">
-                          CMS: {row.__cmsSlug}
-                        </Tag>
-                        <Tag className="admin-pages-list__tag" color={row.__cmsPage ? "blue" : "default"}>
-                          {(() => {
-                            const c = row?.__cmsPage?.content;
-                            const locales = Array.isArray(c)
-                              ? Array.from(new Set(c.map((x) => String(x?.locale || "").toLowerCase()).filter(Boolean)))
-                              : row.__cmsPage
-                                ? ["ru"]
-                                : [];
-                            return locales.length ? locales.join(" + ").toUpperCase() : "—";
-                          })()}
-                        </Tag>
-                      </>
+                      <Tag className="admin-pages-list__tag" color="gold">
+                        ROUTE
+                      </Tag>
                     ) : (
                       <Tag className="admin-pages-list__tag" color="blue">
                         {(() => {
@@ -578,32 +504,11 @@ export default function AdminPagesV2List({
                       <Button onClick={() => window.open(row.__href || row.slug || "/", "_blank")} block>
                         Открыть
                       </Button>
-                      {row.__cmsPage ? (
-                        <>
-                          <Button onClick={() => onEdit?.(row.__cmsPage?.id)} disabled={!canWrite} block>
-                            Редактировать
-                          </Button>
-                          <Button onClick={() => onCreate?.(row.__cmsSlug)} disabled={!canWrite} block>
-                            + Подстраница
-                          </Button>
-                          <Popconfirm
-                            title="Удалить CMS-страницу?"
-                            description="Это действие нельзя отменить."
-                            okText="Удалить"
-                            cancelText="Отмена"
-                            onConfirm={() => deletePage(row.__cmsPage?.id)}
-                            disabled={!canWrite}
-                          >
-                            <Button danger disabled={!canWrite} block>
-                              Удалить
-                            </Button>
-                          </Popconfirm>
-                        </>
-                      ) : (
-                        <Button onClick={() => ensureSystemCms(row)} disabled={!canWrite} block>
-                          Создать CMS
+                      {(Array.isArray(row.__adminLinks) ? row.__adminLinks : []).map((l) => (
+                        <Button key={l.href} onClick={() => (window.location.href = l.href)} block>
+                          {l.label}
                         </Button>
-                      )}
+                      ))}
                     </>
                   ) : (
                     <>
@@ -648,7 +553,7 @@ export default function AdminPagesV2List({
           rowKey={(r) => String(r.id || r.slug || Math.random())}
           rowClassName={(r) =>
             r?.__isSystem
-              ? ["admin-pages-list__row--system", !r?.__cmsPage ? "admin-pages-list__row--system-missing" : ""]
+              ? ["admin-pages-list__row--system"]
                   .filter(Boolean)
                   .join(" ")
               : ""

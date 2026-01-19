@@ -3,6 +3,7 @@ import SideNav from "../components/SideNav.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { AboutApi } from "../api/client.js";
+import { extractPageHtml, getPreferredLocaleToken } from "../utils/pages.js";
 
 export default function About() {
   const { committees, aboutPages: cachedPages, aboutStructure: cachedStructure, government } = useData();
@@ -10,9 +11,7 @@ export default function About() {
   const { lang, t } = useI18n();
   const [activeTab, setActiveTab] = React.useState("general"); // general | structure
   const [pages, setPages] = React.useState(() => (Array.isArray(cachedPages) ? cachedPages : []));
-  const [structure, setStructure] = React.useState(() =>
-    Array.isArray(cachedStructure) ? cachedStructure : []
-  );
+  const [, setStructure] = React.useState(() => (Array.isArray(cachedStructure) ? cachedStructure : []));
 
   const scrollToBlock = React.useCallback((id) => {
     const el = document.getElementById(id);
@@ -21,7 +20,7 @@ export default function About() {
 
   // Keep About content in sync with API (locale-aware)
   React.useEffect(() => {
-    const locale = lang === "ty" ? "tyv" : "ru";
+    const locale = getPreferredLocaleToken(lang);
     (async () => {
       const [apiPages, apiStructure] = await Promise.all([
         AboutApi.listPages({ locale }).catch(() => null),
@@ -120,13 +119,18 @@ export default function About() {
 
             <div id="about-general" className="person-block">
               <h3>{t("Общие сведения")}</h3>
-              {generalPage?.content ? (
+              {(() => {
+                const locale = getPreferredLocaleToken(lang);
+                const html = extractPageHtml(generalPage, locale);
+                if (!html) return null;
+                return (
                 <div
                   className="tile"
                   style={{ marginTop: 12 }}
-                  dangerouslySetInnerHTML={{ __html: String(generalPage.content) }}
+                  dangerouslySetInnerHTML={{ __html: html }}
                 />
-              ) : null}
+                );
+              })()}
               <p>
                 8 сентября 2019 года состоялись очередные выборы в высший законодательный
                 (представительный) орган государственной власти Республики Тыва.
