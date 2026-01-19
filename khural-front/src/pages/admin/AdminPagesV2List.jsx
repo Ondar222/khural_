@@ -412,14 +412,7 @@ export default function AdminPagesV2List({
         />
       </div>
       <div className="admin-pages-list__toolbar-right">
-        <Button
-          onClick={importFromPublicSite}
-          disabled={!canWrite}
-          loading={Boolean(importing)}
-          size={isMobile ? "large" : "middle"}
-        >
-          Импортировать с сайта
-        </Button>
+     
         <Popconfirm
           title="Удалить пустые системные CMS-страницы?"
           description="Удалит slug: home, news, deputies, documents, contacts, about, government, section."
