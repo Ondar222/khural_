@@ -425,10 +425,15 @@ export default function DeputiesV2() {
       const d = sp.get("district");
       const cv = sp.get("convocation");
       const cm = sp.get("committee");
+      const st = sp.get("status");
       if (f) setFaction(decodeURIComponent(f));
       if (d) setDistrict(decodeURIComponent(d));
       if (cv) setConvocation(decodeURIComponent(cv));
       if (cm) setCommitteeId(decodeURIComponent(cm));
+      if (st) {
+        const val = String(st).toLowerCase();
+        if (val === "active" || val === "ended" || val === "all") setStatus(val);
+      }
     };
     applyFromHash();
     window.addEventListener("popstate", applyFromHash);

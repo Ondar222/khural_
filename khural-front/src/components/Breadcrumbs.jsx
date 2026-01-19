@@ -58,6 +58,14 @@ export default function Breadcrumbs() {
     }
     if (base === "/deputies") {
       crumbs.push({ label: "Структура", href: "/section" });
+      try {
+        const sp = new URLSearchParams((route || "").split("?")[1]);
+        const status = String(sp.get("status") || "").toLowerCase();
+        if (status === "ended") {
+          crumbs.push({ label: "Депутаты (прекратившие полномочия)" });
+          return crumbs;
+        }
+      } catch {}
       crumbs.push({ label: "Депутаты" });
       return crumbs;
     }

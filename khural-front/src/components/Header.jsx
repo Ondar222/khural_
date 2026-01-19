@@ -438,7 +438,8 @@ export default function Header() {
           <div className="sheet-col">
             <h3>{t("deputies")}</h3>
             <a href="/deputies">{t("deputies")}</a>
-            <a href="/deputies">{t("deputiesAll")}</a>
+            <a href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5">{t("deputiesAll")}</a>
+            <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">Депутаты прекратившие полномочия</a>
           </div>
           <div className="sheet-col">
             <h3>{t("news")}</h3>
