@@ -501,6 +501,7 @@ export default function AdminDeputiesV2({
     [ensureFaction, ensureDistrict, ensureConvocation]
   );
 
+  // eslint-disable-next-line no-unused-vars
   const syncFromCodeToApi = React.useCallback(() => {
     if (!canWrite) return;
     const list = Array.isArray(publicDeputies) ? publicDeputies : [];
@@ -730,9 +731,6 @@ export default function AdminDeputiesV2({
           <Button type="primary" onClick={() => setOpen(true)} disabled={!canWrite} loading={busy}>
             + Добавить депутата
           </Button>
-          {/* <Button onClick={syncFromCodeToApi} disabled={!canWrite} loading={Boolean(busyLocal)}>
-            Синхронизировать из кода в API
-          </Button> */}
         </Space>
       </div>
 

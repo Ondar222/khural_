@@ -119,110 +119,6 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
     writeDeputiesOverrides({ ...next, deletedIds: Array.from(deleted) });
   }, []);
 
-  const syncFromCodeToApi = React.useCallback(() => {
-    if (!canWrite) return;
-    const list = Array.isArray(publicDeputies) ? publicDeputies : [];
-    if (!list.length) {
-      message.error("Локальные данные депутатов не найдены (public/data/deputies.json)");
-      return;
-    }
-
-    Modal.confirm({
-      title: "Синхронизировать депутатов в API?",
-      content:
-        "Возьмём данные из кода (public/data/deputies.json) и создадим отсутствующих депутатов в базе через API. Это нужно для прода, чтобы CRUD работал через сервер.",
-      okText: "Синхронизировать",
-      cancelText: "Отмена",
-      onOk: async () => {
-        setBusyLocal(true);
-        try {
-          const server = await PersonsApi.list().catch(() => []);
-          const serverList = Array.isArray(server) ? server : [];
-          const existing = new Set(
-            serverList.map(
-              (p) =>
-                `${normKey(p?.fullName || p?.full_name || p?.name)}|${normKey(
-                  p?.electoralDistrict || p?.electoral_district || p?.district
-                )}`
-            )
-          );
-
-          let createdCount = 0;
-          let skippedCount = 0;
-          let photoCount = 0;
-          let failedCount = 0;
-
-          for (const d of list) {
-            const fullName = d?.fullName || d?.name || "";
-            const district = d?.electoralDistrict || d?.electoral_district || d?.district || "";
-            const k = `${normKey(fullName)}|${normKey(district)}`;
-            if (!normKey(fullName)) {
-              skippedCount += 1;
-              continue;
-            }
-            if (existing.has(k)) {
-              skippedCount += 1;
-              continue;
-            }
-
-            const body = toPersonsApiBody({
-              fullName,
-              electoralDistrict: district,
-              faction: d?.faction || "",
-              phoneNumber: d?.phoneNumber || d?.contacts?.phone || "",
-              email: d?.email || d?.contacts?.email || "",
-              address: d?.address || "",
-              biography: d?.biography || d?.bio || "",
-              description: d?.description || d?.position || "",
-              convocationNumber: d?.convocationNumber || d?.convocation || "",
-              structureType: d?.structureType || "",
-              role: d?.role || "",
-              receptionSchedule: d?.receptionSchedule || toReceptionScheduleText(d?.schedule),
-              legislativeActivity: Array.isArray(d?.legislativeActivity)
-                ? d.legislativeActivity
-                : toLegislativeActivity(d?.laws),
-              incomeDeclarations: Array.isArray(d?.incomeDeclarations) ? d.incomeDeclarations : [],
-            });
-
-            try {
-              const created = await PersonsApi.create(body);
-              const createdId = created?.id ?? created?._id ?? created?.personId;
-              createdCount += 1;
-              existing.add(k);
-
-              const photo = d?.photo || d?.image?.link || "";
-              if (createdId && photo) {
-                try {
-                  const abs = new URL(String(photo), window.location.origin).toString();
-                  const res = await fetch(abs);
-                  if (res.ok) {
-                    const blob = await res.blob();
-                    const ext = blob.type && blob.type.includes("/") ? blob.type.split("/")[1] : "jpg";
-                    const file = new File([blob], `photo.${ext}`, { type: blob.type || "image/jpeg" });
-                    await PersonsApi.uploadMedia(createdId, file);
-                    photoCount += 1;
-                  }
-                } catch {
-                  // ignore photo errors
-                }
-              }
-            } catch (e) {
-              failedCount += 1;
-              console.warn("Seed person failed", e);
-            }
-          }
-
-          message.success(
-            `Готово: создано ${createdCount}, пропущено ${skippedCount}, фото ${photoCount}, ошибок ${failedCount}`
-          );
-          reloadPublicData();
-        } finally {
-          setBusyLocal(false);
-        }
-      },
-    });
-  }, [canWrite, message, publicDeputies, reloadPublicData]);
-
   const handleDelete = React.useCallback((id, fullName) => {
     Modal.confirm({
       title: 'Удалить депутата?',
@@ -341,15 +237,6 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
             style={{ fontWeight: 600 }}
           >
             + Добавить депутата
-          </Button>
-          <Button
-            onClick={syncFromCodeToApi}
-            disabled={!canWrite}
-            loading={Boolean(busyLocal)}
-            block
-            size="large"
-          >
-            Синхронизировать из кода в API
           </Button>
         </div>
 
@@ -505,14 +392,6 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
             style={{ fontWeight: 600 }}
           >
             + Добавить депутата
-          </Button>
-          <Button
-            onClick={syncFromCodeToApi}
-            disabled={!canWrite}
-            loading={Boolean(busyLocal)}
-            size={isTablet ? "middle" : "large"}
-          >
-            Синхронизировать из кода в API
           </Button>
         </Space>
       </div>
