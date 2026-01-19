@@ -7,7 +7,7 @@ import PersonDetail from "../components/PersonDetail.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
 import { APPARATUS_NAV_LINKS } from "../utils/apparatusLinks.js";
-import { APPARATUS_NODE_SUBTITLES, APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
+import { APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
 
 const SECTION_TITLE_TO_SLUG = {
   "Кодекс чести мужчины Тувы": "code-of-honor",
@@ -718,7 +718,6 @@ export default function SectionPage() {
 
     if (title === "Структура Аппарата" || title === "Аппарат") {
       const toSectionHref = (t) => `/section?title=${encodeURIComponent(String(t || "").trim())}`;
-      const nodeSub = (key) => APPARATUS_NODE_SUBTITLES?.[key] || "";
       return (
         <section className="section section-page">
           <div className="container">
@@ -736,9 +735,6 @@ export default function SectionPage() {
                           <div className="office-chart__node-title">
                             Руководитель Аппарата Верховного Хурала (парламента) Республики Тыва
                           </div>
-                          {nodeSub("Руководитель Аппарата") ? (
-                            <div className="office-chart__node-sub">{nodeSub("Руководитель Аппарата")}</div>
-                          ) : null}
                         </a>
                       </div>
 
@@ -759,9 +755,6 @@ export default function SectionPage() {
                             Заместитель руководителя Аппарата Верховного Хурала – начальник организационного
                             управления Аппарата ВХ РТ
                           </div>
-                          {nodeSub("Заместитель Руководителя Аппарата") ? (
-                            <div className="office-chart__node-sub">{nodeSub("Заместитель Руководителя Аппарата")}</div>
-                          ) : null}
                         </a>
                         <div className="office-chart__stack office-chart__stack--down">
                           <a
@@ -769,9 +762,6 @@ export default function SectionPage() {
                             href={toSectionHref("Организационное управление")}
                           >
                             <div className="office-chart__node-title">Организационное управление Аппарата ВХ РТ</div>
-                            {nodeSub("Организационное управление") ? (
-                              <div className="office-chart__node-sub">{nodeSub("Организационное управление")}</div>
-                            ) : null}
                           </a>
                         </div>
                       </div>
@@ -829,9 +819,6 @@ export default function SectionPage() {
                             <div className="office-chart__node-title">
                               Первый помощник Председателя Верховного Хурала (парламента) Республики Тыва
                             </div>
-                            {nodeSub("Первый помощник Председателя") ? (
-                              <div className="office-chart__node-sub">{nodeSub("Первый помощник Председателя")}</div>
-                            ) : null}
                           </a>
                           <a
                             className="office-chart__node office-chart__node--link"
@@ -840,9 +827,6 @@ export default function SectionPage() {
                             <div className="office-chart__node-title">
                               Помощник Председателя Верховного Хурала (парламента) Республики Тыва
                             </div>
-                            {nodeSub("Помощник Председателя") ? (
-                              <div className="office-chart__node-sub">{nodeSub("Помощник Председателя")}</div>
-                            ) : null}
                           </a>
                           <a
                             className="office-chart__node office-chart__node--link"
@@ -851,9 +835,6 @@ export default function SectionPage() {
                             <div className="office-chart__node-title">
                               Помощник заместителя Председателя Верховного Хурала (парламента) Республики Тыва
                             </div>
-                            {nodeSub("Помощник заместителя Председателя") ? (
-                              <div className="office-chart__node-sub">{nodeSub("Помощник заместителя Председателя")}</div>
-                            ) : null}
                           </a>
                         </div>
                       </div>
