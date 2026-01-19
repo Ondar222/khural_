@@ -1130,6 +1130,101 @@ a {
     font-size: 18px;
   }
 }
+
+/* Apparatus staff cards (inside Section pages) */
+.apparatus-person-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 959px) {
+  .apparatus-person-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.apparatus-person-card {
+  padding: 16px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  border-radius: 18px;
+}
+.apparatus-person-card__avatarWrap {
+  flex: 0 0 auto;
+}
+.apparatus-person-card__avatar {
+  width: 92px;
+  height: 92px;
+  border-radius: 999px;
+  object-fit: cover;
+  background: #eef2f7;
+  border: 2px solid #cfe3ff;
+  box-shadow: 0 0 0 3px #ffffff, 0 10px 22px rgba(10, 31, 68, 0.12);
+}
+.apparatus-person-card__avatar--placeholder {
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  color: #0d4b8f;
+  background: linear-gradient(180deg, rgba(238, 242, 255, 0.9), rgba(255, 255, 255, 1));
+}
+.apparatus-person-card__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.apparatus-person-card__name {
+  font-size: 18px;
+  font-weight: 900;
+  color: #0d4b8f;
+  line-height: 1.15;
+}
+.apparatus-person-card__role {
+  color: #334155;
+  font-size: 13.5px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+.apparatus-person-card__meta {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  color: #475569;
+  font-size: 13.5px;
+}
+.apparatus-person-card__metaItem {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+.apparatus-person-card__metaItem:hover {
+  color: #1f3b8a;
+}
+.apparatus-person-card__metaItem .anticon {
+  margin-top: 1px;
+  color: #1f3b8a;
+}
+@media (max-width: 560px) {
+  .apparatus-person-card {
+    padding: 14px;
+    gap: 12px;
+  }
+  .apparatus-person-card__avatar {
+    width: 78px;
+    height: 78px;
+  }
+  .apparatus-person-card__name {
+    font-size: 16px;
+  }
+  .apparatus-person-card__role,
+  .apparatus-person-card__meta {
+    font-size: 13px;
+  }
+}
 .office-chart__col {
   display: block;
 }
@@ -2702,6 +2797,19 @@ a {
 }
 .no-gold-underline::after {
   display: none !important;
+}
+
+/* Section pages: back link and title spacing */
+.section-page__topbar {
+  margin-bottom: 10px;
+}
+.section-page__topbar .btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-page__title {
+  display: block; /* prevent inline placement next to back link */
 }
 
 /* Footer */

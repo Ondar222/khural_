@@ -8,6 +8,7 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
 import { APPARATUS_NAV_LINKS } from "../utils/apparatusLinks.js";
 import { APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
+import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 
 const SECTION_TITLE_TO_SLUG = {
   "Кодекс чести мужчины Тувы": "code-of-honor",
@@ -322,21 +323,70 @@ function DeputyGrid({ deputies, structureType, backHref }) {
 }
 
 function ApparatusPersonCard({ p }) {
+  const initials = React.useMemo(() => {
+    const parts = String(p?.name || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    const a = parts[0]?.[0] || "";
+    const b = parts[1]?.[0] || "";
+    return (a + b).toUpperCase();
+  }, [p?.name]);
+
+  const telHref = React.useMemo(() => {
+    const raw = String(p?.phone || "").trim();
+    if (!raw) return "";
+    const digits = raw.replace(/[^\d+]/g, "");
+    return digits ? `tel:${digits}` : "";
+  }, [p?.phone]);
+
   if (!p) return null;
-  const meta = [p.phone, p.email, p.address].filter(Boolean);
+
   return (
-    <div className="person-card person-card--round-xl">
-      {p.photo ? <img className="person-card__photo" src={p.photo} alt="" loading="lazy" /> : null}
-      <div className="person-card__body">
-        <div className="person-card__name">{p.name}</div>
-        {p.role ? <div className="person-card__role">{p.role}</div> : null}
-        {meta.length ? (
-          <ul className="person-card__meta">
-            {meta.map((m, i) => (
-              <li key={i}>{m}</li>
-            ))}
-          </ul>
-        ) : null}
+    <div className="card apparatus-person-card">
+      <div className="apparatus-person-card__avatarWrap">
+        {p.photo ? (
+          <img className="apparatus-person-card__avatar" src={p.photo} alt="" loading="lazy" />
+        ) : (
+          <div className="apparatus-person-card__avatar apparatus-person-card__avatar--placeholder" aria-hidden="true">
+            {initials || "—"}
+          </div>
+        )}
+      </div>
+
+      <div className="apparatus-person-card__body">
+        <div className="apparatus-person-card__name">{p.name}</div>
+        {p.role ? <div className="apparatus-person-card__role">{p.role}</div> : null}
+
+        <div className="apparatus-person-card__meta">
+          {p.phone ? (
+            telHref ? (
+              <a className="apparatus-person-card__metaItem" href={telHref}>
+                <PhoneOutlined />
+                <span>{p.phone}</span>
+              </a>
+            ) : (
+              <div className="apparatus-person-card__metaItem">
+                <PhoneOutlined />
+                <span>{p.phone}</span>
+              </div>
+            )
+          ) : null}
+
+          {p.email ? (
+            <a className="apparatus-person-card__metaItem" href={`mailto:${String(p.email).trim()}`}>
+              <MailOutlined />
+              <span>{p.email}</span>
+            </a>
+          ) : null}
+
+          {p.address ? (
+            <div className="apparatus-person-card__metaItem">
+              <EnvironmentOutlined />
+              <span>{p.address}</span>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -352,15 +402,17 @@ function ApparatusSectionDetail({ title, backHref }) {
         <div className="page-grid">
           <div className="page-grid__main">
             {backHref ? (
-              <a className="btn btn-back" href={backHref} style={{ marginBottom: 16, display: "inline-block" }}>
-                ← Назад
-              </a>
+              <div className="section-page__topbar">
+                <a className="btn btn-back" href={backHref}>
+                  ← Назад
+                </a>
+              </div>
             ) : null}
-            <h1 className="no-gold-underline">{data.title || title}</h1>
+            <h1 className="no-gold-underline section-page__title">{data.title || title}</h1>
             {data.description ? <p style={{ marginTop: 0, maxWidth: 860 }}>{data.description}</p> : null}
 
             {people.length ? (
-              <div className="grid cols-2" style={{ marginTop: 14 }}>
+              <div className="apparatus-person-grid">
                 {people.map((p, i) => (
                   <ApparatusPersonCard key={`${p.name || "p"}-${i}`} p={p} />
                 ))}
