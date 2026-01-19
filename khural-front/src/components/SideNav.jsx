@@ -35,7 +35,7 @@ export default function SideNav({
         "/section?title=" +
         encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
     },
-    { label: "Структура Аппарата", href: "/apparatus" },
+    { label: "Структура Аппарата", href: "/section?title=" + encodeURIComponent("Структура Аппарата") },
     {
       label: "Молодежный Хурал",
       href: "/section?title=" + encodeURIComponent("Молодежный Хурал"),

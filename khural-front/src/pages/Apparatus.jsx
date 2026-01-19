@@ -1,67 +1,11 @@
 import React from "react";
-import UnitModal from "../components/UnitModal.jsx";
 import SideNav from "../components/SideNav.jsx";
+import { APPARATUS_NAV_LINKS } from "../utils/apparatusLinks.js";
 
 export default function Apparatus() {
-  const [unitModal, setUnitModal] = React.useState(null);
-  const [openUnit, setOpenUnit] = React.useState(null);
-
-  // Scroll to a requested unit from URL (e.g., /apparatus?unit=org)
-  React.useEffect(() => {
-    const scrollToUnit = () => {
-      const sp = new URLSearchParams(window.location.search || "");
-      const unit = sp.get("unit");
-      if (unit && typeof unit === "string") {
-        const el = document.getElementById(`unit-${unit}`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }
-    };
-    scrollToUnit();
-    window.addEventListener("popstate", scrollToUnit);
-    window.addEventListener("app:navigate", scrollToUnit);
-    return () => {
-      window.removeEventListener("popstate", scrollToUnit);
-      window.removeEventListener("app:navigate", scrollToUnit);
-    };
+  const toSectionHref = React.useCallback((title) => {
+    return `/section?title=${encodeURIComponent(String(title || "").trim())}`;
   }, []);
-
-  const renderUnit = (id, title) => {
-    // Simple placeholder card similar to "Представитель Комитета"
-    const photo =
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrm9qv4DwbeHFaIDG39k6DjPnAb8ue71tAJ6ZFX1j5WQbSLbibwC_XiG4x42Zy_dE97Fk&usqp=CAU";
-    return (
-      <div className="orgv2__committee" id={`unit-${id}`}>
-        <div className="person-card person-card--committee">
-          <img className="person-card__photo" src={photo} alt="" loading="lazy" />
-          <div className="person-card__body">
-            <div className="person-card__name">Представитель подразделения</div>
-            <div className="person-card__role">{title}</div>
-            <ul className="person-card__meta">
-              <li>+7 (959)123‑45‑67</li>
-              <li>department@rtyva.ru</li>
-              <li>г. Кызыл, ул. Ленина, 40</li>
-            </ul>
-            <a
-              className="btn btn--primary btn--compact"
-              href={"/section?title=" + encodeURIComponent(`Подробнее о: ${title}`)}
-            >
-              Подробнее
-            </a>
-          </div>
-        </div>
-        <div className="orgv2__actions">
-          <a
-            href={"/section?title=" + encodeURIComponent(`Подробнее о: ${title}`)}
-            className="btn btn--primary"
-          >
-            Подробнее о подразделении
-          </a>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <section className="section apparatus-page">
@@ -82,219 +26,128 @@ export default function Apparatus() {
               Тыва.
             </p>
 
-            <div className="orgv2">
-              {/* Руководство */}
-              <div className="apparatus-section">
-                <h2 className="apparatus-section__title">Руководство аппарата</h2>
-                <div className="apparatus-leadership">
-                <div className="person-card person-card--round-xl">
-                  <img
-                    className="person-card__photo"
-                    src={
-                      "https://khural.rtyva.ru/upload/iblock/c37/%D0%A3%D1%81%D0%BF%D1%83%D0%BD%20%D0%9C.%D0%98..jpg"
-                    }
-                    alt=""
-                    loading="lazy"
-                  />
-                  <div className="person-card__body">
-                    <div className="person-card__name">Успун Маадыр Иргитович</div>
-                    <div className="person-card__role">
-                      Руководитель Аппарата Верховного Хурала (парламента) Республики Тыва
-                    </div>
-                    <ul className="person-card__meta">
-                      <li>+7 (959)123‑45‑67</li>
-                      <li>lol@mail.ru</li>
-                      <li>г. Кызыл, ул. Ленина, 40</li>
-                      <li>Фракция: «ЕДИНАЯ РОССИЯ»</li>
-                    </ul>
-                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
-                      Подробнее
-                    </a>
-                  </div>
-                </div>
-                <div className="person-card person-card--round-xl">
-                  <img
-                    className="person-card__photo"
-                    src={"https://khural.rtyva.ru/upload/iblock/2d3/IMG_1348.JPG"}
-                    alt=""
-                    loading="lazy"
-                  />
-                  <div className="person-card__body">
-                    <div className="person-card__name">Ананьина Ирина Викторовна</div>
-                    <div className="person-card__role">
-                      Заместитель руководителя Аппарата, начальник организационного управления
-                    </div>
-                    <ul className="person-card__meta">
-                      <li>+7 (959)123‑45‑67</li>
-                      <li>lol@mail.ru</li>
-                      <li>г. Кызыл, ул. Ленина, 40</li>
-                    </ul>
-                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
-                      Подробнее
-                    </a>
-                  </div>
-                </div>
-                </div>
-              </div>
-
-              {/* Ветка организационного управления */}
-              <div className="apparatus-section">
-                <h2 className="apparatus-section__title">Ключевое подразделение</h2>
-                <div className="apparatus-feature">
-                  <div
-                    id="unit-org"
-                    className="orgv2__unit"
-                    role="button"
-                    onClick={() =>
-                      setUnitModal({
-                        title: "Организационное управление аппарата",
-                        link: "/apparatus?unit=org",
-                      })
-                    }
-                  >
-                    <div className="orgv2__unit_title">Организационное управление аппарата</div>
-                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
-                      Подробнее
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <div className="apparatus-section">
-                <h2 className="apparatus-section__title">Ответственный представитель</h2>
-                <div className="person-card person-card--committee">
-                  <img
-                    className="person-card__photo"
-                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrm9qv4DwbeHFaIDG39k6DjPnAb8ue71tAJ6ZFX1j5WQbSLbibwC_XiG4x42Zy_dE97Fk&usqp=CAU"
-                    alt=""
-                    loading="lazy"
-                  />
-                  <div className="person-card__body">
-                    <div className="person-card__name">Ондар Айбина Борисовна</div>
-                    <div className="person-card__role">
-                      Начальник отдела по организационному обеспечению Комитета по государственному
-                      строительству и местному самоуправлению
-                    </div>
-                    <ul className="person-card__meta">
-                      <li>+7 (959)123‑45‑67</li>
-                      <li>lol@mail.ru</li>
-                      <li>г. Кызыл, ул. Ленина, 40</li>
-                    </ul>
-                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
-                      Подробнее
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Прочие подразделения аппарата (раскрывающиеся блоки) */}
-              <div className="apparatus-section">
-                <h2 className="apparatus-section__title">Подразделения аппарата</h2>
-                <div className="orgv2__list apparatus-units">
-                  {[
-                    ["law", "Государственно-правовое управление"],
-                    ["admin", "Управление делами Аппарата ВХ РТ"],
-                    ["ia", "Информационно-аналитическое управление"],
-                    ["fin", "Управление финансов, бухгалтерского учета и отчетности Аппарата ВХ РТ"],
-                    ["it", "Отдел технического и программного обеспечения Аппарата ВХ РТ"],
-                    ["hr", "Отдел кадров и государственной службы Аппарата ВХ РТ"],
-                  ].map(([id, title]) => (
-                    <React.Fragment key={id}>
-                      <div
-                        className={`orgv2__pill orgv2__pill--outline orgv2__pill--button apparatus-units__pill ${
-                          openUnit === id ? "orgv2__pill--open" : ""
-                        }`}
-                        onClick={() => setOpenUnit(openUnit === id ? null : id)}
-                      >
-                        <span>{title}</span>
-                        <span aria-hidden="true" className="apparatus-units__chev">
-                          {openUnit === id ? "–" : "+"}
-                        </span>
+            <div className="office-chart card">
+              <div className="office-chart__scroll" aria-label="Структура аппарата">
+                <div className="office-chart__grid" role="img" aria-label="Организационная структура аппарата">
+                  <div className="office-chart__top">
+                    <a
+                      className="office-chart__node office-chart__node--top office-chart__node--link"
+                      href={toSectionHref("Руководитель Аппарата")}
+                    >
+                      <div className="office-chart__node-title">
+                        Руководитель Аппарата Верховного Хурала (парламента) Республики Тыва
                       </div>
-                      {openUnit === id ? renderUnit(id, title) : null}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-
-              {/* Помощники руководства */}
-              <div className="apparatus-section">
-                <h2 className="apparatus-section__title">Помощники руководства</h2>
-                <div className="apparatus-assistants">
-                <div className="person-card">
-                  <img
-                    className="person-card__photo"
-                    src="https://khural.rtyva.ru/upload/iblock/a62/DSC_5473.jpg"
-                    alt=""
-                    loading="lazy"
-                  />
-                  <div className="person-card__body">
-                    <div className="person-card__name">Орус-оол Амир Донгакович</div>
-                    <div className="person-card__role">Первый помощник Председателя</div>
-                    <ul className="person-card__meta">
-                      <li>+7 (959)123‑45‑67</li>
-                      <li>lol@mail.ru</li>
-                      <li>г. Кызыл, ул. Ленина, 40</li>
-                    </ul>
-                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
-                      Подробнее
                     </a>
                   </div>
-                </div>
 
-                <div className="person-card">
-                  <img
-                    className="person-card__photo"
-                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrm9qv4DwbeHFaIDG39k6DjPnAb8ue71tAJ6ZFX1j5WQbSLbibwC_XiG4x42Zy_dE97Fk&usqp=CAU"
-                    alt=""
-                    loading="lazy"
-                  />
-                  <div className="person-card__body">
-                    <div className="person-card__name">Хуурак Кумир Валерьевич</div>
-                    <div className="person-card__role">Помощник Председателя</div>
-                    <ul className="person-card__meta">
-                      <li>+7 (959)123‑45‑67</li>
-                      <li>lol@mail.ru</li>
-                      <li>г. Кызыл, ул. Ленина, 40</li>
-                    </ul>
-                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
-                      Подробнее
-                    </a>
+                  <div className="office-chart__wires" aria-hidden="true">
+                    <span className="office-chart__wire office-chart__wire--stem" />
+                    <span className="office-chart__wire office-chart__wire--h" />
+                    <span className="office-chart__wire office-chart__wire--v-left" />
+                    <span className="office-chart__wire office-chart__wire--v-center" />
+                    <span className="office-chart__wire office-chart__wire--v-right" />
                   </div>
-                </div>
 
-                <div className="person-card">
-                  <img
-                    className="person-card__photo"
-                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrm9qv4DwbeHFaIDG39k6DjPnAb8ue71tAJ6ZFX1j5WQbSLbibwC_XiG4x42Zy_dE97Fk&usqp=CAU"
-                    alt=""
-                    loading="lazy"
-                  />
-                  <div className="person-card__body">
-                    <div className="person-card__name">Ондар Айдын Сарыг-оолович</div>
-                    <div className="person-card__role">Помощник заместителя Председателя</div>
-                    <ul className="person-card__meta">
-                      <li>+7 (959)123‑45‑67</li>
-                      <li>lol@mail.ru</li>
-                      <li>г. Кызыл, ул. Ленина, 40</li>
-                    </ul>
-                    <a className="btn btn--primary btn--compact" href="/government?type=gov">
-                      Подробнее
+                  <div className="office-chart__col office-chart__col--left">
+                    <a
+                      className="office-chart__node office-chart__node--link"
+                      href={toSectionHref("Заместитель Руководителя Аппарата")}
+                    >
+                      <div className="office-chart__node-title">
+                        Заместитель руководителя Аппарата Верховного Хурала – начальник организационного
+                        управления Аппарата ВХ РТ
+                      </div>
                     </a>
+                    <div className="office-chart__stack office-chart__stack--down">
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Организационное управление")}
+                      >
+                        <div className="office-chart__node-title">Организационное управление Аппарата ВХ РТ</div>
+                      </a>
+                    </div>
                   </div>
-                </div>
+
+                  <div className="office-chart__col office-chart__col--center">
+                    <div className="office-chart__stack">
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Государственно-правовое управление")}
+                      >
+                        <div className="office-chart__node-title">Государственно-правовое управление Аппарата ВХ РТ</div>
+                      </a>
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Управление делами")}
+                      >
+                        <div className="office-chart__node-title">Управление делами Аппарата ВХ РТ</div>
+                      </a>
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Информационно-аналитическое управление")}
+                      >
+                        <div className="office-chart__node-title">Информационно-аналитическое управление</div>
+                      </a>
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Управление финансов, бухгалтерского учета и отчетности")}
+                      >
+                        <div className="office-chart__node-title">
+                          Управление финансов, бухгалтерского учета и отчетности Аппарата ВХ РТ
+                        </div>
+                      </a>
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Отдел технического и программного обеспечения")}
+                      >
+                        <div className="office-chart__node-title">
+                          Отдел технического и программного обеспечения Аппарата ВХ РТ
+                        </div>
+                      </a>
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Отдел кадров и государственной службы")}
+                      >
+                        <div className="office-chart__node-title">
+                          Отдел кадров и государственной службы Аппарата ВХ РТ
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="office-chart__col office-chart__col--right">
+                    <div className="office-chart__stack">
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Первый помощник Председателя")}
+                      >
+                        <div className="office-chart__node-title">
+                          Первый помощник Председателя Верховного Хурала (парламента) Республики Тыва
+                        </div>
+                      </a>
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Помощник Председателя")}
+                      >
+                        <div className="office-chart__node-title">
+                          Помощник Председателя Верховного Хурала (парламента) Республики Тыва
+                        </div>
+                      </a>
+                      <a
+                        className="office-chart__node office-chart__node--link"
+                        href={toSectionHref("Помощник заместителя Председателя")}
+                      >
+                        <div className="office-chart__node-title">
+                          Помощник заместителя Председателя Верховного Хурала (парламента) Республики Тыва
+                        </div>
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <UnitModal
-              open={!!unitModal}
-              title={unitModal?.title}
-              description={unitModal?.description}
-              link={unitModal?.link}
-              onClose={() => setUnitModal(null)}
-            />
           </div>
-          <SideNav />
+          <SideNav links={APPARATUS_NAV_LINKS} />
         </div>
       </div>
     </section>

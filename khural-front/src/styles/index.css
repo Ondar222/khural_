@@ -1040,6 +1040,216 @@ a {
   }
 }
 
+/* Apparatus / Office structure chart (like khural.rtyva.ru/struct/office) */
+.office-chart {
+  padding: 18px;
+}
+.office-chart__scroll {
+  overflow-x: hidden; /* no horizontal scroll */
+  overflow-y: visible;
+}
+.office-chart__grid {
+  position: relative;
+  min-width: 0; /* allow fitting to viewport */
+  padding: 18px 14px 10px;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  grid-template-rows: auto 58px auto;
+  gap: 18px 24px;
+}
+.office-chart__top {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+}
+.office-chart__node {
+  background: #fff;
+  border: 1px solid rgba(10, 31, 68, 0.16);
+  border-radius: 10px;
+  box-shadow: 0 10px 26px rgba(10, 31, 68, 0.08);
+  padding: 14px 14px;
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #0a1f44;
+}
+.office-chart__node--link {
+  display: block;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 200ms ease, border-color 160ms ease,
+    background 160ms ease, color 160ms ease;
+}
+.office-chart__node--link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(10, 31, 68, 0.12);
+  border-color: rgba(255, 215, 0, 0.55);
+  background: #fbfdff;
+}
+.office-chart__node--link:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow), var(--ring-strong);
+}
+.office-chart__node--top {
+  max-width: 540px;
+  font-weight: 800;
+}
+
+/* Apparatus section links list (as in old site), but in our style */
+.apparatus-links__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: #0a1f44;
+  font-weight: 900;
+  border-bottom: 1px solid rgba(10, 31, 68, 0.08);
+  transition: background 160ms ease;
+}
+.apparatus-links__item:hover {
+  background: rgba(238, 242, 255, 0.55);
+}
+.apparatus-links__item:last-child {
+  border-bottom: 0;
+}
+.apparatus-links__chev {
+  color: var(--link);
+  font-weight: 900;
+  transform: translateY(-1px);
+}
+.apparatus-links__label {
+  font-size: 20px;
+  line-height: 1.2;
+  color: #1f3b8a;
+}
+@media (max-width: 720px) {
+  .apparatus-links__item {
+    padding: 14px 14px;
+  }
+  .apparatus-links__label {
+    font-size: 18px;
+  }
+}
+.office-chart__col {
+  display: block;
+}
+.office-chart__stack {
+  display: grid;
+  gap: 14px;
+}
+.office-chart__stack--down {
+  margin-top: 14px;
+  position: relative;
+}
+.office-chart__stack--down::before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 2px;
+  height: 14px;
+  background: rgba(10, 31, 68, 0.26);
+  transform: translateX(-50%);
+}
+
+/* connector wires */
+.office-chart__wires {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  position: relative;
+  height: 58px;
+}
+.office-chart__wire {
+  position: absolute;
+  background: rgba(10, 31, 68, 0.26);
+}
+.office-chart__wire--stem {
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 22px;
+  transform: translateX(-50%);
+}
+.office-chart__wire--h {
+  top: 22px;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  border-radius: 2px;
+}
+.office-chart__wire--v-left,
+.office-chart__wire--v-center,
+.office-chart__wire--v-right {
+  top: 22px;
+  width: 2px;
+  height: 36px;
+}
+.office-chart__wire--v-left {
+  left: calc(16.666%); /* center of col 1 */
+}
+.office-chart__wire--v-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+.office-chart__wire--v-right {
+  left: calc(83.333%); /* center of col 3 */
+}
+
+@media (max-width: 1024px) {
+  .office-chart__grid {
+    gap: 14px 14px;
+    padding: 16px 12px 10px;
+  }
+  .office-chart__node {
+    padding: 12px 12px;
+    font-size: 14px;
+  }
+  .office-chart__node--top {
+    max-width: 640px;
+  }
+}
+
+/* On phones: show full structure without horizontal scrolling */
+@media (max-width: 720px) {
+  .office-chart {
+    padding: 14px;
+  }
+  .office-chart__grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    gap: 14px;
+    padding: 12px 10px 10px;
+  }
+  .office-chart__wires {
+    display: none;
+  }
+  .office-chart__top {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .office-chart__col--left {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .office-chart__col--center {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .office-chart__col--right {
+    grid-column: 1;
+    grid-row: 4;
+  }
+  .office-chart__node {
+    padding: 11px 11px;
+    font-size: 13.5px;
+    text-align: left; /* better readability on narrow screens */
+  }
+  .office-chart__node--top {
+    max-width: 100%;
+    text-align: center;
+  }
+}
+
 /* Home page: news section should be one-row scroll on mobile */
 .home-news__arrow {
   display: none; /* only on mobile */

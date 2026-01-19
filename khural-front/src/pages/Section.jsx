@@ -6,6 +6,8 @@ import SideNav from "../components/SideNav.jsx";
 import PersonDetail from "../components/PersonDetail.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
+import { APPARATUS_NAV_LINKS } from "../utils/apparatusLinks.js";
+import { APPARATUS_NODE_SUBTITLES, APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
 
 const SECTION_TITLE_TO_SLUG = {
   "Кодекс чести мужчины Тувы": "code-of-honor",
@@ -319,6 +321,63 @@ function DeputyGrid({ deputies, structureType, backHref }) {
   );
 }
 
+function ApparatusPersonCard({ p }) {
+  if (!p) return null;
+  const meta = [p.phone, p.email, p.address].filter(Boolean);
+  return (
+    <div className="person-card person-card--round-xl">
+      {p.photo ? <img className="person-card__photo" src={p.photo} alt="" loading="lazy" /> : null}
+      <div className="person-card__body">
+        <div className="person-card__name">{p.name}</div>
+        {p.role ? <div className="person-card__role">{p.role}</div> : null}
+        {meta.length ? (
+          <ul className="person-card__meta">
+            {meta.map((m, i) => (
+              <li key={i}>{m}</li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ApparatusSectionDetail({ title, backHref }) {
+  const data = APPARATUS_SECTIONS?.[title];
+  if (!data) return null;
+  const people = Array.isArray(data.people) ? data.people : [];
+  return (
+    <section className="section section-page">
+      <div className="container">
+        <div className="page-grid">
+          <div className="page-grid__main">
+            {backHref ? (
+              <a className="btn btn-back" href={backHref} style={{ marginBottom: 16, display: "inline-block" }}>
+                ← Назад
+              </a>
+            ) : null}
+            <h1 className="no-gold-underline">{data.title || title}</h1>
+            {data.description ? <p style={{ marginTop: 0, maxWidth: 860 }}>{data.description}</p> : null}
+
+            {people.length ? (
+              <div className="grid cols-2" style={{ marginTop: 14 }}>
+                {people.map((p, i) => (
+                  <ApparatusPersonCard key={`${p.name || "p"}-${i}`} p={p} />
+                ))}
+              </div>
+            ) : (
+              <div className="card" style={{ padding: 18, marginTop: 14 }}>
+                Информация о подразделении будет добавлена.
+              </div>
+            )}
+          </div>
+          <SideNav title="Разделы" links={APPARATUS_NAV_LINKS} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
@@ -341,6 +400,17 @@ export default function SectionPage() {
     } catch {
       // ignore invalid URI encoding
     }
+
+    // Prefilled (old) apparatus pages: show people/info instead of empty CMS.
+    if (APPARATUS_SECTIONS?.[title]) {
+      return (
+        <ApparatusSectionDetail
+          title={title}
+          backHref={`/section?title=${encodeURIComponent("Структура Аппарата")}`}
+        />
+      );
+    }
+
     const noGoldUnderline =
       title === "Представительство в Совете Федерации" ||
       title === "Депутатские фракции" ||
@@ -640,6 +710,158 @@ export default function SectionPage() {
                 />
               </div>
               <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (title === "Структура Аппарата" || title === "Аппарат") {
+      const toSectionHref = (t) => `/section?title=${encodeURIComponent(String(t || "").trim())}`;
+      const nodeSub = (key) => APPARATUS_NODE_SUBTITLES?.[key] || "";
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <h1 className="no-gold-underline">Структура Аппарата</h1>
+                <div className="office-chart card">
+                  <div className="office-chart__scroll" aria-label="Структура аппарата">
+                    <div className="office-chart__grid" role="img" aria-label="Организационная структура аппарата">
+                      <div className="office-chart__top">
+                        <a
+                          className="office-chart__node office-chart__node--top office-chart__node--link"
+                          href={toSectionHref("Руководитель Аппарата")}
+                        >
+                          <div className="office-chart__node-title">
+                            Руководитель Аппарата Верховного Хурала (парламента) Республики Тыва
+                          </div>
+                          {nodeSub("Руководитель Аппарата") ? (
+                            <div className="office-chart__node-sub">{nodeSub("Руководитель Аппарата")}</div>
+                          ) : null}
+                        </a>
+                      </div>
+
+                      <div className="office-chart__wires" aria-hidden="true">
+                        <span className="office-chart__wire office-chart__wire--stem" />
+                        <span className="office-chart__wire office-chart__wire--h" />
+                        <span className="office-chart__wire office-chart__wire--v-left" />
+                        <span className="office-chart__wire office-chart__wire--v-center" />
+                        <span className="office-chart__wire office-chart__wire--v-right" />
+                      </div>
+
+                      <div className="office-chart__col office-chart__col--left">
+                        <a
+                          className="office-chart__node office-chart__node--link"
+                          href={toSectionHref("Заместитель Руководителя Аппарата")}
+                        >
+                          <div className="office-chart__node-title">
+                            Заместитель руководителя Аппарата Верховного Хурала – начальник организационного
+                            управления Аппарата ВХ РТ
+                          </div>
+                          {nodeSub("Заместитель Руководителя Аппарата") ? (
+                            <div className="office-chart__node-sub">{nodeSub("Заместитель Руководителя Аппарата")}</div>
+                          ) : null}
+                        </a>
+                        <div className="office-chart__stack office-chart__stack--down">
+                          <a
+                            className="office-chart__node office-chart__node--link"
+                            href={toSectionHref("Организационное управление")}
+                          >
+                            <div className="office-chart__node-title">Организационное управление Аппарата ВХ РТ</div>
+                            {nodeSub("Организационное управление") ? (
+                              <div className="office-chart__node-sub">{nodeSub("Организационное управление")}</div>
+                            ) : null}
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="office-chart__col office-chart__col--center">
+                        <div className="office-chart__stack">
+                          <a
+                            className="office-chart__node office-chart__node--link"
+                            href={toSectionHref("Государственно-правовое управление")}
+                          >
+                            <div className="office-chart__node-title">Государственно-правовое управление Аппарата ВХ РТ</div>
+                          </a>
+                          <a className="office-chart__node office-chart__node--link" href={toSectionHref("Управление делами")}>
+                            <div className="office-chart__node-title">Управление делами Аппарата ВХ РТ</div>
+                          </a>
+                          <a
+                            className="office-chart__node office-chart__node--link"
+                            href={toSectionHref("Информационно-аналитическое управление")}
+                          >
+                            <div className="office-chart__node-title">Информационно-аналитическое управление</div>
+                          </a>
+                          <a
+                            className="office-chart__node office-chart__node--link"
+                            href={toSectionHref("Управление финансов, бухгалтерского учета и отчетности")}
+                          >
+                            <div className="office-chart__node-title">
+                              Управление финансов, бухгалтерского учета и отчетности Аппарата ВХ РТ
+                            </div>
+                          </a>
+                          <a
+                            className="office-chart__node office-chart__node--link"
+                            href={toSectionHref("Отдел технического и программного обеспечения")}
+                          >
+                            <div className="office-chart__node-title">
+                              Отдел технического и программного обеспечения Аппарата ВХ РТ
+                            </div>
+                          </a>
+                          <a
+                            className="office-chart__node office-chart__node--link"
+                            href={toSectionHref("Отдел кадров и государственной службы")}
+                          >
+                            <div className="office-chart__node-title">
+                              Отдел кадров и государственной службы Аппарата ВХ РТ
+                            </div>
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="office-chart__col office-chart__col--right">
+                        <div className="office-chart__stack">
+                          <a
+                            className="office-chart__node office-chart__node--link"
+                            href={toSectionHref("Первый помощник Председателя")}
+                          >
+                            <div className="office-chart__node-title">
+                              Первый помощник Председателя Верховного Хурала (парламента) Республики Тыва
+                            </div>
+                            {nodeSub("Первый помощник Председателя") ? (
+                              <div className="office-chart__node-sub">{nodeSub("Первый помощник Председателя")}</div>
+                            ) : null}
+                          </a>
+                          <a
+                            className="office-chart__node office-chart__node--link"
+                            href={toSectionHref("Помощник Председателя")}
+                          >
+                            <div className="office-chart__node-title">
+                              Помощник Председателя Верховного Хурала (парламента) Республики Тыва
+                            </div>
+                            {nodeSub("Помощник Председателя") ? (
+                              <div className="office-chart__node-sub">{nodeSub("Помощник Председателя")}</div>
+                            ) : null}
+                          </a>
+                          <a
+                            className="office-chart__node office-chart__node--link"
+                            href={toSectionHref("Помощник заместителя Председателя")}
+                          >
+                            <div className="office-chart__node-title">
+                              Помощник заместителя Председателя Верховного Хурала (парламента) Республики Тыва
+                            </div>
+                            {nodeSub("Помощник заместителя Председателя") ? (
+                              <div className="office-chart__node-sub">{nodeSub("Помощник заместителя Председателя")}</div>
+                            ) : null}
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <SideNav title="Разделы" links={APPARATUS_NAV_LINKS} />
             </div>
           </div>
         </section>
