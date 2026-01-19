@@ -122,16 +122,54 @@ function normalizeServerList(payload) {
   return [];
 }
 
+function mapAppealStatusCodeToName(code) {
+  const c = String(code || "").toLowerCase();
+  if (c === "received") return "Принято";
+  if (c === "in_progress") return "В работе";
+  if (c === "responded") return "Ответ отправлен";
+  if (c === "closed") return "Закрыто";
+  return "";
+}
+
+function normalizeAppealStatus(status) {
+  if (!status) return { name: "Принято", id: null, code: null, color: null };
+  if (typeof status === "string") {
+    const mapped = mapAppealStatusCodeToName(status);
+    return { name: mapped || status, id: null, code: null, color: null };
+  }
+  if (typeof status === "number") {
+    return { name: "Принято", id: status, code: null, color: null };
+  }
+  if (typeof status === "object") {
+    const name =
+      (typeof status?.name === "string" && status.name) ||
+      (typeof status?.label === "string" && status.label) ||
+      (typeof status?.value === "string" && status.value) ||
+      mapAppealStatusCodeToName(status?.code) ||
+      (typeof status?.code === "string" && status.code) ||
+      "Принято";
+    const id = typeof status?.id === "number" ? status.id : null;
+    const code = typeof status?.code === "string" ? status.code : null;
+    const color = typeof status?.color === "string" ? status.color : null;
+    return { name, id, code, color };
+  }
+  return { name: "Принято", id: null, code: null, color: null };
+}
+
 function normalizeAppeal(a) {
   const createdAt = a?.createdAt || a?.created_at || a?.date || new Date().toISOString();
-  const status = a?.status || a?.state || "Принято";
+  const statusRaw = a?.status || a?.state || "Принято";
+  const s = normalizeAppealStatus(statusRaw);
   const number = a?.number || a?.registrationNumber || a?.regNumber || a?.id || "";
   return {
     id: String(a?.id || a?._id || number || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
     number: String(number || "").trim(),
     subject: a?.subject || a?.title || "",
     message: a?.message || a?.text || a?.content || "",
-    status: String(status),
+    status: String(s?.name || "Принято"),
+    statusId: s?.id ?? null,
+    statusCode: s?.code ?? null,
+    statusColor: s?.color ?? null,
     createdAt: String(createdAt),
     userEmail: a?.userEmail || a?.user?.email || a?.email || "",
     userName: a?.userName || a?.user?.name || a?.name || "",

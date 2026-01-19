@@ -449,6 +449,9 @@ export const AppealsApi = {
       auth: true,
     });
   },
+  async listStatuses() {
+    return apiFetch("/appeals/statuses/all", { method: "GET", auth: false });
+  },
   async listMine({ page = 1, limit = 50 } = {}) {
     const qs = new URLSearchParams();
     qs.set("page", String(page));
@@ -470,11 +473,28 @@ export const AppealsApi = {
     }
   },
   async updateStatus(id, status) {
-    return apiFetch(`/appeals/${id}/status`, {
-      method: "PATCH",
-      body: { status },
-      auth: true,
-    });
+    // Backend expects PATCH /appeals/:id with { statusId } (number)
+    let statusId = null;
+    if (typeof status === "number") {
+      statusId = status;
+    } else if (status && typeof status === "object") {
+      if (typeof status?.id === "number") statusId = status.id;
+      else if (typeof status?.value === "number") statusId = status.value;
+    } else if (typeof status === "string") {
+      const want = status.trim().toLowerCase();
+      const list = await this.listStatuses().catch(() => []);
+      const arr = Array.isArray(list) ? list : Array.isArray(list?.items) ? list.items : [];
+      const found = (arr || []).find((s) => {
+        const name = String(s?.name || "").trim().toLowerCase();
+        const code = String(s?.code || "").trim().toLowerCase();
+        return name === want || code === want;
+      });
+      if (typeof found?.id === "number") statusId = found.id;
+    }
+    if (!statusId) {
+      throw new Error("Не удалось определить ID статуса обращения");
+    }
+    return apiFetch(`/appeals/${id}`, { method: "PATCH", body: { statusId }, auth: true });
   },
 };
 

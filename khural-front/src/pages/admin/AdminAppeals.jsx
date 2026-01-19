@@ -5,6 +5,7 @@ const STATUS_OPTIONS = [
   { value: "Принято", label: "Принято", color: "gold" },
   { value: "В работе", label: "В работе", color: "blue" },
   { value: "Ответ отправлен", label: "Ответ отправлен", color: "green" },
+  { value: "Закрыто", label: "Закрыто", color: "default" },
 ];
 
 function normalizeServerList(payload) {
