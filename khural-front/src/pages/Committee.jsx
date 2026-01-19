@@ -3,10 +3,83 @@ import { useData } from "../context/DataContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { CommitteesApi } from "../api/client.js";
+import {
+  COMMITTEES_OVERRIDES_EVENT_NAME,
+  COMMITTEES_OVERRIDES_STORAGE_KEY,
+  readCommitteesOverrides,
+} from "../utils/committeesOverrides.js";
+
+function mergeCommitteesWithOverrides(base, overrides) {
+  const created = Array.isArray(overrides?.created) ? overrides.created : [];
+  const updatedById =
+    overrides?.updatedById && typeof overrides.updatedById === "object"
+      ? overrides.updatedById
+      : {};
+  const deletedIds = new Set(
+    Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []
+  );
+
+  const out = [];
+  const seen = new Set();
+
+  for (const it of Array.isArray(base) ? base : []) {
+    const idStr = String(it?.id ?? "");
+    if (!idStr) continue;
+    if (deletedIds.has(idStr)) continue;
+    const override = updatedById[idStr];
+    out.push(override ? { ...it, ...override } : it);
+    seen.add(idStr);
+  }
+
+  for (const it of created) {
+    const idStr = String(it?.id ?? "");
+    if (!idStr) continue;
+    if (deletedIds.has(idStr)) continue;
+    if (seen.has(idStr)) continue;
+    const override = updatedById[idStr];
+    out.push(override ? { ...it, ...override } : it);
+    seen.add(idStr);
+  }
+
+  return out.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
+}
 
 export default function Committee() {
-  const { committees, deputies, loading, errors, reload } = useData();
+  const { committees: committeesFromContext, deputies, loading, errors, reload } = useData();
   const [committee, setCommittee] = React.useState(null);
+  const [apiCommittees, setApiCommittees] = React.useState(null);
+  const [overridesSeq, setOverridesSeq] = React.useState(0);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      const list = await CommitteesApi.list({ all: true }).catch(() => null);
+      if (!alive) return;
+      if (Array.isArray(list)) setApiCommittees(list);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const bump = () => setOverridesSeq((x) => x + 1);
+    const onStorage = (e) => {
+      if (e?.key === COMMITTEES_OVERRIDES_STORAGE_KEY) bump();
+    };
+    window.addEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  const committees = React.useMemo(() => {
+    const base = Array.isArray(apiCommittees) ? apiCommittees : committeesFromContext;
+    return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
+  }, [apiCommittees, committeesFromContext, overridesSeq]);
   
   // Get current section from URL hash or default to "about"
   const [currentSection, setCurrentSection] = React.useState(() => {
@@ -22,7 +95,7 @@ export default function Committee() {
     const sp = new URLSearchParams(window.location.search || "");
     const id = sp.get("id");
     if (id) {
-    const c = (committees || []).find((x) => x.id === id);
+    const c = (committees || []).find((x) => String(x?.id ?? "") === String(id));
     setCommittee(c || null);
     } else {
       setCommittee(null);
@@ -34,7 +107,7 @@ export default function Committee() {
       const sp = new URLSearchParams(window.location.search || "");
       const id = sp.get("id");
       if (id) {
-      const c = (committees || []).find((x) => x.id === id);
+      const c = (committees || []).find((x) => String(x?.id ?? "") === String(id));
       setCommittee(c || null);
       } else {
         setCommittee(null);
@@ -92,7 +165,9 @@ export default function Committee() {
   // Если нет id - показываем список комитетов
   if (!committee) {
     const getChairman = (c) => {
-      if (!c || !Array.isArray(c.members)) return null;
+      if (!c) return null;
+      if (typeof c.head === "string" && c.head.trim()) return c.head.trim();
+      if (!Array.isArray(c.members)) return null;
       const chairman = c.members.find((m) => 
         m && m.role && typeof m.role === "string" && m.role.toLowerCase().includes("председатель")
       );
@@ -116,9 +191,19 @@ export default function Committee() {
                   {(committees || []).filter((c) => c && c.id && (c.name || c.title)).map((c) => {
                     const chairman = getChairman(c);
                     const title = typeof c.name === "string" ? c.name : (typeof c.title === "string" ? c.title : "Комитет");
+                    const desc =
+                      (typeof c.shortDescription === "string" && c.shortDescription.trim())
+                        ? c.shortDescription.trim()
+                        : (typeof c.description === "string" && c.description.trim())
+                          ? c.description.trim()
+                          : "";
+                    const phone = typeof c.phone === "string" ? c.phone.trim() : "";
+                    const email = typeof c.email === "string" ? c.email.trim() : "";
+                    const address = typeof c.address === "string" ? c.address.trim() : "";
+                    const website = typeof c.website === "string" ? c.website.trim() : "";
                     return (
                       <a
-                        key={c.id}
+                        key={String(c.id)}
                         href={`/committee?id=${encodeURIComponent(String(c.id))}`}
                         className="tile"
                         style={{
@@ -142,11 +227,40 @@ export default function Committee() {
                         <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14, color: "#003366", lineHeight: 1.3 }}>
                           {title}
                         </div>
+                        {desc ? (
+                          <div style={{ opacity: 0.8, fontSize: 13, lineHeight: 1.45, color: "#4b5563" }}>
+                            {desc.length > 180 ? `${desc.slice(0, 180)}…` : desc}
+                          </div>
+                        ) : null}
                         {chairman && typeof chairman === "string" && (
                           <div style={{ color: "#6b7280", fontSize: 14, marginTop: 10, lineHeight: 1.5 }}>
                             <strong style={{ color: "#374151" }}>Председатель:</strong> {chairman}
                           </div>
                         )}
+                        {phone || email || address || website ? (
+                          <div style={{ marginTop: 10, color: "#6b7280", fontSize: 13, lineHeight: 1.55 }}>
+                            {phone ? (
+                              <div>
+                                <strong style={{ color: "#374151" }}>Телефон:</strong> {phone}
+                              </div>
+                            ) : null}
+                            {email ? (
+                              <div>
+                                <strong style={{ color: "#374151" }}>Email:</strong> {email}
+                              </div>
+                            ) : null}
+                            {address ? (
+                              <div>
+                                <strong style={{ color: "#374151" }}>Адрес:</strong> {address}
+                              </div>
+                            ) : null}
+                            {website ? (
+                              <div>
+                                <strong style={{ color: "#374151" }}>Сайт:</strong> {website}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
                         <div style={{ marginTop: 16, color: "#003366", fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                           Подробнее <span style={{ fontSize: 16 }}>→</span>
                         </div>
@@ -193,10 +307,10 @@ export default function Committee() {
             <h1 className="h1-compact">{committee.name || committee.title}</h1>
 
             {/* Краткая информация о комитете */}
-            {committee.shortDescription && (
+            {(committee.shortDescription || committee.description) && (
               <div style={{ marginTop: 16, padding: 20, background: "#f9fafb", borderRadius: 8 }}>
                 <div style={{ fontSize: 16, lineHeight: 1.6, color: "#374151" }}>
-                  {committee.shortDescription}
+                  {committee.shortDescription || committee.description}
                 </div>
               </div>
             )}
@@ -204,6 +318,52 @@ export default function Committee() {
             {/* Контент в зависимости от выбранной секции */}
             {currentSection === "about" && (
               <>
+                {/* Контакты комитета */}
+                {(committee.phone || committee.email || committee.address || committee.website) ? (
+                  <div className="card" style={{ marginTop: 18, padding: 18 }}>
+                    <div style={{ fontWeight: 800, marginBottom: 10 }}>Контакты</div>
+                    <ul className="gov-meta" style={{ marginTop: 0 }}>
+                      {committee.phone ? (
+                        <li>
+                          <span>📞</span>
+                          <span>{committee.phone}</span>
+                        </li>
+                      ) : null}
+                      {committee.email ? (
+                        <li>
+                          <span>✉️</span>
+                          <span>{committee.email}</span>
+                        </li>
+                      ) : null}
+                      {committee.address ? (
+                        <li>
+                          <span>📍</span>
+                          <span>{committee.address}</span>
+                        </li>
+                      ) : null}
+                      {committee.website ? (
+                        <li>
+                          <span>🌐</span>
+                          <span>{committee.website}</span>
+                        </li>
+                      ) : null}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {/* Руководитель (если задан вручную в админке и нет членов) */}
+                {!leader && committee.head ? (
+                  <div style={{ marginTop: 24 }}>
+                    <h2 style={{ marginTop: 0 }}>Руководитель</h2>
+                    <div className="card" style={{ padding: 18 }}>
+                      <div style={{ fontWeight: 800, fontSize: 16 }}>{committee.head}</div>
+                      <div style={{ marginTop: 6, color: "#6b7280" }}>
+                        Руководитель комитета (указан в админке)
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 {/* Председатель */}
             {leader ? (
               <>

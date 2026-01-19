@@ -8,6 +8,8 @@ export default function AdminCommitteesList({
   selectedConvocationId,
   onConvocationChange,
   onDelete,
+  onImport,
+  importing,
   busy,
   canWrite,
 }) {
@@ -45,6 +47,11 @@ export default function AdminCommitteesList({
         <div style={{ display: "grid", gap: 6 }}>
           <div style={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
             {row.name}
+            {String(row?.id || "").startsWith("local-static-") ? (
+              <Tag color="blue">Локально (файл)</Tag>
+            ) : String(row?.id || "").startsWith("local-") ? (
+              <Tag color="blue">Локально</Tag>
+            ) : null}
             {row.isActive ? (
               <Tag color="green">Активный</Tag>
             ) : (
@@ -93,14 +100,18 @@ export default function AdminCommitteesList({
       render: (_, row) => (
         <Space wrap>
           <Button
-            disabled={!canWrite}
+            disabled={!canWrite || String(row?.id || "").startsWith("local-static-")}
             onClick={() =>
               navigate(`/admin/committees/edit/${encodeURIComponent(String(row.id))}`)
             }
           >
             Редактировать
           </Button>
-          <Button danger disabled={!canWrite} onClick={() => onDelete?.(row.id)}>
+          <Button
+            danger
+            disabled={!canWrite || String(row?.id || "").startsWith("local-static-")}
+            onClick={() => onDelete?.(row.id)}
+          >
             Удалить
           </Button>
         </Space>
@@ -142,6 +153,9 @@ export default function AdminCommitteesList({
             loading={busy}
           >
             + Добавить комитет
+          </Button>
+          <Button onClick={onImport} disabled={!canWrite || busy} loading={Boolean(importing)}>
+            Импортировать с сайта
           </Button>
         </Space>
       </div>

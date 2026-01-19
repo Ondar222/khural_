@@ -3,11 +3,85 @@ import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { CommitteesApi } from "../api/client.js";
+import {
+  COMMITTEES_OVERRIDES_EVENT_NAME,
+  COMMITTEES_OVERRIDES_STORAGE_KEY,
+  readCommitteesOverrides,
+} from "../utils/committeesOverrides.js";
+
+function mergeCommitteesWithOverrides(base, overrides) {
+  const created = Array.isArray(overrides?.created) ? overrides.created : [];
+  const updatedById =
+    overrides?.updatedById && typeof overrides.updatedById === "object"
+      ? overrides.updatedById
+      : {};
+  const deletedIds = new Set(
+    Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []
+  );
+
+  const out = [];
+  const seen = new Set();
+
+  for (const it of Array.isArray(base) ? base : []) {
+    const idStr = String(it?.id ?? "");
+    if (!idStr) continue;
+    if (deletedIds.has(idStr)) continue;
+    const override = updatedById[idStr];
+    out.push(override ? { ...it, ...override } : it);
+    seen.add(idStr);
+  }
+
+  for (const it of created) {
+    const idStr = String(it?.id ?? "");
+    if (!idStr) continue;
+    if (deletedIds.has(idStr)) continue;
+    if (seen.has(idStr)) continue;
+    const override = updatedById[idStr];
+    out.push(override ? { ...it, ...override } : it);
+    seen.add(idStr);
+  }
+
+  return out.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
+}
 
 export default function CommitteeStaffDetail() {
   const { route, navigate } = useHashRoute();
-  const { committees, loading, errors, reload } = useData();
+  const { committees: committeesFromContext, loading, errors, reload } = useData();
   const staffId = route.params?.id;
+  const [apiCommittees, setApiCommittees] = React.useState(null);
+  const [overridesSeq, setOverridesSeq] = React.useState(0);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      const list = await CommitteesApi.list({ all: true }).catch(() => null);
+      if (!alive) return;
+      if (Array.isArray(list)) setApiCommittees(list);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const bump = () => setOverridesSeq((x) => x + 1);
+    const onStorage = (e) => {
+      if (e?.key === COMMITTEES_OVERRIDES_STORAGE_KEY) bump();
+    };
+    window.addEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  const committees = React.useMemo(() => {
+    const base = Array.isArray(apiCommittees) ? apiCommittees : committeesFromContext;
+    return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
+  }, [apiCommittees, committeesFromContext, overridesSeq]);
+
   // Get committee ID from query string or hash
   const committeeId = React.useMemo(() => {
     const search = new URLSearchParams(window.location.search);
@@ -20,7 +94,7 @@ export default function CommitteeStaffDetail() {
 
   React.useEffect(() => {
     if (!committeeId || !committees) return;
-    const c = (committees || []).find((x) => x.id === committeeId);
+    const c = (committees || []).find((x) => String(x?.id ?? "") === String(committeeId));
     if (c) {
       setCommittee(c);
       const staffList = Array.isArray(c.staff) ? c.staff : [];

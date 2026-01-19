@@ -5,6 +5,7 @@ import { useData } from "../../context/DataContext.jsx";
 import { useHashRoute } from "../../Router.jsx";
 import { readDeputiesOverrides, writeDeputiesOverrides } from "./deputiesOverrides.js";
 import { toPersonsApiBody } from "../../api/personsPayload.js";
+import { APPARATUS_SECTIONS } from "../../utils/apparatusContent.js";
 
 function normKey(v) {
   return String(v || "")
@@ -73,20 +74,7 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
   const [q, setQ] = React.useState("");
   const [busyLocal, setBusyLocal] = React.useState(false);
   const [overrides, setOverrides] = React.useState(() => readDeputiesOverrides());
-  const [windowWidth, setWindowWidth] = React.useState(
-    typeof window !== 'undefined' ? window.innerWidth : 1200
-  );
-
-  // Отслеживание размера окна для адаптивности
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const isMobile = windowWidth <= 768;
-  const isTablet = windowWidth > 768 && windowWidth <= 1024;
+  const [seeded, setSeeded] = React.useState([]);
 
   React.useEffect(() => {
     const onLocal = () => setOverrides(readDeputiesOverrides());
@@ -99,8 +87,16 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
   }, []);
 
   const displayItems = React.useMemo(() => {
-    return mergeItemsWithOverrides(items, overrides);
-  }, [items, overrides]);
+    const base = Array.isArray(items) ? items : [];
+    const extra = Array.isArray(seeded) ? seeded : [];
+    const byId = new Map();
+    for (const it of [...base, ...extra]) {
+      const id = String(it?.id ?? it?._id ?? "");
+      if (!id) continue;
+      if (!byId.has(id)) byId.set(id, it);
+    }
+    return mergeItemsWithOverrides(Array.from(byId.values()), overrides);
+  }, [items, overrides, seeded]);
 
   const filtered = React.useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -119,61 +115,255 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
     writeDeputiesOverrides({ ...next, deletedIds: Array.from(deleted) });
   }, []);
 
-  const handleDelete = React.useCallback((id, fullName) => {
+  // Kept for reference; button is commented out below.
+  const syncFromCodeToApi = React.useCallback(() => {
+    if (!canWrite) return;
+    const list = Array.isArray(publicDeputies) ? publicDeputies : [];
+    if (!list.length) {
+      message.error("Локальные данные депутатов не найдены (public/data/deputies.json)");
+      return;
+    }
+
     Modal.confirm({
-      title: 'Удалить депутата?',
-      content: `Вы уверены, что хотите удалить депутата "${fullName || 'без имени'}"?`,
-      okText: 'Удалить',
-      okType: 'danger',
-      cancelText: 'Отмена',
+      title: "Синхронизировать депутатов в API?",
+      content:
+        "Возьмём данные из кода (public/data/deputies.json) и создадим отсутствующих депутатов в базе через API. Это нужно для прода, чтобы CRUD работал через сервер.",
+      okText: "Синхронизировать",
+      cancelText: "Отмена",
       onOk: async () => {
-        if (!id) return;
         setBusyLocal(true);
         try {
-          await PersonsApi.remove(id);
-          message.success("Депутат удалён");
-        } catch {
-          message.warning("Удалено локально (сервер недоступен или нет прав)");
-        } finally {
-          deleteLocal(id);
+          const server = await PersonsApi.list().catch(() => []);
+          const serverList = Array.isArray(server) ? server : [];
+          const existing = new Set(
+            serverList.map(
+              (p) =>
+                `${normKey(p?.fullName || p?.full_name || p?.name)}|${normKey(
+                  p?.electoralDistrict || p?.electoral_district || p?.district
+                )}`
+            )
+          );
+
+          let createdCount = 0;
+          let skippedCount = 0;
+          let photoCount = 0;
+          let failedCount = 0;
+
+          for (const d of list) {
+            const fullName = d?.fullName || d?.name || "";
+            const district = d?.electoralDistrict || d?.electoral_district || d?.district || "";
+            const k = `${normKey(fullName)}|${normKey(district)}`;
+            if (!normKey(fullName)) {
+              skippedCount += 1;
+              continue;
+            }
+            if (existing.has(k)) {
+              skippedCount += 1;
+              continue;
+            }
+
+            const body = toPersonsApiBody({
+              fullName,
+              electoralDistrict: district,
+              faction: d?.faction || "",
+              phoneNumber: d?.phoneNumber || d?.contacts?.phone || "",
+              email: d?.email || d?.contacts?.email || "",
+              address: d?.address || "",
+              biography: d?.biography || d?.bio || "",
+              description: d?.description || d?.position || "",
+              convocationNumber: d?.convocationNumber || d?.convocation || "",
+              structureType: d?.structureType || "",
+              role: d?.role || "",
+              receptionSchedule: d?.receptionSchedule || toReceptionScheduleText(d?.schedule),
+              legislativeActivity: Array.isArray(d?.legislativeActivity)
+                ? d.legislativeActivity
+                : toLegislativeActivity(d?.laws),
+              incomeDeclarations: Array.isArray(d?.incomeDeclarations) ? d.incomeDeclarations : [],
+            });
+
+            try {
+              const created = await PersonsApi.create(body);
+              const createdId = created?.id ?? created?._id ?? created?.personId;
+              createdCount += 1;
+              existing.add(k);
+
+              const photo = d?.photo || d?.image?.link || "";
+              if (createdId && photo) {
+                try {
+                  const abs = new URL(String(photo), window.location.origin).toString();
+                  const res = await fetch(abs);
+                  if (res.ok) {
+                    const blob = await res.blob();
+                    const ext = blob.type && blob.type.includes("/") ? blob.type.split("/")[1] : "jpg";
+                    const file = new File([blob], `photo.${ext}`, { type: blob.type || "image/jpeg" });
+                    await PersonsApi.uploadMedia(createdId, file);
+                    photoCount += 1;
+                  }
+                } catch {
+                  // ignore photo errors
+                }
+              }
+            } catch (e) {
+              failedCount += 1;
+              console.warn("Seed person failed", e);
+            }
+          }
+
+          message.success(
+            `Готово: создано ${createdCount}, пропущено ${skippedCount}, фото ${photoCount}, ошибок ${failedCount}`
+          );
           reloadPublicData();
+        } finally {
           setBusyLocal(false);
         }
       },
     });
-  }, [deleteLocal, message, reloadPublicData]);
+  }, [canWrite, message, publicDeputies, reloadPublicData]);
+
+  const importApparatusToApi = React.useCallback(() => {
+    if (!canWrite) return;
+
+    const mapByName = new Map();
+    const sections = APPARATUS_SECTIONS && typeof APPARATUS_SECTIONS === "object" ? APPARATUS_SECTIONS : {};
+    for (const key of Object.keys(sections)) {
+      const people = sections?.[key]?.people;
+      if (!Array.isArray(people)) continue;
+      for (const p of people) {
+        const fullName = String(p?.name || "").trim();
+        if (!fullName) continue;
+        const k = normKey(fullName);
+        if (!k) continue;
+        if (!mapByName.has(k)) mapByName.set(k, { section: key, ...p, fullName });
+      }
+    }
+    const list = Array.from(mapByName.values());
+
+    if (!list.length) {
+      message.error("В данных Аппарата не найдено сотрудников для импорта");
+      return;
+    }
+
+    Modal.confirm({
+      title: "Импортировать сотрудников Аппарата в API?",
+      content:
+        "Создадим в базе отсутствующих людей из структуры Аппарата. Если человек с таким ФИО уже существует — пропустим (без дублей).",
+      okText: "Импортировать",
+      cancelText: "Отмена",
+      onOk: async () => {
+        setBusyLocal(true);
+        try {
+          const server = await PersonsApi.list().catch(() => []);
+          const serverList = Array.isArray(server) ? server : [];
+          const existingByName = new Set(
+            serverList.map((p) => normKey(p?.fullName || p?.full_name || p?.name))
+          );
+
+          let createdCount = 0;
+          let skippedCount = 0;
+          let failedCount = 0;
+          let photoCount = 0;
+          const createdItems = [];
+
+          for (const p of list) {
+            const fullName = String(p?.fullName || "").trim();
+            const key = normKey(fullName);
+            if (!key) {
+              skippedCount += 1;
+              continue;
+            }
+            if (existingByName.has(key)) {
+              skippedCount += 1;
+              continue;
+            }
+
+            const position = String(p?.role || "").trim();
+            const body = toPersonsApiBody({
+              fullName,
+              electoralDistrict: "",
+              faction: "",
+              phoneNumber: String(p?.phone || "").replace(/\u00A0/g, " ").trim(),
+              email: String(p?.email || "").trim(),
+              address: String(p?.address || "").trim(),
+              biography: "",
+              description: position,
+              convocationNumber: "",
+              structureType: "apparatus",
+              role: "",
+              receptionSchedule: "",
+              legislativeActivity: [],
+              incomeDeclarations: [],
+            });
+
+            try {
+              const created = await PersonsApi.create(body);
+              createdCount += 1;
+              createdItems.push(created);
+              existingByName.add(key);
+
+              const createdId = created?.id ?? created?._id ?? created?.personId;
+              const photo = String(p?.photo || "").trim();
+              if (createdId && photo) {
+                try {
+                  const abs = new URL(photo, window.location.origin).toString();
+                  const res = await fetch(abs);
+                  if (res.ok) {
+                    const blob = await res.blob();
+                    const ext = blob.type && blob.type.includes("/") ? blob.type.split("/")[1] : "jpg";
+                    const file = new File([blob], `photo.${ext}`, { type: blob.type || "image/jpeg" });
+                    await PersonsApi.uploadMedia(createdId, file);
+                    photoCount += 1;
+                  }
+                } catch {
+                  // ignore photo errors
+                }
+              }
+            } catch (e) {
+              failedCount += 1;
+              console.warn("Import apparatus person failed", e);
+            }
+          }
+
+          if (createdItems.length) {
+            setSeeded((prev) => {
+              const next = Array.isArray(prev) ? prev.slice() : [];
+              for (const it of createdItems) {
+                const id = String(it?.id ?? it?._id ?? "");
+                if (!id) continue;
+                if (next.some((x) => String(x?.id ?? x?._id ?? "") === id)) continue;
+                next.push(it);
+              }
+              return next;
+            });
+          }
+
+          message.success(
+            `Готово: создано ${createdCount}, пропущено ${skippedCount}, фото ${photoCount}, ошибок ${failedCount}`
+          );
+          reloadPublicData();
+        } finally {
+          setBusyLocal(false);
+        }
+      },
+    });
+  }, [canWrite, message, reloadPublicData]);
 
   const columns = [
     {
-      title: "№",
-      key: "index",
-      width: 80,
-      align: 'center',
-      render: (_, __, index) => (
-        <span style={{ textAlign: 'center', display: 'block' }}>
-          {index + 1}
-        </span>
-      ),
-    },
-    {
       title: "ФИО",
       dataIndex: "fullName",
-      align: 'center',
-      render: (_, row) => <span style={{ textAlign: 'center', display: 'block' }}>{row.fullName || row.full_name || row.name || "—"}</span>,
+      render: (_, row) => row.fullName || row.full_name || row.name || "—",
     },
     {
       title: "Фракция",
       dataIndex: "faction",
       width: 180,
-      align: 'center',
-      render: (v) => <span style={{ textAlign: 'center', display: 'block' }}>{v || "—"}</span>,
+      render: (v) => v || "—",
     },
     {
       title: "Округ",
       dataIndex: "electoralDistrict",
       width: 200,
-      align: 'center',
-      render: (_, row) => <span style={{ textAlign: 'center', display: 'block' }}>{row.electoralDistrict || row.electoral_district || row.district || "—"}</span>,
+      render: (_, row) => row.electoralDistrict || row.electoral_district || row.district || "—",
     },
     {
       title: "Действия",
@@ -182,7 +372,6 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
       render: (_, row) => (
         <Space wrap>
           <Button
-            size={isTablet ? "small" : "middle"}
             disabled={!canWrite}
             onClick={() => navigate(`/admin/deputies/edit/${encodeURIComponent(String(row.id))}`)}
           >
@@ -190,9 +379,22 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
           </Button>
           <Button
             danger
-            size={isTablet ? "small" : "middle"}
             disabled={!canWrite}
-            onClick={() => handleDelete(row.id, row.fullName || row.full_name || row.name)}
+            onClick={async () => {
+              const id = String(row?.id ?? "");
+              if (!id) return;
+              setBusyLocal(true);
+              try {
+                await PersonsApi.remove(id);
+                message.success("Депутат удалён");
+              } catch {
+                message.warning("Удалено локально (сервер недоступен или нет прав)");
+              } finally {
+                deleteLocal(id);
+                reloadPublicData();
+                setBusyLocal(false);
+              }
+            }}
           >
             Удалить
           </Button>
@@ -201,186 +403,14 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
     },
   ];
 
-  // Адаптивные карточки для мобильных
-  if (isMobile) {
-    return (
-      <div className="admin-grid" style={{
-        maxWidth: '100%',
-        width: '100%',
-        margin: 0,
-        padding: 0,
-        overflowX: 'hidden',
-        boxSizing: 'border-box',
-      }}>
-        <div className="admin-card admin-toolbar" style={{
-          padding: '16px',
-          marginBottom: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-        }}>
-          <Input
-            placeholder="Поиск по ФИО..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="admin-input"
-            size="large"
-            style={{ width: '100%' }}
-          />
-          <Button
-            type="primary"
-            onClick={() => navigate("/admin/deputies/create")}
-            disabled={!canWrite}
-            loading={busy}
-            block
-            size="large"
-            style={{ fontWeight: 600 }}
-          >
-            + Добавить депутата
-          </Button>
-        </div>
-
-        {filtered.length === 0 ? (
-          <div className="admin-card" style={{
-            padding: '32px 16px',
-            textAlign: 'center',
-            opacity: 0.6,
-          }}>
-            {q ? 'Депутаты не найдены' : 'Депутаты отсутствуют'}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {filtered.map((row, index) => (
-              <div
-                key={String(row.id)}
-                className="admin-card"
-                style={{
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px',
-                  borderRadius: '12px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  marginBottom: '4px',
-                  flexWrap: 'wrap',
-                }}>
-                  <span style={{
-                    opacity: 0.6,
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    flexShrink: 0,
-                  }}>№{index + 1}</span>
-                  <div style={{
-                    fontWeight: 800,
-                    fontSize: '16px',
-                    lineHeight: 1.3,
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    textAlign: 'center',
-                    flex: 1,
-                    minWidth: 0,
-                  }}>
-                    {row.fullName || row.full_name || row.name || "—"}
-                  </div>
-                </div>
-
-                {(row.faction || row.electoralDistrict || row.electoral_district || row.district) && (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                    paddingTop: '12px',
-                    borderTop: '1px solid rgba(0,0,0,0.08)',
-                    fontSize: '14px',
-                  }}>
-                    {row.faction && (
-                      <div style={{
-                        opacity: 0.75,
-                        textAlign: 'center',
-                      }}>
-                        <strong>Фракция:</strong> {row.faction}
-                      </div>
-                    )}
-                    {(row.electoralDistrict || row.electoral_district || row.district) && (
-                      <div style={{
-                        opacity: 0.75,
-                        textAlign: 'center',
-                      }}>
-                        <strong>Округ:</strong> {row.electoralDistrict || row.electoral_district || row.district}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px',
-                  justifyContent: 'center',
-                  marginTop: '8px',
-                }}>
-                  <Button
-                    size="small"
-                    disabled={!canWrite}
-                    onClick={() => navigate(`/admin/deputies/edit/${encodeURIComponent(String(row.id))}`)}
-                    style={{ flex: '1 1 calc(50% - 4px)' }}
-                  >
-                    Редактировать
-                  </Button>
-                  <Button
-                    danger
-                    size="small"
-                    disabled={!canWrite}
-                    onClick={() => handleDelete(row.id, row.fullName || row.full_name || row.name)}
-                    style={{ flex: '1 1 calc(50% - 4px)' }}
-                  >
-                    Удалить
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="admin-grid" style={{
-      maxWidth: '100%',
-      width: '100%',
-      margin: 0,
-      padding: 0,
-      overflowX: 'hidden',
-      boxSizing: 'border-box',
-    }}>
-      <div className="admin-card admin-toolbar" style={{
-        padding: isTablet ? '16px' : '20px 24px',
-        marginBottom: '16px',
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: '12px',
-        alignItems: isMobile ? 'stretch' : 'center',
-      }}>
+    <div className="admin-grid">
+      <div className="admin-card admin-toolbar">
         <Input
           placeholder="Поиск по ФИО..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"
-          size={isTablet ? "middle" : "large"}
-          style={{
-            flex: 1,
-            maxWidth: isMobile ? '100%' : '400px',
-            width: '100%',
-          }}
         />
         <Space wrap>
           <Button
@@ -388,34 +418,22 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
             onClick={() => navigate("/admin/deputies/create")}
             disabled={!canWrite}
             loading={busy}
-            size={isTablet ? "middle" : "large"}
-            style={{ fontWeight: 600 }}
           >
             + Добавить депутата
           </Button>
+          <Button onClick={importApparatusToApi} disabled={!canWrite} loading={Boolean(busyLocal)}>
+            Импортировать Аппарат
+          </Button>
+          {/* <Button onClick={syncFromCodeToApi} disabled={!canWrite} loading={Boolean(busyLocal)}>
+            Синхронизировать из кода в API
+          </Button> */}
         </Space>
       </div>
 
-      <div className="admin-card admin-table" style={{
-        padding: 0,
-        overflowX: 'auto',
-        maxWidth: '100%',
-        boxSizing: 'border-box',
-      }}>
-        <Table
-          rowKey={(r) => String(r.id)}
-          columns={columns}
-          dataSource={filtered}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: !isTablet,
-            showQuickJumper: !isTablet,
-            size: isTablet ? 'small' : 'default',
-          }}
-          scroll={isTablet ? { x: 'max-content' } : undefined}
-          size={isTablet ? 'small' : 'middle'}
-        />
+      <div className="admin-card admin-table">
+        <Table rowKey={(r) => String(r.id)} columns={columns} dataSource={filtered} pagination={{ pageSize: 10 }} />
       </div>
     </div>
   );
 }
+

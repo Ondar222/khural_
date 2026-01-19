@@ -21,6 +21,11 @@ import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 import { toPersonsApiBody } from "../api/personsPayload.js";
 import { addCreatedEvent, updateEventOverride, addDeletedEventId } from "../utils/eventsOverrides.js";
 import { addCreatedSlide, updateSlideOverride, addDeletedSlideId, setSliderOrder } from "../utils/sliderOverrides.js";
+import {
+  COMMITTEES_OVERRIDES_EVENT_NAME,
+  readCommitteesOverrides,
+  writeCommitteesOverrides,
+} from "../utils/committeesOverrides.js";
 
 function toNewsFallback(items) {
   return (items || []).map((n) => ({
@@ -231,6 +236,36 @@ function mapDocType(type) {
   return type || "other";
 }
 
+function mergeCommitteesWithOverrides(base, overrides) {
+  const created = Array.isArray(overrides?.created) ? overrides.created : [];
+  const updatedById =
+    overrides?.updatedById && typeof overrides.updatedById === "object"
+      ? overrides.updatedById
+      : {};
+  const deleted = new Set(
+    (Array.isArray(overrides?.deletedIds) ? overrides.deletedIds : []).map(String)
+  );
+
+  const list = Array.isArray(base) ? base.slice() : [];
+  const mergedBase = list
+    .filter((c) => !deleted.has(String(c?.id ?? "")))
+    .map((c) => {
+      const id = String(c?.id ?? "");
+      const upd = id && updatedById[id] ? updatedById[id] : null;
+      return upd ? { ...c, ...upd } : c;
+    });
+
+  const createdFiltered = created.filter((c) => !deleted.has(String(c?.id ?? "")));
+  const byId = new Map();
+  for (const c of mergedBase) byId.set(String(c?.id ?? ""), c);
+  for (const c of createdFiltered) {
+    const id = String(c?.id ?? "");
+    if (!id || byId.has(id)) continue;
+    byId.set(id, c);
+  }
+  return Array.from(byId.values()).sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
+}
+
 export function useAdminData() {
   const { message } = App.useApp();
   const data = useData();
@@ -266,6 +301,30 @@ export function useAdminData() {
   const [pages, setPages] = React.useState([]);
 
   const canWrite = isAuthenticated;
+
+  // Track whether committees list endpoint is healthy; if not, keep local fallback in sync.
+  const committeesApiOkRef = React.useRef(true);
+
+  const publicCommitteesFallback = React.useCallback(() => {
+    const fb = fallbackRef.current || {};
+    const list = Array.isArray(fb.committees) ? fb.committees : [];
+    return list.map((c, idx) => {
+      const title = String(c?.title || c?.name || "").trim();
+      const short =
+        title.length <= 255
+          ? title
+          : (title.split(",")[0] || title).trim().slice(0, 252).trimEnd() + "…";
+      return {
+        id: `local-static-${String(c?.id || idx)}`,
+        name: short || title || `Комитет ${idx + 1}`,
+        description: title && short && title !== short ? title : "",
+        isActive: true,
+        order: idx,
+        // keep original payload for potential future sync
+        __source: c,
+      };
+    });
+  }, []);
 
   React.useEffect(() => {
     document.body.classList.add("admin-mode");
@@ -312,15 +371,42 @@ export function useAdminData() {
     const apiAppeals = normalizeServerList(apiAppealsResponse);
     setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
     setConvocations(Array.isArray(apiConvocations) ? apiConvocations : []);
-    setCommittees(Array.isArray(apiCommittees) ? apiCommittees : []);
+    committeesApiOkRef.current = Array.isArray(apiCommittees);
+    const baseCommittees = committeesApiOkRef.current ? apiCommittees : publicCommitteesFallback();
+    setCommittees(mergeCommitteesWithOverrides(baseCommittees, readCommitteesOverrides()));
     const pagesList = normalizeServerList(apiPages);
     setPages(Array.isArray(pagesList) ? pagesList : []);
-  }, []);
+  }, [publicCommitteesFallback]);
 
   React.useEffect(() => {
     // Load once on mount to avoid spamming the API (429).
     loadAll();
   }, [loadAll]);
+
+  // If API is down and DataContext committees load later, refresh local fallback once.
+  React.useEffect(() => {
+    if (committeesApiOkRef.current) return;
+    const fbList = publicCommitteesFallback();
+    if (!fbList.length) return;
+    setCommittees((prev) =>
+      Array.isArray(prev) && prev.length
+        ? prev
+        : mergeCommitteesWithOverrides(fbList, readCommitteesOverrides())
+    );
+  }, [data?.committees, publicCommitteesFallback]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const apply = () => {
+      setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
+    };
+    window.addEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, apply);
+    window.addEventListener("storage", apply);
+    return () => {
+      window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, apply);
+      window.removeEventListener("storage", apply);
+    };
+  }, []);
 
   const toggleTheme = React.useCallback(() => {
     const next = themeMode === "light" ? "dark" : "light";
@@ -940,14 +1026,34 @@ export function useAdminData() {
   const createCommittee = React.useCallback(async (payload) => {
     setBusy(true);
     try {
-      await CommitteesApi.create(payload);
+      const created = await CommitteesApi.create(payload);
       message.success("Комитет создан");
       await reload();
+      return created;
     } catch (error) {
+      // Fallback: save locally when API is down (500, network, etc.)
       console.error("Ошибка создания комитета:", error);
-      const errorMessage = error?.data?.message || error?.message || "Ошибка создания комитета";
-      message.error(`Не удалось создать комитет: ${errorMessage}`);
-      throw error;
+      const id = `local-${Date.now()}`;
+      const next = {
+        id,
+        name: String(payload?.name || "").trim() || "Комитет",
+        description: String(payload?.description || ""),
+        phone: payload?.phone || "",
+        email: payload?.email || "",
+        address: payload?.address || "",
+        website: payload?.website || "",
+        head: payload?.head || "",
+        isActive: payload?.isActive !== false,
+        order: payload?.order ?? Date.now(),
+      };
+      const ov = readCommitteesOverrides();
+      writeCommitteesOverrides({
+        ...ov,
+        created: [...(Array.isArray(ov.created) ? ov.created : []), next],
+      });
+      setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
+      message.warning("Сервер вернул 500. Комитет сохранён локально.");
+      return next;
     } finally {
       setBusy(false);
     }
@@ -956,6 +1062,20 @@ export function useAdminData() {
   const updateCommittee = React.useCallback(async (id, payload) => {
     setBusy(true);
     try {
+      const sid = String(id);
+      if (sid.startsWith("local-") || sid.startsWith("local-static-")) {
+        const ov = readCommitteesOverrides();
+        const updatedById =
+          ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
+        writeCommitteesOverrides({
+          ...ov,
+          updatedById: { ...updatedById, [sid]: { ...payload } },
+        });
+        setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
+        message.success("Комитет обновлён (локально)");
+        return;
+      }
+
       await CommitteesApi.patch(id, payload);
       message.success("Комитет обновлён");
       await reload();
@@ -967,6 +1087,19 @@ export function useAdminData() {
   const deleteCommittee = React.useCallback(async (id) => {
     setBusy(true);
     try {
+      const sid = String(id);
+      if (sid.startsWith("local-") || sid.startsWith("local-static-")) {
+        const ov = readCommitteesOverrides();
+        const deletedIds = Array.isArray(ov.deletedIds) ? ov.deletedIds : [];
+        writeCommitteesOverrides({
+          ...ov,
+          deletedIds: [...new Set([...deletedIds, sid])],
+        });
+        setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
+        message.success("Комитет удалён (локально)");
+        return;
+      }
+
       await CommitteesApi.remove(id);
       message.success("Комитет удалён");
       await reload();
@@ -1036,6 +1169,7 @@ export function useAdminData() {
     pages,
     stats,
     apiBase,
+    reload,
     
     // CRUD News
     createNews,

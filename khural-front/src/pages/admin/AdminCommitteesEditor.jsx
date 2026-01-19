@@ -105,6 +105,12 @@ export default function AdminCommitteesEditor({
       if (values.address?.trim()) {
         payload.address = values.address.trim();
       }
+      if (values.website?.trim()) {
+        payload.website = values.website.trim();
+      }
+      if (values.head?.trim()) {
+        payload.head = values.head.trim();
+      }
       
       // ВАЖНО: Не отправляем convocationId, т.к. бэкенд может его не поддерживать
       // и это вызывает 500 ошибку. Поле можно будет добавить позже, когда бэкенд будет готов.
@@ -121,6 +127,8 @@ export default function AdminCommitteesEditor({
         phone: payload.phone ? typeof payload.phone : "undefined",
         email: payload.email ? typeof payload.email : "undefined",
         address: payload.address ? typeof payload.address : "undefined",
+        website: payload.website ? typeof payload.website : "undefined",
+        head: payload.head ? typeof payload.head : "undefined",
       });
       console.log("[AdminCommitteesEditor] Payload size:", JSON.stringify(payload).length, "bytes");
       
