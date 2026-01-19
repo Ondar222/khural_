@@ -15,6 +15,30 @@ const STATUS_OPTIONS = [
   { value: "all", label: "Все" },
 ];
 
+function normalizeConvocationToken(raw) {
+  const s = String(raw || "").replace(/\u00A0/g, " ").trim();
+  if (!s) return "";
+  if (s.toLowerCase() === "все") return "Все";
+  // Strip common words to avoid "VIII созыв созыв"
+  const cleaned = s
+    .replace(/\(.*?\)/g, " ")
+    .replace(/архив/gi, " ")
+    .replace(/созыв(а|ы)?/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const roman = cleaned.match(/\b([IVX]{1,8})\b/i);
+  if (roman) return roman[1].toUpperCase();
+  const num = cleaned.match(/\b(\d{1,2})\b/);
+  if (num) return num[1];
+  return cleaned;
+}
+
+function formatConvocationLabel(token) {
+  if (token === "Все") return "Все созывы";
+  if (!token) return "Без созыва";
+  return `${token} созыв`;
+}
+
 function safeParse(json) {
   try {
     return JSON.parse(json);
@@ -273,29 +297,23 @@ export default function DeputiesV2() {
     const list = Array.isArray(d?.convocations) ? d.convocations : [];
     const stringItems = list
       .map((x) => (typeof x === "string" ? x : x?.name || x?.title || x?.label || ""))
-      .map((x) => String(x || "").trim())
+      .map((x) => normalizeConvocationToken(x))
       .filter(Boolean);
-    const fallback = String(d?.convocation || "").trim();
-    const out = [...new Set([...stringItems, ...(fallback ? [fallback] : [])])];
+    const fallback = normalizeConvocationToken(d?.convocation || d?.convocationNumber || d?.convocation_number || "");
+    const out = [...new Set([...stringItems, ...(fallback ? [fallback] : [])])].filter(Boolean);
     return out;
   }, []);
 
   const isEndedDeputy = React.useCallback((d) => Boolean(d?.mandateEnded || d?.isDeceased), []);
 
   // Filters per structure
+  // Default: show all deputies (all convocations, all statuses).
   const [convocation, setConvocation] = React.useState("Все");
   const [committeeId, setCommitteeId] = React.useState("Все");
   const [faction, setFaction] = React.useState("Все");
   const [district, setDistrict] = React.useState("Все");
   const [openConv, setOpenConv] = React.useState(false);
-  const [status, setStatus] = React.useState("active");
-
-  React.useEffect(() => {
-    if (convocation === "Все") return;
-    if (!Array.isArray(deputies) || deputies.length === 0) return;
-    const hasAny = deputies.some((d) => getDeputyConvocations(d).includes(convocation));
-    if (!hasAny) setConvocation("Все");
-  }, [convocation, deputies, getDeputyConvocations]);
+  const [status, setStatus] = React.useState("all");
 
   const districts = React.useMemo(() => {
     const items = Array.isArray(structureDistricts) ? structureDistricts : [];
@@ -311,15 +329,42 @@ export default function DeputiesV2() {
 
   const convocations = React.useMemo(() => {
     const items = Array.isArray(structureConvocations) ? structureConvocations : [];
-    const stringItems = items
+    const fromStructure = items
       .map((item) => {
         if (typeof item === "string") return item;
         if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
         return String(item || "");
       })
-      .filter((item) => item && item.trim() !== "");
-    return ["Все", ...stringItems];
-  }, [structureConvocations]);
+      .map((x) => normalizeConvocationToken(x))
+      .filter((x) => x && x !== "Все");
+
+    const fromDeputies = [];
+    const list = Array.isArray(deputies) ? deputies : [];
+    for (const d of list) {
+      const ds = getDeputyConvocations(d);
+      ds.forEach((c) => {
+        const tok = normalizeConvocationToken(c);
+        if (tok && tok !== "Все") fromDeputies.push(tok);
+      });
+    }
+
+    const set = new Set([...fromStructure, ...fromDeputies]);
+    const preferred = CONVOCATION_ORDER.filter((c) => c !== "Все" && set.has(c));
+    const rest = Array.from(set).filter((c) => !preferred.includes(c)).sort();
+    return ["Все", ...preferred, ...rest];
+  }, [structureConvocations, deputies, getDeputyConvocations]);
+
+  // Ensure selected convocation exists in data; otherwise fallback gracefully.
+  React.useEffect(() => {
+    if (!Array.isArray(deputies) || deputies.length === 0) return;
+    if (convocation === "Все") return;
+    const hasAny = deputies.some((d) => getDeputyConvocations(d).includes(convocation));
+    if (hasAny) return;
+
+    const available = (Array.isArray(convocations) ? convocations : []).filter((c) => c && c !== "Все");
+    const fallback = available.includes("VIII") ? "VIII" : available[0] || "Все";
+    setConvocation(fallback);
+  }, [convocation, deputies, getDeputyConvocations, convocations]);
 
   const factions = React.useMemo(() => {
     const items = Array.isArray(structureFactions) ? structureFactions : [];
@@ -338,7 +383,7 @@ export default function DeputiesV2() {
     const ordered = CONVOCATION_ORDER.filter((x) => av.includes(x));
     return ordered.map((c) => ({
       key: c,
-      label: c === "Все" ? "Все созывы" : `${c} созыв`,
+      label: formatConvocationLabel(c),
       onClick: () => {
         setConvocation(c);
         setOpenConv(false);
@@ -381,42 +426,40 @@ export default function DeputiesV2() {
   }, [deputies, status, faction, district, committeeMatcher, isEndedDeputy]);
 
   const filteredByConvocation = React.useMemo(() => {
-    if (convocation === "Все") return filtered;
-    return filtered.filter((d) => getDeputyConvocations(d).includes(convocation));
-  }, [filtered, convocation, getDeputyConvocations]);
+    const base = Array.isArray(filtered) ? filtered : [];
+    const list = convocation === "Все" ? base : base.filter((d) => getDeputyConvocations(d).includes(convocation));
 
-  const groupedByConvocation = React.useMemo(() => {
-    if (convocation !== "Все") return null;
-    const list = Array.isArray(filtered) ? filtered : [];
-    const convs = (Array.isArray(convocations) ? convocations : []).filter((c) => c && c !== "Все");
-    const preferred = CONVOCATION_ORDER.filter((c) => c !== "Все" && convs.includes(c));
-    const rest = convs.filter((c) => !preferred.includes(c)).sort();
-    const ordered = [...preferred, ...rest];
-
-    const by = new Map();
-    ordered.forEach((c) => by.set(c, []));
-    by.set("Без созыва", []);
-
-    for (const d of list) {
+    // Stable, nice ordering: by convocation (VIII..I), then by name.
+    const order = CONVOCATION_ORDER.filter((x) => x !== "Все");
+    const rankOf = (c) => {
+      const idx = order.indexOf(String(c || ""));
+      return idx === -1 ? 999 : idx;
+    };
+    const getBestConv = (d) => {
       const ds = getDeputyConvocations(d);
-      if (!ds.length) {
-        by.get("Без созыва").push(d);
-        continue;
+      if (!ds || ds.length === 0) return "";
+      // pick best (highest in order)
+      let best = ds[0];
+      for (const c of ds) {
+        if (rankOf(c) < rankOf(best)) best = c;
       }
-      ds.forEach((c) => {
-        if (!by.has(c)) by.set(c, []);
-        by.get(c).push(d);
-      });
-    }
+      return best;
+    };
 
-    // Remove empty sections except "Без созыва" (keep only if non-empty)
-    const out = [];
-    for (const [key, arr] of by.entries()) {
-      if (!arr || arr.length === 0) continue;
-      out.push([key, arr]);
-    }
-    return out;
-  }, [filtered, convocation, convocations, getDeputyConvocations]);
+    return [...list].sort((a, b) => {
+      // When showing all convocations, group implicitly by order (but without headers)
+      if (convocation === "Все") {
+        const ra = rankOf(getBestConv(a));
+        const rb = rankOf(getBestConv(b));
+        if (ra !== rb) return ra - rb;
+        // Put "Без созыва" to the bottom
+        if (ra === 999) return 1;
+      }
+      const na = String(a?.name || a?.fullName || "").toLowerCase();
+      const nb = String(b?.name || b?.fullName || "").toLowerCase();
+      return na.localeCompare(nb, "ru");
+    });
+  }, [filtered, convocation, getDeputyConvocations]);
 
   React.useEffect(() => {
     const applyFromHash = () => {
@@ -428,7 +471,7 @@ export default function DeputiesV2() {
       const st = sp.get("status");
       if (f) setFaction(decodeURIComponent(f));
       if (d) setDistrict(decodeURIComponent(d));
-      if (cv) setConvocation(decodeURIComponent(cv));
+      if (cv) setConvocation(normalizeConvocationToken(decodeURIComponent(cv)));
       if (cm) setCommitteeId(decodeURIComponent(cm));
       if (st) {
         const val = String(st).toLowerCase();
@@ -468,7 +511,7 @@ export default function DeputiesV2() {
                 <Dropdown open={openConv} onOpenChange={setOpenConv} menu={{ items: convMenuItems }}>
                   <Button size="large">
                     <span className="filters__btnText">
-                      {convocation === "Все" ? "Все созывы" : `${convocation} созыв`}
+                      {formatConvocationLabel(convocation)}
                     </span>
                     <span className="filters__btnCaret" aria-hidden="true">
                       ▾
@@ -525,34 +568,20 @@ export default function DeputiesV2() {
                 empty={filteredByConvocation.length === 0}
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
-                {groupedByConvocation ? (
-                  <div style={{ display: "grid", gap: 18 }}>
-                    {groupedByConvocation.map(([c, list]) => (
-                      <div key={c}>
-                        <h2 style={{ margin: "10px 0 12px" }}>{c === "Без созыва" ? c : `${c} созыв`}</h2>
                 <div className="grid cols-3">
-                          {list.map((d) => {
+                  {filteredByConvocation.map((d) => {
                     const photoRaw =
                       typeof d.photo === "string"
                         ? d.photo
-                                : d.photo?.link ||
-                                  d.photo?.url ||
-                                  (d.image && (d.image.link || d.image.url)) ||
-                                  "";
+                        : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || "";
                     const photo = normalizeFilesUrl(photoRaw);
-                            const ended = isEndedDeputy(d);
-                            const convs = getDeputyConvocations(d);
+                    const ended = isEndedDeputy(d);
+                    const convs = getDeputyConvocations(d);
                     return (
-                              <div key={`${c}-${d.id}`} className="gov-card">
+                      <div key={d.id} className="gov-card">
                         <div className="gov-card__top">
                           {photo ? (
-                            <img
-                              className="gov-card__avatar"
-                              src={photo}
-                              alt=""
-                              loading="lazy"
-                              decoding="async"
-                            />
+                            <img className="gov-card__avatar" src={photo} alt="" loading="lazy" decoding="async" />
                           ) : (
                             <div className="gov-card__avatar" aria-hidden="true" />
                           )}
@@ -565,12 +594,12 @@ export default function DeputiesV2() {
                             <div className="gov-card__role">Депутат</div>
                           )}
                           <ul className="gov-meta">
-                                    {ended && (
-                                      <li>
-                                        <span>✅</span>
-                                        <span>Созыв завершен</span>
-                                      </li>
-                                    )}
+                            {ended && (
+                              <li>
+                                <span>✅</span>
+                                <span>Созыв завершен</span>
+                              </li>
+                            )}
                             {d.reception && (
                               <li>
                                 <span>⏰</span>
@@ -589,95 +618,12 @@ export default function DeputiesV2() {
                                 <span>{toDisplay(d.faction)}</span>
                               </li>
                             )}
-                                    {convs.length ? (
+                            {convs.length ? (
                               <li>
                                 <span>🎖️</span>
-                                        <span>Созыв: {convs.map(toDisplay).join(", ")}</span>
-                                      </li>
-                                    ) : null}
-                                    {d.contacts?.phone && (
-                                      <li>
-                                        <span>📞</span>
-                                        <span>{toDisplay(d.contacts.phone)}</span>
-                                      </li>
-                                    )}
-                                    {d.contacts?.email && (
-                                      <li>
-                                        <span>✉️</span>
-                                        <span>{toDisplay(d.contacts.email)}</span>
+                                <span>Созыв: {convs.map(toDisplay).join(", ")}</span>
                               </li>
-                            )}
-                                  </ul>
-                                </div>
-                                <div className="gov-card__actions">
-                                  <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
-                                    Подробнее
-                                  </a>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid cols-3">
-                    {filteredByConvocation.map((d) => {
-                      const photoRaw =
-                        typeof d.photo === "string"
-                          ? d.photo
-                          : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || "";
-                      const photo = normalizeFilesUrl(photoRaw);
-                      const ended = isEndedDeputy(d);
-                      const convs = getDeputyConvocations(d);
-                      return (
-                        <div key={d.id} className="gov-card">
-                          <div className="gov-card__top">
-                            {photo ? (
-                              <img className="gov-card__avatar" src={photo} alt="" loading="lazy" decoding="async" />
-                            ) : (
-                              <div className="gov-card__avatar" aria-hidden="true" />
-                            )}
-                          </div>
-                          <div className="gov-card__body">
-                            <div className="gov-card__name">{toDisplay(d.name)}</div>
-                            {d.position ? (
-                              <div className="gov-card__role">{toDisplay(d.position)}</div>
-                            ) : (
-                              <div className="gov-card__role">Депутат</div>
-                            )}
-                            <ul className="gov-meta">
-                              {ended && (
-                                <li>
-                                  <span>✅</span>
-                                  <span>Созыв завершен</span>
-                                </li>
-                              )}
-                              {d.reception && (
-                                <li>
-                                  <span>⏰</span>
-                                  <span>Приём: {toDisplay(d.reception)}</span>
-                                </li>
-                              )}
-                              {d.district && (
-                                <li>
-                                  <span>🏛️</span>
-                                  <span>{toDisplay(d.district)}</span>
-                                </li>
-                              )}
-                              {d.faction && (
-                                <li>
-                                  <span>👥</span>
-                                  <span>{toDisplay(d.faction)}</span>
-                                </li>
-                              )}
-                              {convs.length ? (
-                                <li>
-                                  <span>🎖️</span>
-                                  <span>Созыв: {convs.map(toDisplay).join(", ")}</span>
-                                </li>
-                              ) : null}
+                            ) : null}
                             {d.contacts?.phone && (
                               <li>
                                 <span>📞</span>
@@ -701,7 +647,6 @@ export default function DeputiesV2() {
                     );
                   })}
                 </div>
-                )}
               </DataState>
             </DataState>
           </div>
