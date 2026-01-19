@@ -4822,7 +4822,12 @@ body.admin-mode[data-admin-theme="light"] .admin-nav::-webkit-scrollbar-thumb {
 }
 @media (max-width: 768px) {
   .admin-content {
-    padding: 0;
+    padding: 14px 12px 18px;
+  }
+}
+@media (max-width: 420px) {
+  .admin-content {
+    padding: 12px 10px 16px;
   }
 }
 
@@ -4857,10 +4862,8 @@ body.admin-mode[data-admin-theme="light"] .admin-card {
 }
 @media (max-width: 768px) {
   .admin-card {
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    padding: 16px;
+    border-radius: 18px;
+    padding: 14px 14px;
   }
 }
 
