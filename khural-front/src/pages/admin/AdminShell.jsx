@@ -31,7 +31,6 @@ function NavItem({ href, label, active, onClick }) {
 export default function AdminShell({
   activeKey,
   title,
-  subtitle,
   user,
   themeMode,
   onToggleTheme,
@@ -133,6 +132,9 @@ export default function AdminShell({
             >
               На сайт
             </a>
+            <button className="admin-pillbtn admin-pillbtn--theme" type="button" onClick={onToggleTheme}>
+              {themeMode === "light" ? "Тёмная" : "Светлая"}
+            </button>
             <button
               className="admin-iconbtn admin-iconbtn--menu"
               type="button"
@@ -140,9 +142,6 @@ export default function AdminShell({
               onClick={() => setSidebarOpen(true)}
             >
               <span className="admin-burger" />
-            </button>
-            <button className="admin-pillbtn admin-pillbtn--theme" type="button" onClick={onToggleTheme}>
-              {themeMode === "light" ? "Тёмная" : "Светлая"}
             </button>
           </div>
         </header>
