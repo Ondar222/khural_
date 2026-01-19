@@ -4878,11 +4878,16 @@ body.admin-mode[data-admin-theme="light"] .admin-card {
 }
 @media (max-width: 720px) {
   .admin-cards--stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 420px) {
+  .admin-cards--stats {
     grid-template-columns: 1fr;
   }
 }
 .admin-stat__value {
-  font-size: 34px;
+  font-size: clamp(26px, 3.2vw, 34px);
   font-weight: 900;
   line-height: 1;
 }
@@ -4902,8 +4907,79 @@ body.admin-mode[data-admin-theme="light"] .admin-card {
 }
 @media (max-width: 720px) {
   .admin-cards--actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .admin-cards--actions {
     grid-template-columns: 1fr;
   }
+}
+
+/* Dashboard layout refinements */
+.admin-dashboard .admin-cards {
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .admin-dashboard .admin-cards {
+    gap: 12px;
+  }
+}
+
+/* Keep rounded cards on mobile specifically for dashboard */
+@media (max-width: 768px) {
+  .admin-dashboard .admin-card {
+    border-radius: 18px;
+    border-left: 1px solid rgba(255, 255, 255, 0.14);
+    border-right: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 14px 16px;
+  }
+  body.admin-mode[data-admin-theme="light"] .admin-dashboard .admin-card {
+    border-color: rgba(15, 23, 42, 0.08);
+  }
+}
+
+.admin-dashboard .admin-stat {
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+@media (max-width: 720px) {
+  .admin-dashboard .admin-stat {
+    min-height: 88px;
+  }
+  .admin-dashboard .admin-stat__label {
+    margin-top: 8px;
+    font-size: 13px;
+  }
+}
+
+.admin-dashboard .admin-action__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-dashboard .admin-action__cta::after {
+  content: "→";
+  opacity: 0.85;
+}
+
+/* Center text inside dashboard action cards */
+.admin-dashboard .admin-action {
+  align-items: center;
+  text-align: center;
+  justify-items: center;
+}
+.admin-dashboard .admin-action__title,
+.admin-dashboard .admin-action__desc {
+  text-align: center;
+}
+.admin-dashboard .admin-action__cta {
+  width: fit-content;
+  justify-self: center;
 }
 
 /* Hover glow + slight scale for dashboard cards */
@@ -6296,6 +6372,27 @@ body.admin-mode[data-admin-theme="dark"] .admin-action:hover .admin-action__desc
 }
 
 /* Admin profile page */
+.admin-profile {
+  padding: 22px;
+  border-radius: 22px;
+  background: radial-gradient(900px 260px at 10% 0%, rgba(255, 215, 0, 0.12), transparent 62%),
+    rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+body.admin-mode[data-admin-theme="light"] .admin-profile {
+  background: radial-gradient(900px 260px at 10% 0%, rgba(255, 215, 0, 0.16), transparent 62%),
+    rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+.admin-profile__layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 16px 18px;
+  align-items: start;
+}
+.admin-profile__identity {
+  min-width: 0;
+}
 .admin-profile__head {
   display: flex;
   align-items: center;
@@ -6326,6 +6423,11 @@ body.admin-mode[data-admin-theme="dark"] .admin-action:hover .admin-action__desc
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 8px;
+  padding-left: 2px;
+}
+.admin-profile__avatarActions .ant-btn {
+  border-radius: 12px;
+  font-weight: 800;
 }
 .admin-profile__name {
   font-weight: 900;
@@ -6339,7 +6441,7 @@ body.admin-mode[data-admin-theme="dark"] .admin-action:hover .admin-action__desc
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 12px;
+  margin-top: 2px;
 }
 .admin-profile__item {
   border-radius: 16px;
@@ -6361,16 +6463,31 @@ body.admin-mode[data-admin-theme="light"] .admin-profile__item {
 .admin-profile__value {
   margin-top: 6px;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 .admin-profile__actions {
   margin-top: 14px;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.admin-profile__actions .ant-btn {
+  border-radius: 12px;
+  font-weight: 800;
 }
 @media (max-width: 959px) {
+  .admin-profile {
+    padding: 16px;
+  }
+  .admin-profile__layout {
+    grid-template-columns: 1fr;
+  }
   .admin-profile__grid {
     grid-template-columns: 1fr;
+  }
+  .admin-profile__avatarActions .ant-btn {
+    flex: 1 1 auto;
   }
   .admin-profile__actions .ant-btn {
     flex: 1 1 auto;

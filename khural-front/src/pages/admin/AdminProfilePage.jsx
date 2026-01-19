@@ -49,7 +49,6 @@ export default function AdminProfilePage() {
     <AdminShell
       activeKey={null}
       title="Администратор"
-      subtitle=""
       user={adminData.user}
       themeMode={adminData.themeMode}
       onToggleTheme={adminData.toggleTheme}
@@ -57,48 +56,51 @@ export default function AdminProfilePage() {
     >
       <div className="admin-grid">
         <div className="admin-card admin-profile">
-          <div className="admin-profile__head">
-            <div className={"admin-profile__avatar" + (avatarUrl ? " admin-profile__avatar--img" : "")}>
-              {avatarUrl ? <img src={avatarUrl} alt="" className="admin-profile__avatarImg" /> : avatarLetter}
-            </div>
-            <div className="admin-profile__meta">
-              <div className="admin-profile__name">{adminData.user?.name || adminData.user?.email || "Администратор"}</div>
-              <div className="admin-profile__role">{adminData.user?.role || "admin"}</div>
-            </div>
-          </div>
+          <div className="admin-profile__layout">
+            <div className="admin-profile__identity">
+              <div className="admin-profile__head">
+                <div className={"admin-profile__avatar" + (avatarUrl ? " admin-profile__avatar--img" : "")}>
+                  {avatarUrl ? <img src={avatarUrl} alt="" className="admin-profile__avatarImg" /> : avatarLetter}
+                </div>
+                <div className="admin-profile__meta">
+                  <div className="admin-profile__name">
+                    {adminData.user?.name || adminData.user?.email || "Администратор"}
+                  </div>
+                  <div className="admin-profile__role">{adminData.user?.role || "admin"}</div>
+                </div>
+              </div>
 
-          <div className="admin-profile__avatarActions">
-            <Upload
-              accept="image/*"
-              maxCount={1}
-              showUploadList={false}
-              beforeUpload={beforeUpload}
-            >
-              <Button>Загрузить фото</Button>
-            </Upload>
-            <Button
-              disabled={!avatarUrl}
-              onClick={() => {
-                writeAdminAvatar(null);
-                message.success("Аватарка удалена");
-              }}
-            >
-              Удалить фото
-            </Button>
-          </div>
+              <div className="admin-profile__avatarActions">
+                <Upload accept="image/*" maxCount={1} showUploadList={false} beforeUpload={beforeUpload}>
+                  <Button>Загрузить фото</Button>
+                </Upload>
+                <Button
+                  disabled={!avatarUrl}
+                  onClick={() => {
+                    writeAdminAvatar(null);
+                    message.success("Аватарка удалена");
+                  }}
+                >
+                  Удалить фото
+                </Button>
+              </div>
+            </div>
 
-          <div className="admin-profile__grid">
-            <div className="admin-profile__item">
-              <div className="admin-profile__label">Email</div>
-              <div className="admin-profile__value">{adminData.user?.email || "—"}</div>
-            </div>
-            <div className="admin-profile__item">
-              <div className="admin-profile__label">Роль</div>
-              <div className="admin-profile__value">{adminData.user?.role || "—"}</div>
-            </div>
-            <div className="admin-profile__item">
-              <div className="admin-profile__label">Тема</div>
-              <div className="admin-profile__value">{adminData.themeMode === "light" ? "Светлая" : "Тёмная"}</div>
+            <div className="admin-profile__grid">
+              <div className="admin-profile__item">
+                <div className="admin-profile__label">Email</div>
+                <div className="admin-profile__value">{adminData.user?.email || "—"}</div>
+              </div>
+              <div className="admin-profile__item">
+                <div className="admin-profile__label">Роль</div>
+                <div className="admin-profile__value">{adminData.user?.role || "—"}</div>
+              </div>
+              <div className="admin-profile__item">
+                <div className="admin-profile__label">Тема</div>
+                <div className="admin-profile__value">
+                  {adminData.themeMode === "light" ? "Светлая" : "Тёмная"}
+                </div>
+              </div>
             </div>
           </div>
 
