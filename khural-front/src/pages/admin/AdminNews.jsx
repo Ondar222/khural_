@@ -28,7 +28,7 @@ function toKey(row) {
   return `news:${title}|${date}`;
 }
 
-export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, canWrite }) {
+export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
   const [editOpen, setEditOpen] = React.useState(false);
@@ -36,6 +36,17 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
   const [editFile, setEditFile] = React.useState(null);
   const [editing, setEditing] = React.useState(null);
   const [editForm] = Form.useForm();
+  const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+  const isTablet = windowWidth > 768 && windowWidth <= 1024;
 
   const grouped = React.useMemo(() => {
     const list = Array.isArray(items) ? items : [];
@@ -76,7 +87,6 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
       let fail = 0;
       for (const id of ids) {
         try {
-          // eslint-disable-next-line no-await-in-loop
           await onDelete?.(id);
           ok += 1;
         } catch {
@@ -107,50 +117,59 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
       cancelText: "Отмена",
       onOk: async () => {
         for (const row of targets) {
-          // eslint-disable-next-line no-await-in-loop
           await handleDelete(row);
         }
       },
     });
   }, [filtered, handleDelete, message, canWrite]);
 
+  const formatDate = React.useCallback((row) => {
+    const v = row?.createdAt || row?.created_at || row?.publishedAt || row?.published_at;
+    const d = v ? new Date(v) : null;
+    return d ? d.toLocaleDateString("ru-RU") : "—";
+  }, []);
+
+  const mediaTag = React.useCallback((row) => {
+    const v = row?.images;
+    return Array.isArray(v) && v.length ? <Tag color="blue">есть</Tag> : "—";
+  }, []);
+
+  const renderTitleCell = React.useCallback((row) => {
+    const ru = pickRu(row.content);
+    const title = ru?.title || row.title || "(без названия)";
+    const desc = String(ru?.description || "").replace(/<[^>]+>/g, "").slice(0, 140);
+    return (
+      <div className="admin-news-list__titlecell">
+        <div className="admin-news-list__title">{title}</div>
+        {desc ? <div className="admin-news-list__desc">{desc}</div> : null}
+      </div>
+    );
+  }, []);
+
   const columns = [
     {
       title: "Заголовок",
       dataIndex: "content",
-      render: (_, row) => {
-        const ru = pickRu(row.content);
-        return (
-          <div style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>{ru?.title || "(без названия)"}</div>
-            <div style={{ opacity: 0.75, fontSize: 13 }}>
-              {String(ru?.description || "").slice(0, 140)}
-            </div>
-          </div>
-        );
-      },
+      render: (_, row) => renderTitleCell(row),
     },
     {
       title: "Дата",
       dataIndex: "createdAt",
       width: 160,
-      render: (v) => {
-        const d = v ? new Date(v) : null;
-        return d ? d.toLocaleDateString() : "—";
-      },
+      render: (_, row) => formatDate(row),
     },
     {
       title: "Медиа",
       dataIndex: "images",
       width: 120,
-      render: (v) => (Array.isArray(v) && v.length ? <Tag color="blue">есть</Tag> : "—"),
+      render: (_, row) => mediaTag(row),
     },
     {
       title: "Действия",
       key: "actions",
       width: 220,
       render: (_, row) => (
-        <Space wrap>
+        <Space wrap className="admin-news-list__actions">
           <Button
             onClick={() => {
               navigate(`/admin/news/edit/${row.id}`);
@@ -166,6 +185,26 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
       ),
     },
   ];
+
+  const toolbar = (
+    <div className="admin-card admin-toolbar admin-news-list__toolbar">
+      <div className="admin-news-list__toolbar-left">
+        <Input
+          placeholder="Поиск по заголовку..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="admin-input"
+          size={isMobile ? "large" : "middle"}
+        />
+      </div>
+      <div className="admin-news-list__toolbar-right">
+        <Button type="primary" onClick={() => navigate("/admin/news/create")} disabled={!canWrite} size={isMobile ? "large" : "middle"}>
+          + Добавить новость
+        </Button>
+   
+      </div>
+    </div>
+  );
 
   const submitEdit = async () => {
     try {
@@ -185,31 +224,94 @@ export default function AdminNews({ items, onCreate, onUpdate, onDelete, busy, c
     }
   };
 
-  return (
-    <div className="admin-grid">
-      <div className="admin-card admin-toolbar">
-        <Input
-          placeholder="Поиск по заголовку..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="admin-input"
-        />
-        <Space wrap>
-          <Button type="primary" onClick={() => navigate("/admin/news/create")} disabled={!canWrite}>
-            + Добавить новость
-          </Button>
-          <Button onClick={deleteEmptyTitles} disabled={!canWrite}>
-            Удалить без заголовка
-          </Button>
-        </Space>
+  if (isMobile) {
+    return (
+      <div className="admin-grid admin-news-list">
+        {toolbar}
+
+        {Array.isArray(filtered) && filtered.length ? (
+          <div className="admin-cards admin-news-list__cards">
+            {filtered.map((row) => (
+              <div key={String(row.id)} className="admin-card admin-news-list__card">
+                <div className="admin-news-list__card-head">
+                  {renderTitleCell(row)}
+                  <div className="admin-news-list__meta-row">
+                    <div className="admin-news-list__meta">{formatDate(row)}</div>
+                    <div className="admin-news-list__meta">{mediaTag(row)}</div>
+                  </div>
+                </div>
+
+                <div className="admin-news-list__card-actions">
+                  <Button onClick={() => navigate(`/admin/news/edit/${row.id}`)} disabled={!canWrite} block>
+                    Редактировать
+                  </Button>
+                  <Button danger onClick={() => handleDelete(row)} disabled={!canWrite} block>
+                    Удалить
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="admin-card admin-news-list__empty">Нет данных</div>
+        )}
+
+        <Modal
+          title="Редактировать новость"
+          open={editOpen}
+          onCancel={() => {
+            setEditOpen(false);
+            setEditing(null);
+            setEditFile(null);
+          }}
+          onOk={submitEdit}
+          okText="Сохранить"
+          confirmLoading={busy}
+          okButtonProps={{ disabled: !canWrite }}
+        >
+          <Form layout="vertical" form={editForm}>
+            <Form.Item label="Заголовок (RU)" name="titleRu" rules={[{ required: true, message: "Укажите заголовок" }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item label="Краткое описание (RU)" name="descRu" rules={[{ required: true, message: "Укажите описание" }]}>
+              <Input.TextArea autoSize={{ minRows: 5, maxRows: 10 }} />
+            </Form.Item>
+
+            <Form.Item label="Добавить/обновить обложку (опционально)">
+              <Upload
+                accept="image/*"
+                maxCount={1}
+                beforeUpload={(f) => {
+                  setEditFile(f);
+                  return false;
+                }}
+                onRemove={() => setEditFile(null)}
+              >
+                <Button>Загрузить</Button>
+              </Upload>
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
+    );
+  }
+
+  return (
+    <div className="admin-grid admin-news-list">
+      {toolbar}
 
       <div className="admin-card admin-table">
         <Table
           rowKey={(r) => String(r.id)}
           columns={columns}
           dataSource={filtered}
-          pagination={{ pageSize: 8 }}
+          pagination={{
+            pageSize: 8,
+            showSizeChanger: !isTablet,
+            showQuickJumper: !isTablet,
+            size: isTablet ? "small" : "default",
+          }}
+          scroll={isTablet ? { x: "max-content" } : undefined}
         />
       </div>
 
