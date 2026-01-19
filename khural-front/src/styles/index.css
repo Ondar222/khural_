@@ -5007,6 +5007,7 @@ body.admin-mode[data-admin-theme="light"] .ant-table-tbody > tr:hover > td {
 /* Pages (V2) list */
 .admin-pages-list__toolbar {
   gap: 14px;
+  align-items: stretch;
 }
 .admin-pages-list__toolbar-left {
   flex: 1 1 520px;
@@ -5017,6 +5018,11 @@ body.admin-mode[data-admin-theme="light"] .ant-table-tbody > tr:hover > td {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.admin-pages-list__toolbar-right .ant-btn {
+  border-radius: 12px;
+  font-weight: 800;
 }
 .admin-pages-list__titlecell {
   display: grid;
@@ -5043,11 +5049,48 @@ body.admin-mode[data-admin-theme="light"] .ant-table-tbody > tr:hover > td {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+}
+.admin-pages-list__metarow .ant-tag {
+  margin-inline-end: 0 !important;
+  margin: 0 !important;
+  border-radius: 999px;
+  padding: 0 10px;
+  line-height: 22px;
+  font-weight: 700;
+  max-width: 100%;
+}
+.admin-pages-list__metarow .ant-tag .ant-tag-close-icon {
+  margin-left: 6px;
 }
 .admin-pages-list__tag {
+  display: inline-flex;
+  align-items: center;
   max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-pages-list__tag {
+  max-width: min(520px, 100%);
+}
+.admin-pages-list__card-head,
+.admin-pages-list__titlecell {
+  min-width: 0;
+}
+.admin-pages-list__actions {
+  display: flex !important; /* override Ant Space inline-flex */
+  justify-content: flex-end;
+  width: 100%;
+  gap: 10px !important;
+}
+.admin-pages-list__actions .ant-btn {
+  border-radius: 12px;
+}
+.admin-pages-list__actions .ant-btn-dangerous {
+  box-shadow: none;
 }
 .admin-pages-list__actions .ant-btn {
   font-weight: 700;
@@ -5058,6 +5101,19 @@ body.admin-mode[data-admin-theme="light"] .ant-table-tbody > tr:hover > td {
 .admin-pages-list__card {
   display: grid;
   gap: 12px;
+}
+.admin-pages-list__card--system {
+  background: radial-gradient(900px 260px at 10% 0%, rgba(2, 132, 199, 0.10), transparent 60%),
+    rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+body.admin-mode[data-admin-theme="light"] .admin-pages-list__card--system {
+  background: radial-gradient(900px 260px at 10% 0%, rgba(2, 132, 199, 0.10), transparent 60%),
+    rgba(255, 255, 255, 0.92);
+  border-color: rgba(2, 132, 199, 0.16);
+}
+.admin-pages-list__card--system-missing {
+  border-color: rgba(239, 68, 68, 0.26);
 }
 .admin-pages-list__card-title {
   font-weight: 900;
@@ -5088,6 +5144,20 @@ body.admin-mode[data-admin-theme="light"] .ant-table-tbody > tr:hover > td {
   .admin-pages-list__card-actions {
     grid-template-columns: 1fr;
   }
+}
+
+/* Table row accents for system routes */
+body.admin-mode .admin-pages-list__row--system > td {
+  background: rgba(2, 132, 199, 0.06);
+}
+body.admin-mode .admin-pages-list__row--system-missing > td {
+  background: rgba(239, 68, 68, 0.06);
+}
+body.admin-mode[data-admin-theme="light"] .admin-pages-list__row--system > td {
+  background: rgba(2, 132, 199, 0.05);
+}
+body.admin-mode[data-admin-theme="light"] .admin-pages-list__row--system-missing > td {
+  background: rgba(239, 68, 68, 0.06);
 }
 
 /* Documents list */

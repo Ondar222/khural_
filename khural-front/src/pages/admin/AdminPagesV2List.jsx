@@ -521,7 +521,17 @@ export default function AdminPagesV2List({
         ) : (
           <div className="admin-cards admin-pages-list__cards">
             {filtered.map((row) => (
-              <div key={String(row.id || row.slug)} className="admin-card admin-pages-list__card">
+              <div
+                key={String(row.id || row.slug)}
+                className={[
+                  "admin-card",
+                  "admin-pages-list__card",
+                  row?.__isSystem ? "admin-pages-list__card--system" : "",
+                  row?.__isSystem && !row?.__cmsPage ? "admin-pages-list__card--system-missing" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
                 <div className="admin-pages-list__card-head">
                   <div className="admin-pages-list__card-title">
                     {row.title || row.name || "—"}
@@ -636,6 +646,13 @@ export default function AdminPagesV2List({
       <div className="admin-card admin-table">
         <Table
           rowKey={(r) => String(r.id || r.slug || Math.random())}
+          rowClassName={(r) =>
+            r?.__isSystem
+              ? ["admin-pages-list__row--system", !r?.__cmsPage ? "admin-pages-list__row--system-missing" : ""]
+                  .filter(Boolean)
+                  .join(" ")
+              : ""
+          }
           columns={columns}
           dataSource={filtered}
           loading={busy}
