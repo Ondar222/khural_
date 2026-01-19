@@ -191,16 +191,6 @@ export default function Committee() {
                   {(committees || []).filter((c) => c && c.id && (c.name || c.title)).map((c) => {
                     const chairman = getChairman(c);
                     const title = typeof c.name === "string" ? c.name : (typeof c.title === "string" ? c.title : "Комитет");
-                    const desc =
-                      (typeof c.shortDescription === "string" && c.shortDescription.trim())
-                        ? c.shortDescription.trim()
-                        : (typeof c.description === "string" && c.description.trim())
-                          ? c.description.trim()
-                          : "";
-                    const phone = typeof c.phone === "string" ? c.phone.trim() : "";
-                    const email = typeof c.email === "string" ? c.email.trim() : "";
-                    const address = typeof c.address === "string" ? c.address.trim() : "";
-                    const website = typeof c.website === "string" ? c.website.trim() : "";
                     return (
                       <a
                         key={String(c.id)}
@@ -227,40 +217,11 @@ export default function Committee() {
                         <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14, color: "#003366", lineHeight: 1.3 }}>
                           {title}
                         </div>
-                        {desc ? (
-                          <div style={{ opacity: 0.8, fontSize: 13, lineHeight: 1.45, color: "#4b5563" }}>
-                            {desc.length > 180 ? `${desc.slice(0, 180)}…` : desc}
-                          </div>
-                        ) : null}
                         {chairman && typeof chairman === "string" && (
                           <div style={{ color: "#6b7280", fontSize: 14, marginTop: 10, lineHeight: 1.5 }}>
                             <strong style={{ color: "#374151" }}>Председатель:</strong> {chairman}
                           </div>
                         )}
-                        {phone || email || address || website ? (
-                          <div style={{ marginTop: 10, color: "#6b7280", fontSize: 13, lineHeight: 1.55 }}>
-                            {phone ? (
-                              <div>
-                                <strong style={{ color: "#374151" }}>Телефон:</strong> {phone}
-                              </div>
-                            ) : null}
-                            {email ? (
-                              <div>
-                                <strong style={{ color: "#374151" }}>Email:</strong> {email}
-                              </div>
-                            ) : null}
-                            {address ? (
-                              <div>
-                                <strong style={{ color: "#374151" }}>Адрес:</strong> {address}
-                              </div>
-                            ) : null}
-                            {website ? (
-                              <div>
-                                <strong style={{ color: "#374151" }}>Сайт:</strong> {website}
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
                         <div style={{ marginTop: 16, color: "#003366", fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
                           Подробнее <span style={{ fontSize: 16 }}>→</span>
                         </div>
