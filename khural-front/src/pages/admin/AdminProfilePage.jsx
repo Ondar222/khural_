@@ -103,7 +103,7 @@ export default function AdminProfilePage() {
           </div>
 
           <div className="admin-profile__actions">
-            <Button href="/admin">На главную админки</Button>
+            <Button href="/admin">Вернуться на Главную</Button>
             <Button danger onClick={adminData.handleLogout}>
               Выйти
             </Button>

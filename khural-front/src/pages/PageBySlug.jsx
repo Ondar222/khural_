@@ -2,6 +2,7 @@ import React from "react";
 import { AboutApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "../components/DataState.jsx";
+import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
 
 function getSlugFromPath() {
   const path = typeof window !== "undefined" ? window.location.pathname || "" : "";
@@ -28,7 +29,7 @@ export default function PageBySlug() {
 
   React.useEffect(() => {
     if (!slug) return;
-    const locale = lang === "ty" ? "tyv" : "ru";
+    const locale = getPreferredLocaleToken(lang);
     let alive = true;
     (async () => {
       setLoading(true);
@@ -50,8 +51,9 @@ export default function PageBySlug() {
     };
   }, [lang, slug]);
 
-  const title = page?.title || page?.name || slug;
-  const html = String(page?.content || page?.body || "");
+  const locale = getPreferredLocaleToken(lang);
+  const title = extractPageTitle(page, locale, slug);
+  const html = extractPageHtml(page, locale);
 
   return (
     <section className="section">

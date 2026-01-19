@@ -479,19 +479,29 @@ export const AppealsApi = {
 };
 
 export const AboutApi = {
-  async listPages({ locale } = {}) {
-    // Пробуем новый endpoint /pages, если не работает - fallback на /about/pages
+  async listPages({ locale, publishedOnly = true } = {}) {
+    // Backend /pages does NOT support locale filter in query.
+    // We fetch list and then filter client-side by localized content locale.
     try {
+      const qs = new URLSearchParams();
+      if (publishedOnly) qs.set("publishedOnly", "true");
+      const suffix = qs.toString() ? `?${qs.toString()}` : "";
+      const res = await apiFetch(`/pages${suffix}`, { method: "GET", auth: false });
+      const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+      if (!locale) return arr;
+      const want = String(locale).toLowerCase();
+      return arr.filter((p) => {
+        const c = p?.content;
+        if (Array.isArray(c)) return c.some((x) => String(x?.locale || "").toLowerCase() === want);
+        // legacy single-content page: treat as RU by default
+        return want === "ru";
+      });
+    } catch {
+      // Fallback на старый endpoint
       const qs = new URLSearchParams();
       if (locale) qs.set("locale", locale);
       const suffix = qs.toString() ? `?${qs.toString()}` : "";
-      return await apiFetch(`/pages${suffix}`, { method: "GET", auth: false });
-    } catch {
-      // Fallback на старый endpoint
-    const qs = new URLSearchParams();
-    if (locale) qs.set("locale", locale);
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return apiFetch(`/about/pages${suffix}`, { method: "GET", auth: false });
+      return apiFetch(`/about/pages${suffix}`, { method: "GET", auth: false });
     }
   },
   async getPageBySlug(slug, { locale } = {}) {
@@ -511,21 +521,78 @@ export const AboutApi = {
       });
     }
   },
-  async createPage({ title, slug, content, locale = "ru" }) {
-    // Согласно Swagger, endpoint - /pages
-    return apiFetch("/pages", {
-      method: "POST",
-      body: { title, slug, content, locale },
-      auth: true,
-    });
+  async createPage(dto = {}) {
+    // Swagger DTO: CreatePageDto { slug, title, content?: PageContentDto[], parentId?, order?, isPublished?, publishedAt? }
+    const slug = String(dto?.slug || "").trim().replace(/^\/+|\/+$/g, "");
+    const title = String(dto?.title || "").trim();
+    const locale = String(dto?.locale || "ru").toLowerCase();
+    const rawContent = dto?.content;
+
+    const content = Array.isArray(rawContent)
+      ? rawContent.map((c) => ({
+          locale: String(c?.locale || locale || "ru").toLowerCase(),
+          title: String(c?.title || title || "").trim(),
+          description: c?.description ?? undefined,
+          content: c?.content ?? null,
+          blocks: Array.isArray(c?.blocks) ? c.blocks : undefined,
+        }))
+      : typeof rawContent === "string"
+        ? [
+            {
+              locale,
+              title,
+              content: rawContent,
+            },
+          ]
+        : undefined;
+
+    const body = {
+      slug,
+      title,
+      ...(content ? { content } : {}),
+      ...(dto?.parentId !== undefined ? { parentId: dto.parentId } : {}),
+      ...(dto?.order !== undefined ? { order: dto.order } : {}),
+      ...(dto?.isPublished !== undefined ? { isPublished: dto.isPublished } : {}),
+      ...(dto?.publishedAt !== undefined ? { publishedAt: dto.publishedAt } : {}),
+    };
+
+    return apiFetch("/pages", { method: "POST", body, auth: true });
   },
-  async updatePage(id, { title, slug, content, locale = "ru" }) {
-    // Согласно Swagger, endpoint - /pages/{id}
-    return apiFetch(`/pages/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      body: { title, slug, content, locale },
-      auth: true,
-    });
+  async updatePage(id, dto = {}) {
+    const slug = dto?.slug !== undefined ? String(dto?.slug || "").trim().replace(/^\/+|\/+$/g, "") : undefined;
+    const title = dto?.title !== undefined ? String(dto?.title || "").trim() : undefined;
+    const locale = String(dto?.locale || "ru").toLowerCase();
+    const rawContent = dto?.content;
+
+    const content = Array.isArray(rawContent)
+      ? rawContent.map((c) => ({
+          locale: String(c?.locale || locale || "ru").toLowerCase(),
+          title: String(c?.title || title || "").trim(),
+          description: c?.description ?? undefined,
+          content: c?.content ?? null,
+          blocks: Array.isArray(c?.blocks) ? c.blocks : undefined,
+        }))
+      : typeof rawContent === "string"
+        ? [
+            {
+              locale,
+              title: String(title || "").trim(),
+              content: rawContent,
+            },
+          ]
+        : undefined;
+
+    const body = {
+      ...(slug !== undefined ? { slug } : {}),
+      ...(title !== undefined ? { title } : {}),
+      ...(content ? { content } : {}),
+      ...(dto?.parentId !== undefined ? { parentId: dto.parentId } : {}),
+      ...(dto?.order !== undefined ? { order: dto.order } : {}),
+      ...(dto?.isPublished !== undefined ? { isPublished: dto.isPublished } : {}),
+      ...(dto?.publishedAt !== undefined ? { publishedAt: dto.publishedAt } : {}),
+    };
+
+    return apiFetch(`/pages/${encodeURIComponent(id)}`, { method: "PATCH", body, auth: true });
   },
   async deletePage(id) {
     // Согласно Swagger, endpoint - /pages/{id}
