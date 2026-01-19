@@ -25,13 +25,10 @@ export default function AdminEnvDocs() {
   }, [load]);
 
   return (
-    <div className="admin-grid">
-      <div
-        className="admin-card admin-toolbar"
-        style={{ display: "flex", gap: 12, alignItems: "center" }}
-      >
-        <div style={{ fontWeight: 900 }}>ENV_VARIABLES.md</div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+    <div className="admin-grid admin-env-docs">
+      <div className="admin-card admin-toolbar admin-env-docs__toolbar">
+        <div className="admin-env-docs__title">ENV_VARIABLES.md</div>
+        <div className="admin-env-docs__actions">
           <Button onClick={load} loading={loading}>
             Обновить
           </Button>
@@ -51,18 +48,8 @@ export default function AdminEnvDocs() {
         </div>
       </div>
 
-      <div className="admin-card" style={{ padding: 14 }}>
-        <pre
-          style={{
-            margin: 0,
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-            fontFamily:
-              "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-            fontSize: 13,
-            lineHeight: 1.5,
-          }}
-        >
+      <div className="admin-card admin-env-docs__content">
+        <pre className="admin-env-docs__pre">
           {loading ? "Загрузка…" : text || "Пусто (или нет доступа)."}
         </pre>
       </div>
