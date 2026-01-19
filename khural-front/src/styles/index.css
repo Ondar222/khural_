@@ -5004,6 +5004,92 @@ body.admin-mode[data-admin-theme="light"] .ant-table-tbody > tr:hover > td {
   min-width: min(520px, 100%);
 }
 
+/* Pages (V2) list */
+.admin-pages-list__toolbar {
+  gap: 14px;
+}
+.admin-pages-list__toolbar-left {
+  flex: 1 1 520px;
+  min-width: min(520px, 100%);
+}
+.admin-pages-list__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.admin-pages-list__titlecell {
+  display: grid;
+  gap: 6px;
+}
+.admin-pages-list__titleline {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.admin-pages-list__indent {
+  opacity: 0.55;
+  flex: 0 0 auto;
+}
+.admin-pages-list__title {
+  font-weight: 900;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-pages-list__metarow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.admin-pages-list__tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-pages-list__actions .ant-btn {
+  font-weight: 700;
+}
+.admin-pages-list__cards {
+  gap: 12px;
+}
+.admin-pages-list__card {
+  display: grid;
+  gap: 12px;
+}
+.admin-pages-list__card-title {
+  font-weight: 900;
+  font-size: 16px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.admin-pages-list__card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.admin-pages-list__empty {
+  padding: 28px 16px;
+  text-align: center;
+  opacity: 0.7;
+}
+@media (max-width: 768px) {
+  .admin-pages-list__toolbar {
+    padding: 16px;
+  }
+  .admin-pages-list__toolbar-right {
+    width: 100%;
+  }
+  .admin-pages-list__toolbar-right .ant-btn {
+    flex: 1 1 auto;
+  }
+  .admin-pages-list__card-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-split {
   display: grid;
   grid-template-columns: 1fr 1fr;

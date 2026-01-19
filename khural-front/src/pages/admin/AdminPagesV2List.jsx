@@ -27,23 +27,11 @@ async function listPagesWithFallback({ locale, authPreferred } = {}) {
     try {
       const res = await AboutApi.listPages({ locale });
       return normalizeList(res);
-    } catch (e2) {
+    } catch {
       throw e; // Возвращаем первую ошибку
     }
   }
 }
-
-// Список существующих страниц сайта для импорта
-const EXISTING_PAGES = [
-  { slug: "code-of-honor", title: "Кодекс чести мужчины Тувы", menuTitle: "Кодекс чести мужчины Тувы" },
-  { slug: "mothers-commandments", title: "Свод заповедей матерей Тувы", menuTitle: "Свод заповедей матерей Тувы" },
-  { slug: "news-subscription", title: "Подписка на новости", menuTitle: "Подписка на новости" },
-  { slug: "for-media", title: "Для СМИ", menuTitle: "Для СМИ" },
-  { slug: "photos", title: "Фотографии", menuTitle: "Фотографии" },
-  { slug: "videos", title: "Видеозаписи", menuTitle: "Видеозаписи" },
-  { slug: "pd-policy", title: "Политика обработки персональных данных", menuTitle: "Политика обработки ПДн" },
-  { slug: "license", title: "Лицензия", menuTitle: "Лицензия" },
-];
 
 export default function AdminPagesV2List({
   canWrite,
@@ -57,7 +45,17 @@ export default function AdminPagesV2List({
   const [localeMode, setLocaleMode] = React.useState("all"); // all | ru | tyv
   const [busy, setBusy] = React.useState(false);
   const [items, setItems] = React.useState([]);
-  const [importing, setImporting] = React.useState(false);
+  const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+  const isTablet = windowWidth > 768 && windowWidth <= 1024;
 
   const load = React.useCallback(async () => {
     setBusy(true);
@@ -132,78 +130,21 @@ export default function AdminPagesV2List({
     [canWrite, load, onMessage, reloadData]
   );
 
-  const importExistingPages = React.useCallback(async () => {
-    if (!canWrite) return;
-    setImporting(true);
-    let imported = 0;
-    let skipped = 0;
-    let errors = 0;
-    try {
-      // Сначала загружаем текущий список страниц
-      await load();
-      const existingSlugs = new Set((items || []).map((p) => String(p.slug || "").toLowerCase()));
-
-      // Импортируем страницы последовательно с задержками, чтобы избежать 429
-      for (let i = 0; i < EXISTING_PAGES.length; i++) {
-        const pageData = EXISTING_PAGES[i];
-        const slugLower = pageData.slug.toLowerCase();
-        
-        // Проверяем, не существует ли уже страница
-        if (existingSlugs.has(slugLower)) {
-          skipped++;
-          continue;
-        }
-
-        try {
-          await AboutApi.createPage({
-            title: pageData.title,
-            menuTitle: pageData.menuTitle || pageData.title,
-            slug: pageData.slug,
-            locale: "ru",
-            content: `<p>Страница "${pageData.title}"</p>`,
-          });
-          imported++;
-          existingSlugs.add(slugLower); // Добавляем в список, чтобы не создавать дубликаты
-          
-          // Задержка между запросами, чтобы избежать 429
-          if (i < EXISTING_PAGES.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-          }
-        } catch (e) {
-          console.error(`Failed to import page ${pageData.slug}:`, e);
-          errors++;
-          // Продолжаем импорт других страниц даже если одна не удалась
-        }
-      }
-
-      const message = `Импорт завершен: создано ${imported} страниц, пропущено ${skipped} (уже существуют)${errors > 0 ? `, ошибок: ${errors}` : ""}`;
-      onMessage?.(errors > 0 ? "warning" : "success", message);
-      
-      // Перезагружаем список страниц
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Задержка перед перезагрузкой
-      reloadData();
-      await load();
-    } catch (e) {
-      console.error("Import error:", e);
-      onMessage?.("error", e?.message || "Не удалось импортировать страницы");
-    } finally {
-      setImporting(false);
-    }
-  }, [canWrite, items, load, onMessage, reloadData]);
-
   const columns = [
     {
       title: "Название",
       dataIndex: "title",
       render: (_, row) => (
-        <div style={{ display: "grid", gap: 4 }}>
-          <div style={{ fontWeight: 800 }}>
-            {row.__depth ? <span style={{ opacity: 0.6 }}>{"— ".repeat(row.__depth)}</span> : null}
-            {row.title || row.name || "—"}
+        <div className="admin-pages-list__titlecell">
+          <div className="admin-pages-list__titleline">
+            {row.__depth ? <span className="admin-pages-list__indent">{"— ".repeat(row.__depth)}</span> : null}
+            <span className="admin-pages-list__title">{row.title || row.name || "—"}</span>
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Tag>{row.slug || "—"}</Tag>
-            <Tag color="blue">{(row.locale || row.lang || "ru").toUpperCase()}</Tag>
+          <div className="admin-pages-list__metarow">
+            <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
+            <Tag className="admin-pages-list__tag" color="blue">
+              {(row.locale || row.lang || "ru").toUpperCase()}
+            </Tag>
           </div>
         </div>
       ),
@@ -211,16 +152,20 @@ export default function AdminPagesV2List({
     {
       title: "Действия",
       key: "actions",
-      width: 520,
+      width: isTablet ? 380 : 460,
       render: (_, row) => (
-        <Space wrap>
-          <Button onClick={() => onPreview?.(row.slug)} disabled={!row.slug}>
+        <Space wrap className="admin-pages-list__actions">
+          <Button size={isTablet ? "small" : "middle"} onClick={() => onPreview?.(row.slug)} disabled={!row.slug}>
             Открыть
           </Button>
-          <Button onClick={() => onCreate?.(row.slug)} disabled={!canWrite || !row.slug}>
+          <Button
+            size={isTablet ? "small" : "middle"}
+            onClick={() => onCreate?.(row.slug)}
+            disabled={!canWrite || !row.slug}
+          >
             + Подстраница
           </Button>
-          <Button onClick={() => onEdit?.(row.id)} disabled={!canWrite}>
+          <Button size={isTablet ? "small" : "middle"} onClick={() => onEdit?.(row.id)} disabled={!canWrite}>
             Редактировать
           </Button>
           <Popconfirm
@@ -231,7 +176,7 @@ export default function AdminPagesV2List({
             onConfirm={() => deletePage(row.id)}
             disabled={!canWrite}
           >
-            <Button danger disabled={!canWrite}>
+            <Button size={isTablet ? "small" : "middle"} danger disabled={!canWrite}>
               Удалить
             </Button>
           </Popconfirm>
@@ -240,39 +185,108 @@ export default function AdminPagesV2List({
     },
   ];
 
-  return (
-    <div className="admin-grid">
-      <div className="admin-card admin-toolbar">
+  const renderToolbar = () => (
+    <div className="admin-card admin-toolbar admin-pages-list__toolbar">
+      <div className="admin-pages-list__toolbar-left">
         <Input
           placeholder="Поиск по названию или slug..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"
+          size={isMobile ? "large" : "middle"}
         />
-        <Space wrap>
-          <Button
-            onClick={() =>
-              setLocaleMode((x) => (x === "all" ? "ru" : x === "ru" ? "tyv" : "all"))
-            }
-          >
-            Язык: {localeMode === "all" ? "Все" : localeMode === "tyv" ? "Тыва" : "Русский"}
-          </Button>
-          <Button onClick={load} loading={busy}>
-            Обновить
-          </Button>
-          <Button
-            onClick={importExistingPages}
-            loading={importing}
-            disabled={!canWrite || importing}
-            type="default"
-          >
-            Импортировать существующие страницы
-          </Button>
-          <Button type="primary" onClick={() => onCreate?.()} disabled={!canWrite}>
-            + Создать страницу
-          </Button>
-        </Space>
       </div>
+      <div className="admin-pages-list__toolbar-right">
+        <Button
+          onClick={() => setLocaleMode((x) => (x === "all" ? "ru" : x === "ru" ? "tyv" : "all"))}
+          size={isMobile ? "large" : "middle"}
+        >
+          Язык: {localeMode === "all" ? "Все" : localeMode === "tyv" ? "Тыва" : "Русский"}
+        </Button>
+        <Button onClick={load} loading={busy} size={isMobile ? "large" : "middle"}>
+          Обновить
+        </Button>
+        <Button
+          type="primary"
+          onClick={() => onCreate?.()}
+          disabled={!canWrite}
+          size={isMobile ? "large" : "middle"}
+        >
+          + Создать страницу
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="admin-grid admin-pages-list">
+        {renderToolbar()}
+
+        {filtered.length === 0 ? (
+          <div className="admin-card admin-pages-list__empty">Нет данных</div>
+        ) : (
+          <div className="admin-cards admin-pages-list__cards">
+            {filtered.map((row) => (
+              <div key={String(row.id || row.slug)} className="admin-card admin-pages-list__card">
+                <div className="admin-pages-list__card-head">
+                  <div className="admin-pages-list__card-title">
+                    {row.title || row.name || "—"}
+                  </div>
+                  <div className="admin-pages-list__metarow">
+                    <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
+                    <Tag className="admin-pages-list__tag" color="blue">
+                      {(row.locale || row.lang || "ru").toUpperCase()}
+                    </Tag>
+                  </div>
+                </div>
+
+                <div className="admin-pages-list__card-actions">
+                  <Button
+                    onClick={() => onPreview?.(row.slug)}
+                    disabled={!row.slug}
+                    block
+                  >
+                    Открыть
+                  </Button>
+                  <Button
+                    onClick={() => onEdit?.(row.id)}
+                    disabled={!canWrite}
+                    block
+                  >
+                    Редактировать
+                  </Button>
+                  <Button
+                    onClick={() => onCreate?.(row.slug)}
+                    disabled={!canWrite || !row.slug}
+                    block
+                  >
+                    + Подстраница
+                  </Button>
+                  <Popconfirm
+                    title="Удалить страницу?"
+                    description="Это действие нельзя отменить."
+                    okText="Удалить"
+                    cancelText="Отмена"
+                    onConfirm={() => deletePage(row.id)}
+                    disabled={!canWrite}
+                  >
+                    <Button danger disabled={!canWrite} block>
+                      Удалить
+                    </Button>
+                  </Popconfirm>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="admin-grid admin-pages-list">
+      {renderToolbar()}
 
       <div className="admin-card admin-table">
         <Table
@@ -280,7 +294,13 @@ export default function AdminPagesV2List({
           columns={columns}
           dataSource={filtered}
           loading={busy}
-          pagination={{ pageSize: 10 }}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: !isTablet,
+            showQuickJumper: !isTablet,
+            size: isTablet ? "small" : "default",
+          }}
+          scroll={isTablet ? { x: "max-content" } : undefined}
         />
       </div>
     </div>
