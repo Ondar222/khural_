@@ -4926,12 +4926,15 @@ body.admin-mode[data-admin-theme="light"] .admin-card {
 }
 @media (max-width: 720px) {
   .admin-dashboard .admin-cards {
-    gap: 12px;
+    gap: 14px;
   }
 }
 
 /* Keep rounded cards on mobile specifically for dashboard */
 @media (max-width: 768px) {
+  .admin-dashboard {
+    padding: 14px 12px 18px;
+  }
   .admin-dashboard .admin-card {
     border-radius: 18px;
     border-left: 1px solid rgba(255, 255, 255, 0.14);
