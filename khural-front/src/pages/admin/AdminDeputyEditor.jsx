@@ -129,6 +129,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const structureType = Form.useWatch("structureType", form);
   const isDeceased = Form.useWatch("isDeceased", form);
   const fullNameValue = Form.useWatch("fullName", form);
+  const initialStatusRef = React.useRef(null);
   const [newFactionOpen, setNewFactionOpen] = React.useState(false);
   const [newFactionName, setNewFactionName] = React.useState("");
   const [newDistrictOpen, setNewDistrictOpen] = React.useState(false);
@@ -455,9 +456,19 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         // Try API; fallback to local list
         const fromApi = await PersonsApi.getById(id).catch(() => null);
         const fromLocal = getLocalDeputyById(deputies, id);
-        const src = fromApi || fromLocal;
+        // Merge local overrides so status checkbox remains consistent even if backend ignores these fields.
+        const ov = readDeputiesOverrides();
+        const patch = ov?.updatedById && typeof ov.updatedById === "object" ? ov.updatedById[String(id)] : null;
+        const base = fromApi || fromLocal || patch;
+        const src = patch && base && typeof base === "object" ? { ...base, ...patch } : base;
         if (!alive) return;
-        form.setFieldsValue(normalizeInitial(src));
+        const normalized = normalizeInitial(src);
+        form.setFieldsValue(normalized);
+        initialStatusRef.current = {
+          mandateEnded: Boolean(normalized?.mandateEnded),
+          isDeceased: Boolean(normalized?.isDeceased),
+          isActive: normalized?.isActive !== undefined ? Boolean(normalized?.isActive) : true,
+        };
       } finally {
         if (alive) setLoading(false);
       }
@@ -486,6 +497,22 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     });
   }, []);
 
+  // Persist status fields locally so the checkbox "works" even if backend ignores these fields.
+  const saveOverridesStatus = React.useCallback((id, statusPatch) => {
+    const key = String(id || "");
+    if (!key) return;
+    const next = readDeputiesOverrides();
+    const updatedById = next.updatedById && typeof next.updatedById === "object" ? next.updatedById : {};
+    const prev = updatedById[key] && typeof updatedById[key] === "object" ? updatedById[key] : {};
+    writeDeputiesOverrides({
+      ...next,
+      updatedById: {
+        ...updatedById,
+        [key]: { ...prev, ...statusPatch, id: key },
+      },
+    });
+  }, []);
+
   const saveOverridesCreate = React.useCallback((item) => {
     const next = readDeputiesOverrides();
     const created = Array.isArray(next.created) ? next.created : [];
@@ -510,6 +537,15 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           const created = await PersonsApi.create(toPersonsApiBody(body));
           const id = created?.id ?? created?._id ?? created?.personId;
           if (id && photoFile) await PersonsApi.uploadMedia(id, photoFile);
+          // If admin set any non-default status, persist it locally too (backend may ignore these fields).
+          const statusPatch = {
+            mandateEnded: Boolean(body?.mandateEnded),
+            isDeceased: Boolean(body?.isDeceased),
+            isActive: body?.isActive !== undefined ? Boolean(body?.isActive) : true,
+          };
+          if (id && (statusPatch.mandateEnded || statusPatch.isDeceased || statusPatch.isActive === false)) {
+            saveOverridesStatus(id, statusPatch);
+          }
           message.success("Депутат создан");
           reload();
           navigate("/admin/deputies");
@@ -531,6 +567,19 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         console.log("[AdminDeputyEditor] Sending PATCH payload:", { mandateEnded: payload.mandateEnded, isDeceased: payload.isDeceased, ...payload });
         await PersonsApi.patch(id, payload);
         if (photoFile) await PersonsApi.uploadMedia(id, photoFile);
+        // Persist status locally when it changes (backend may not store these fields).
+        const statusPatch = {
+          mandateEnded: Boolean(body?.mandateEnded),
+          isDeceased: Boolean(body?.isDeceased),
+          isActive: body?.isActive !== undefined ? Boolean(body?.isActive) : true,
+        };
+        const prev = initialStatusRef.current;
+        const changed =
+          !prev ||
+          Boolean(prev.mandateEnded) !== Boolean(statusPatch.mandateEnded) ||
+          Boolean(prev.isDeceased) !== Boolean(statusPatch.isDeceased) ||
+          Boolean(prev.isActive) !== Boolean(statusPatch.isActive);
+        if (changed) saveOverridesStatus(id, statusPatch);
         message.success("Депутат обновлён");
         reload();
         navigate("/admin/deputies");
