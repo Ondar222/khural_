@@ -521,6 +521,10 @@ export default function NewsArchive() {
                 href: "/news",
                 active: !isSpeakerNews && category === "Все"
               },
+              {
+                label: "Главные события недели",
+                href: "/news/week",
+              },
               { 
                 label: "Новости Председателя", 
                 href: "/news?speaker=true",

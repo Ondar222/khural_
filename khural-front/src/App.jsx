@@ -72,6 +72,8 @@ import AdminConvocationsEditPage from "./pages/admin/AdminConvocationsEditPage.j
 import AdminCommitteesPage from "./pages/admin/AdminCommitteesPage.jsx";
 import AdminCommitteesCreatePage from "./pages/admin/AdminCommitteesCreatePage.jsx";
 import AdminCommitteesEditPage from "./pages/admin/AdminCommitteesEditPage.jsx";
+import NewsSliderDetail from "./pages/NewsSliderDetail.jsx";
+import NewsWeekHighlights from "./pages/NewsWeekHighlights.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
@@ -120,6 +122,8 @@ export default function App() {
                           "/region": Region,
                           "/about": About,
                           "/news": NewsArchive,
+                          "/news/week": NewsWeekHighlights,
+                          "/news/slider/:id": NewsSliderDetail,
                           "/calendar": CalendarPage,
                           "/documents": Documents,
                           "/documents/:id": DocumentDetail,

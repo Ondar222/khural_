@@ -328,6 +328,8 @@ export default function Header() {
             >
               <Link to="/news">{t("news")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("news")}>
+                <a href="/news/week">Главные события недели</a>
+                <hr />
                 {newsCategories.map((c, i) =>
                   c === "—" ? (
                     <hr key={`hr-${i}`} />
@@ -523,6 +525,7 @@ export default function Header() {
           </div>
           <div className="sheet-col">
             <h3>{t("news")}</h3>
+            <a href="/news/week">Главные события недели</a>
             <a href="/news">{t("hotNews")}</a>
             <a href="/news">{t("allNews")}</a>
             <a href="/news">{t("media")}</a>
@@ -878,6 +881,12 @@ export default function Header() {
               {t("back")}
             </button>
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("news")}</div>
+            <a className="tile link" href="/news/week" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Главные события недели
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
             <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("hotNews")}

@@ -19,6 +19,16 @@ function joinDateAndDescription(date, description) {
   return `Дата события: ${d}${body ? `\n${body}` : ""}`;
 }
 
+function pickText(...vals) {
+  for (const v of vals) {
+    if (v === undefined || v === null) continue;
+    const s = String(v).trim();
+    if (!s) continue;
+    return s;
+  }
+  return "";
+}
+
 export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpdate, onUploadImage, busy, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
@@ -37,17 +47,35 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
     (async () => {
       setLoading(true);
       try {
-        const local = (Array.isArray(items) ? items : []).find((s) => String(s?.id) === String(id)) || null;
+        const local =
+          (Array.isArray(items) ? items : []).find((s) => String(s?.id) === String(id)) || null;
         const fromApi = await SliderApi.getById(id).catch(() => null);
-        const src = fromApi || local;
-        if (!src) return;
-        const dateSplit = splitDateAndDescription(src.description || src.desc || src.subtitle || "");
+
+        // Merge carefully: API may return partial/empty object; do not wipe local values with empty strings.
+        const title = pickText(fromApi?.title, local?.title);
+        const descriptionRaw = pickText(
+          fromApi?.description,
+          fromApi?.desc,
+          fromApi?.subtitle,
+          local?.description,
+          local?.desc,
+          local?.subtitle
+        );
+        const url = pickText(fromApi?.url, fromApi?.link, fromApi?.href, local?.url, local?.link, local?.href);
+        const isActive =
+          fromApi && typeof fromApi === "object" && Object.prototype.hasOwnProperty.call(fromApi, "isActive")
+            ? fromApi.isActive !== false
+            : local
+              ? local.isActive !== false
+              : true;
+
+        const dateSplit = splitDateAndDescription(descriptionRaw);
         form.setFieldsValue({
-          title: src.title || "",
+          title: title || "",
           date: dateSplit.date || "",
           description: dateSplit.description || "",
-          url: src.url || src.link || src.href || "",
-          isActive: src.isActive !== false,
+          url: url || "",
+          isActive,
         });
       } finally {
         if (alive) setLoading(false);
@@ -144,6 +172,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
               autoSize={{ minRows: 10, maxRows: 24 }}
               placeholder="<p>Описание</p>"
               style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+              disabled={loading || saving}
             />
           </Form.Item>
 

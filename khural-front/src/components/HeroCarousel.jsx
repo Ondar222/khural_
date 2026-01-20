@@ -8,12 +8,61 @@ export default function HeroCarousel() {
   const { t } = useI18n();
   const [active, setActive] = React.useState(0);
 
+  const truncateWords = React.useCallback((text, maxWords) => {
+    const s = String(text || "").trim();
+    if (!s) return "";
+    const words = s.split(/\s+/).filter(Boolean);
+    const n = Number(maxWords || 0);
+    if (!n || words.length <= n) return s;
+    return words.slice(0, n).join(" ") + "…";
+  }, []);
+
+  const splitDateAndDescription = React.useCallback((text) => {
+    const s = String(text || "");
+    const m = s.match(/^\s*(?:Дата события|Дата)\s*:\s*([0-9]{4}-[0-9]{2}-[0-9]{2})\s*\n?/i);
+    if (m) {
+      const date = m[1] || "";
+      const rest = s.slice(m[0].length).trimStart();
+      return { date, description: rest };
+    }
+    // Also support raw "YYYY-MM-DD ..." at the start
+    const m2 = s.match(/^\s*([0-9]{4}-[0-9]{2}-[0-9]{2})\b\s*/);
+    if (m2) {
+      const date = m2[1] || "";
+      const rest = s.slice(m2[0].length).trimStart();
+      return { date, description: rest };
+    }
+    return { date: "", description: s };
+  }, []);
+
+  const stripHtmlToText = React.useCallback((input) => {
+    const s = String(input || "");
+    if (!s.trim()) return "";
+    // Prefer real HTML parsing when in browser (handles entities, nested tags, etc.)
+    try {
+      if (typeof window !== "undefined" && typeof window.DOMParser !== "undefined") {
+        const doc = new window.DOMParser().parseFromString(String(s), "text/html");
+        const text = String(doc?.body?.textContent || "").replace(/\s+/g, " ").trim();
+        if (text) return text;
+      }
+    } catch {
+      // ignore and fallback to regex
+    }
+    // Fallback: strip tags and collapse whitespace
+    return String(s)
+      .replace(/&nbsp;/gi, " ")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }, []);
+
   const baseSlides = React.useMemo(() => {
     // Slider must come from backend/admin only (no code fallbacks)
     const base = Array.isArray(dataSlides) ? dataSlides : [];
     return base.map((s) => ({
+      id: String(s?.id ?? "").trim(),
       title: String(s?.title || "").trim(),
-      desc: String(s?.desc || "").trim(),
+      desc: String(s?.desc ?? s?.description ?? s?.subtitle ?? "").trim(),
       link: s?.link ? String(s.link) : "/news",
       image: s?.image || "",
     }));
@@ -42,10 +91,14 @@ export default function HeroCarousel() {
   if (!slides.length) return null;
 
   const current = slides[active] || slides[0];
-  const href = current?.link ? String(current.link) : "/news";
   const desc = current?.desc ? String(current.desc).trim() : "";
-  const visibleDesc = desc.length > 220 ? desc.slice(0, 220).trim() + "…" : desc;
-  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(desc);
+  const previewText = stripHtmlToText(desc);
+  const { date, description } = splitDateAndDescription(previewText);
+  const subtitleText = String(description || "").trim();
+  const subtitlePreview = truncateWords(subtitleText, 30);
+  const href = current?.id
+    ? `/news/slider/${encodeURIComponent(String(current.id))}`
+    : "/news";
 
   return (
     <div className="container">
@@ -63,13 +116,8 @@ export default function HeroCarousel() {
         <div className="caption center">
           <div className="hero__panel">
             <h1 className="title center">{current?.title}</h1>
-            {visibleDesc ? (
-              looksLikeHtml ? (
-                <div className="hero__desc" dangerouslySetInnerHTML={{ __html: desc }} />
-              ) : (
-                <p className="hero__desc">{visibleDesc}</p>
-              )
-            ) : null}
+            {subtitlePreview ? <p className="hero__desc">{subtitlePreview}</p> : null}
+            {date ? <div className="hero__date">{date}</div> : null}
             <div className="hero__actions">
               <a className="hero__btn" href={href}>
                 {t("more")} <span aria-hidden="true">→</span>
