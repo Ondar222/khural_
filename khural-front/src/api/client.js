@@ -1063,7 +1063,11 @@ export const ConvocationsApi = {
       
       // Фильтруем по активности, если нужно
       if (activeOnly) {
-        return all.filter(c => c.isActive !== false);
+        return all.filter((c) => {
+          const v = c?.isActive;
+          // Treat string/number false as false as well
+          return !(v === false || v === 0 || v === "0" || String(v).toLowerCase() === "false");
+        });
       }
       return all;
     } catch (e) {

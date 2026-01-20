@@ -27,6 +27,12 @@ import {
   writeCommitteesOverrides,
 } from "../utils/committeesOverrides.js";
 import { normalizeBool } from "../utils/bool.js";
+import {
+  CONVOCATIONS_OVERRIDES_EVENT_NAME,
+  CONVOCATIONS_OVERRIDES_STORAGE_KEY,
+  readConvocationsOverrides,
+  writeConvocationsOverrides,
+} from "../utils/convocationsOverrides.js";
 
 function toNewsFallback(items) {
   return (items || []).map((n) => ({
@@ -371,13 +377,42 @@ export function useAdminData() {
     const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
     const apiAppeals = normalizeServerList(apiAppealsResponse);
     setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
-    setConvocations(Array.isArray(apiConvocations) ? apiConvocations : []);
+    const baseConv = Array.isArray(apiConvocations) ? apiConvocations : [];
+    setConvocations(mergeConvocationsWithOverrides(baseConv, readConvocationsOverrides()));
     committeesApiOkRef.current = Array.isArray(apiCommittees);
     const baseCommittees = committeesApiOkRef.current ? apiCommittees : publicCommitteesFallback();
     setCommittees(mergeCommitteesWithOverrides(baseCommittees, readCommitteesOverrides()));
     const pagesList = normalizeServerList(apiPages);
     setPages(Array.isArray(pagesList) ? pagesList : []);
   }, [publicCommitteesFallback]);
+
+  function mergeConvocationsWithOverrides(base, overrides) {
+    const created = Array.isArray(overrides?.created) ? overrides.created : [];
+    const updatedById =
+      overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
+    const deletedIds = new Set(Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []);
+
+    const out = [];
+    const seen = new Set();
+    for (const it of Array.isArray(base) ? base : []) {
+      const idStr = String(it?.id ?? "");
+      if (!idStr) continue;
+      if (deletedIds.has(idStr)) continue;
+      const override = updatedById[idStr];
+      out.push(override ? { ...it, ...override } : it);
+      seen.add(idStr);
+    }
+    for (const it of created) {
+      const idStr = String(it?.id ?? "");
+      if (!idStr) continue;
+      if (deletedIds.has(idStr)) continue;
+      if (seen.has(idStr)) continue;
+      const override = updatedById[idStr];
+      out.push(override ? { ...it, ...override } : it);
+      seen.add(idStr);
+    }
+    return out;
+  }
 
   React.useEffect(() => {
     // Load once on mount to avoid spamming the API (429).
@@ -406,6 +441,22 @@ export function useAdminData() {
     return () => {
       window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, apply);
       window.removeEventListener("storage", apply);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const apply = () => {
+      setConvocations((prev) => mergeConvocationsWithOverrides(prev, readConvocationsOverrides()));
+    };
+    const onStorage = (e) => {
+      if (e?.key === CONVOCATIONS_OVERRIDES_STORAGE_KEY) apply();
+    };
+    window.addEventListener(CONVOCATIONS_OVERRIDES_EVENT_NAME, apply);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(CONVOCATIONS_OVERRIDES_EVENT_NAME, apply);
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 
@@ -1014,6 +1065,23 @@ export function useAdminData() {
   const updateConvocation = React.useCallback(async (id, payload) => {
     setBusy(true);
     try {
+      const sid = String(id);
+      // Always persist locally so UI/public site reflects status even if backend ignores it.
+      const ov = readConvocationsOverrides();
+      const updatedById =
+        ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
+      writeConvocationsOverrides({
+        ...ov,
+        updatedById: { ...updatedById, [sid]: { ...payload, id: sid } },
+      });
+      setConvocations((prev) =>
+        mergeConvocationsWithOverrides(
+          (Array.isArray(prev) ? prev : []).map((c) =>
+            String(c?.id ?? "") === sid ? { ...c, ...payload } : c
+          ),
+          readConvocationsOverrides()
+        )
+      );
       try {
         await ConvocationsApi.patch(id, payload);
       } catch (e) {
@@ -1021,7 +1089,8 @@ export function useAdminData() {
         if (e?.status === 400 && payload?.name) {
           await ConvocationsApi.patch(id, { name: payload.name });
         } else {
-          throw e;
+          message.warning("Сервер не сохранил изменения. Сохранено локально.");
+          return;
         }
       }
       message.success("Созыв обновлён");

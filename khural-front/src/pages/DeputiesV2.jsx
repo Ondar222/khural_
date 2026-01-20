@@ -312,7 +312,8 @@ export default function DeputiesV2() {
   const [committeeId, setCommitteeId] = React.useState("Все");
   const [faction, setFaction] = React.useState("Все");
   const [district, setDistrict] = React.useState("Все");
-  const [status, setStatus] = React.useState("all");
+  // Public default: hide ended/deceased deputies (they are available in /deputies/ended)
+  const [status, setStatus] = React.useState("active");
 
   const districts = React.useMemo(() => {
     const items = Array.isArray(structureDistricts) ? structureDistricts : [];

@@ -24,6 +24,7 @@ import DocumentDetail from "./pages/DocumentDetail.jsx";
 import Broadcast from "./pages/Broadcast.jsx";
 import Deputies from "./pages/DeputiesV2.jsx";
 import DeputiesEnded from "./pages/DeputiesEnded.jsx";
+import Convocations from "./pages/Convocations.jsx";
 import PagesIndex from "./pages/PagesIndex.jsx";
 import PageBySlug from "./pages/PageBySlug.jsx";
 import Appeals from "./pages/Appeals.jsx";
@@ -140,6 +141,7 @@ export default function App() {
                           "/commission": Commission,
                           "/apparatus": Apparatus,
                           "/section": SectionPage,
+                          "/convocations": Convocations,
                           "/deputies": Deputies,
                           "/deputies/ended": DeputiesEnded,
                           "/pages": PagesIndex,

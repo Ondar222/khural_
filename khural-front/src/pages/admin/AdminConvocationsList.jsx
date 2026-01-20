@@ -1,6 +1,7 @@
 import React from "react";
 import { Button, Input, Space, Table, Tag, App } from "antd";
 import { useHashRoute } from "../../Router.jsx";
+import { normalizeBool } from "../../utils/bool.js";
 
 export default function AdminConvocationsList({ items, onDelete, busy, canWrite }) {
   const { navigate } = useHashRoute();
@@ -28,6 +29,11 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
     if (low.includes("созыв")) return raw;
     return `Созыв ${raw}`;
   }, []);
+
+  const isConvocationActive = React.useCallback(
+    (row) => normalizeBool(row?.isActive, true) !== false,
+    []
+  );
 
   const filtered = React.useMemo(() => {
     const itemsArray = Array.isArray(items) ? items : [];
@@ -66,7 +72,7 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
         <div style={{ display: "grid", gap: 6 }}>
           <div style={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 8, flexWrap: 'wrap' }}>
             {formatConvocationLabel(row)}
-            {row.isActive !== false ? (
+            {isConvocationActive(row) ? (
               <Tag color="green">Активный</Tag>
             ) : (
               <Tag color="default">Архив</Tag>
@@ -85,7 +91,7 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
       dataIndex: "isActive",
       width: 120,
       render: (isActive) =>
-        isActive ? (
+        normalizeBool(isActive, true) !== false ? (
           <Tag color="green">Активный</Tag>
         ) : (
           <Tag color="default">Архив</Tag>
@@ -215,7 +221,7 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
                           flexWrap: 'wrap',
                         }}>
                           <span>{formatConvocationLabel(row)}</span>
-                          {row.isActive !== false ? (
+                          {isConvocationActive(row) ? (
                             <Tag color="green" style={{ margin: 0 }}>Активный</Tag>
                           ) : (
                             <Tag color="default" style={{ margin: 0 }}>Архив</Tag>

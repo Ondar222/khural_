@@ -1,6 +1,7 @@
 import React from "react";
 import { App, Button, Form, Input, Switch, Select, Space, Tag, Empty } from "antd";
 import { useHashRoute } from "../../Router.jsx";
+import { normalizeBool } from "../../utils/bool.js";
 
 export default function AdminConvocationsEditor({
   mode,
@@ -45,7 +46,7 @@ export default function AdminConvocationsEditor({
       form.setFieldsValue({
         number: extractNumber(found.name || found.number || ""),
         description: found.description || "",
-        isActive: found.isActive !== false,
+        isActive: normalizeBool(found.isActive, true),
       });
     } finally {
       setLoading(false);
@@ -59,10 +60,13 @@ export default function AdminConvocationsEditor({
       const values = await form.validateFields();
       // Отправляем все поля: name, description, isActive
       const number = String(values.number || "").trim();
+      const isActive = normalizeBool(values.isActive, true);
       const payload = {
         name: number,
         description: values.description || "",
-        isActive: values.isActive !== false,
+        isActive,
+        // Some deployments expect snake_case
+        is_active: isActive,
       };
       if (mode === "create") {
         await onCreate?.(payload);
@@ -166,13 +170,15 @@ export default function AdminConvocationsEditor({
 
           <Form.Item
             label="Статус"
-            name="isActive"
-            valuePropName="checked"
             tooltip="Активный - текущий созыв, Архив - прошлые созывы"
           >
-            <Switch disabled={loading || saving} />
-            <div style={{ marginTop: 8, opacity: 0.7, fontSize: 13 }}>
-              {isActiveValue !== false ? "Активный" : "Архив"}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <Form.Item name="isActive" valuePropName="checked" noStyle>
+                <Switch disabled={loading || saving} />
+              </Form.Item>
+              <div style={{ opacity: 0.7, fontSize: 13 }}>
+                {normalizeBool(isActiveValue, true) ? "Активный" : "Архив"}
+              </div>
             </div>
           </Form.Item>
         </Form>

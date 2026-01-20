@@ -16,6 +16,7 @@ export default function SideNav({
     //   label: "Руководство парламента",
     //   href: "/section?title=" + encodeURIComponent("Руководство парламента"),
     // },
+    { label: "Созывы", href: "/convocations" },
     // "Депутаты" — по умолчанию показываем текущий созыв (если есть в данных)
     { label: "Депутаты", href: "/deputies?convocation=VIII" },
     { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
