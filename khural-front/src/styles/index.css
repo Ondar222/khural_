@@ -1562,9 +1562,7 @@ a {
   margin-bottom: 40px;
 }
 
-.anticon anticon-down ant-select-suffix{
 
-}
 /* Ensure long select values fit (wrap instead of ellipsis/cut) */
 .filters--deputies .ant-select {
   width: 100%;
@@ -1594,6 +1592,21 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Center the down-arrow icon inside Select (suffix) */
+.filters--deputies .ant-select .ant-select-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.filters--deputies .ant-select .ant-select-arrow .anticon.anticon-down.ant-select-suffix {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Make the convocation dropdown button match Select */
