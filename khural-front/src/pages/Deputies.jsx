@@ -1,7 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { Select, Button, Dropdown } from "antd";
+import { Select } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
@@ -25,7 +25,6 @@ export default function Deputies() {
   const [committeeId, setCommitteeId] = React.useState("Все");
   const [faction, setFaction] = React.useState("Все");
   const [district, setDistrict] = React.useState("Все");
-  const [openConv, setOpenConv] = React.useState(false);
 
   // If URL/structure links set a convocation that doesn't exist in data yet,
   // don't show an empty page — fallback to "Все".
@@ -65,6 +64,18 @@ export default function Deputies() {
       .filter((item) => item && item.trim() !== "");
     return ["Все", ...stringItems];
   }, [structureConvocations]);
+
+  const convocationOptions = React.useMemo(() => {
+    const av = Array.from(new Set(convocations))
+      .map((c) => String(c || "").trim())
+      .filter(Boolean);
+    const ordered = CONVOCATION_ORDER.filter((x) => av.includes(x));
+    const rest = av.filter((c) => !ordered.includes(c));
+    return [...ordered, ...rest].map((c) => ({
+      value: c,
+      label: c === "Все" ? "Все созывы" : `${c} созыв`,
+    }));
+  }, [convocations]);
   
   const factions = React.useMemo(() => {
     const items = Array.isArray(structureFactions) ? structureFactions : [];
@@ -79,19 +90,6 @@ export default function Deputies() {
       .filter((item) => item && item.trim() !== "");
     return ["Все", ...stringItems];
   }, [structureFactions]);
-  const convMenuItems = React.useMemo(() => {
-    const av = Array.from(new Set(convocations));
-    const ordered = CONVOCATION_ORDER.filter((x) => av.includes(x));
-    return ordered.map((c) => ({
-      key: c,
-      label: c === "Все" ? "Все созывы" : `${c} созыв`,
-      onClick: () => {
-        setConvocation(c);
-        setOpenConv(false);
-      },
-    }));
-  }, [convocations]);
-
   const committeeOptions = React.useMemo(() => {
     return ["Все", ...(committees || []).map((c) => c.id)];
   }, [committees]);
@@ -161,24 +159,16 @@ export default function Deputies() {
             >
               {/* Single-row filters from Structure */}
               <div className="filters filters--deputies">
-                <Dropdown
-                  open={openConv}
-                  onOpenChange={setOpenConv}
-                  menu={{ items: convMenuItems }}
-                >
-                  <Button size="large">
-                    <span className="filters__btnText">
-                      {convocation === "Все" ? "Все созывы" : `${convocation} созыв`}
-                    </span>
-                    <span className="filters__btnCaret" aria-hidden="true">
-                      ▾
-                    </span>
-                  </Button>
-                </Dropdown>
+                <Select
+                  value={convocation}
+                  onChange={setConvocation}
+                  popupMatchSelectWidth={false}
+                  options={convocationOptions}
+                />
                 <Select
                   value={committeeId}
                   onChange={setCommitteeId}
-                  dropdownMatchSelectWidth={false}
+                  popupMatchSelectWidth={false}
                   options={committeeOptions.map((id) =>
                     id === "Все"
                       ? { value: "Все", label: "По комитетам: Все" }
@@ -193,7 +183,7 @@ export default function Deputies() {
                 <Select
                   value={faction}
                   onChange={setFaction}
-                  dropdownMatchSelectWidth={false}
+                  popupMatchSelectWidth={false}
                   options={factions.map((x) => {
                     const strValue = typeof x === "string" ? x : String(x || "");
                     return {
@@ -206,7 +196,7 @@ export default function Deputies() {
                 <Select
                   value={district}
                   onChange={setDistrict}
-                  dropdownMatchSelectWidth={false}
+                  popupMatchSelectWidth={false}
                   options={districts.map((x) => {
                     const strValue = typeof x === "string" ? x : String(x || "");
                     return {

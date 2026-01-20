@@ -1,7 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { Select, Button, Dropdown } from "antd";
+import { Select } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { PersonsApi } from "../api/client.js";
@@ -312,7 +312,6 @@ export default function DeputiesV2() {
   const [committeeId, setCommitteeId] = React.useState("Все");
   const [faction, setFaction] = React.useState("Все");
   const [district, setDistrict] = React.useState("Все");
-  const [openConv, setOpenConv] = React.useState(false);
   const [status, setStatus] = React.useState("all");
 
   const districts = React.useMemo(() => {
@@ -377,19 +376,6 @@ export default function DeputiesV2() {
       .filter((item) => item && item.trim() !== "");
     return ["Все", ...stringItems];
   }, [structureFactions]);
-
-  const convMenuItems = React.useMemo(() => {
-    const av = Array.from(new Set(convocations));
-    const ordered = CONVOCATION_ORDER.filter((x) => av.includes(x));
-    return ordered.map((c) => ({
-      key: c,
-      label: formatConvocationLabel(c),
-      onClick: () => {
-        setConvocation(c);
-        setOpenConv(false);
-      },
-    }));
-  }, [convocations]);
 
   const committeeOptions = React.useMemo(() => ["Все", ...(committees || []).map((c) => c.id)], [committees]);
 
@@ -508,20 +494,19 @@ export default function DeputiesV2() {
               emptyDescription="Список депутатов пуст"
             >
               <div className="filters filters--deputies">
-                <Dropdown open={openConv} onOpenChange={setOpenConv} menu={{ items: convMenuItems }}>
-                  <Button size="large">
-                    <span className="filters__btnText">
-                      {formatConvocationLabel(convocation)}
-                    </span>
-                    <span className="filters__btnCaret" aria-hidden="true">
-                      ▾
-                    </span>
-                  </Button>
-                </Dropdown>
+                <Select
+                  value={convocation}
+                  onChange={setConvocation}
+                  popupMatchSelectWidth={false}
+                  options={(Array.isArray(convocations) ? convocations : []).map((c) => ({
+                    value: c,
+                    label: formatConvocationLabel(c),
+                  }))}
+                />
                 <Select
                   value={status}
                   onChange={setStatus}
-                  dropdownMatchSelectWidth={false}
+                  popupMatchSelectWidth={false}
                   options={STATUS_OPTIONS.map((x) => ({
                     value: x.value,
                     label: `Статус: ${x.label}`,
@@ -530,7 +515,7 @@ export default function DeputiesV2() {
                 <Select
                   value={committeeId}
                   onChange={setCommitteeId}
-                  dropdownMatchSelectWidth={false}
+                  popupMatchSelectWidth={false}
                   options={committeeOptions.map((id) =>
                     id === "Все"
                       ? { value: "Все", label: "По комитетам: Все" }
@@ -543,7 +528,7 @@ export default function DeputiesV2() {
                 <Select
                   value={faction}
                   onChange={setFaction}
-                  dropdownMatchSelectWidth={false}
+                  popupMatchSelectWidth={false}
                   options={factions.map((x) => ({
                     value: x,
                     label: x === "Все" ? "По фракциям: Все" : `По фракциям: ${x}`,
@@ -553,7 +538,7 @@ export default function DeputiesV2() {
                 <Select
                   value={district}
                   onChange={setDistrict}
-                  dropdownMatchSelectWidth={false}
+                  popupMatchSelectWidth={false}
                   options={districts.map((x) => ({
                     value: x,
                     label: x === "Все" ? "По округам: Все" : `По округам: ${x}`,

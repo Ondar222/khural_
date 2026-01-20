@@ -1464,6 +1464,7 @@ a {
     white-space: nowrap !important;
     overflow: hidden;
     text-overflow: ellipsis;
+  
   }
   .filters .ant-space .ant-select .ant-select-selection-item {
     font-size: 14px !important;
@@ -1553,11 +1554,16 @@ a {
 /* Deputies page filters layout */
 .filters--deputies {
   display: grid;
-  /* 4 фильтра в одну строку */
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  /* 5 фильтров: аккуратная сетка 3 + 2 на десктопе */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
   align-items: stretch;
   margin: 12px 0 18px;
+  margin-bottom: 40px;
+}
+
+.anticon anticon-down ant-select-suffix{
+
 }
 /* Ensure long select values fit (wrap instead of ellipsis/cut) */
 .filters--deputies .ant-select {
@@ -1569,6 +1575,7 @@ a {
   align-items: center !important;
   border-radius: 14px !important;
   padding: 0 14px !important; /* внутренние padding */
+  font-size: 13px; /* slightly smaller text in filters */
 }
 .filters--deputies .ant-select-selection-item,
 .filters--deputies .ant-select-selection-placeholder {
@@ -1576,6 +1583,7 @@ a {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   line-height: 1.25 !important;
+  font-size: 13px; /* keep selection/placeholder consistent */
 }
 .filters--deputies .ant-select-selection-item {
   padding-right: 22px; /* leave room for arrow */
@@ -1597,7 +1605,7 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   overflow: hidden;
 }
@@ -1613,24 +1621,22 @@ a {
   opacity: 0.75;
 }
 
-/* Tablet: 2 columns */
+/* Tablet: 2 columns (last filter spans full row) */
 @media (max-width: 1100px) {
   .filters--deputies {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
   }
-}
-/* Phone: 1 column */
-@media (max-width: 720px) {
-  .filters--deputies {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .filters--deputies > :last-child {
+    grid-column: 1 / -1;
   }
-  /* Mobile: force vertical spacing even if global .filters overrides apply */
+}
+/* Phone: 1 column (override global .filters!important rules) */
+@media (max-width: 720px) {
   .filters.filters--deputies {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
   }
 }
 @media (max-width: 959px) {
@@ -1642,21 +1648,16 @@ a {
     width: 100%;
     min-height: 54px;
   }
+  .filters.filters--deputies {
+    gap: 20px !important;
+  }
 }
 
-/* Deputies mobile: ensure spacing even when global .filters overrides apply */
 @media (max-width: 560px) {
   .filters.filters--deputies {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important; /* отступы между фильтрами */
-  }
-  /* When Dropdown wraps the button, it becomes a sibling element */
-  .filters--deputies .ant-dropdown-trigger + .ant-select,
-  .filters--deputies button + .ant-select,
-  .filters--deputies .ant-btn + .ant-select,
-  .filters--deputies .ant-select + .ant-select {
-    margin-top: 0;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 20px !important; /* компактнее на телефоне */
   }
 }
 .tile {
@@ -6879,6 +6880,8 @@ body.admin-mode[data-admin-theme="dark"]
 }
 body.admin-mode[data-admin-theme="dark"] .ant-select-arrow {
   color: rgba(241, 245, 249, 0.8);
+
+
 }
 body.admin-mode[data-admin-theme="dark"] .ant-table {
   background: transparent;
