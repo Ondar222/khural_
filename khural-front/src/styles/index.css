@@ -1551,6 +1551,70 @@ a {
   }
 }
 
+/* News page filters (match Deputies filters style) */
+.filters--news {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start; /* keep fields on the same top level */
+  margin: 12px 0 20px;
+}
+.filters--news .filters__field {
+  min-width: 0;
+}
+.filters--news .filters__label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.filters--news .ant-select,
+.filters--news .ant-input {
+  width: 100%;
+}
+.filters--news .ant-select .ant-select-selector {
+  height: 54px !important;
+  min-height: 54px !important;
+  align-items: center !important;
+  border-radius: 14px !important;
+  padding: 0 14px !important;
+  font-size: 13px;
+}
+.filters--news .ant-input {
+  height: 54px !important;
+  border-radius: 14px !important;
+  padding: 0 14px !important;
+  font-size: 13px;
+}
+.filters--news .ant-select-selection-item,
+.filters--news .ant-select-selection-placeholder {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.25 !important;
+  font-size: 13px;
+}
+.filters--news .ant-select .ant-select-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.filters--news .ant-select .ant-select-arrow .anticon.anticon-down.ant-select-suffix {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 720px) {
+  .filters.filters--news {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+}
+
 /* Deputies page filters layout */
 .filters--deputies {
   display: grid;

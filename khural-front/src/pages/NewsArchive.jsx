@@ -1,5 +1,5 @@
 import React from "react";
-import { Input, Select, Space } from "antd";
+import { Input, Select } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
@@ -389,15 +389,9 @@ export default function NewsArchive() {
               empty={!loading?.news && (!news || news.length === 0)}
               emptyDescription="Новостей пока нет"
             >
-              <div className="filters">
-                <Space
-                  size={12}
-                  style={{ margin: "12px 0 20px", width: "100%", display: "flex", flexWrap: "wrap" }}
-                >
-                  <div style={{ minWidth: 250, flex: "1 1 auto" }}>
-                    <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
-                      Категория
-                    </label>
+              <div className="filters filters--news">
+                <div className="filters__field">
+                  <label className="filters__label">Категория</label>
                     <Select
                       value={category}
                       onChange={(newCategory) => {
@@ -422,17 +416,16 @@ export default function NewsArchive() {
                       placeholder="Выберите категорию"
                       showSearch
                       allowClear
+                      popupMatchSelectWidth={false}
                       style={{ width: "100%" }}
                       filterOption={(input, option) =>
                         String(option?.label || "").toLowerCase().includes(String(input || "").toLowerCase())
                       }
                       options={categories.map((c) => ({ value: c, label: c }))}
                     />
-                  </div>
-                  <div style={{ minWidth: 200, flex: "0 0 auto" }}>
-                    <label style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 14 }}>
-                      Дата
-                    </label>
+                </div>
+                <div className="filters__field">
+                  <label className="filters__label">Дата</label>
                     <Input
                       type="date"
                       value={date || ""}
@@ -458,8 +451,7 @@ export default function NewsArchive() {
                       placeholder="Выберите дату"
                       aria-label="Фильтр новостей по дате"
                     />
-                  </div>
-                </Space>
+                </div>
               </div>
 
               <DataState
