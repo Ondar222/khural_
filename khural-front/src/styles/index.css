@@ -1711,9 +1711,10 @@ a {
 /* Phone: 1 column (override global .filters!important rules) */
 @media (max-width: 720px) {
   .filters.filters--deputies {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 20px !important;
+    display: block !important; /* reliable spacing on mobile */
+  }
+  .filters.filters--deputies > * + * {
+    margin-top: 20px !important; /* spacing between filters */
   }
 }
 @media (max-width: 959px) {
@@ -1725,16 +1726,15 @@ a {
     width: 100%;
     min-height: 54px;
   }
-  .filters.filters--deputies {
-    gap: 20px !important;
-  }
 }
 
 @media (max-width: 560px) {
   .filters.filters--deputies {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 20px !important; /* компактнее на телефоне */
+    /* keep spacing even if other rules override layout */
+    display: block !important;
+  }
+  .filters.filters--deputies > * + * {
+    margin-top: 20px !important;
   }
 }
 .tile {
