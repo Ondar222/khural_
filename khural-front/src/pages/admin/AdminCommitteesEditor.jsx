@@ -1,5 +1,5 @@
 import React from "react";
-import { App, Button, Form, Input, Switch, Select } from "antd";
+import { App, Button, Form, Input, Switch, Select, Space, Divider, InputNumber } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { toCommitteeHtml } from "../../utils/committeeHtml.js";
 
@@ -8,6 +8,7 @@ export default function AdminCommitteesEditor({
   committeeId,
   items,
   convocations,
+  persons,
   onCreate,
   onUpdate,
   busy,
@@ -24,6 +25,16 @@ export default function AdminCommitteesEditor({
 
   const nameValue = Form.useWatch("name", form);
   const descriptionValue = Form.useWatch("description", form);
+
+  // Prefill convocationId when coming from convocation page
+  React.useEffect(() => {
+    if (mode !== "create") return;
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search || "");
+    const cid = sp.get("convocationId");
+    if (!cid) return;
+    form.setFieldsValue({ convocationId: cid });
+  }, [mode, form]);
 
   // Отслеживание размера окна для адаптивности
   React.useEffect(() => {
@@ -52,6 +63,14 @@ export default function AdminCommitteesEditor({
         head: found.head || "",
         isActive: found.isActive !== false,
         convocationId: found.convocation?.id || found.convocationId || null,
+        members: Array.isArray(found.members)
+          ? found.members.map((m, idx) => ({
+              personId: m?.person?.id ?? m?.personId ?? null,
+              name: m?.name || m?.person?.fullName || m?.person?.name || "",
+              role: m?.role || "Член комитета",
+              order: m?.order ?? idx,
+            }))
+          : [],
       });
     } finally {
       setLoading(false);
@@ -70,8 +89,6 @@ export default function AdminCommitteesEditor({
         return;
       }
       
-      // ВАЖНО: Временно делаем convocationId необязательным для диагностики
-      // Если бэкенд не поддерживает это поле, его отправка может вызвать 500 ошибку
       let convocationId = null;
       if (values.convocationId) {
         convocationId = Number(values.convocationId);
@@ -114,11 +131,27 @@ export default function AdminCommitteesEditor({
         payload.head = values.head.trim();
       }
       
-      // ВАЖНО: Не отправляем convocationId, т.к. бэкенд может его не поддерживать
-      // и это вызывает 500 ошибку. Поле можно будет добавить позже, когда бэкенд будет готов.
-      // if (convocationId) {
-      //   payload.convocationId = convocationId;
-      // }
+      if (convocationId) {
+        payload.convocationId = convocationId;
+      }
+
+      // Members (deputies)
+      const rawMembers = Array.isArray(values.members) ? values.members : [];
+      const normalizedMembers = rawMembers
+        .map((m, idx) => {
+          const role = String(m?.role || "").trim() || "Член комитета";
+          const order = Number.isFinite(Number(m?.order)) ? Number(m.order) : idx;
+          const pid =
+            m?.personId === null || m?.personId === undefined || String(m.personId).trim() === ""
+              ? null
+              : Number(m.personId);
+          const name = String(m?.name || "").trim();
+          if (pid && Number.isFinite(pid) && pid > 0) return { personId: pid, role, order };
+          if (name) return { name, role, order };
+          return null;
+        })
+        .filter(Boolean);
+      payload.members = normalizedMembers;
       
       console.log("[AdminCommitteesEditor] ⚠️ Отправка payload на https://someshit.yurta.site/committees:");
       console.log("[AdminCommitteesEditor] Payload:", JSON.stringify(payload, null, 2));
@@ -131,6 +164,7 @@ export default function AdminCommitteesEditor({
         address: payload.address ? typeof payload.address : "undefined",
         website: payload.website ? typeof payload.website : "undefined",
         head: payload.head ? typeof payload.head : "undefined",
+        convocationId: payload.convocationId ? typeof payload.convocationId + " = " + payload.convocationId : "undefined",
       });
       console.log("[AdminCommitteesEditor] Payload size:", JSON.stringify(payload).length, "bytes");
       
@@ -256,7 +290,7 @@ export default function AdminCommitteesEditor({
         <Form 
           layout="vertical" 
           form={form} 
-          initialValues={{ isActive: true }}
+          initialValues={{ isActive: true, members: [] }}
           style={{ padding: windowWidth <= 768 ? '16px' : '24px' }}
         >
           {/* Основная информация */}
@@ -272,9 +306,7 @@ export default function AdminCommitteesEditor({
                 </span>
               }
               name="convocationId"
-              rules={[{ required: false, message: "Выберите созыв" }]}
-              // ВРЕМЕННО необязательное поле для диагностики проблемы 500 на бэкенде
-              // Если комитет создастся без convocationId, значит проблема была в этом поле
+              rules={[{ required: true, message: "Выберите созыв" }]}
               style={{ marginBottom: 0 }}
             >
               <Select
@@ -349,6 +381,101 @@ export default function AdminCommitteesEditor({
                 />
               </div>
             ) : null}
+          </div>
+
+          <Divider style={{ margin: "18px 0 14px" }} />
+
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>Состав комитета</div>
+            <div style={{ opacity: 0.75, fontSize: 13, lineHeight: 1.45 }}>
+              Добавьте депутатов и роли. Один депутат может состоять в разных комитетах и созывах.
+            </div>
+
+            <Form.List name="members">
+              {(fields, { add, remove }) => (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {fields.map((field, idx) => (
+                    <div
+                      key={field.key}
+                      style={{
+                        border: "1px solid rgba(10, 31, 68, 0.08)",
+                        borderRadius: 12,
+                        padding: 12,
+                        background: "rgba(255,255,255,0.55)",
+                        display: "grid",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                        <div style={{ fontWeight: 800 }}>Участник #{idx + 1}</div>
+                        <Button danger size="small" onClick={() => remove(field.name)} disabled={loading || saving}>
+                          Удалить
+                        </Button>
+                      </div>
+
+                      <div style={{ display: "grid", gap: 10 }}>
+                        <Form.Item
+                          {...field}
+                          label="Депутат"
+                          name={[field.name, "personId"]}
+                          style={{ marginBottom: 0 }}
+                        >
+                          <Select
+                            placeholder="Выберите депутата (или оставьте пустым и заполните имя)"
+                            disabled={loading || saving}
+                            showSearch
+                            allowClear
+                            optionFilterProp="label"
+                            options={(Array.isArray(persons) ? persons : []).map((p) => ({
+                              value: String(p?.id),
+                              label: String(p?.fullName || p?.name || `ID ${p?.id}`),
+                            }))}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          {...field}
+                          label="Имя (если не депутат)"
+                          name={[field.name, "name"]}
+                          style={{ marginBottom: 0 }}
+                        >
+                          <Input placeholder="ФИО" disabled={loading || saving} />
+                        </Form.Item>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: 10 }}>
+                          <Form.Item
+                            {...field}
+                            label="Роль"
+                            name={[field.name, "role"]}
+                            rules={[{ required: true, message: "Укажите роль" }]}
+                            style={{ marginBottom: 0 }}
+                          >
+                            <Input placeholder="Председатель / Член комитета" disabled={loading || saving} />
+                          </Form.Item>
+                          <Form.Item
+                            {...field}
+                            label="Порядок"
+                            name={[field.name, "order"]}
+                            style={{ marginBottom: 0 }}
+                          >
+                            <InputNumber min={0} style={{ width: "100%" }} disabled={loading || saving} />
+                          </Form.Item>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <Space wrap>
+                    <Button
+                      onClick={() => add({ role: "Член комитета", order: fields.length })}
+                      disabled={loading || saving}
+                    >
+                      + Добавить участника
+                    </Button>
+                  </Space>
+                </div>
+              )}
+            </Form.List>
           </div>
 
           {/* Контактная информация */}

@@ -993,7 +993,16 @@ export function useAdminData() {
   const createConvocation = React.useCallback(async (payload) => {
     setBusy(true);
     try {
-      await ConvocationsApi.create(payload);
+      try {
+        await ConvocationsApi.create(payload);
+      } catch (e) {
+        // Fallback for older backend versions that accept only { name }
+        if (e?.status === 400 && payload?.name) {
+          await ConvocationsApi.create({ name: payload.name });
+        } else {
+          throw e;
+        }
+      }
       message.success("Созыв создан");
       await reload();
     } finally {
@@ -1004,7 +1013,16 @@ export function useAdminData() {
   const updateConvocation = React.useCallback(async (id, payload) => {
     setBusy(true);
     try {
-      await ConvocationsApi.patch(id, payload);
+      try {
+        await ConvocationsApi.patch(id, payload);
+      } catch (e) {
+        // Fallback for older backend versions that accept only { name }
+        if (e?.status === 400 && payload?.name) {
+          await ConvocationsApi.patch(id, { name: payload.name });
+        } else {
+          throw e;
+        }
+      }
       message.success("Созыв обновлён");
       await reload();
     } finally {
@@ -1043,6 +1061,11 @@ export function useAdminData() {
         address: payload?.address || "",
         website: payload?.website || "",
         head: payload?.head || "",
+        convocationId:
+          payload?.convocationId === null || payload?.convocationId === undefined
+            ? null
+            : Number(payload.convocationId),
+        members: Array.isArray(payload?.members) ? payload.members : [],
         isActive: payload?.isActive !== false,
         order: payload?.order ?? Date.now(),
       };
@@ -1076,9 +1099,22 @@ export function useAdminData() {
         return;
       }
 
-      await CommitteesApi.patch(id, payload);
-      message.success("Комитет обновлён");
-      await reload();
+      try {
+        await CommitteesApi.patch(id, payload);
+        message.success("Комитет обновлён");
+        await reload();
+      } catch {
+        // Fallback: keep change locally when backend is broken
+        const ov = readCommitteesOverrides();
+        const updatedById =
+          ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
+        writeCommitteesOverrides({
+          ...ov,
+          updatedById: { ...updatedById, [sid]: { ...(updatedById[sid] || {}), ...payload } },
+        });
+        setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
+        message.warning("Сервер недоступен. Изменения сохранены локально.");
+      }
     } finally {
       setBusy(false);
     }
@@ -1100,9 +1136,20 @@ export function useAdminData() {
         return;
       }
 
-      await CommitteesApi.remove(id);
-      message.success("Комитет удалён");
-      await reload();
+      try {
+        await CommitteesApi.remove(id);
+        message.success("Комитет удалён");
+        await reload();
+      } catch {
+        const ov = readCommitteesOverrides();
+        const deletedIds = Array.isArray(ov.deletedIds) ? ov.deletedIds : [];
+        writeCommitteesOverrides({
+          ...ov,
+          deletedIds: [...new Set([...deletedIds, sid])],
+        });
+        setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
+        message.warning("Сервер недоступен. Удаление сохранено локально.");
+      }
     } finally {
       setBusy(false);
     }

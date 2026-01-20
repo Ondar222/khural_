@@ -19,6 +19,7 @@ export default function AdminCommitteesCreatePage() {
       <AdminCommitteesEditor
         mode="create"
         convocations={adminData.convocations}
+        persons={adminData.persons}
         onCreate={adminData.createCommittee}
         busy={adminData.busy}
         canWrite={adminData.canWrite}

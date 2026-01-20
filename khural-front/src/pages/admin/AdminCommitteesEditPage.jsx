@@ -28,6 +28,7 @@ export default function AdminCommitteesEditPage() {
         committeeId={committeeId}
         items={adminData.committees}
         convocations={adminData.convocations}
+        persons={adminData.persons}
         onUpdate={adminData.updateCommittee}
         busy={adminData.busy}
         canWrite={adminData.canWrite}

@@ -27,6 +27,8 @@ export default function AdminConvocationsEditPage() {
         mode="edit"
         convocationId={convocationId}
         items={adminData.convocations}
+        committees={adminData.committees}
+        onUpdateCommittee={adminData.updateCommittee}
         onUpdate={adminData.updateConvocation}
         busy={adminData.busy}
         canWrite={adminData.canWrite}

@@ -21,6 +21,14 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
   const isMobile = windowWidth <= 768;
   const isTablet = windowWidth > 768 && windowWidth <= 1024;
 
+  const formatConvocationLabel = React.useCallback((row) => {
+    const raw = String(row?.name || row?.number || "").trim();
+    if (!raw) return "Созыв";
+    const low = raw.toLowerCase();
+    if (low.includes("созыв")) return raw;
+    return `Созыв ${raw}`;
+  }, []);
+
   const filtered = React.useMemo(() => {
     const itemsArray = Array.isArray(items) ? items : [];
     const qq = q.trim().toLowerCase();
@@ -57,7 +65,7 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
       render: (_, row) => (
         <div style={{ display: "grid", gap: 6 }}>
           <div style={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 8, flexWrap: 'wrap' }}>
-            {row.name || row.number || "Созыв"}
+            {formatConvocationLabel(row)}
             {row.isActive !== false ? (
               <Tag color="green">Активный</Tag>
             ) : (
@@ -206,7 +214,7 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
                           gap: 8,
                           flexWrap: 'wrap',
                         }}>
-                          <span>{row.name || row.number || "Созыв"}</span>
+                          <span>{formatConvocationLabel(row)}</span>
                           {row.isActive !== false ? (
                             <Tag color="green" style={{ margin: 0 }}>Активный</Tag>
                           ) : (

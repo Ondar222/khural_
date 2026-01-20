@@ -1,11 +1,13 @@
 import React from "react";
-import { App, Button, Form, Input, Switch } from "antd";
+import { App, Button, Form, Input, Switch, Select, Space, Tag, Empty } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 
 export default function AdminConvocationsEditor({
   mode,
   convocationId,
   items,
+  committees,
+  onUpdateCommittee,
   onCreate,
   onUpdate,
   busy,
@@ -17,8 +19,18 @@ export default function AdminConvocationsEditor({
   const [saving, setSaving] = React.useState(false);
   const [loading, setLoading] = React.useState(mode === "edit");
 
-  const nameValue = Form.useWatch("name", form);
+  const numberValue = Form.useWatch("number", form);
   const isActiveValue = Form.useWatch("isActive", form);
+
+  const extractNumber = React.useCallback((raw) => {
+    const s = String(raw || "").trim();
+    if (!s) return "";
+    // Examples supported: "VII", "VII созыв", "Созыв VII", "Созыв VII (парламент)" etc
+    const m =
+      s.match(/\b([IVXLCDM]+)\b/i) || // roman
+      s.match(/\b(\d+)\b/); // arabic
+    return m ? String(m[1] || "").toUpperCase() : s;
+  }, []);
 
   React.useEffect(() => {
     if (mode !== "edit") return;
@@ -29,16 +41,16 @@ export default function AdminConvocationsEditor({
     setLoading(true);
     try {
       if (!found) return;
-      // API использует поле "name" (например, "VII созыв")
+      // API использует поле "name" (например, "VII созыв" / "Созыв VII" / "VII")
       form.setFieldsValue({
-        name: found.name || found.number || "",
+        number: extractNumber(found.name || found.number || ""),
         description: found.description || "",
         isActive: found.isActive !== false,
       });
     } finally {
       setLoading(false);
     }
-  }, [mode, convocationId, items, form]);
+  }, [mode, convocationId, items, form, extractNumber]);
 
   const onSave = async () => {
     if (!canWrite) return;
@@ -46,8 +58,9 @@ export default function AdminConvocationsEditor({
     try {
       const values = await form.validateFields();
       // Отправляем все поля: name, description, isActive
+      const number = String(values.number || "").trim();
       const payload = {
-        name: values.name,
+        name: number,
         description: values.description || "",
         isActive: values.isActive !== false,
       };
@@ -67,6 +80,41 @@ export default function AdminConvocationsEditor({
     }
   };
 
+  const convIdNum = React.useMemo(() => {
+    const n = Number(convocationId);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [convocationId]);
+
+  const committeesForThisConvocation = React.useMemo(() => {
+    if (!convIdNum) return [];
+    const list = Array.isArray(committees) ? committees : [];
+    return list.filter((c) => String(c?.convocation?.id || c?.convocationId || "") === String(convIdNum));
+  }, [committees, convIdNum]);
+
+  const availableToAttach = React.useMemo(() => {
+    if (!convIdNum) return [];
+    const list = Array.isArray(committees) ? committees : [];
+    return list.filter((c) => String(c?.convocation?.id || c?.convocationId || "") !== String(convIdNum));
+  }, [committees, convIdNum]);
+
+  const [attachCommitteeId, setAttachCommitteeId] = React.useState(null);
+
+  const attachExisting = React.useCallback(async () => {
+    if (!canWrite) return;
+    if (!convIdNum) return;
+    const id = attachCommitteeId ? String(attachCommitteeId) : "";
+    if (!id) return;
+    await onUpdateCommittee?.(id, { convocationId: convIdNum });
+    setAttachCommitteeId(null);
+  }, [attachCommitteeId, canWrite, convIdNum, onUpdateCommittee]);
+
+  const detach = React.useCallback(async (committeeIdToDetach) => {
+    if (!canWrite) return;
+    const id = String(committeeIdToDetach || "");
+    if (!id) return;
+    await onUpdateCommittee?.(id, { convocationId: null });
+  }, [canWrite, onUpdateCommittee]);
+
   return (
     <div className="admin-events-editor">
       <div className="admin-events-editor__hero">
@@ -76,8 +124,8 @@ export default function AdminConvocationsEditor({
             <div className="admin-events-editor__title">
               {mode === "create" ? "Добавить созыв" : "Редактировать созыв"}
             </div>
-            {mode === "edit" && nameValue ? (
-              <div className="admin-events-editor__subtitle">{String(nameValue)}</div>
+            {mode === "edit" && numberValue ? (
+              <div className="admin-events-editor__subtitle">{`Созыв ${String(numberValue)}`}</div>
             ) : (
               <div className="admin-events-editor__subtitle">Управление созывами</div>
             )}
@@ -100,12 +148,12 @@ export default function AdminConvocationsEditor({
         <div className="admin-events-editor__section-title">Детали созыва</div>
         <Form layout="vertical" form={form} initialValues={{ isActive: true }}>
           <Form.Item
-            label="Название созыва"
-            name="name"
-            rules={[{ required: true, message: "Укажите название созыва" }]}
-            tooltip="Например: 'VII созыв' или 'VIII созыв'"
+            label="Номер созыва"
+            name="number"
+            rules={[{ required: true, message: "Укажите номер созыва" }]}
+            tooltip="Например: 'VII' или '8'"
           >
-            <Input placeholder="VII созыв" disabled={loading || saving} />
+            <Input placeholder="VII" disabled={loading || saving} />
           </Form.Item>
 
           <Form.Item label="Краткое описание" name="description">
@@ -129,6 +177,85 @@ export default function AdminConvocationsEditor({
           </Form.Item>
         </Form>
       </div>
+
+      {mode === "edit" && convIdNum ? (
+        <div className="admin-card" style={{ marginTop: 16 }}>
+          <div className="admin-events-editor__section-title">Комитеты созыва</div>
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <Button
+                type="primary"
+                disabled={!canWrite}
+                onClick={() => navigate(`/admin/committees/create?convocationId=${encodeURIComponent(String(convIdNum))}`)}
+              >
+                + Создать комитет в этом созыве
+              </Button>
+              <Space.Compact style={{ minWidth: 320, flex: "1 1 320px" }}>
+                <Select
+                  style={{ width: "100%" }}
+                  placeholder="Прикрепить существующий комитет…"
+                  value={attachCommitteeId}
+                  onChange={setAttachCommitteeId}
+                  allowClear
+                  disabled={!canWrite}
+                  showSearch
+                  optionFilterProp="label"
+                  options={(availableToAttach || []).map((c) => ({
+                    value: String(c?.id),
+                    label: String(c?.name || c?.title || c?.id),
+                  }))}
+                />
+                <Button type="default" disabled={!canWrite || !attachCommitteeId} onClick={attachExisting}>
+                  Добавить
+                </Button>
+              </Space.Compact>
+            </div>
+
+            {committeesForThisConvocation.length ? (
+              <div style={{ display: "grid", gap: 10 }}>
+                {committeesForThisConvocation.map((c) => {
+                  const id = String(c?.id ?? "");
+                  const localStatic = id.startsWith("local-static-");
+                  return (
+                    <div
+                      key={id}
+                      style={{
+                        border: "1px solid rgba(15, 23, 42, 0.08)",
+                        borderRadius: 14,
+                        padding: 14,
+                        background: "rgba(255,255,255,0.55)",
+                        display: "grid",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                        <div style={{ fontWeight: 900 }}>{c?.name || c?.title || "Комитет"}</div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                          {localStatic ? <Tag color="blue">Локально (файл)</Tag> : id.startsWith("local-") ? <Tag color="blue">Локально</Tag> : null}
+                          {c?.isActive ? <Tag color="green">Активный</Tag> : <Tag color="default">Неактивный</Tag>}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        <Button
+                          disabled={!canWrite || localStatic}
+                          onClick={() => navigate(`/admin/committees/edit/${encodeURIComponent(id)}`)}
+                        >
+                          Редактировать
+                        </Button>
+                        <Button danger disabled={!canWrite || localStatic} onClick={() => detach(id)}>
+                          Убрать из созыва
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <Empty description="В этом созыве пока нет комитетов" />
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

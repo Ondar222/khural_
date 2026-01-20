@@ -138,15 +138,21 @@ export default function Committee() {
   // Resolve members only if committee exists (moved before conditional return)
   const resolveMember = React.useCallback((m) => {
     if (!m || typeof m !== "object") return null;
-    // Try resolve by id first, then by full name (case-insensitive)
-    let d = m.id ? (deputies || []).find((x) => x && x.id === m.id) : null;
+    // Try resolve by id/personId first, then by full name (case-insensitive)
+    const refId = m.personId ?? m?.person?.id ?? m.id ?? "";
+    let d = refId ? (deputies || []).find((x) => x && String(x.id) === String(refId)) : null;
     if (!d && m.name && typeof m.name === "string") {
       const target = m.name.trim().toLowerCase();
       d = (deputies || []).find((x) => x && x.name && typeof x.name === "string" && x.name.trim().toLowerCase() === target);
     }
     return {
-      id: d?.id || m.id || (typeof m.name === "string" ? m.name : String(m.id || "")),
-      name: (d?.name && typeof d.name === "string") ? d.name : (typeof m.name === "string" ? m.name : ""),
+      id: d?.id || refId || (typeof m.name === "string" ? m.name : String(refId || "")),
+      name:
+        (d?.name && typeof d.name === "string")
+          ? d.name
+          : (typeof m.name === "string"
+              ? m.name
+              : (typeof m?.person?.fullName === "string" ? m.person.fullName : "")),
       role: typeof m.role === "string" ? m.role : "",
       photo: normalizeFilesUrl(
         (d?.photo && typeof d.photo === "string" ? d.photo : "") ||
@@ -172,7 +178,12 @@ export default function Committee() {
       const chairman = c.members.find((m) => 
         m && m.role && typeof m.role === "string" && m.role.toLowerCase().includes("председатель")
       );
-      return chairman && typeof chairman.name === "string" ? chairman.name : null;
+      if (!chairman) return null;
+      if (typeof chairman.name === "string" && chairman.name.trim()) return chairman.name.trim();
+      const refId = chairman.personId ?? chairman?.person?.id ?? chairman.id ?? "";
+      const d = refId ? (deputies || []).find((x) => x && String(x.id) === String(refId)) : null;
+      const dn = d?.name || d?.fullName;
+      return typeof dn === "string" && dn.trim() ? dn.trim() : null;
     };
 
     return (

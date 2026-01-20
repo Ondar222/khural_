@@ -8,8 +8,6 @@ export default function AdminCommitteesList({
   selectedConvocationId,
   onConvocationChange,
   onDelete,
-  onImport,
-  importing,
   busy,
   canWrite,
 }) {
@@ -78,6 +76,15 @@ export default function AdminCommitteesList({
             <div style={{ opacity: 0.7, fontSize: 13 }}>
               {row.convocation.name || row.convocation.number || ""}
             </div>
+          ) : row.convocationId ? (
+            <div style={{ opacity: 0.7, fontSize: 13 }}>
+              {(() => {
+                const match = (Array.isArray(convocations) ? convocations : []).find(
+                  (c) => String(c?.id) === String(row.convocationId)
+                );
+                return match ? (match.name || match.number || "") : "";
+              })()}
+            </div>
           ) : null}
           {row.description ? (
             <div style={{ opacity: 0.75, fontSize: 13 }}>
@@ -91,12 +98,20 @@ export default function AdminCommitteesList({
       title: "Созыв",
       dataIndex: "convocation",
       width: 120,
-      render: (convocation) =>
-        convocation ? (
-          <Tag>{convocation.name || convocation.number || ""}</Tag>
+      render: (convocation, row) => {
+        const c =
+          convocation ||
+          (row?.convocationId
+            ? (Array.isArray(convocations) ? convocations : []).find(
+                (x) => String(x?.id) === String(row.convocationId)
+              )
+            : null);
+        return c ? (
+          <Tag>{c.name || c.number || ""}</Tag>
         ) : (
           <Tag color="default">—</Tag>
-        ),
+        );
+      },
     },
     {
       title: "Статус",

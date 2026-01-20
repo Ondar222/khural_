@@ -1,11 +1,17 @@
 import React from "react";
-import { App, Button, Form, Input, Select, Space, Upload, Modal, Checkbox } from "antd";
+import { App, Button, Form, Input, Select, Upload, Modal, Checkbox } from "antd";
 import { useHashRoute } from "../../Router.jsx";
-import { PersonsApi } from "../../api/client.js";
+import { CommitteesApi, PersonsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { toPersonsApiBody } from "../../api/personsPayload.js";
 import { readDeputiesOverrides, writeDeputiesOverrides } from "./deputiesOverrides.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
+import {
+  COMMITTEES_OVERRIDES_EVENT_NAME,
+  COMMITTEES_OVERRIDES_STORAGE_KEY,
+  readCommitteesOverrides,
+  writeCommitteesOverrides,
+} from "../../utils/committeesOverrides.js";
 
 const STRUCTURE_TYPE_OPTIONS = [
   { value: "committee", label: "Комитет" },
@@ -119,7 +125,6 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const [photoFile, setPhotoFile] = React.useState(null);
   const structureType = Form.useWatch("structureType", form);
   const isDeceased = Form.useWatch("isDeceased", form);
-  const biographyHtml = Form.useWatch("biography", form);
   const fullNameValue = Form.useWatch("fullName", form);
   const [newFactionOpen, setNewFactionOpen] = React.useState(false);
   const [newFactionName, setNewFactionName] = React.useState("");
@@ -133,6 +138,160 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const [factionEntities, setFactionEntities] = React.useState([]);
   const [districtEntities, setDistrictEntities] = React.useState([]);
   const [convocationEntities, setConvocationEntities] = React.useState([]);
+
+  const deputyIdNum = React.useMemo(() => {
+    const n = Number(deputyId);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [deputyId]);
+
+  const [committeesOverridesSeq, setCommitteesOverridesSeq] = React.useState(0);
+  React.useEffect(() => {
+    const bump = () => setCommitteesOverridesSeq((x) => x + 1);
+    const onStorage = (e) => {
+      if (e?.key === COMMITTEES_OVERRIDES_STORAGE_KEY) bump();
+    };
+    window.addEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  const mergeCommitteesWithOverrides = React.useCallback((base, overrides) => {
+    const created = Array.isArray(overrides?.created) ? overrides.created : [];
+    const updatedById =
+      overrides?.updatedById && typeof overrides.updatedById === "object"
+        ? overrides.updatedById
+        : {};
+    const deletedIds = new Set(
+      Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []
+    );
+    const out = [];
+    const seen = new Set();
+    for (const it of Array.isArray(base) ? base : []) {
+      const id = String(it?.id ?? "");
+      if (!id) continue;
+      if (deletedIds.has(id)) continue;
+      const override = updatedById[id];
+      out.push(override ? { ...it, ...override } : it);
+      seen.add(id);
+    }
+    for (const it of created) {
+      const id = String(it?.id ?? "");
+      if (!id) continue;
+      if (deletedIds.has(id)) continue;
+      if (seen.has(id)) continue;
+      const override = updatedById[id];
+      out.push(override ? { ...it, ...override } : it);
+      seen.add(id);
+    }
+    return out;
+  }, []);
+
+  const committeesMerged = React.useMemo(() => {
+    void committeesOverridesSeq;
+    const base = Array.isArray(committees) ? committees : [];
+    return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
+  }, [committees, committeesOverridesSeq, mergeCommitteesWithOverrides]);
+
+  const [participationConvocationId, setParticipationConvocationId] = React.useState("all");
+  const [participationCommitteeId, setParticipationCommitteeId] = React.useState(null);
+  const [participationRole, setParticipationRole] = React.useState("Член комитета");
+
+  const committeesForSelectedConvocation = React.useMemo(() => {
+    const list = Array.isArray(committeesMerged) ? committeesMerged : [];
+    if (!participationConvocationId || participationConvocationId === "all") return list;
+    return list.filter(
+      (c) =>
+        String(c?.convocation?.id || c?.convocationId || "") ===
+        String(participationConvocationId)
+    );
+  }, [committeesMerged, participationConvocationId]);
+
+  const myCommitteeMemberships = React.useMemo(() => {
+    if (!deputyIdNum) return [];
+    const list = Array.isArray(committeesMerged) ? committeesMerged : [];
+    const out = [];
+    for (const c of list) {
+      const members = Array.isArray(c?.members) ? c.members : [];
+      const found = members.find((m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum);
+      if (found) out.push({ committee: c, member: found });
+    }
+    return out;
+  }, [committeesMerged, deputyIdNum]);
+
+  const upsertMembershipLocal = React.useCallback(async () => {
+    if (!canWrite) return;
+    if (!deputyIdNum) {
+      message.error("Для участия нужен сохранённый депутат (ID)");
+      return;
+    }
+    const cid = String(participationCommitteeId || "");
+    if (!cid) return;
+    const role = String(participationRole || "").trim() || "Член комитета";
+    const c = (Array.isArray(committeesMerged) ? committeesMerged : []).find(
+      (x) => String(x?.id ?? "") === cid
+    );
+    if (!c) return;
+    const members = Array.isArray(c.members) ? c.members.slice() : [];
+    const idx = members.findIndex(
+      (m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum
+    );
+    const nextMember = { personId: deputyIdNum, role, order: idx >= 0 ? (members[idx]?.order ?? idx) : members.length };
+    if (idx >= 0) members[idx] = { ...members[idx], ...nextMember };
+    else members.push(nextMember);
+
+    // Try API first for real committees, then local override
+    const looksServerId = /^\d+$/.test(cid);
+    if (looksServerId) {
+      try {
+        await CommitteesApi.addMembers(cid, [{ personId: deputyIdNum, role, order: nextMember.order }]);
+        message.success("Участие добавлено");
+        return;
+      } catch {
+        // fall back to local override below
+      }
+    }
+
+    const ov = readCommitteesOverrides();
+    const updatedById =
+      ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
+    writeCommitteesOverrides({
+      ...ov,
+      updatedById: { ...updatedById, [cid]: { ...(updatedById[cid] || {}), members } },
+    });
+    message.warning("Сервер недоступен. Участие сохранено локально.");
+  }, [canWrite, committeesMerged, deputyIdNum, message, participationCommitteeId, participationRole]);
+
+  const removeMembershipLocal = React.useCallback(async (committeeIdToUpdate) => {
+    if (!canWrite) return;
+    if (!deputyIdNum) return;
+    const cid = String(committeeIdToUpdate || "");
+    if (!cid) return;
+    const c = (Array.isArray(committeesMerged) ? committeesMerged : []).find(
+      (x) => String(x?.id ?? "") === cid
+    );
+    if (!c) return;
+    const members = (Array.isArray(c.members) ? c.members : []).filter(
+      (m) => Number(m?.personId) !== deputyIdNum && Number(m?.person?.id) !== deputyIdNum
+    );
+
+    const looksServerId = /^\d+$/.test(cid);
+    if (looksServerId) {
+      // If backend supports removing by memberId, we'd need memberId; fallback to patch via overrides.
+      // Keeping it local for now.
+    }
+
+    const ov = readCommitteesOverrides();
+    const updatedById =
+      ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
+    writeCommitteesOverrides({
+      ...ov,
+      updatedById: { ...updatedById, [cid]: { ...(updatedById[cid] || {}), members } },
+    });
+    message.success("Участие удалено (локально)");
+  }, [canWrite, committeesMerged, deputyIdNum, message]);
 
   const refreshLookups = React.useCallback(async () => {
     setLookupBusy(true);
@@ -348,7 +507,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           message.success("Депутат создан");
           reload();
           navigate("/admin/deputies");
-        } catch (e) {
+        } catch {
           const localId = `local-${Date.now()}`;
           saveOverridesCreate({ ...body, id: localId });
           message.warning("Создано локально (сервер недоступен или нет прав)");
@@ -369,7 +528,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         message.success("Депутат обновлён");
         reload();
         navigate("/admin/deputies");
-      } catch (e) {
+      } catch {
         // If data patch fails (often due to validation), still try to upload photo so it appears on the site.
         if (photoFile) {
           try {
@@ -481,6 +640,107 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
               </Form.Item>
             </div>
           </div>
+
+          {mode === "edit" ? (
+            <div className="admin-card">
+              <div className="admin-deputy-editor__section-title">Участие в комитетах</div>
+              <div style={{ display: "grid", gap: 12 }}>
+                <div style={{ opacity: 0.75, fontSize: 13, lineHeight: 1.45 }}>
+                  Выберите созыв → комитет → роль, чтобы добавить участие депутата.
+                </div>
+
+                <div className="admin-split">
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>Созыв</div>
+                    <Select
+                      value={participationConvocationId}
+                      onChange={setParticipationConvocationId}
+                      disabled={saving || loading}
+                      options={[
+                        { value: "all", label: "Все созывы" },
+                        ...(Array.isArray(convocationEntities) ? convocationEntities : []).map((c) => ({
+                          value: String(c?.id),
+                          label: String(c?.name || `Созыв ${c?.id}`),
+                        })),
+                      ]}
+                    />
+                  </div>
+
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>Комитет</div>
+                    <Select
+                      value={participationCommitteeId}
+                      onChange={setParticipationCommitteeId}
+                      disabled={saving || loading}
+                      placeholder="Выберите комитет"
+                      showSearch
+                      optionFilterProp="label"
+                      options={(Array.isArray(committeesForSelectedConvocation) ? committeesForSelectedConvocation : [])
+                        .map((c) => ({
+                          value: String(c?.id),
+                          label: String(c?.name || c?.title || `Комитет ${c?.id}`),
+                        }))}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gap: 8 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>Роль</div>
+                  <Select
+                    value={participationRole}
+                    onChange={setParticipationRole}
+                    disabled={saving || loading}
+                    options={[
+                      { value: "Председатель комитета", label: "Председатель комитета" },
+                      { value: "Заместитель председателя комитета", label: "Заместитель председателя" },
+                      { value: "Член комитета", label: "Член комитета" },
+                    ]}
+                  />
+                </div>
+
+                <Button
+                  type="primary"
+                  disabled={!canWrite || !participationCommitteeId}
+                  onClick={upsertMembershipLocal}
+                >
+                  Добавить / обновить участие
+                </Button>
+
+                <div style={{ marginTop: 6, fontWeight: 800 }}>Текущее участие</div>
+                {myCommitteeMemberships.length ? (
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {myCommitteeMemberships.map(({ committee: c, member: m }) => (
+                      <div
+                        key={String(c?.id)}
+                        style={{
+                          border: "1px solid rgba(10, 31, 68, 0.08)",
+                          borderRadius: 12,
+                          padding: 12,
+                          background: "rgba(255,255,255,0.55)",
+                          display: "grid",
+                          gap: 8,
+                        }}
+                      >
+                        <div style={{ fontWeight: 900 }}>{c?.name || c?.title || "Комитет"}</div>
+                        <div style={{ opacity: 0.8 }}>
+                          <strong>Роль:</strong> {String(m?.role || "—")}
+                        </div>
+                        <Button
+                          danger
+                          disabled={!canWrite}
+                          onClick={() => removeMembershipLocal(String(c?.id))}
+                        >
+                          Удалить из комитета
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ opacity: 0.65 }}>Пока не добавлено</div>
+                )}
+              </div>
+            </div>
+          ) : null}
 
           <div className="admin-card">
             <div className="admin-deputy-editor__section-title">Статус</div>
