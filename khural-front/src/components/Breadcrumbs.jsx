@@ -9,6 +9,7 @@ const TITLES = {
   "/region": "Регион",
   "/about": "О парламенте",
   "/news": "Новости",
+  "/news/week": "Главные события недели",
   "/calendar": "Календарь",
   "/documents": "Документы",
   "/committee": "Комитеты",
@@ -34,7 +35,7 @@ function getRouteBase(route) {
 export default function Breadcrumbs() {
   const { route, navigate } = useHashRoute();
   const base = getRouteBase(route);
-  const { committees } = useData();
+  const { committees, slides } = useData();
 
   // Build hierarchical trail
   const trail = React.useMemo(() => {
@@ -54,6 +55,28 @@ export default function Breadcrumbs() {
         }
       } catch {}
       crumbs.push({ label: "Комитеты" });
+      return crumbs;
+    }
+    // News: Week highlights page
+    if (base === "/news/week") {
+      crumbs.push({ label: "Новости", href: "/news" });
+      crumbs.push({ label: "Главные события недели" });
+      return crumbs;
+    }
+    // News: Slider detail page
+    if (base.startsWith("/news/slider/")) {
+      crumbs.push({ label: "Новости", href: "/news" });
+      crumbs.push({ label: "Главные события недели", href: "/news/week" });
+      try {
+        const id =
+          (typeof window !== "undefined" && window.__routeParams && window.__routeParams.id
+            ? String(window.__routeParams.id)
+            : decodeURIComponent(base.slice("/news/slider/".length))) || "";
+        const found = (Array.isArray(slides) ? slides : []).find((s) => String(s?.id ?? "") === String(id));
+        crumbs.push({ label: String(found?.title || "").trim() || "Событие" });
+      } catch {
+        crumbs.push({ label: "Событие" });
+      }
       return crumbs;
     }
     if (base === "/deputies") {
@@ -124,7 +147,7 @@ export default function Breadcrumbs() {
       crumbs.push({ label: title });
     }
     return crumbs;
-  }, [base, route, committees]);
+  }, [base, route, committees, slides]);
 
   // Hide on home
   if (base === "/") return null;
