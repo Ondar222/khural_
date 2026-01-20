@@ -1,5 +1,5 @@
 import React from "react";
-import { App, Button, Form, Input, Switch, Select, Space, Divider, InputNumber } from "antd";
+import { App, Button, Form, Input, Switch, Select, Space, Divider, InputNumber, Tag } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { toCommitteeHtml } from "../../utils/committeeHtml.js";
 
@@ -25,6 +25,21 @@ export default function AdminCommitteesEditor({
 
   const nameValue = Form.useWatch("name", form);
   const descriptionValue = Form.useWatch("description", form);
+  const convocationIdValue = Form.useWatch("convocationId", form);
+
+  const formatConvocationLabel = React.useCallback((c) => {
+    const raw = String(c?.name || c?.number || "").trim();
+    if (!raw) return `Созыв ${c?.id ?? ""}`.trim();
+    const low = raw.toLowerCase();
+    if (low.includes("созыв")) return raw;
+    return `Созыв ${raw}`;
+  }, []);
+
+  const selectedConvocation = React.useMemo(() => {
+    const list = Array.isArray(convocations) ? convocations : [];
+    if (!convocationIdValue) return null;
+    return list.find((c) => String(c?.id) === String(convocationIdValue)) || null;
+  }, [convocations, convocationIdValue]);
 
   // Prefill convocationId when coming from convocation page
   React.useEffect(() => {
@@ -95,6 +110,8 @@ export default function AdminCommitteesEditor({
         if (isNaN(convocationId) || convocationId <= 0) {
           console.warn("[AdminCommitteesEditor] Неверный ID созыва:", values.convocationId);
           convocationId = null;
+          message.error("Неверный созыв. Выберите созыв из списка.");
+          return;
         } else {
           // Проверяем, существует ли созыв в списке
           const convocationExists = (convocations || []).some(c => Number(c.id) === convocationId);
@@ -308,6 +325,11 @@ export default function AdminCommitteesEditor({
               name="convocationId"
               rules={[{ required: true, message: "Выберите созыв" }]}
               style={{ marginBottom: 0 }}
+              extra={
+                <span style={{ opacity: 0.75 }}>
+                  Комитет принадлежит конкретному созыву. В выпадающем списке показан статус (Активный/Архив).
+                </span>
+              }
             >
               <Select
                 placeholder="Выберите созыв"
@@ -321,11 +343,49 @@ export default function AdminCommitteesEditor({
               >
                 {(convocations || []).map((c) => (
                   <Select.Option key={c.id} value={c.id}>
-                    {c.name || c.number || `Созыв ${c.id}`}
+                    <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <span>{formatConvocationLabel(c)}</span>
+                      {c?.isActive !== false ? (
+                        <Tag color="green" style={{ margin: 0 }}>Активный</Tag>
+                      ) : (
+                        <Tag color="default" style={{ margin: 0 }}>Архив</Tag>
+                      )}
+                    </span>
                   </Select.Option>
                 ))}
               </Select>
             </Form.Item>
+
+            {selectedConvocation ? (
+              <div
+                style={{
+                  marginTop: -8,
+                  padding: "10px 12px",
+                  borderRadius: 12,
+                  border: "1px solid rgba(10, 31, 68, 0.08)",
+                  background: "rgba(255,255,255,0.55)",
+                  display: "grid",
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <div style={{ fontWeight: 800 }}>{formatConvocationLabel(selectedConvocation)}</div>
+                  {selectedConvocation?.isActive !== false ? (
+                    <Tag color="green" style={{ margin: 0 }}>Активный</Tag>
+                  ) : (
+                    <Tag color="default" style={{ margin: 0 }}>Архив</Tag>
+                  )}
+                </div>
+                {selectedConvocation?.description ? (
+                  <div style={{ opacity: 0.8, fontSize: 13, lineHeight: 1.45 }}>
+                    {String(selectedConvocation.description).slice(0, 220)}
+                    {String(selectedConvocation.description).length > 220 ? "…" : ""}
+                  </div>
+                ) : (
+                  <div style={{ opacity: 0.65, fontSize: 13 }}>Описание не заполнено</div>
+                )}
+              </div>
+            ) : null}
 
             <Form.Item
               label={
