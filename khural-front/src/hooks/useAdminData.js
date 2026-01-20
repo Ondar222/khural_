@@ -1156,15 +1156,33 @@ export function useAdminData() {
     setBusy(true);
     try {
       const sid = String(id);
+
+      // Build a full snapshot for overrides so public pages can render even if API is unavailable.
+      const baseList = Array.isArray(committees) ? committees : [];
+      const found = baseList.find((c) => c && String(c.id) === sid) || null;
+      const snapshot =
+        found && typeof found === "object"
+          ? { ...found, ...payload, id: found.id ?? sid }
+          : { id: sid, ...payload };
+
+      // Persist snapshot locally (safe even if API succeeds).
+      const ov0 = readCommitteesOverrides();
+      const updatedById0 =
+        ov0.updatedById && typeof ov0.updatedById === "object" ? ov0.updatedById : {};
+      writeCommitteesOverrides({
+        ...ov0,
+        updatedById: { ...updatedById0, [sid]: { ...(updatedById0[sid] || {}), ...snapshot } },
+      });
+
+      // Optimistically update local state
+      setCommittees((prev) =>
+        mergeCommitteesWithOverrides(
+          (Array.isArray(prev) ? prev : []).map((c) => (String(c?.id ?? "") === sid ? { ...c, ...snapshot } : c)),
+          readCommitteesOverrides()
+        )
+      );
+
       if (sid.startsWith("local-") || sid.startsWith("local-static-")) {
-        const ov = readCommitteesOverrides();
-        const updatedById =
-          ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
-        writeCommitteesOverrides({
-          ...ov,
-          updatedById: { ...updatedById, [sid]: { ...payload } },
-        });
-        setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
         message.success("Комитет обновлён (локально)");
         return;
       }
@@ -1175,20 +1193,12 @@ export function useAdminData() {
         await reload();
       } catch {
         // Fallback: keep change locally when backend is broken
-        const ov = readCommitteesOverrides();
-        const updatedById =
-          ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
-        writeCommitteesOverrides({
-          ...ov,
-          updatedById: { ...updatedById, [sid]: { ...(updatedById[sid] || {}), ...payload } },
-        });
-        setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
         message.warning("Сервер недоступен. Изменения сохранены локально.");
       }
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, committees]);
 
   const deleteCommittee = React.useCallback(async (id) => {
     setBusy(true);

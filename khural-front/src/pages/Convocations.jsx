@@ -78,6 +78,18 @@ function mergeConvocationsWithOverridesByKey(base, overrides) {
     pushOne(it);
   }
 
+  // Also add updates even if base list is only strings (no numeric ids),
+  // so we keep full data (id/description/isActive) and can match committees by convocationId.
+  for (const patch of Object.values(updatedById || {})) {
+    if (!patch || typeof patch !== "object") continue;
+    const idStr = String(patch?.id ?? "").trim();
+    if (idStr && deletedIds.has(idStr)) continue;
+    const key = convocationKey(patch);
+    if (!key || seen.has(key)) continue;
+    out.push(patch);
+    seen.add(key);
+  }
+
   return out;
 }
 
@@ -106,6 +118,18 @@ function mergeCommitteesWithOverrides(base, overrides) {
     out.push(override ? { ...it, ...override } : it);
     seen.add(idStr);
   }
+
+  // Also add updated snapshots even if base list doesn't have them (API unavailable).
+  for (const patch of Object.values(updatedById || {})) {
+    if (!patch || typeof patch !== "object") continue;
+    const idStr = String(patch?.id ?? "").trim();
+    if (!idStr) continue;
+    if (deletedIds.has(idStr)) continue;
+    if (seen.has(idStr)) continue;
+    out.push(patch);
+    seen.add(idStr);
+  }
+
   return out.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
 }
 
@@ -113,6 +137,43 @@ function toConvocationIdStrFromCommittee(c) {
   const v = c?.convocation?.id ?? c?.convocationId ?? null;
   if (v === null || v === undefined || v === "") return "";
   return String(v);
+}
+
+function convocationMatchKeys(c) {
+  const keys = new Set();
+  if (!c) return [];
+  const id = String(c?.id ?? "").trim();
+  if (id) keys.add(id);
+  const token = normalizeConvocationToken(c?.name || c?.number || c?.id || "");
+  if (token) keys.add(token);
+  return Array.from(keys);
+}
+
+function committeeConvocationMatchKeys(c) {
+  const keys = new Set();
+  if (!c) return [];
+  const idStr = toConvocationIdStrFromCommittee(c);
+  if (idStr) keys.add(idStr);
+  const token = normalizeConvocationToken(c?.convocation?.name || c?.convocation?.number || "");
+  if (token) keys.add(token);
+  return Array.from(keys);
+}
+
+function stripTags(input) {
+  return String(input || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+}
+
+function getChairman(c) {
+  if (!c) return "";
+  if (typeof c.head === "string" && c.head.trim()) return c.head.trim();
+  const members = Array.isArray(c.members) ? c.members : [];
+  const chairman = members.find(
+    (m) => m && typeof m.role === "string" && m.role.toLowerCase().includes("председатель")
+  );
+  if (!chairman) return "";
+  if (typeof chairman.name === "string" && chairman.name.trim()) return chairman.name.trim();
+  const pn = chairman?.person?.fullName || chairman?.person?.name;
+  return typeof pn === "string" ? pn.trim() : "";
 }
 
 function isCommitteeActive(c) {
@@ -215,33 +276,69 @@ export default function Convocations() {
     return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
   }, [apiCommittees, committeesFromContext, overridesSeq]);
 
+  const convocationsFromCommittees = React.useMemo(() => {
+    const out = [];
+    const seen = new Set();
+    for (const k of Array.isArray(committees) ? committees : []) {
+      const c = k?.convocation;
+      if (!c || typeof c !== "object") continue;
+      const idStr = String(c?.id ?? "").trim();
+      if (!idStr || seen.has(idStr)) continue;
+      out.push({
+        id: c.id,
+        name: c.name || c.number || "",
+        description: c.description || "",
+        isActive: normalizeBool(c.isActive, true),
+      });
+      seen.add(idStr);
+    }
+    return out;
+  }, [committees]);
+
+  const convocationsMerged = React.useMemo(() => {
+    // Prefer convocations resolved from committees first (they include numeric ids),
+    // then merge API list and local overrides.
+    const base = [
+      ...(Array.isArray(convocationsFromCommittees) ? convocationsFromCommittees : []),
+      ...(Array.isArray(convocations) ? convocations : []),
+    ];
+    return mergeConvocationsWithOverridesByKey(base, readConvocationsOverrides());
+  }, [convocationsFromCommittees, convocations, convOverridesSeq]);
+
   const activeConvocations = React.useMemo(
-    () => convocations.filter((c) => normalizeBool(c?.isActive, true) !== false),
-    [convocations]
+    () => convocationsMerged.filter((c) => normalizeBool(c?.isActive, true) !== false),
+    [convocationsMerged]
   );
   const archivedConvocations = React.useMemo(
-    () => convocations.filter((c) => normalizeBool(c?.isActive, true) === false),
-    [convocations]
+    () => convocationsMerged.filter((c) => normalizeBool(c?.isActive, true) === false),
+    [convocationsMerged]
   );
 
   const byId = React.useMemo(() => {
     const m = new Map();
-    for (const c of convocations) {
+    for (const c of convocationsMerged) {
       const id = String(c?.id ?? "");
       if (id) m.set(id, c);
     }
     return m;
-  }, [convocations]);
+  }, [convocationsMerged]);
 
-  const committeesByConvocationId = React.useMemo(() => {
+  const committeesByConvocationKey = React.useMemo(() => {
     const map = new Map();
     for (const c of Array.isArray(committees) ? committees : []) {
       if (!isCommitteeActive(c)) continue;
-      const cid = toConvocationIdStrFromCommittee(c);
-      const key = cid || "__none__";
-      const list = map.get(key) || [];
-      list.push(c);
-      map.set(key, list);
+      const keys = committeeConvocationMatchKeys(c);
+      if (!keys.length) {
+        const list = map.get("__none__") || [];
+        list.push(c);
+        map.set("__none__", list);
+        continue;
+      }
+      for (const key of keys) {
+        const list = map.get(key) || [];
+        if (!list.some((x) => String(x?.id ?? "") === String(c?.id ?? ""))) list.push(c);
+        map.set(key, list);
+      }
     }
     return map;
   }, [committees]);
@@ -307,8 +404,15 @@ export default function Convocations() {
                 {(Array.isArray(shownConvocations) ? shownConvocations : []).map((c) => {
                   const idStr = String(c?.id ?? "");
                   const title = formatConvocationLabel(c);
-                  const committeeKey = idStr && byId.has(idStr) ? idStr : idStr;
-                  const list = committeesByConvocationId.get(committeeKey) || [];
+                  const keys = convocationMatchKeys(c);
+                  const list = keys.flatMap((k) => committeesByConvocationKey.get(k) || []);
+                  const uniq = new Map();
+                  for (const it of list) {
+                    const cid = String(it?.id ?? "");
+                    if (!cid) continue;
+                    if (!uniq.has(cid)) uniq.set(cid, it);
+                  }
+                  const committeesList = Array.from(uniq.values());
                   const token = normalizeConvocationToken(c?.name || c?.number || c?.id || "");
                   const deputiesHref = token ? `/deputies?convocation=${encodeURIComponent(token)}` : "/deputies";
 
@@ -331,24 +435,49 @@ export default function Convocations() {
                       </div>
                       {c?.description ? (
                         <div style={{ marginTop: 8, color: "var(--muted, #6b7280)", lineHeight: 1.45 }}>
-                          {String(c.description)}
+                          {stripTags(String(c.description))}
                         </div>
                       ) : null}
 
                       <div style={{ marginTop: 12, fontWeight: 700 }}>Комитеты созыва</div>
-                      {list.length ? (
+                      {committeesList.length ? (
                         <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
-                          {list.map((k) => {
+                          {committeesList.map((k) => {
                             const cid = String(k?.id ?? "");
                             const name = String(k?.name || k?.title || "").trim() || "Комитет";
+                            const chairman = getChairman(k);
+                            const desc = stripTags(k?.description || "");
+                            const phone = String(k?.phone || "").trim();
+                            const email = String(k?.email || "").trim();
+                            const website = String(k?.website || "").trim();
+                            const address = String(k?.address || "").trim();
                             return (
                               <a
                                 key={cid || name}
                                 className="tile link"
                                 href={`/committee?id=${encodeURIComponent(cid)}`}
-                                style={{ padding: 12, borderRadius: 14 }}
+                                style={{ padding: 12, borderRadius: 14, display: "grid", gap: 6 }}
                               >
-                                {name}
+                                <div style={{ fontWeight: 800 }}>{name}</div>
+                                {chairman ? (
+                                  <div style={{ opacity: 0.85 }}>
+                                    <span style={{ opacity: 0.7 }}>Председатель: </span>
+                                    {chairman}
+                                  </div>
+                                ) : null}
+                                {desc ? (
+                                  <div style={{ opacity: 0.75 }}>
+                                    {desc.length > 220 ? `${desc.slice(0, 220)}…` : desc}
+                                  </div>
+                                ) : null}
+                                {phone || email || website || address ? (
+                                  <div style={{ opacity: 0.75, display: "grid", gap: 2 }}>
+                                    {phone ? <div>Тел.: {phone}</div> : null}
+                                    {email ? <div>Email: {email}</div> : null}
+                                    {website ? <div>Сайт: {website}</div> : null}
+                                    {address ? <div>Адрес: {address}</div> : null}
+                                  </div>
+                                ) : null}
                               </a>
                             );
                           })}
@@ -363,7 +492,7 @@ export default function Convocations() {
                 })}
 
                 {/* Committees without convocation */}
-                {tab === "active" && (committeesByConvocationId.get("__none__") || []).length ? (
+                {tab === "active" && (committeesByConvocationKey.get("__none__") || []).length ? (
                   <div
                     className="tile"
                     style={{
@@ -378,7 +507,7 @@ export default function Convocations() {
                       Эти комитеты пока не привязаны к созыву.
                     </div>
                     <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
-                      {(committeesByConvocationId.get("__none__") || []).map((k) => {
+                      {(committeesByConvocationKey.get("__none__") || []).map((k) => {
                         const cid = String(k?.id ?? "");
                         const name = String(k?.name || k?.title || "").trim() || "Комитет";
                         return (
