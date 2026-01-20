@@ -7424,6 +7424,11 @@ body.a11y-dark .btn {
 .news-week__card {
   overflow: hidden;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: 100%;
+  align-self: stretch;
 }
 .news-week__media {
   height: 160px;
@@ -7432,11 +7437,14 @@ body.a11y-dark .btn {
 .news-week__img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
   display: block;
 }
 .news-week__body {
   padding: 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
 }
 .news-week__title {
   font-size: 16px;
@@ -7455,6 +7463,8 @@ body.a11y-dark .btn {
   font-weight: 800;
   font-size: 14px;
   color: var(--link);
+  margin-top: auto;
+  padding-top: 10px;
 }
 @media (max-width: 959px) {
   .news-week__media {
