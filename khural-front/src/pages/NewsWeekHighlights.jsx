@@ -49,13 +49,16 @@ export default function NewsWeekHighlights() {
   }, [slides]);
 
   return (
-    <section className="section">
+    <section className="section news-week">
       <div className="container">
-        <a className="btn btn-back" href="/news" style={{ marginBottom: 16, display: "inline-block" }}>
-          {t("back")}
-        </a>
-
-        <h1 className="no-gold-underline">Главные события недели</h1>
+        <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
+          <a className="btn btn-back" href="/news" style={{ display: "inline-block", width: "fit-content" }}>
+            ← К списку
+          </a>
+          <h1 className="no-gold-underline" style={{ margin: 0 }}>
+            Главные события недели
+          </h1>
+        </div>
 
         <DataState
           loading={Boolean(loading?.slides) && (!slides || slides.length === 0)}
@@ -64,7 +67,7 @@ export default function NewsWeekHighlights() {
           empty={!loading?.slides && items.length === 0}
           emptyDescription="Пока нет слайдов"
         >
-          <div className="grid cols-3" style={{ marginTop: 16 }}>
+          <div className="grid cols-3 news-week__grid" style={{ marginTop: 16 }}>
             {items.map((s) => {
               const id = String(s?.id ?? "").trim();
               const title = String(s?.title || "").trim();
@@ -75,22 +78,22 @@ export default function NewsWeekHighlights() {
               const preview = `${subtitlePreview}${subtitlePreview && date ? " " : ""}${date || ""}`.trim();
               const href = id ? `/news/slider/${encodeURIComponent(id)}` : "/news";
               return (
-                <a key={id || title || Math.random()} className="tile" href={href} style={{ overflow: "hidden", padding: 0 }}>
+                <a key={id || title || Math.random()} className="tile news-week__card" href={href}>
                   {s?.image ? (
-                    <div style={{ height: 180, overflow: "hidden" }}>
+                    <div className="news-week__media">
                       <img
                         src={normalizeFilesUrl(s.image)}
                         alt=""
                         loading="lazy"
                         decoding="async"
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        className="news-week__img"
                       />
                     </div>
                   ) : null}
-                  <div style={{ padding: 16 }}>
-                    <div style={{ fontSize: 18, fontWeight: 800 }}>{title || "—"}</div>
-                    {preview ? <div style={{ marginTop: 8, color: "#6b7280" }}>{preview}</div> : null}
-                    <div style={{ marginTop: 12, fontWeight: 800, color: "var(--link)" }}>Подробнее →</div>
+                  <div className="news-week__body">
+                    <div className="news-week__title">{title || "—"}</div>
+                    {preview ? <div className="news-week__preview">{preview}</div> : null}
+                    <div className="news-week__more">Подробнее →</div>
                   </div>
                 </a>
               );

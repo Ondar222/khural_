@@ -577,6 +577,7 @@ a {
   display: grid;
   place-items: center;
   text-align: center;
+  z-index: 4;
 }
 .hero .caption.center {
   text-align: center;
@@ -713,6 +714,7 @@ a {
   /* small inset so icons don't stick to edges */
   padding-left: 8px;
   padding-top: 8px;
+  z-index: 6;
 }
 .hero .sbtn--vk {
   background: transparent;
@@ -2718,7 +2720,7 @@ a {
     margin: 0 auto 10px;
   }
   .hero__panel {
-    padding: 16px 14px 14px;
+    padding: 14px 12px 12px;
     border-radius: 16px;
     width: auto;
     margin-left: 16px;
@@ -2747,6 +2749,8 @@ a {
     left: 16px;
     bottom: 20px;
     gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
   }
   .hero .sbtn {
     width: 40px;
@@ -2821,11 +2825,11 @@ a {
     margin: 0 auto 8px;
   }
   .hero__panel {
-    padding: 14px 12px 12px;
+    padding: 12px 10px 10px;
     border-radius: 14px;
-    margin-left: 12px;
-    margin-right: 12px;
-    max-width: calc(100% - 24px);
+    margin-left: 20px;
+    margin-right: 20px;
+    max-width: calc(100% - 40px);
   }
   .hero__desc {
     font-size: 13px;
@@ -2845,8 +2849,12 @@ a {
   }
   .hero .social-left {
     left: 12px;
-    bottom: 16px;
+    bottom: 12px;
     gap: 6px;
+    padding-left: 0;
+    padding-top: 0;
+    flex-direction: column;
+    align-items: flex-start;
   }
   .hero .sbtn {
     width: 36px;
@@ -7407,6 +7415,73 @@ body.a11y-dark .btn {
   background-color: #ffffff !important;
   color: #000000 !important;
   border-color: #ffffff !important;
+}
+
+/* News: Week highlights (smaller cards) */
+.news-week__grid {
+  gap: 14px;
+}
+.news-week__card {
+  overflow: hidden;
+  padding: 0;
+}
+.news-week__media {
+  height: 160px;
+  overflow: hidden;
+}
+.news-week__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.news-week__body {
+  padding: 14px;
+}
+.news-week__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.25;
+}
+.news-week__preview {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.news-week__more {
+  margin-top: 10px;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--link);
+}
+@media (max-width: 959px) {
+  .news-week__media {
+    height: 150px;
+  }
+  .news-week__body {
+    padding: 12px;
+  }
+  .news-week__title {
+    font-size: 15px;
+  }
+  /* Adaptive: show only title in cards (details on click) */
+  .news-week__preview,
+  .news-week__more {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .news-week__media {
+    height: 130px;
+  }
+  .news-week__more {
+    font-size: 13px;
+  }
+  .news-week__body {
+    padding: 10px;
+  }
 }
 
 body.a11y-blue {
