@@ -250,14 +250,10 @@ a {
   html[data-lang="tyv"] .main-nav {
     justify-content: flex-start;
     gap: 10px;
-    flex-wrap: nowrap; /* keep "Страницы" on the same row */
+    flex-wrap: wrap; /* avoid horizontal overflow that clips dropdown menus */
     font-size: 13px;
     min-width: 0; /* allow shrink inside flex row */
-    overflow-x: auto; /* if still too tight, scroll instead of wrapping */
-    scrollbar-width: none; /* Firefox */
-  }
-  html[data-lang="tyv"] .main-nav::-webkit-scrollbar {
-    display: none; /* Chromium */
+    overflow: visible;
   }
   /* In case any global styles set flex: 1 on children, force compact items */
   html[data-lang="tyv"] .main-nav > * {

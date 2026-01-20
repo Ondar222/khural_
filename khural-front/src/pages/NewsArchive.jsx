@@ -11,8 +11,8 @@ function looksLikeHtml(s) {
 }
 
 export default function NewsArchive() {
-  const { news, loading, errors, reload } = useData();
   const { t } = useI18n();
+  const { news, loading, errors, reload } = useData();
 
   const getInitialCategory = () => {
     const categoryParam = new URLSearchParams(window.location.search || "").get("category");
@@ -555,7 +555,7 @@ export default function NewsArchive() {
                 href: "/p/for-media"
               },
               { 
-                label: "Трансляции", 
+                label: t("Трансляции"), 
                 href: "/broadcast"
               },
             ]}

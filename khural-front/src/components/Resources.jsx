@@ -98,7 +98,7 @@ export default function Resources() {
         
         {/* Раздел Трансляции */}
         <div style={{ marginTop: 48 }}>
-          <h2 className="portals-title" style={{ marginBottom: 24 }}>Трансляции</h2>
+          <h2 className="portals-title" style={{ marginBottom: 24 }}>{t("Трансляции")}</h2>
           <div style={{ marginTop: 16 }}>
             <BroadcastWidget />
           </div>

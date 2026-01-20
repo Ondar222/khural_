@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import SideNav from "../components/SideNav.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
 
 const CATEGORIES = ["Министерства", "Службы", "Агентства"];
 const typeToCategory = (t) =>
@@ -14,6 +15,7 @@ const typeToCategory = (t) =>
 
 export default function Authorities() {
   const { authorities } = useData();
+  const { t } = useI18n();
   const [category, setCategory] = React.useState(() => {
     const cat = new URLSearchParams(window.location.search || "").get("cat");
     return CATEGORIES.includes(cat) ? cat : "Министерства";
@@ -58,7 +60,7 @@ export default function Authorities() {
                 href="/authorities"
                 style={{ marginBottom: 16, display: "inline-block" }}
               >
-                ← К списку
+                {t("back")}
               </a>
               <div>
                 <h1 style={{ marginBottom: 8, display: "block" }}>{item.title}</h1>

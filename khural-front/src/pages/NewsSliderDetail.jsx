@@ -1,6 +1,7 @@
 import React from "react";
 import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
@@ -59,6 +60,7 @@ function formatRuDateMaybe(dateStr) {
 export default function NewsSliderDetail() {
   const { slides, loading, errors, reload } = useData();
   const { route } = useHashRoute();
+  const { t } = useI18n();
 
   const slideId = React.useMemo(() => {
     const base = (route || "/").split("?")[0];
@@ -100,7 +102,7 @@ export default function NewsSliderDetail() {
           <div>
             <div style={{ marginBottom: 16 }}>
               <a className="btn btn-back" href="/news/week" style={{ marginBottom: 16, display: "inline-block" }}>
-                ← К списку
+                {t("back")}
               </a>
               <div>
                 <h1 style={{ marginBottom: 8, display: "block" }}>{item?.title || "Главные события недели"}</h1>

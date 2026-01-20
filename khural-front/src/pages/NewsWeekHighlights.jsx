@@ -53,7 +53,7 @@ export default function NewsWeekHighlights() {
       <div className="container">
         <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
           <a className="btn btn-back" href="/news" style={{ display: "inline-block", width: "fit-content" }}>
-            ← К списку
+            {t("back")}
           </a>
           <h1 className="no-gold-underline" style={{ margin: 0 }}>
             Главные события недели

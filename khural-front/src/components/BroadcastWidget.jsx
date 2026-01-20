@@ -1,5 +1,6 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
 
 function getVkEmbedUrl(vkStreamKey, vkStreamUrl) {
   // Если есть прямая ссылка на трансляцию VK
@@ -44,6 +45,7 @@ function getYouTubeEmbedUrl(youtubeVideoId, youtubeUrl) {
 
 export default function BroadcastWidget() {
   const { settings, loading } = useData();
+  const { t } = useI18n();
   
   // Получаем настройки трансляции из settings
   const broadcastSettings = React.useMemo(() => {
@@ -54,7 +56,7 @@ export default function BroadcastWidget() {
       if (local) {
         broadcast = JSON.parse(local);
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
     
@@ -69,7 +71,7 @@ export default function BroadcastWidget() {
         if (broadcastSetting?.value) {
           try {
             settingsBroadcast = JSON.parse(broadcastSetting.value);
-          } catch (e) {
+          } catch {
             settingsBroadcast = null;
           }
         }
@@ -81,7 +83,7 @@ export default function BroadcastWidget() {
         if (typeof settingsBroadcast === "string") {
           try {
             settingsBroadcast = JSON.parse(settingsBroadcast);
-          } catch (e) {
+          } catch {
             settingsBroadcast = null;
           }
         }
@@ -94,7 +96,7 @@ export default function BroadcastWidget() {
     
     return {
       type: broadcast.type || broadcast.platform || "vk",
-      title: broadcast.title || broadcast.name || "Трансляция",
+      title: broadcast.title || broadcast.name || t("Трансляция"),
       description: broadcast.description || "",
       vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key,
       vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url,
@@ -105,7 +107,7 @@ export default function BroadcastWidget() {
       embedUrl: broadcast.embed_url || broadcast.embedUrl,
       isActive: broadcast.is_active !== false && broadcast.isActive !== false,
     };
-  }, [settings]);
+  }, [settings, t]);
 
   const [embedUrl, setEmbedUrl] = React.useState(null);
   const [streamType, setStreamType] = React.useState(null);
@@ -195,7 +197,7 @@ export default function BroadcastWidget() {
                 }}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                title={broadcastSettings.title || "Трансляция"}
+                title={broadcastSettings.title || t("Трансляция")}
               />
             ) : streamType === "vk" || streamType === "vkontakte" ? (
               <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -269,7 +271,7 @@ export default function BroadcastWidget() {
                 }}
                 allow="autoplay; encrypted-media"
                 allowFullScreen
-                title={broadcastSettings.title || "Трансляция"}
+                title={broadcastSettings.title || t("Трансляция")}
               />
             ) : null}
           </div>
