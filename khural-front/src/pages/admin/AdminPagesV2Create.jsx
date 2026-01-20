@@ -1,8 +1,9 @@
 import React from "react";
-import { Button, Form, Input, Select, Space, Card, message as antdMessage } from "antd";
+import { Button, Form, Input, Select, Space, Card, Switch, message as antdMessage } from "antd";
 import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import { AboutApi, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
+import { upsertPageOverride } from "../../utils/pagesOverrides.js";
 
 function slugify(input) {
   return String(input || "")
@@ -113,10 +114,10 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
         metadata: block.metadata || null,
       }));
 
-      await AboutApi.createPage({
+      const created = await AboutApi.createPage({
         title: values.title,
-        menuTitle: values.menuTitle || null,
         slug: fullSlug,
+        isPublished: values.isPublished !== undefined ? Boolean(values.isPublished) : true,
         locale: values.locale || "ru",
         content: [
           {
@@ -126,6 +127,14 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
             blocks: contentBlocks,
           },
         ],
+      });
+
+      // menu/submenu labels are stored as frontend overrides (backend strips unknown fields)
+      upsertPageOverride({
+        id: created?.id,
+        slug: created?.slug || fullSlug,
+        menuTitle: values.menuTitle || null,
+        submenuTitle: values.submenuTitle || null,
       });
       antdMessage.success("Страница создана");
       reload();
@@ -206,13 +215,20 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
       <div className="admin-card admin-page-editor__card">
 
-        <Form layout="vertical" form={form} initialValues={{ locale: "ru", blocks: [] }}>
+        <Form layout="vertical" form={form} initialValues={{ locale: "ru", blocks: [], isPublished: true }}>
           <Form.Item label="Название страницы" name="title" rules={[{ required: true, message: "Введите название" }]}>
             <Input onChange={onTitleChange} placeholder="Название страницы" />
           </Form.Item>
 
+          <Form.Item label="Опубликовать" name="isPublished" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+
           <Form.Item label="Название в меню" name="menuTitle">
             <Input placeholder="Название в меню (если отличается от названия страницы)" />
+          </Form.Item>
+          <Form.Item label="Название в подменю" name="submenuTitle">
+            <Input placeholder="Название в подменю (если отличается от названия в меню)" />
           </Form.Item>
           <Form.Item label="Родитель (опционально)" name="parentSlug">
             <Select

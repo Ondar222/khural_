@@ -2,15 +2,17 @@ import React from "react";
 import { AboutApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "../components/DataState.jsx";
+import { getPreferredLocaleToken } from "../utils/pages.js";
+import { pickMenuLabel } from "../utils/pagesOverrides.js";
 
 export default function PagesIndex() {
   const { lang } = useI18n();
+  const locale = getPreferredLocaleToken(lang);
   const [items, setItems] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
   React.useEffect(() => {
-    const locale = lang === "ty" ? "tyv" : "ru";
     let alive = true;
     (async () => {
       setLoading(true);
@@ -31,7 +33,7 @@ export default function PagesIndex() {
     return () => {
       alive = false;
     };
-  }, [lang]);
+  }, [lang, locale]);
 
   return (
     <section className="section">
@@ -51,7 +53,7 @@ export default function PagesIndex() {
                     href={href}
                     style={{ fontWeight: 700 }}
                   >
-                    {p.title || p.name || p.slug}
+                    {pickMenuLabel(p, locale, { prefer: "menu" }) || p.slug}
                   </a>
                 );
               })}

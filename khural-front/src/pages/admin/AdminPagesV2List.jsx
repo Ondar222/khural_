@@ -2,44 +2,17 @@ import React from "react";
 import { Button, Input, Space, Table, Popconfirm, Tag } from "antd";
 import { AboutApi, apiFetch } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
+import {
+  getPageOverrideById,
+  PAGES_OVERRIDES_EVENT_NAME,
+  PAGES_OVERRIDES_STORAGE_KEY,
+} from "../../utils/pagesOverrides.js";
 
 function normalizeList(res) {
   if (Array.isArray(res)) return res;
   if (res && typeof res === "object" && Array.isArray(res.items)) return res.items;
   return [];
 }
-
-function slugify(input) {
-  return String(input || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_]+/g, "-")
-    .replace(/[^a-z0-9\-а-яё]+/gi, "")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-// Pages that already exist on the public site (used in /section via title→slug mapping).
-// If backend /pages is empty, we still can seed these so they appear in admin.
-const SITE_SEED_PAGES = [
-  { slug: "code-of-honor", title: "Кодекс чести мужчины Тувы" },
-  { slug: "mothers-commandments", title: "Свод заповедей матерей Тувы" },
-  { slug: "news-subscription", title: "Подписка на новости" },
-  { slug: "for-media", title: "Для СМИ" },
-  { slug: "photos", title: "Фотографии" },
-  { slug: "videos", title: "Видеозаписи" },
-  { slug: "pd-policy", title: "Политика обработки персональных данных" },
-  { slug: "license", title: "Лицензия" },
-  { slug: slugify("Комиссии"), title: "Комиссии" },
-  { slug: slugify("Депутатские фракции"), title: "Депутатские фракции" },
-  { slug: slugify("Молодежный Хурал"), title: "Молодежный Хурал" },
-  // content sections used in SideNav/header via /section?title=...
-  { slug: slugify("Представительство в Совете Федерации"), title: "Представительство в Совете Федерации" },
-  {
-    slug: slugify("Совет по взаимодействию с представительными органами муниципальных образований"),
-    title: "Совет по взаимодействию с представительными органами муниципальных образований",
-  },
-];
 
 // Real site routes. These are NOT CMS pages.
 // Editing is done via corresponding admin modules (news/deputies/documents/slider/etc).
@@ -91,7 +64,7 @@ export default function AdminPagesV2List({
   const [localeMode, setLocaleMode] = React.useState("all"); // all | ru | tyv
   const [busy, setBusy] = React.useState(false);
   const [items, setItems] = React.useState([]);
-  const [importing, setImporting] = React.useState(false);
+  const [, setOvTick] = React.useState(0);
   const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
   React.useEffect(() => {
@@ -99,6 +72,20 @@ export default function AdminPagesV2List({
     const onResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const bump = () => setOvTick((x) => x + 1);
+    const onStorage = (e) => {
+      if (e?.key === PAGES_OVERRIDES_STORAGE_KEY) bump();
+    };
+    window.addEventListener(PAGES_OVERRIDES_EVENT_NAME, bump);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(PAGES_OVERRIDES_EVENT_NAME, bump);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   const isMobile = windowWidth <= 768;
@@ -231,86 +218,6 @@ export default function AdminPagesV2List({
     }
   }, [canWrite, items, load, onMessage, reloadData]);
 
-  const importFromPublicSite = React.useCallback(async () => {
-    if (!canWrite) return;
-    setImporting(true);
-    let created = 0;
-    let skipped = 0;
-    let failed = 0;
-    let usedSeed = 0;
-    let firstError = "";
-
-    const delay = (ms) => new Promise((r) => setTimeout(r, ms));
-    const toSlug = (p) => String(p?.slug || p?.path || "").trim().replace(/^\/+/, "");
-    const toTitle = (p) => String(p?.title || p?.name || p?.menuTitle || p?.menu_title || "").trim();
-    const toContent = (p, title) => {
-      const c = p?.content ?? p?.html ?? p?.body ?? p?.text ?? "";
-      if (typeof c === "string" && c.trim()) return c;
-      return `<p>${String(title || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>`;
-    };
-
-    try {
-      // На всякий случай подтянем текущий список страниц в админке
-      await load();
-      // 1) Публичный список (то, что есть на сайте). Если API пустой — используем seed.
-      const publicList = await AboutApi.listPages({ locale: "ru", publishedOnly: false }).catch(() => []);
-      const publicItems = normalizeList(publicList);
-      const sourceItems = publicItems.length ? publicItems : SITE_SEED_PAGES;
-      if (!publicItems.length) usedSeed += SITE_SEED_PAGES.length;
-
-      // 2) Текущий список в админке (все страницы)
-      const adminList = normalizeList(await apiFetch(`/pages`, { method: "GET", auth: true }).catch(() => []));
-      const existingSlugs = new Set(adminList.map((p) => toSlug(p).toLowerCase()).filter(Boolean));
-
-      const localesToCreate = localeMode === "all" ? ["ru", "tyv"] : [localeMode];
-
-      for (const p of sourceItems) {
-        const slug = toSlug(p);
-        const title = toTitle(p);
-        if (!slug || !title) {
-          skipped += 1;
-          continue;
-        }
-        if (existingSlugs.has(slug.toLowerCase())) {
-          skipped += 1;
-          continue;
-        }
-
-        const content = localesToCreate.map((loc) => ({
-          locale: loc,
-          title,
-          content: toContent(p, title),
-        }));
-
-        try {
-          await AboutApi.createPage({
-            slug,
-            title,
-            isPublished: true,
-            content,
-          });
-          created += 1;
-          existingSlugs.add(slug.toLowerCase());
-          await delay(350);
-        } catch (e) {
-          failed += 1;
-          if (!firstError) firstError = e?.message || "Ошибка создания страницы";
-        }
-      }
-
-      onMessage?.(
-        failed > 0 ? "warning" : "success",
-        `Импорт завершён: создано ${created}, пропущено ${skipped}${
-          failed ? `, ошибок ${failed}` : ""
-        }${usedSeed ? ` (seed: ${usedSeed})` : ""}${firstError ? ` • пример: ${firstError}` : ""}`
-      );
-      reloadData();
-      await load();
-    } finally {
-      setImporting(false);
-    }
-  }, [canWrite, load, localeMode, onMessage, reloadData]);
-
   const columns = [
     {
       title: "Название",
@@ -338,6 +245,26 @@ export default function AdminPagesV2List({
                 })()}
               </Tag>
             )}
+            {!row?.__isSystem ? (() => {
+              const ov = getPageOverrideById(row?.id);
+              const mt = typeof ov?.menuTitle === "string" ? ov.menuTitle.trim() : "";
+              const st = typeof ov?.submenuTitle === "string" ? ov.submenuTitle.trim() : "";
+              if (!mt && !st) return null;
+              return (
+                <>
+                  {mt ? (
+                    <Tag className="admin-pages-list__tag" color="purple">
+                      MENU: {mt}
+                    </Tag>
+                  ) : null}
+                  {st ? (
+                    <Tag className="admin-pages-list__tag" color="magenta">
+                      SUB: {st}
+                    </Tag>
+                  ) : null}
+                </>
+              );
+            })() : null}
           </div>
         </div>
       ),

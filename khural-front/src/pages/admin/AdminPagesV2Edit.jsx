@@ -1,8 +1,9 @@
 import React from "react";
-import { Button, Form, Input, Select, Space, Card, message as antdMessage } from "antd";
+import { Button, Form, Input, Select, Space, Card, Switch, message as antdMessage } from "antd";
 import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import { AboutApi, apiFetch, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
+import { getPageOverrideById, upsertPageOverride } from "../../utils/pagesOverrides.js";
 
 function normalizeList(res) {
   if (Array.isArray(res)) return res;
@@ -91,9 +92,13 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           contentValue = page.content;
         }
 
+        const ov = getPageOverrideById(page?.id);
+
         form.setFieldsValue({
           title: page.title || page.name || "",
-          menuTitle: page.menuTitle || page.menu_title || "",
+          isPublished: Boolean(page?.isPublished),
+          menuTitle: ov?.menuTitle || "",
+          submenuTitle: ov?.submenuTitle || "",
           parentSlug,
           slugLeaf: leaf,
           locale: page.locale || page.lang || "ru",
@@ -129,10 +134,10 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         metadata: block.metadata || null,
       }));
 
-      await AboutApi.updatePage(id, {
+      const saved = await AboutApi.updatePage(id, {
         title: values.title,
-        menuTitle: values.menuTitle || null,
         slug: fullSlug,
+        isPublished: values.isPublished !== undefined ? Boolean(values.isPublished) : undefined,
         locale: values.locale || "ru",
         content: [
           {
@@ -142,6 +147,13 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
             blocks: contentBlocks,
           },
         ],
+      });
+
+      upsertPageOverride({
+        id: saved?.id ?? id,
+        slug: saved?.slug || fullSlug,
+        menuTitle: values.menuTitle || null,
+        submenuTitle: values.submenuTitle || null,
       });
       antdMessage.success("Страница сохранена");
       reload();
@@ -218,8 +230,15 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
             <Input disabled={loading} placeholder="Название страницы" />
           </Form.Item>
 
+          <Form.Item label="Опубликовать" name="isPublished" valuePropName="checked">
+            <Switch disabled={loading} />
+          </Form.Item>
+
           <Form.Item label="Название в меню" name="menuTitle">
             <Input disabled={loading} placeholder="Название в меню (если отличается от названия страницы)" />
+          </Form.Item>
+          <Form.Item label="Название в подменю" name="submenuTitle">
+            <Input disabled={loading} placeholder="Название в подменю (если отличается от названия в меню)" />
           </Form.Item>
 
           <Form.Item label="Родитель (опционально)" name="parentSlug">

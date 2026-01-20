@@ -4,17 +4,23 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import Link from "./Link.jsx";
 import { useData } from "../context/DataContext.jsx";
-import { useHashRoute } from "../Router.jsx";
-import { RightOutlined, LeftOutlined } from "@ant-design/icons";
+import { RightOutlined } from "@ant-design/icons";
+import { AboutApi } from "../api/client.js";
+import { getPreferredLocaleToken } from "../utils/pages.js";
+import {
+  applyPagesOverridesToTree,
+  pickMenuLabel,
+  PAGES_OVERRIDES_EVENT_NAME,
+  PAGES_OVERRIDES_STORAGE_KEY,
+} from "../utils/pagesOverrides.js";
 // removed unused UI icon libs
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [sheetOpen, setSheetOpen] = React.useState(false);
-  const [openMenu, setOpenMenu] = React.useState(null); // 'vh' | 'news' | 'docs'
+  const [openMenu, setOpenMenu] = React.useState(null); // 'vh' | 'news' | 'docs' | 'pages'
   const [mobileSection, setMobileSection] = React.useState(null);
   const { isAuthenticated, user, logout } = useAuth();
-  const { route } = useHashRoute();
 
 
   React.useEffect(() => {
@@ -36,8 +42,9 @@ export default function Header() {
     }
   };
 
-  const { cycleMode } = useA11y();
-  const { lang, setLang, t } = useI18n();
+  useA11y();
+ const { lang, setLang, t } = useI18n();
+  const localeToken = getPreferredLocaleToken(lang);
   const brandLine1 = lang === "ru" ? "Верховный Хурал" : t("brandTop");
   const brandLine2 = lang === "ru" ? "(парламент)" : t("brandParliament");
   const brandLine3 = lang === "ru" ? "Республика Тыва" : t("brandBottom");
@@ -107,6 +114,48 @@ export default function Header() {
     ).filter((c) => typeof c === "string" && c.trim() !== "");
     return ["Актуальные новости", "Все новости", "Медиа", "—", ...cats];
   }, [news]);
+
+  const [pagesTree, setPagesTree] = React.useState([]);
+
+  const pageHref = React.useCallback((slug) => {
+    const segs = String(slug || "")
+      .split("/")
+      .filter(Boolean)
+      .map((s) => encodeURIComponent(s));
+    return `/p/${segs.join("/")}`;
+  }, []);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await AboutApi.listPagesTree({ publishedOnly: true }).catch(() => []);
+        const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+        if (!alive) return;
+        setPagesTree(applyPagesOverridesToTree(arr));
+      } catch {
+        if (!alive) return;
+        setPagesTree([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [lang]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const reapply = () => setPagesTree((prev) => applyPagesOverridesToTree(prev));
+    const onStorage = (e) => {
+      if (e?.key === PAGES_OVERRIDES_STORAGE_KEY) reapply();
+    };
+    window.addEventListener(PAGES_OVERRIDES_EVENT_NAME, reapply);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(PAGES_OVERRIDES_EVENT_NAME, reapply);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   return (
     <>
@@ -311,6 +360,37 @@ export default function Header() {
             <div>
               <Link to="/appeals">{t("appeals")}</Link>
             </div>
+            <div
+              className={`dropdown ${openMenu === "pages" ? "open" : ""}`}
+              onMouseEnter={() => setOpenMenu("pages")}
+              onMouseLeave={() => setOpenMenu(null)}
+            >
+              <Link to="/pages">{t("Страницы") || "Страницы"} ▾</Link>
+              <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("pages")}>
+                <a href="/pages">{t("Все страницы") || "Все страницы"}</a>
+                {Array.isArray(pagesTree) && pagesTree.length ? <hr /> : null}
+                {(Array.isArray(pagesTree) ? pagesTree : []).slice(0, 25).map((p) => {
+                  const rootLabel = pickMenuLabel(p, localeToken, { prefer: "menu" });
+                  const children = Array.isArray(p?.children) ? p.children : [];
+                  return (
+                    <React.Fragment key={String(p?.id || p?.slug || Math.random())}>
+                      <a href={pageHref(p.slug)} style={{ fontWeight: 800 }}>
+                        {rootLabel || p.slug}
+                      </a>
+                      {children.slice(0, 25).map((c) => (
+                        <a
+                          key={String(c?.id || c?.slug || Math.random())}
+                          href={pageHref(c.slug)}
+                          style={{ paddingLeft: 14, fontSize: 13 }}
+                        >
+                          {pickMenuLabel(c, localeToken, { prefer: "submenu" }) || c.slug}
+                        </a>
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
           </nav>
 
           <div className="header-actions">
@@ -484,6 +564,15 @@ export default function Header() {
             <a href="/wifi">{t("wifiMap")}</a>
             <a href="/map">{t("map")}</a>
           </div>
+          <div className="sheet-col">
+            <h3>{t("Страницы") || "Страницы"}</h3>
+            <a href="/pages">{t("Все страницы") || "Все страницы"}</a>
+            {(Array.isArray(pagesTree) ? pagesTree : []).slice(0, 12).map((p) => (
+              <a key={String(p?.id || p?.slug)} href={pageHref(p.slug)}>
+                {pickMenuLabel(p, localeToken, { prefer: "menu" }) || p.slug}
+              </a>
+            ))}
+          </div>
         </div>
       </div>
       <div
@@ -639,6 +728,12 @@ export default function Header() {
               <button className="tile link" onClick={() => setMobileSection("news")}>
                 <span className="mobile-menu-link-content">
                   {t("news")}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </button>
+              <button className="tile link" onClick={() => setMobileSection("pages")}>
+                <span className="mobile-menu-link-content">
+                  {t("Страницы") || "Страницы"}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </button>
@@ -929,6 +1024,44 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
+          </>
+        )}
+        {mobileSection === "pages" && (
+          <>
+            <button className="btn" onClick={() => setMobileSection(null)}>
+              {t("back")}
+            </button>
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("Страницы") || "Страницы"}</div>
+            <a className="tile link" href="/pages" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("Все страницы") || "Все страницы"}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            {(Array.isArray(pagesTree) ? pagesTree : []).map((p) => (
+              <React.Fragment key={String(p?.id || p?.slug)}>
+                <a className="tile link" href={pageHref(p.slug)} onClick={() => setMobileOpen(false)}>
+                  <span className="mobile-menu-link-content">
+                    {pickMenuLabel(p, localeToken, { prefer: "menu" }) || p.slug}
+                    <RightOutlined aria-hidden="true" />
+                  </span>
+                </a>
+                {(Array.isArray(p?.children) ? p.children : []).map((c) => (
+                  <a
+                    key={String(c?.id || c?.slug)}
+                    className="tile link"
+                    href={pageHref(c.slug)}
+                    onClick={() => setMobileOpen(false)}
+                    style={{ paddingLeft: 14 }}
+                  >
+                    <span className="mobile-menu-link-content">
+                      {pickMenuLabel(c, localeToken, { prefer: "submenu" }) || c.slug}
+                      <RightOutlined aria-hidden="true" />
+                    </span>
+                  </a>
+                ))}
+              </React.Fragment>
+            ))}
           </>
         )}
       </nav>

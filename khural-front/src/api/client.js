@@ -524,6 +524,14 @@ export const AboutApi = {
       return apiFetch(`/about/pages${suffix}`, { method: "GET", auth: false });
     }
   },
+  async listPagesTree({ publishedOnly = true } = {}) {
+    // Public tree: GET /pages?tree=true&publishedOnly=true|false
+    const qs = new URLSearchParams();
+    qs.set("tree", "true");
+    if (publishedOnly) qs.set("publishedOnly", "true");
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/pages${suffix}`, { method: "GET", auth: false });
+  },
   async getPageBySlug(slug, { locale } = {}) {
     try {
       return await apiFetch(`/pages/slug/${encodeURIComponent(slug)}`, {
