@@ -1,6 +1,7 @@
 import React from "react";
 import { App, Button, Form, Input, Switch, Select } from "antd";
 import { useHashRoute } from "../../Router.jsx";
+import { toCommitteeHtml } from "../../utils/committeeHtml.js";
 
 export default function AdminCommitteesEditor({
   mode,
@@ -22,6 +23,7 @@ export default function AdminCommitteesEditor({
   );
 
   const nameValue = Form.useWatch("name", form);
+  const descriptionValue = Form.useWatch("description", form);
 
   // Отслеживание размера окна для адаптивности
   React.useEffect(() => {
@@ -311,19 +313,42 @@ export default function AdminCommitteesEditor({
             </Form.Item>
 
             <Form.Item 
-              label={<span style={{ fontWeight: 600, fontSize: 14 }}>Краткое описание</span>}
+              label={<span style={{ fontWeight: 600, fontSize: 14 }}>Краткое описание (HTML)</span>}
               name="description"
               style={{ marginBottom: 0 }}
+              extra={
+                <span style={{ opacity: 0.75 }}>
+                  Можно использовать теги: <code>{`p, a, h1-h6, ul, ol, li, br, strong, em`}</code>. На сайте теги не отображаются как текст — они рендерятся.
+                </span>
+              }
             >
               <Input.TextArea
                 autoSize={{ minRows: 4, maxRows: 8 }}
-                placeholder="Введите описание комитета, его функции и обязанности..."
+                placeholder="<p>Введите описание комитета...</p>"
                 disabled={loading || saving}
                 showCount
-                maxLength={500}
+                maxLength={5000}
                 style={{ resize: 'vertical' }}
               />
             </Form.Item>
+
+            {descriptionValue ? (
+              <div
+                className="admin-card"
+                style={{
+                  padding: 16,
+                  borderRadius: 14,
+                  background: "rgba(255, 255, 255, 0.55)",
+                  border: "1px solid rgba(15, 23, 42, 0.08)",
+                }}
+              >
+                <div style={{ fontWeight: 800, marginBottom: 10 }}>Превью на сайте</div>
+                <div
+                  style={{ lineHeight: 1.65, color: "#374151" }}
+                  dangerouslySetInnerHTML={{ __html: toCommitteeHtml(descriptionValue) }}
+                />
+              </div>
+            ) : null}
           </div>
 
           {/* Контактная информация */}

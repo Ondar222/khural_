@@ -9,6 +9,7 @@ import {
   COMMITTEES_OVERRIDES_STORAGE_KEY,
   readCommitteesOverrides,
 } from "../utils/committeesOverrides.js";
+import { toCommitteeHtml } from "../utils/committeeHtml.js";
 
 function mergeCommitteesWithOverrides(base, overrides) {
   const created = Array.isArray(overrides?.created) ? overrides.created : [];
@@ -270,9 +271,12 @@ export default function Committee() {
             {/* Краткая информация о комитете */}
             {(committee.shortDescription || committee.description) && (
               <div style={{ marginTop: 16, padding: 20, background: "#f9fafb", borderRadius: 8 }}>
-                <div style={{ fontSize: 16, lineHeight: 1.6, color: "#374151" }}>
-                  {committee.shortDescription || committee.description}
-                </div>
+                <div
+                  style={{ fontSize: 16, lineHeight: 1.6, color: "#374151" }}
+                  dangerouslySetInnerHTML={{
+                    __html: toCommitteeHtml(committee.shortDescription || committee.description),
+                  }}
+                />
               </div>
             )}
 
