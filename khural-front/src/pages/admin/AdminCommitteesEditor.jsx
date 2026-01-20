@@ -2,6 +2,7 @@ import React from "react";
 import { App, Button, Form, Input, Switch, Select, Space, Divider, InputNumber, Tag } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { toCommitteeHtml } from "../../utils/committeeHtml.js";
+import { normalizeBool } from "../../utils/bool.js";
 
 export default function AdminCommitteesEditor({
   mode,
@@ -26,6 +27,7 @@ export default function AdminCommitteesEditor({
   const nameValue = Form.useWatch("name", form);
   const descriptionValue = Form.useWatch("description", form);
   const convocationIdValue = Form.useWatch("convocationId", form);
+  const isActiveValue = Form.useWatch("isActive", form);
 
   const formatConvocationLabel = React.useCallback((c) => {
     const raw = String(c?.name || c?.number || "").trim();
@@ -76,7 +78,7 @@ export default function AdminCommitteesEditor({
         address: found.address || "",
         website: found.website || "",
         head: found.head || "",
-        isActive: found.isActive !== false,
+        isActive: normalizeBool(found.isActive, true),
         convocationId: found.convocation?.id || found.convocationId || null,
         members: Array.isArray(found.members)
           ? found.members.map((m, idx) => ({
@@ -125,7 +127,7 @@ export default function AdminCommitteesEditor({
       // Используем такой же формат, как в других успешно работающих формах
       const payload = {
         name: String(values.name).trim(),
-        isActive: values.isActive !== false,
+        isActive: normalizeBool(values.isActive, true),
       };
       
       // Добавляем остальные поля, только если они заполнены
@@ -644,8 +646,6 @@ export default function AdminCommitteesEditor({
             
             <Form.Item
               label={<span style={{ fontWeight: 600, fontSize: 14 }}>Статус комитета</span>}
-              name="isActive"
-              valuePropName="checked"
               tooltip="Активный комитет отображается на сайте"
               style={{ marginBottom: 0 }}
             >
@@ -660,17 +660,19 @@ export default function AdminCommitteesEditor({
                 border: '1px solid rgba(10, 31, 68, 0.08)',
                 flexWrap: 'wrap'
               }}>
-                <Switch 
-                  disabled={loading || saving}
-                  checkedChildren="Активен"
-                  unCheckedChildren="Неактивен"
-                />
+                <Form.Item name="isActive" valuePropName="checked" noStyle>
+                  <Switch 
+                    disabled={loading || saving}
+                    checkedChildren="Активен"
+                    unCheckedChildren="Неактивен"
+                  />
+                </Form.Item>
                 <span style={{ 
                   fontSize: 14, 
-                  color: form.getFieldValue("isActive") ? '#52c41a' : '#8c8c8c',
-                  fontWeight: form.getFieldValue("isActive") ? 600 : 400
+                  color: normalizeBool(isActiveValue, true) ? '#52c41a' : '#8c8c8c',
+                  fontWeight: normalizeBool(isActiveValue, true) ? 600 : 400
                 }}>
-                  {form.getFieldValue("isActive") ? "Комитет отображается на сайте" : "Комитет скрыт"}
+                  {normalizeBool(isActiveValue, true) ? "Комитет отображается на сайте" : "Комитет скрыт"}
                 </span>
               </div>
             </Form.Item>

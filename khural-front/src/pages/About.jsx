@@ -200,7 +200,7 @@ export default function About() {
                 которых избирались неоднократно, профессиональными юристами, деятелями культуры,
                 искусства, спортсменами, учителями, врачами, предпринимателями.
               </p>
-              <div
+              {/* <div
                 className="tile"
                 style={{
                   padding: 0,
@@ -227,7 +227,7 @@ export default function About() {
                 >
                   ▶
                 </div>
-              </div>
+              </div> */}
             </div>
 
             <div id="about-structure" className="person-block about-structure" style={{ marginTop: 22 }}>

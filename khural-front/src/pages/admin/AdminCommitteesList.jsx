@@ -1,6 +1,7 @@
 import React from "react";
 import { Button, Input, Space, Table, Tag, Select, Empty } from "antd";
 import { useHashRoute } from "../../Router.jsx";
+import { normalizeBool } from "../../utils/bool.js";
 
 export default function AdminCommitteesList({
   items,
@@ -52,6 +53,7 @@ export default function AdminCommitteesList({
   const isLocalStatic = (row) => String(row?.id || "").startsWith("local-static-");
   const isLocal = (row) =>
     !isLocalStatic(row) && String(row?.id || "").startsWith("local-");
+  const isCommitteeActive = (row) => normalizeBool(row?.isActive, true) !== false;
 
   const columns = [
     {
@@ -66,7 +68,7 @@ export default function AdminCommitteesList({
             ) : isLocal(row) ? (
               <Tag color="blue">Локально</Tag>
             ) : null}
-            {row.isActive ? (
+            {isCommitteeActive(row) ? (
               <Tag color="green">Активный</Tag>
             ) : (
               <Tag color="default">Неактивный</Tag>
@@ -118,7 +120,7 @@ export default function AdminCommitteesList({
       dataIndex: "isActive",
       width: 100,
       render: (isActive) =>
-        isActive ? (
+        normalizeBool(isActive, true) !== false ? (
           <Tag color="green">Активный</Tag>
         ) : (
           <Tag color="default">Неактивный</Tag>

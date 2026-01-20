@@ -26,6 +26,7 @@ import {
   readCommitteesOverrides,
   writeCommitteesOverrides,
 } from "../utils/committeesOverrides.js";
+import { normalizeBool } from "../utils/bool.js";
 
 function toNewsFallback(items) {
   return (items || []).map((n) => ({
@@ -1066,7 +1067,7 @@ export function useAdminData() {
             ? null
             : Number(payload.convocationId),
         members: Array.isArray(payload?.members) ? payload.members : [],
-        isActive: payload?.isActive !== false,
+        isActive: normalizeBool(payload?.isActive, true),
         order: payload?.order ?? Date.now(),
       };
       const ov = readCommitteesOverrides();
