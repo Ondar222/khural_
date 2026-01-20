@@ -245,6 +245,53 @@ a {
   font-weight: 600;
   font-size: 14px; /* slightly smaller for long TU labels */
 }
+/* TU (TYV): keep header links compact (avoid stretched spacing) */
+@media (min-width: 960px) {
+  html[data-lang="tyv"] .main-nav {
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: nowrap; /* keep "Страницы" on the same row */
+    font-size: 13px;
+    min-width: 0; /* allow shrink inside flex row */
+    overflow-x: auto; /* if still too tight, scroll instead of wrapping */
+    scrollbar-width: none; /* Firefox */
+  }
+  html[data-lang="tyv"] .main-nav::-webkit-scrollbar {
+    display: none; /* Chromium */
+  }
+  /* In case any global styles set flex: 1 on children, force compact items */
+  html[data-lang="tyv"] .main-nav > * {
+    flex: 0 0 auto;
+  }
+
+  /* Slightly compact brand area for TY on desktop to fit menu */
+  html[data-lang="tyv"] .site-header .row {
+    gap: 12px;
+  }
+  html[data-lang="tyv"] .brand {
+    gap: 10px;
+    min-width: 0;
+  }
+  html[data-lang="tyv"] .brand-text {
+    min-width: 0;
+  }
+  html[data-lang="tyv"] .brand-ty__line {
+    line-height: 1.05;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  html[data-lang="tyv"] .brand-ty__line--1,
+  html[data-lang="tyv"] .brand-ty__line--2 {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--primary);
+  }
+  html[data-lang="tyv"] .brand-ty__line--3 {
+    font-size: 12px;
+    color: var(--muted);
+  }
+}
 .main-nav a,
 .main-nav a:visited {
   color: #111827;
@@ -3635,6 +3682,15 @@ a {
   justify-content: space-between;
   font-size: 13px;
   color: #4b5563;
+}
+
+/* TU (TYV) locale: avoid "stretched" gaps between links in topbar */
+html[data-lang="tyv"] .topbar {
+  justify-content: flex-start;
+  gap: 16px;
+}
+html[data-lang="tyv"] .topbar > a {
+  margin-right: 0;
 }
 .container.topbar {
   /* Desktop header: add breathing room above auth buttons and align closer to the right edge */
