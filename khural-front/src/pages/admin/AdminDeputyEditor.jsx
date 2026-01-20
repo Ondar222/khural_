@@ -81,15 +81,18 @@ function normalizeInitial(d) {
     fullName: row.fullName || row.full_name || row.name || "",
     faction: row.faction || "",
     electoralDistrict: row.electoralDistrict || row.electoral_district || row.district || "",
-    convocations: (() => {
+    convocationIds: (() => {
+      // Prefer explicit IDs
+      if (Array.isArray(row.convocationIds)) return row.convocationIds.map(String).filter(Boolean);
+      if (Array.isArray(row.convocation_ids)) return row.convocation_ids.map(String).filter(Boolean);
+      // From relation
       const fromRel = Array.isArray(row.convocations)
         ? row.convocations
-            .map((c) => (typeof c === "string" ? c : c?.name || c?.title || c?.label || ""))
+            .map((c) => (typeof c === "string" ? "" : c?.id))
             .map((x) => String(x || "").trim())
             .filter(Boolean)
         : [];
-      const one = String(row.convocationNumber || row.convocation || row.convocation_number || "").trim();
-      return [...new Set([...fromRel, ...(one ? [one] : [])])];
+      return [...new Set(fromRel)];
     })(),
     committeeIds: (() => {
       if (Array.isArray(row.committeeIds)) return row.committeeIds.map(String);
@@ -118,7 +121,7 @@ function normalizeInitial(d) {
 export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
-  const { reload, deputies, factions, districts, convocations: structureConvocations, committees, setFactions, setCommittees } = useData();
+  const { reload, deputies, factions, districts, committees, setFactions, setCommittees } = useData();
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(mode === "edit");
   const [saving, setSaving] = React.useState(false);
@@ -199,6 +202,15 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const [participationCommitteeId, setParticipationCommitteeId] = React.useState(null);
   const [participationRole, setParticipationRole] = React.useState("Член комитета");
 
+  const deputyConvocationIds = Form.useWatch("convocationIds", form);
+
+  const convocationsForParticipation = React.useMemo(() => {
+    const ids = Array.isArray(deputyConvocationIds) ? deputyConvocationIds.map(String) : [];
+    const all = Array.isArray(convocationEntities) ? convocationEntities : [];
+    const filtered = ids.length ? all.filter((c) => ids.includes(String(c?.id))) : all;
+    return filtered;
+  }, [convocationEntities, deputyConvocationIds]);
+
   const committeesForSelectedConvocation = React.useMemo(() => {
     const list = Array.isArray(committeesMerged) ? committeesMerged : [];
     if (!participationConvocationId || participationConvocationId === "all") return list;
@@ -234,6 +246,17 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       (x) => String(x?.id ?? "") === cid
     );
     if (!c) return;
+
+    // Ensure deputy has this convocation selected
+    const convIdFromCommittee = c?.convocation?.id || c?.convocationId || participationConvocationId;
+    if (convIdFromCommittee && convIdFromCommittee !== "all") {
+      const nextIds = Array.isArray(form.getFieldValue("convocationIds"))
+        ? form.getFieldValue("convocationIds").map(String)
+        : [];
+      if (!nextIds.includes(String(convIdFromCommittee))) {
+        form.setFieldValue("convocationIds", [...nextIds, String(convIdFromCommittee)]);
+      }
+    }
     const members = Array.isArray(c.members) ? c.members.slice() : [];
     const idx = members.findIndex(
       (m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum
@@ -262,7 +285,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       updatedById: { ...updatedById, [cid]: { ...(updatedById[cid] || {}), members } },
     });
     message.warning("Сервер недоступен. Участие сохранено локально.");
-  }, [canWrite, committeesMerged, deputyIdNum, message, participationCommitteeId, participationRole]);
+  }, [canWrite, committeesMerged, deputyIdNum, message, participationCommitteeId, participationRole, form, participationConvocationId]);
 
   const removeMembershipLocal = React.useCallback(async (committeeIdToUpdate) => {
     if (!canWrite) return;
@@ -374,20 +397,6 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     [canWrite, districtEntities, findEntityByName, refreshLookups]
   );
 
-  const ensureConvocation = React.useCallback(
-    async (name) => {
-      const s = String(name || "").trim();
-      if (!s) return null;
-      const found = findEntityByName(convocationEntities, s);
-      if (found) return found;
-      if (!canWrite) return null;
-      await PersonsApi.createConvocation({ name: s });
-      await refreshLookups();
-      return findEntityByName(convocationEntities, s);
-    },
-    [canWrite, convocationEntities, findEntityByName, refreshLookups]
-  );
-
   const enrichRelations = React.useCallback(
     async (raw) => {
       const body = raw && typeof raw === "object" ? { ...raw } : {};
@@ -418,14 +427,11 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         if (d?.id) body.districtIds = [String(d.id)];
       }
 
-      // convocationIds (multi)
-      const convNames = Array.isArray(body.convocations)
-        ? body.convocations.map((x) => String(x || "").trim()).filter(Boolean)
-        : [];
-      if (convNames.length) {
-        const ensured = await Promise.all(convNames.map((n) => ensureConvocation(n).catch(() => null)));
-        const ids = ensured.filter((x) => x?.id).map((x) => String(x.id));
-        if (ids.length) body.convocationIds = ids;
+      // convocationIds (multi) - prefer IDs from UI
+      if (Array.isArray(body.convocationIds)) {
+        body.convocationIds = body.convocationIds.map(String).filter(Boolean);
+      } else if (Array.isArray(body.convocation_ids)) {
+        body.convocationIds = body.convocation_ids.map(String).filter(Boolean);
       }
 
       // committeeIds (multi) - сохраняем как есть, если это массив ID
@@ -435,7 +441,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
 
       return body;
     },
-    [ensureFaction, ensureDistrict, ensureConvocation]
+    [ensureFaction, ensureDistrict]
   );
 
   React.useEffect(() => {
@@ -580,8 +586,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           biography: "",
           structureType: undefined,
           role: undefined,
-          convocations: [],
-          committeeIds: [],
+          convocationIds: [],
           mandateEnded: false,
           isDeceased: false,
           isActive: true,
@@ -658,7 +663,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                       disabled={saving || loading}
                       options={[
                         { value: "all", label: "Все созывы" },
-                        ...(Array.isArray(convocationEntities) ? convocationEntities : []).map((c) => ({
+                        ...(Array.isArray(convocationsForParticipation) ? convocationsForParticipation : []).map((c) => ({
                           value: String(c?.id),
                           label: String(c?.name || `Созыв ${c?.id}`),
                         })),
@@ -747,36 +752,19 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             <div className="admin-split">
               <Form.Item
                 label="Созывы"
-                name="convocations"
-                tooltip="Можно выбрать несколько созывов. Теги можно вводить вручную."
+                name="convocationIds"
+                tooltip="Выберите один или несколько созывов, в которых участвует депутат."
               >
                 <Select
                   disabled={loading || saving || lookupBusy}
-                  mode="tags"
-                  tokenSeparators={[","]}
-                  placeholder="Например: VIII, VII"
+                  mode="multiple"
+                  placeholder="Выберите созывы"
                   allowClear
                   showSearch
                   optionFilterProp="label"
-                  options={(
-                    Array.isArray(convocationEntities) && convocationEntities.length
-                      ? convocationEntities.map((c) => c?.name)
-                      : Array.isArray(structureConvocations)
-                        ? structureConvocations
-                        : []
-                  )
-                    .filter((x) => x && String(x).trim() !== "")
-                    .map((x) => ({ value: String(x), label: String(x) }))}
-                  dropdownRender={(menu) => (
-                    <div>
-                      {menu}
-                      <div style={{ padding: 8, borderTop: "1px solid #f0f0f0" }}>
-                        <Button type="dashed" block onClick={() => setNewConvocationOpen(true)} disabled={!canWrite}>
-                          + Добавить созыв
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  options={(Array.isArray(convocationEntities) ? convocationEntities : [])
+                    .filter((c) => c && c.id)
+                    .map((c) => ({ value: String(c.id), label: String(c.name || `Созыв ${c.id}`) }))}
                 />
               </Form.Item>
               <Form.Item label="Тип структуры" name="structureType">
@@ -806,36 +794,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                 </Select>
               </Form.Item>
             ) : null}
-            <Form.Item
-              label="Комитеты"
-              name="committeeIds"
-              tooltip="Можно выбрать несколько комитетов"
-            >
-              <Select
-                disabled={loading || saving}
-                mode="multiple"
-                placeholder="Выберите комитеты"
-                allowClear
-                showSearch
-                optionFilterProp="label"
-                options={(Array.isArray(committees) ? committees : [])
-                  .filter((c) => c && (c.id || c.name || c.title))
-                  .map((c) => ({
-                    value: String(c.id || c.name || c.title),
-                    label: String(c.name || c.title || c.id),
-                  }))}
-                dropdownRender={(menu) => (
-                  <div>
-                    {menu}
-                    <div style={{ padding: 8, borderTop: "1px solid #f0f0f0" }}>
-                      <Button type="dashed" block onClick={() => setNewCommitteeOpen(true)} disabled={!canWrite}>
-                        + Добавить комитет
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              />
-            </Form.Item>
+            {/* Комитеты задаются через блок "Участие в комитетах" (созыв → комитет → роль) */}
           </div>
         </div>
 
