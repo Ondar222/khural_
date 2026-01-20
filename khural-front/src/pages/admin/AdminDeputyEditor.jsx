@@ -756,6 +756,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                   type="primary"
                   disabled={!canWrite || !participationCommitteeId}
                   onClick={upsertMembershipLocal}
+                  style={{ color: "#fff" }}
                 >
                   Добавить / обновить участие
                 </Button>
