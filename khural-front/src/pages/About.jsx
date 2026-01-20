@@ -2,34 +2,17 @@ import React from "react";
 import SideNav from "../components/SideNav.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { AboutApi } from "../api/client.js";
-import { extractPageHtml, getPreferredLocaleToken } from "../utils/pages.js";
 
 export default function About() {
-  const { committees, aboutPages: cachedPages, aboutStructure: cachedStructure, government } = useData();
+  const { committees, government } = useData();
   // NOTE: government is used to link Chairman in the structure diagram.
-  const { lang, t } = useI18n();
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = React.useState("general"); // general | structure
-  const [pages, setPages] = React.useState(() => (Array.isArray(cachedPages) ? cachedPages : []));
-  const [, setStructure] = React.useState(() => (Array.isArray(cachedStructure) ? cachedStructure : []));
 
   const scrollToBlock = React.useCallback((id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
-
-  // Keep About content in sync with API (locale-aware)
-  React.useEffect(() => {
-    const locale = getPreferredLocaleToken(lang);
-    (async () => {
-      const [apiPages, apiStructure] = await Promise.all([
-        AboutApi.listPages({ locale }).catch(() => null),
-        AboutApi.listStructure().catch(() => null),
-      ]);
-      if (Array.isArray(apiPages)) setPages(apiPages);
-      if (Array.isArray(apiStructure)) setStructure(apiStructure);
-    })();
-  }, [lang]);
 
   // If user arrives with /about?tab=structure — scroll smoothly after mount
   React.useEffect(() => {
@@ -66,17 +49,6 @@ export default function About() {
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, []);
-
-  const generalPage = React.useMemo(() => {
-    const arr = Array.isArray(pages) ? pages : [];
-    // Try to pick a meaningful "about" page; otherwise show the first by order.
-    const bySlug =
-      arr.find((p) => String(p.slug).toLowerCase().includes("about")) ||
-      arr.find((p) => String(p.slug).toLowerCase().includes("about-us")) ||
-      arr[0] ||
-      null;
-    return bySlug;
-  }, [pages]);
 
   // NOTE: About structure diagram below is intentionally kept identical to `/section`
   // (so we do not render the "Structure (from API)" tree here).
@@ -119,18 +91,6 @@ export default function About() {
 
             <div id="about-general" className="person-block">
               <h3>{t("Общие сведения")}</h3>
-              {(() => {
-                const locale = getPreferredLocaleToken(lang);
-                const html = extractPageHtml(generalPage, locale);
-                if (!html) return null;
-                return (
-                <div
-                  className="tile"
-                  style={{ marginTop: 12 }}
-                  dangerouslySetInnerHTML={{ __html: html }}
-                />
-                );
-              })()}
               <p>
                 8 сентября 2019 года состоялись очередные выборы в высший законодательный
                 (представительный) орган государственной власти Республики Тыва.
