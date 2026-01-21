@@ -1,5 +1,6 @@
 import React from "react";
-import { App, Button, Input, Modal, Space, Table, Tag, Select } from "antd";
+import { App, Button, Input, Modal, Popconfirm, Space, Table, Tag, Select } from "antd";
+import { AppealsApi } from "../../api/client.js";
 
 const STATUS_OPTIONS = [
   { value: "Принято", label: "Принято", color: "gold" },
@@ -8,29 +9,28 @@ const STATUS_OPTIONS = [
   { value: "Закрыто", label: "Закрыто", color: "default" },
 ];
 
-function normalizeServerList(payload) {
-  if (Array.isArray(payload)) return payload;
-  const p = payload?.data ? payload.data : payload;
-  if (Array.isArray(p?.items)) return p.items;
-  if (Array.isArray(p?.results)) return p.results;
-  if (Array.isArray(p)) return p;
-  return [];
-}
-
-function normalizeAppeal(a) {
-  const createdAt = a?.createdAt || a?.created_at || a?.date || new Date().toISOString();
-  const status = a?.status || a?.state || "Принято";
-  const number = a?.number || a?.registrationNumber || a?.regNumber || a?.id || "";
-  return {
-    id: String(a?.id || a?._id || number || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
-    number: String(number || "").trim(),
-    subject: a?.subject || a?.title || "",
-    message: a?.message || a?.text || a?.content || "",
-    status: String(status),
-    createdAt: String(createdAt),
-    userEmail: a?.userEmail || a?.user?.email || a?.email || "",
-    userName: a?.userName || a?.user?.name || a?.name || "",
-  };
+function normalizeStatusText(status) {
+  if (status == null) return "";
+  let v = status;
+  if (typeof v === "object") {
+    v = v?.name ?? v?.title ?? v?.label ?? v?.code ?? v?.status ?? "";
+  }
+  const s = String(v || "").trim();
+  if (!s) return "";
+  const key = s.toLowerCase();
+  return (
+    {
+      accepted: "Принято",
+      new: "Принято",
+      created: "Принято",
+      in_progress: "В работе",
+      processing: "В работе",
+      answered: "Ответ отправлен",
+      sent: "Ответ отправлен",
+      done: "Ответ отправлен",
+      closed: "Закрыто",
+    }[key] || s
+  );
 }
 
 export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) {
@@ -50,17 +50,24 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
   const isMobile = windowWidth <= 768;
   const isTablet = windowWidth > 768 && windowWidth <= 1024;
 
+  const normalizedItems = React.useMemo(() => {
+    return (Array.isArray(items) ? items : []).map((a) => ({
+      ...a,
+      status: normalizeStatusText(a?.status) || "Принято",
+    }));
+  }, [items]);
+
   const filtered = React.useMemo(() => {
     const qq = q.trim().toLowerCase();
-    if (!qq) return items;
-    return (items || []).filter((a) => {
+    if (!qq) return normalizedItems;
+    return (normalizedItems || []).filter((a) => {
       const subject = String(a.subject || "").toLowerCase();
       const message = String(a.message || "").toLowerCase();
       const number = String(a.number || "").toLowerCase();
       const email = String(a.userEmail || "").toLowerCase();
       return subject.includes(qq) || message.includes(qq) || number.includes(qq) || email.includes(qq);
     });
-  }, [items, q]);
+  }, [normalizedItems, q]);
 
   const handleStatusChange = async (appealId, newStatus) => {
     try {
@@ -68,6 +75,23 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
       message.success("Статус обновлен");
     } catch (e) {
       message.error(e?.message || "Не удалось обновить статус");
+    }
+  };
+
+  const handleDelete = async (row) => {
+    if (!row?.id) return;
+    try {
+      await AppealsApi.remove(row.id);
+      message.success("Обращение удалено");
+      // Ask admin data hook to refresh list (AdminAppealsPage doesn't pass callbacks).
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("khural:admin:reload"));
+      }
+      if (selectedAppeal && String(selectedAppeal.id) === String(row.id)) {
+        closeDetailModal();
+      }
+    } catch (e) {
+      message.error(e?.message || "Не удалось удалить обращение");
     }
   };
 
@@ -163,6 +187,19 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
             <Button size={isTablet ? "small" : "middle"} onClick={() => openDetailModal(row)}>
               Подробнее
             </Button>
+            <Popconfirm
+              title="Удалить обращение?"
+              description="Действие необратимо."
+              okText="Удалить"
+              cancelText="Отмена"
+              okButtonProps={{ danger: true, disabled: !canWrite || busy }}
+              onConfirm={() => handleDelete(row)}
+              disabled={!canWrite || busy}
+            >
+              <Button danger size={isTablet ? "small" : "middle"} disabled={!canWrite || busy}>
+                Удалить
+              </Button>
+            </Popconfirm>
           </Space>
         ),
       },
@@ -212,6 +249,19 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
                   <Button onClick={() => openDetailModal(row)} block>
                     Подробнее
                   </Button>
+                  <Popconfirm
+                    title="Удалить обращение?"
+                    description="Действие необратимо."
+                    okText="Удалить"
+                    cancelText="Отмена"
+                    okButtonProps={{ danger: true, disabled: !canWrite || busy }}
+                    onConfirm={() => handleDelete(row)}
+                    disabled={!canWrite || busy}
+                  >
+                    <Button danger block disabled={!canWrite || busy}>
+                      Удалить
+                    </Button>
+                  </Popconfirm>
                 </div>
               </div>
             ))}
@@ -254,6 +304,20 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
           <Button key="close" onClick={closeDetailModal}>
             Закрыть
           </Button>,
+          <Popconfirm
+            key="delete"
+            title="Удалить обращение?"
+            description="Действие необратимо."
+            okText="Удалить"
+            cancelText="Отмена"
+            okButtonProps={{ danger: true, disabled: !canWrite || busy || !selectedAppeal }}
+            onConfirm={() => handleDelete(selectedAppeal)}
+            disabled={!canWrite || busy || !selectedAppeal}
+          >
+            <Button danger disabled={!canWrite || busy || !selectedAppeal}>
+              Удалить
+            </Button>
+          </Popconfirm>,
         ]}
         width={700}
       >

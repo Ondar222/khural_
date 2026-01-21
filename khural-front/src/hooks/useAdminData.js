@@ -470,6 +470,16 @@ export function useAdminData() {
     await loadAll();
   }, [loadAll]);
 
+  // Allow child components (that don't have direct access to this hook) to request a refresh.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onReload = () => {
+      reload();
+    };
+    window.addEventListener("khural:admin:reload", onReload);
+    return () => window.removeEventListener("khural:admin:reload", onReload);
+  }, [reload]);
+
   const createNews = React.useCallback(async (formData) => {
     setBusy(true);
     try {
@@ -1042,6 +1052,20 @@ export function useAdminData() {
     }
   }, [message, reload]);
 
+  const deleteAppeal = React.useCallback(async (id) => {
+    setBusy(true);
+    try {
+      await AppealsApi.remove(id);
+      message.success("Обращение удалено");
+      setAppeals((prev) =>
+        Array.isArray(prev) ? prev.filter((a) => String(a?.id) !== String(id)) : prev
+      );
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload]);
+
   const createConvocation = React.useCallback(async (payload) => {
     setBusy(true);
     try {
@@ -1327,6 +1351,7 @@ export function useAdminData() {
     
     // CRUD Appeals
     updateAppealStatus,
+    deleteAppeal,
     
     // CRUD Convocations
     createConvocation,

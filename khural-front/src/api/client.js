@@ -499,6 +499,17 @@ export const AppealsApi = {
     }
     return apiFetch(`/appeals/${id}`, { method: "PATCH", body: { statusId }, auth: true });
   },
+  async remove(id) {
+    const sid = encodeURIComponent(String(id));
+    // Some deployments expose admin-only delete under /appeals/admin/:id
+    // even though Swagger might document /appeals/:id. Try admin path first.
+    try {
+      return await apiFetch(`/appeals/admin/${sid}`, { method: "DELETE", auth: true });
+    } catch (e) {
+      if (e?.status !== 404 && e?.status !== 405) throw e;
+      return apiFetch(`/appeals/${sid}`, { method: "DELETE", auth: true });
+    }
+  },
 };
 
 export const AboutApi = {

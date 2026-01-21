@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { Form, Input, Button, Result, Alert, Tabs, Tag, Checkbox } from "antd";
+import { App, Form, Input, Button, Result, Alert, Tabs, Tag, Checkbox, Popconfirm } from "antd";
 import { useAuth } from "../context/AuthContext.jsx";
 import { AppealsApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
@@ -8,6 +8,11 @@ import { useI18n } from "../context/I18nContext.jsx";
 function storageKey(user) {
   const id = user?.id || user?.email || "anon";
   return `appeals_history_${String(id)}`;
+}
+
+function hiddenKey(user) {
+  const id = user?.id || user?.email || "anon";
+  return `appeals_hidden_${String(id)}`;
 }
 
 function loadLocal(user) {
@@ -23,6 +28,26 @@ function loadLocal(user) {
 function saveLocal(user, items) {
   try {
     localStorage.setItem(storageKey(user), JSON.stringify(Array.isArray(items) ? items : []));
+  } catch {
+    // ignore
+  }
+}
+
+function loadHiddenIds(user) {
+  try {
+    const raw = localStorage.getItem(hiddenKey(user));
+    const parsed = raw ? JSON.parse(raw) : [];
+    const arr = Array.isArray(parsed) ? parsed : [];
+    return new Set(arr.map((x) => String(x)));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveHiddenIds(user, idsSet) {
+  try {
+    const arr = Array.from(idsSet || new Set()).map((x) => String(x));
+    localStorage.setItem(hiddenKey(user), JSON.stringify(arr));
   } catch {
     // ignore
   }
@@ -91,6 +116,7 @@ function normalizeAppeal(a) {
   const number = a?.number || a?.registrationNumber || a?.regNumber || a?.id || "";
   const user = a?.user || {};
   const userEmail = a?.userEmail || user?.email || a?.email || "";
+  const userId = a?.userId || user?.id || a?.user_id || "";
   const fullName = getFullName(a);
   
   return {
@@ -101,12 +127,13 @@ function normalizeAppeal(a) {
     status: String(status),
     createdAt: String(createdAt),
     userEmail: String(userEmail),
+    userId: String(userId || ""),
     fullName: String(fullName),
   };
 }
 
 // AppealDetailModal component in SpectrUM style
-function AppealDetailModal({ open, onClose, appeal, t }) {
+function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
   React.useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     return () => {
@@ -179,6 +206,18 @@ function AppealDetailModal({ open, onClose, appeal, t }) {
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+            {typeof onDelete === "function" ? (
+              <button
+                className="btn"
+                style={{ borderColor: "#ef4444", color: "#ef4444", marginRight: 10 }}
+                onClick={() => {
+                  const ok = typeof window !== "undefined" ? window.confirm("Удалить обращение?") : false;
+                  if (ok) onDelete(appeal);
+                }}
+              >
+                {t("Удалить") || "Удалить"}
+              </button>
+            ) : null}
             <button className="btn btn--primary" onClick={onClose}>
               {t("Закрыть")}
             </button>
@@ -193,16 +232,46 @@ function AppealDetailModal({ open, onClose, appeal, t }) {
 export default function Appeals({ embedded = false } = {}) {
   const { isAuthenticated, user } = useAuth();
   const { t } = useI18n();
+  const { message } = App.useApp();
   const [tab, setTab] = React.useState("create");
   const [ok, setOk] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [historyBusy, setHistoryBusy] = React.useState(false);
   const [history, setHistory] = React.useState(() => loadLocal(user));
+  const [hiddenIds, setHiddenIds] = React.useState(() => loadHiddenIds(user));
   const [selectedAppeal, setSelectedAppeal] = React.useState(null);
+
+  const isMineAppeal = React.useCallback(
+    (appeal) => {
+      if (!appeal) return false;
+      const id = String(appeal?.id || "");
+      if (id.startsWith("local-")) return true;
+      const myEmail = String(user?.email || "").trim().toLowerCase();
+      const email =
+        String(appeal?.userEmail || appeal?.user?.email || appeal?.email || "")
+          .trim()
+          .toLowerCase();
+      if (myEmail && email) return myEmail === email;
+      const myId = String(user?.id || "").trim();
+      const ownerId = String(appeal?.userId || appeal?.user?.id || "").trim();
+      if (myId && ownerId) return myId === ownerId;
+      return false;
+    },
+    [user?.email, user?.id]
+  );
 
   React.useEffect(() => {
     // keep local history isolated per user
-    setHistory(loadLocal(user));
+    const local = loadLocal(user);
+    const hid = loadHiddenIds(user);
+    setHiddenIds(hid);
+    const filtered = (Array.isArray(local) ? local : [])
+      .filter(isMineAppeal)
+      .filter((a) => !hid.has(String(a?.id ?? "")));
+    if (filtered.length !== (Array.isArray(local) ? local.length : 0)) {
+      saveLocal(user, filtered);
+    }
+    setHistory(filtered);
   }, [user?.id, user?.email]);
 
   const loadHistory = React.useCallback(async () => {
@@ -210,20 +279,41 @@ export default function Appeals({ embedded = false } = {}) {
     setHistoryBusy(true);
     try {
       const res = await AppealsApi.listMine({ page: 1, limit: 50 });
-      const items = normalizeServerList(res).map(normalizeAppeal);
+      const hid = loadHiddenIds(user);
+      setHiddenIds(hid);
+      const items = normalizeServerList(res)
+        .map(normalizeAppeal)
+        .filter(isMineAppeal)
+        .filter((a) => !hid.has(String(a?.id ?? "")));
       if (items.length) {
         setHistory(items);
         saveLocal(user, items);
       } else {
         // if backend returns empty, keep local cache
-        setHistory(loadLocal(user));
+        const local = loadLocal(user);
+        const filtered = (Array.isArray(local) ? local : [])
+          .filter(isMineAppeal)
+          .filter((a) => !hid.has(String(a?.id ?? "")));
+        if (filtered.length !== (Array.isArray(local) ? local.length : 0)) {
+          saveLocal(user, filtered);
+        }
+        setHistory(filtered);
       }
     } catch {
-      setHistory(loadLocal(user));
+      const local = loadLocal(user);
+      const hid = loadHiddenIds(user);
+      setHiddenIds(hid);
+      const filtered = (Array.isArray(local) ? local : [])
+        .filter(isMineAppeal)
+        .filter((a) => !hid.has(String(a?.id ?? "")));
+      if (filtered.length !== (Array.isArray(local) ? local.length : 0)) {
+        saveLocal(user, filtered);
+      }
+      setHistory(filtered);
     } finally {
       setHistoryBusy(false);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, isMineAppeal]);
 
   React.useEffect(() => {
     if (isAuthenticated) loadHistory();
@@ -236,6 +326,83 @@ export default function Appeals({ embedded = false } = {}) {
   const closeModal = () => {
     setSelectedAppeal(null);
   };
+
+  const canDeleteAppeal = React.useCallback(
+    (appeal) => {
+      if (!isAuthenticated) return false;
+      const id = String(appeal?.id || "");
+      if (!id) return false;
+      // local drafts can always be deleted from local history
+      if (id.startsWith("local-")) return true;
+      // allow admin to delete (real server delete), but still only within "my appeals" context
+      if (user?.admin || String(user?.role || "").toLowerCase() === "admin") return isMineAppeal(appeal);
+      return isMineAppeal(appeal);
+    },
+    [isAuthenticated, user, isMineAppeal]
+  );
+
+  const deleteAppeal = React.useCallback(
+    async (appeal) => {
+      const id = String(appeal?.id || "");
+      if (!id) return;
+      if (!canDeleteAppeal(appeal)) {
+        message.error("Можно удалить только своё обращение.");
+        return;
+      }
+
+      const isAdmin = Boolean(user?.admin) || String(user?.role || "").toLowerCase() === "admin";
+      const prevHistory = Array.isArray(history) ? history : [];
+
+      // Optimistic UI remove (also removes local-only items)
+      setHistory((prev) => {
+        const next = (Array.isArray(prev) ? prev : []).filter((a) => String(a?.id) !== id);
+        saveLocal(user, next);
+        return next;
+      });
+
+      if (selectedAppeal && String(selectedAppeal?.id) === id) {
+        closeModal();
+      }
+
+      // For locally created placeholder items, stop here
+      if (id.startsWith("local-")) {
+        message.success("Обращение удалено");
+        return;
+      }
+
+      try {
+        await AppealsApi.remove(id);
+        message.success("Обращение удалено");
+        // Refresh from backend to stay consistent
+        loadHistory();
+      } catch (e) {
+        if (e?.status === 401) {
+          message.error("Сессия истекла. Пожалуйста, войдите заново.");
+        } else {
+          if (isAdmin) {
+            // Admin: do NOT hide. Restore list and show error.
+            setHistory(prevHistory);
+            saveLocal(user, prevHistory);
+            message.error(e?.message || "Не удалось удалить обращение");
+          } else {
+            // Citizen fallback: if backend doesn't allow delete, hide locally to keep "My appeals" clean.
+            const nextHidden = new Set(hiddenIds || []);
+            nextHidden.add(id);
+            setHiddenIds(nextHidden);
+            saveHiddenIds(user, nextHidden);
+            if (e?.status === 403 || e?.status === 405) {
+              message.warning("Обращение скрыто из списка. Удалить на сервере может только администратор.");
+            } else {
+              message.warning("Обращение скрыто из списка (сервер не удалил).");
+            }
+          }
+        }
+        // Keep UI consistent with server/cache as much as possible
+        loadHistory();
+      }
+    },
+    [canDeleteAppeal, hiddenIds, history, loadHistory, message, selectedAppeal, user]
+  );
 
   const onSubmit = async (values) => {
     if (!isAuthenticated) return;
@@ -511,6 +678,25 @@ export default function Appeals({ embedded = false } = {}) {
                                   >
                                     Подробнее
                                   </Button>
+                                  {canDeleteAppeal(a) ? (
+                                    <Popconfirm
+                                      title="Удалить обращение?"
+                                      description="Действие необратимо."
+                                      okText="Удалить"
+                                      cancelText="Отмена"
+                                      okButtonProps={{ danger: true }}
+                                      onConfirm={() => deleteAppeal(a)}
+                                    >
+                                      <Button
+                                        type="link"
+                                        danger
+                                        size="small"
+                                        style={{ padding: 0, marginTop: 6, height: "auto", fontSize: "13px" }}
+                                      >
+                                        Удалить
+                                      </Button>
+                                    </Popconfirm>
+                                  ) : null}
                                 </div>
                               ) : null}
                             </div>
@@ -533,7 +719,13 @@ export default function Appeals({ embedded = false } = {}) {
         </div>
       </div>
 
-      <AppealDetailModal open={!!selectedAppeal} onClose={closeModal} appeal={selectedAppeal} t={t} />
+      <AppealDetailModal
+        open={!!selectedAppeal}
+        onClose={closeModal}
+        appeal={selectedAppeal}
+        t={t}
+        onDelete={selectedAppeal && canDeleteAppeal(selectedAppeal) ? deleteAppeal : undefined}
+      />
     </>
   );
 
