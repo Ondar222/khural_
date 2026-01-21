@@ -7,6 +7,17 @@ export default function HeroCarousel() {
   const { slides: dataSlides } = useData();
   const { t } = useI18n();
   const [active, setActive] = React.useState(0);
+  const [isMobile, setIsMobile] = React.useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= 768;
+  });
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const truncateWords = React.useCallback((text, maxWords) => {
     const s = String(text || "").trim();
@@ -95,7 +106,8 @@ export default function HeroCarousel() {
   const previewText = stripHtmlToText(desc);
   const { date, description } = splitDateAndDescription(previewText);
   const subtitleText = String(description || "").trim();
-  const subtitlePreview = truncateWords(subtitleText, 30);
+  // On mobile, keep subtitle short to avoid overflowing the hero card.
+  const subtitlePreview = truncateWords(subtitleText, isMobile ? 15 : 30);
   const href = current?.id
     ? `/news/slider/${encodeURIComponent(String(current.id))}`
     : "/news";
