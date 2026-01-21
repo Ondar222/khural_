@@ -38,6 +38,31 @@ function normalizeServerList(payload) {
   return [];
 }
 
+function normalizeStatusText(status) {
+  if (status == null) return "";
+  let v = status;
+  if (typeof v === "object") {
+    v = v?.name ?? v?.title ?? v?.label ?? v?.code ?? v?.status ?? "";
+  }
+  const s = String(v || "").trim();
+  if (!s) return "";
+  const key = s.toLowerCase();
+  return (
+    {
+      // common english codes → RU labels
+      accepted: "Принято",
+      new: "Принято",
+      created: "Принято",
+      in_progress: "В работе",
+      processing: "В работе",
+      work: "В работе",
+      answered: "Ответ отправлен",
+      sent: "Ответ отправлен",
+      done: "Ответ отправлен",
+    }[key] || s
+  );
+}
+
 function getFullName(a) {
   // Try to get fullName directly
   if (a?.fullName || a?.user?.fullName) {
@@ -61,7 +86,8 @@ function getFullName(a) {
 
 function normalizeAppeal(a) {
   const createdAt = a?.createdAt || a?.created_at || a?.date || new Date().toISOString();
-  const status = a?.status || a?.state || "Принято";
+  const statusRaw = a?.status || a?.state || a?.appealStatus || a?.statusInfo || "";
+  const status = normalizeStatusText(statusRaw) || "Принято";
   const number = a?.number || a?.registrationNumber || a?.regNumber || a?.id || "";
   const user = a?.user || {};
   const userEmail = a?.userEmail || user?.email || a?.email || "";
@@ -164,7 +190,7 @@ function AppealDetailModal({ open, onClose, appeal, t }) {
   );
 }
 
-export default function Appeals() {
+export default function Appeals({ embedded = false } = {}) {
   const { isAuthenticated, user } = useAuth();
   const { t } = useI18n();
   const [tab, setTab] = React.useState("create");
@@ -250,9 +276,9 @@ export default function Appeals() {
     }
   };
 
-  return (
-    <section className="section">
-      <div className="container">
+  const content = (
+    <>
+      <div className={embedded ? "" : "container"}>
         <h1 className="h1-compact">{t("Обращения граждан")}</h1>
 
         {!isAuthenticated ? (
@@ -508,6 +534,9 @@ export default function Appeals() {
       </div>
 
       <AppealDetailModal open={!!selectedAppeal} onClose={closeModal} appeal={selectedAppeal} t={t} />
-    </section>
+    </>
   );
+
+  if (embedded) return content;
+  return <section className="section">{content}</section>;
 }

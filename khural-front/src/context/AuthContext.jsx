@@ -22,17 +22,35 @@ export function useAuth() {
   return React.useContext(AuthContext);
 }
 
+function toRoleString(role) {
+  if (!role) return "";
+  if (typeof role === "string" || typeof role === "number") return String(role);
+  if (typeof role === "object") {
+    return String(role?.name || role?.id || role?.role || "");
+  }
+  return String(role);
+}
+
 function normalizeUser(u) {
   if (!u || typeof u !== "object") return null;
   const firstName = u.firstName || u.name || u.firstname || "";
   const lastName = u.lastName || u.surname || u.lastname || "";
+  const roleStr =
+    toRoleString(u?.role) ||
+    toRoleString(u?.role_id) ||
+    toRoleString(u?.roleId) ||
+    "user";
+  const adminAccess =
+    Boolean(u?.admin) ||
+    Boolean(u?.isAdmin) ||
+    Boolean(u?.admin_access) ||
+    Boolean(u?.role?.admin_access) ||
+    String(roleStr).toLowerCase() === "admin";
   return {
     ...u,
     name: u?.name || [firstName, lastName].filter(Boolean).join(" ") || u?.email,
-    role:
-      (typeof u?.role === "object" ? u?.role?.name || u?.role?.id : u?.role) ||
-      u?.role_id ||
-      "user",
+    role: roleStr,
+    admin: adminAccess,
   };
 }
 
@@ -220,17 +238,21 @@ export default function AuthProvider({ children }) {
       }
 
       applySessionFromResponse(res);
-      if (res?.user) setUser(normalizeUser(res.user));
+      const resUser = res?.user ? normalizeUser(res.user) : null;
+      if (resUser) setUser(resUser);
       // Ensure we have a real user object (backend returns only credentials)
+      let meUser = resUser;
       try {
         const me = await AuthApi.me();
-        setUser(normalizeUser(me));
+        meUser = normalizeUser(me);
+        setUser(meUser);
       } catch {
         // ignore; token may still be valid, user will be loaded by effect
       }
       // In admin area, UI already shows its own notifications; avoid duplicates.
       if (!isInAdminArea()) message.success("Вход выполнен");
-      return res;
+      // Return user info for immediate role-based routing in UI
+      return { ...(res || {}), user: meUser || resUser || null };
     },
     [applySessionFromResponse, setFakeDevSession]
   );

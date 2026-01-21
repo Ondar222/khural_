@@ -315,8 +315,11 @@ export const AuthApi = {
         body: user,
         auth: false,
       });
-    } catch {
-      return await apiFetch("/auth/register", {
+    } catch (e) {
+      // Only fallback when the endpoint truly doesn't exist / method not allowed.
+      // For real business/validation errors (409 conflict, 400 validation, etc) we MUST surface the original error.
+      if (e?.status !== 404 && e?.status !== 405) throw e;
+      return apiFetch("/auth/register", {
         method: "POST",
         body: user,
         auth: false,

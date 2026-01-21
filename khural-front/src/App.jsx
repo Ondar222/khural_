@@ -41,6 +41,7 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
+import RequireAdmin from "./components/RequireAdmin.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import PdPolicy from "./pages/PdPolicy.jsx";
 import License from "./pages/License.jsx";
@@ -74,6 +75,9 @@ import AdminCommitteesCreatePage from "./pages/admin/AdminCommitteesCreatePage.j
 import AdminCommitteesEditPage from "./pages/admin/AdminCommitteesEditPage.jsx";
 import NewsSliderDetail from "./pages/NewsSliderDetail.jsx";
 import NewsWeekHighlights from "./pages/NewsWeekHighlights.jsx";
+import CabinetHome from "./pages/cabinet/CabinetHome.jsx";
+import CabinetAppeals from "./pages/cabinet/CabinetAppeals.jsx";
+import CabinetAccount from "./pages/cabinet/CabinetAccount.jsx";
 
 export default function App() {
   const { route } = useHashRoute();
@@ -84,11 +88,21 @@ export default function App() {
 
   const AdminProtected = React.useCallback((Component) => {
     const ProtectedComponent = () => (
+      <RequireAdmin>
+        <Component />
+      </RequireAdmin>
+    );
+    ProtectedComponent.displayName = `AdminProtected(${Component.displayName || Component.name || 'Component'})`;
+    return ProtectedComponent;
+  }, []);
+
+  const UserProtected = React.useCallback((Component) => {
+    const ProtectedComponent = () => (
       <RequireAuth>
         <Component />
       </RequireAuth>
     );
-    ProtectedComponent.displayName = `AdminProtected(${Component.displayName || Component.name || 'Component'})`;
+    ProtectedComponent.displayName = `UserProtected(${Component.displayName || Component.name || "Component"})`;
     return ProtectedComponent;
   }, []);
 
@@ -191,6 +205,9 @@ export default function App() {
                           "/contacts": Contacts,
                           "/login": Login,
                           "/register": Register,
+                          "/cabinet": UserProtected(CabinetHome),
+                          "/cabinet/appeals": UserProtected(CabinetAppeals),
+                          "/cabinet/account": UserProtected(CabinetAccount),
                           "/pd-policy": PdPolicy,
                           "/license": License,
                           "/sitemap": Sitemap,

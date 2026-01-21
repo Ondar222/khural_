@@ -171,7 +171,10 @@ export default function Header() {
                 <span className="topbar-auth__name">
                   {user?.name || user?.email || t("login")}
                 </span>
-                <a href="/admin">{t("Панель управления") || "Панель управления"}</a>
+                <a href="/cabinet">{t("Личный кабинет") || "Личный кабинет"}</a>
+                {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
+                  <a href="/admin">{t("Панель управления") || "Панель управления"}</a>
+                ) : null}
                 <button
                   className="link-like"
                   onClick={() => {
@@ -653,12 +656,22 @@ export default function Header() {
                   <div className="mobile-auth__name">{user?.name || user?.email}</div>
                   <a
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
-                    href="/admin"
+                    href="/cabinet"
                     onClick={() => setMobileOpen(false)}
                     style={{ width: "80%" }}
                   >
-                    {t("Панель управления") || "Панель управления"}
+                    {t("Личный кабинет") || "Личный кабинет"}
                   </a>
+                  {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
+                    <a
+                      className="btn mobile-auth__btn mobile-auth__btn--outline"
+                      href="/admin"
+                      onClick={() => setMobileOpen(false)}
+                      style={{ width: "80%" }}
+                    >
+                      {t("Панель управления") || "Панель управления"}
+                    </a>
+                  ) : null}
                   <button
                     className="btn mobile-auth__btn mobile-auth__btn--outline"
                     onClick={() => {

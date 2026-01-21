@@ -8,6 +8,12 @@ export default function Login() {
   const { route, navigate } = useHashRoute();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [loginUser, setLoginUser] = React.useState(null);
+
+  const isAdminUser = React.useCallback((u) => {
+    const role = String(u?.role || "").toLowerCase();
+    return Boolean(u?.admin) || role === "admin";
+  }, []);
 
   const nextPath = React.useMemo(() => {
     const q = String(route || "").split("?")[1] || "";
@@ -19,11 +25,15 @@ export default function Login() {
   }, [route]);
 
   const targetAfterLogin = React.useMemo(() => {
-    // If explicit next is provided, honor it. Otherwise, admins go to /admin, others to home.
-    if (nextPath && nextPath !== "/") return nextPath;
-    if ((user?.role || "").toString().toLowerCase() === "admin") return "/admin";
-    return "/";
-  }, [nextPath, user]);
+    const u = loginUser || user;
+    const isAdmin = isAdminUser(u);
+    // If explicit next is provided, honor it, except non-admins can't be sent to /admin.
+    if (nextPath && nextPath !== "/") {
+      if (!isAdmin && nextPath.startsWith("/admin")) return "/cabinet";
+      return nextPath;
+    }
+    return isAdmin ? "/admin" : "/cabinet";
+  }, [nextPath, user, loginUser, isAdminUser]);
 
   const hasNavigatedRef = React.useRef(false);
 
@@ -44,7 +54,8 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await login(values);
+      const res = await login(values);
+      if (res?.user) setLoginUser(res.user);
       // Navigation will happen automatically via useEffect when isAuthenticated becomes true
       // But we can also navigate here as a fallback
       if (targetAfterLogin) {

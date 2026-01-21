@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 
 export default function Register() {
-  const { register, login, isAuthenticated } = useAuth();
+  const { register, login } = useAuth();
   const { navigate } = useHashRoute();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -20,7 +20,16 @@ export default function Register() {
       } catch {
         // ignore; fallback to manual login if backend doesn't allow immediate login
       }
-      setTimeout(() => navigate(isAuthenticated ? "/" : "/login"), 800);
+      // If login succeeded, user will have token and can go to cabinet; otherwise go to login
+      setTimeout(() => {
+        const token =
+          sessionStorage.getItem("access_token") ||
+          sessionStorage.getItem("token") ||
+          sessionStorage.getItem("auth_token") ||
+          sessionStorage.getItem("jwt") ||
+          "";
+        navigate(token ? "/cabinet" : "/login");
+      }, 500);
     } catch (e) {
       setError(e?.message || "Ошибка регистрации");
     } finally {
