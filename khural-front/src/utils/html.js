@@ -15,4 +15,19 @@ export function decodeHtmlEntities(input) {
     .replace(/&amp;/g, "&");
 }
 
+/**
+ * Удаляет HTML теги из текста, оставляя только чистый текст
+ */
+export function stripHtmlTags(input) {
+  const s = String(input || "");
+  if (!s) return "";
+  if (typeof document !== "undefined") {
+    const el = document.createElement("div");
+    el.innerHTML = s;
+    return el.textContent || el.innerText || "";
+  }
+  // Fallback для серверной стороны
+  return s.replace(/<[^>]*>/g, "").trim();
+}
+
 

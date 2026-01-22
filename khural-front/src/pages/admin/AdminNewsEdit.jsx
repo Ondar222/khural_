@@ -5,7 +5,8 @@ import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
 import dayjs from "dayjs";
 import { useData } from "../../context/DataContext.jsx";
-import { decodeHtmlEntities } from "../../utils/html.js";
+import { decodeHtmlEntities, stripHtmlTags } from "../../utils/html.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const { navigate } = useHashRoute();
@@ -131,16 +132,18 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         const ruContent = contentArray.find((c) => c.locale === "ru") || {};
         const tyvContent = contentArray.find((c) => c.locale === "tyv") || {};
 
-        // Заполняем форму и декодируем HTML-сущности
+        // Заполняем форму
+        // Для краткого описания убираем HTML теги (это должно быть простым текстом)
+        // Для подробного описания (content) оставляем HTML, так как используется TinyMCE
         form.setFieldsValue({
           categoryId: news.category?.id,
           slug: news.slug,
           publishedAt: news.publishedAt ? dayjs(news.publishedAt) : null,
           isPublished: news.isPublished ?? false,
-          shortDescriptionRu: decodeHtmlEntities(ruContent.shortDescription || ""),
+          shortDescriptionRu: stripHtmlTags(ruContent.shortDescription || ""),
           titleRu: ruContent.title || "",
           contentRu: decodeHtmlEntities(ruContent.content || ""),
-          shortDescriptionTy: decodeHtmlEntities(tyvContent.shortDescription || ""),
+          shortDescriptionTy: stripHtmlTags(tyvContent.shortDescription || ""),
           titleTy: tyvContent.title || "",
           contentTy: decodeHtmlEntities(tyvContent.content || ""),
         });
@@ -235,51 +238,76 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   };
 
   const handleSubmit = async () => {
+    if (!canWrite) {
+      antdMessage.warning("Нет прав на запись");
+      return;
+    }
+    
     try {
       const values = await form.validateFields();
 
-      // Получаем контент из текстовых полей (raw HTML)
-      const contentRu = decodeHtmlEntities(values.contentRu || "");
-      const contentTy = decodeHtmlEntities(values.contentTy || "");
-      const shortRu = decodeHtmlEntities(values.shortDescriptionRu || "");
-      const shortTy = decodeHtmlEntities(values.shortDescriptionTy || "");
+      // Получаем контент: TinyMCE возвращает HTML напрямую, краткое описание - обычный текст
+      const contentRu = String(values.contentRu || "").trim();
+      const contentTy = String(values.contentTy || "").trim();
+      // Убираем HTML теги из краткого описания (оно должно быть простым текстом)
+      const shortRu = stripHtmlTags(String(values.shortDescriptionRu || "").trim());
+      const shortTy = stripHtmlTags(String(values.shortDescriptionTy || "").trim());
+      const titleRu = String(values.titleRu || "").trim();
+      const titleTy = String(values.titleTy || "").trim();
 
       // Формируем массив локализованного контента
       const contentArray = [];
 
       // Русский контент (обязательно)
-      if (values.titleRu || contentRu) {
-        contentArray.push({
+      if (titleRu || contentRu) {
+        const ruItem = {
           locale: "ru",
-          title: values.titleRu || "",
-          content: contentRu || "",
-          shortDescription: shortRu || "",
-        });
+          title: titleRu || "",
+        };
+        if (contentRu) ruItem.content = contentRu;
+        if (shortRu) ruItem.shortDescription = shortRu;
+        contentArray.push(ruItem);
       }
 
       // Тувинский контент (опционально)
-      if (values.titleTy || contentTy) {
-        contentArray.push({
+      if (titleTy || contentTy) {
+        const tyvItem = {
           locale: "tyv",
-          title: values.titleTy || "",
-          content: contentTy || "",
-          shortDescription: shortTy || "",
-        });
+          title: titleTy || "",
+        };
+        if (contentTy) tyvItem.content = contentTy;
+        if (shortTy) tyvItem.shortDescription = shortTy;
+        contentArray.push(tyvItem);
+      }
+
+      // Проверяем, что есть хотя бы русский контент
+      if (contentArray.length === 0) {
+        antdMessage.error("Заполните хотя бы русский заголовок или контент");
+        return;
       }
 
       // JSON-патч для текстовых данных
+      let publishedAtValue = undefined;
+      if (values.publishedAt) {
+        if (values.publishedAt && typeof values.publishedAt.valueOf === "function") {
+          // dayjs объект
+          publishedAtValue = values.publishedAt.toISOString();
+        } else if (values.publishedAt instanceof Date) {
+          publishedAtValue = values.publishedAt.toISOString();
+        } else {
+          publishedAtValue = new Date(values.publishedAt).toISOString();
+        }
+      }
+
       const payload = {
         categoryId: values.categoryId,
         slug: values.slug || undefined,
-        publishedAt: values.publishedAt
-          ? (values.publishedAt && typeof values.publishedAt.valueOf === "function"
-              ? values.publishedAt.valueOf()
-              : new Date(values.publishedAt).getTime())
-          : undefined,
+        publishedAt: publishedAtValue,
         isPublished: values.isPublished ?? false,
         content: contentArray,
       };
 
+      console.log("Saving news with payload:", payload);
       await NewsApi.patch(newsId, payload);
 
       // Обложка (только новые файлы)
@@ -296,10 +324,21 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       }
 
       antdMessage.success("Новость обновлена");
-      reloadPublicData?.();
+      
+      // Принудительно перезагружаем данные перед навигацией
+      if (reloadPublicData) {
+        reloadPublicData();
+        // Даем время на обновление данных
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
       navigate("/admin/news");
     } catch (error) {
-      if (error?.errorFields) return;
+      console.error("Error saving news:", error);
+      if (error?.errorFields) {
+        antdMessage.warning("Проверьте заполнение полей");
+        return;
+      }
       antdMessage.error(error?.message || "Не удалось обновить новость");
     }
   };
@@ -445,10 +484,9 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               name="contentTy"
               rules={[{ required: false, message: "Укажите контент" }]}
             >
-              <Input.TextArea
-                placeholder="<p>Контент (TY)</p>"
-                autoSize={{ minRows: 12, maxRows: 24 }}
-                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+              <TinyMCEEditor
+                placeholder="Контент на тувинском языке"
+                height={400}
               />
             </Form.Item>
           </div>
@@ -491,10 +529,9 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               name="contentRu"
               rules={[{ required: true, message: "Укажите контент" }]}
             >
-              <Input.TextArea
-                placeholder="<p>Контент (RU)</p>"
-                autoSize={{ minRows: 12, maxRows: 24 }}
-                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+              <TinyMCEEditor
+                placeholder="Контент на русском языке"
+                height={400}
               />
             </Form.Item>
           </div>
