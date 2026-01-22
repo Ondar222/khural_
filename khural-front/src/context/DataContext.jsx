@@ -192,6 +192,11 @@ function firstImageLink(images) {
   return firstFileLink(images[0]);
 }
 
+function allImageLinks(images) {
+  if (!Array.isArray(images) || !images.length) return [];
+  return images.map((img) => firstFileLink(img)).filter((url) => url && url.trim());
+}
+
 function ensureUniqueIds(items) {
   const seen = new Set();
   return (Array.isArray(items) ? items : []).map((item, idx) => {
@@ -600,6 +605,15 @@ export default function DataProvider({ children }) {
             const contentHtml = String(ru?.content || n.contentHtml || n.contentText || "");
 
             const img = firstImageLink(n.images || n.gallery) || firstFileLink(n.coverImage);
+            // Collect all images: gallery first, then images, then coverImage if not already included
+            const allImages = [
+              ...allImageLinks(n.gallery || []),
+              ...allImageLinks(n.images || []),
+            ];
+            const coverImg = firstFileLink(n.coverImage);
+            if (coverImg && !allImages.includes(coverImg)) {
+              allImages.unshift(coverImg); // Put cover image first
+            }
 
             const dateStr =
               normalizeNewsDateKey(
@@ -628,7 +642,8 @@ export default function DataProvider({ children }) {
               // Keep both: rich HTML and plain content array (for legacy JSON)
               contentHtml: contentHtml || "",
               content: [],
-              image: img,
+              image: img, // Keep for backward compatibility
+              images: allImages, // All images for carousel
             };
           })
         : [];

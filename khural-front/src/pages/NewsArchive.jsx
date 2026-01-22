@@ -5,6 +5,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import NewsImageCarousel from "../components/NewsImageCarousel.jsx";
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
@@ -164,17 +165,15 @@ export default function NewsArchive() {
           <div className="news-detail">
             <article className="card" style={{ padding: 16 }}>
               {/* Images must come from backend/admin only */}
-              {item?.image ? (
-                <div style={{ height: 340, overflow: "hidden", borderRadius: 12 }}>
-                  <img
-                    src={normalizeFilesUrl(item.image)}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                </div>
-              ) : null}
+              <NewsImageCarousel
+                images={
+                  Array.isArray(item?.images) && item.images.length > 0
+                    ? item.images
+                    : item?.image
+                      ? [item.image]
+                      : []
+                }
+              />
 
               <div className="prose" style={{ marginTop: 16 }}>
                 {item.excerpt ? (
