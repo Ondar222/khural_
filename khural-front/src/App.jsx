@@ -74,6 +74,7 @@ import AdminConvocationsDocumentsPage from "./pages/admin/AdminConvocationsDocum
 import AdminCommitteesPage from "./pages/admin/AdminCommitteesPage.jsx";
 import AdminCommitteesCreatePage from "./pages/admin/AdminCommitteesCreatePage.jsx";
 import AdminCommitteesEditPage from "./pages/admin/AdminCommitteesEditPage.jsx";
+import AdminPortalsPage from "./pages/admin/AdminPortalsPage.jsx";
 import NewsSliderDetail from "./pages/NewsSliderDetail.jsx";
 import NewsWeekHighlights from "./pages/NewsWeekHighlights.jsx";
 import CabinetHome from "./pages/cabinet/CabinetHome.jsx";
@@ -191,6 +192,7 @@ export default function App() {
                           "/admin/committees": AdminProtected(AdminCommitteesPage),
                           "/admin/committees/create": AdminProtected(AdminCommitteesCreatePage),
                           "/admin/committees/edit/:id": AdminProtected(AdminCommitteesEditPage),
+                          "/admin/portals": AdminProtected(AdminPortalsPage),
                           "/admin/events": AdminProtected(AdminEventsPage),
                           "/admin/events/create": AdminProtected(AdminEventsCreatePage),
                           "/admin/events/edit/:id": AdminProtected(AdminEventsEditPage),

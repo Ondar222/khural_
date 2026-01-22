@@ -55,42 +55,70 @@ export default function AdminCommitteesList({
     !isLocalStatic(row) && String(row?.id || "").startsWith("local-");
   const isCommitteeActive = (row) => normalizeBool(row?.isActive, true) !== false;
 
+  // Функция для обрезки текста с удалением HTML тегов
+  const stripHtml = React.useCallback((html) => {
+    if (!html) return "";
+    const str = String(html);
+    // Простое удаление HTML тегов через regex (безопасно для отображения)
+    const cleanText = str.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+    return cleanText;
+  }, []);
+
+  const truncateText = React.useCallback((text, maxLength = 60) => {
+    const cleanText = stripHtml(String(text || ""));
+    if (cleanText.length <= maxLength) return cleanText;
+    return cleanText.slice(0, maxLength) + "…";
+  }, [stripHtml]);
+
   const columns = [
     {
       title: "Комитет",
       dataIndex: "name",
+      width: 400,
+      ellipsis: true,
       render: (_, row) => (
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
-            {row.name}
-            {isLocalStatic(row) ? (
-              <Tag color="blue">Локально (файл)</Tag>
-            ) : isLocal(row) ? (
-              <Tag color="blue">Локально</Tag>
-            ) : null}
-            {isCommitteeActive(row) ? (
-              <Tag color="green">Активный</Tag>
-            ) : (
-              <Tag color="default">Неактивный</Tag>
+        <div style={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          gap: 4,
+          minWidth: 0,
+          maxWidth: "100%"
+        }}>
+          <div style={{ 
+            fontWeight: 600, 
+            fontSize: 13,
+            lineHeight: 1.4,
+            display: "flex", 
+            alignItems: "flex-start", 
+            gap: 6,
+            minWidth: 0
+          }}>
+            <span style={{ 
+              flex: "1 1 auto", 
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }}>
+              {truncateText(row.name, 60)}
+            </span>
+            {(isLocalStatic(row) || isLocal(row)) && (
+              <Tag color="blue" style={{ fontSize: 10, margin: 0, flexShrink: 0 }}>Локально</Tag>
             )}
           </div>
-          {row.convocation ? (
-            <div style={{ opacity: 0.7, fontSize: 13 }}>
-              {row.convocation.name || row.convocation.number || ""}
-            </div>
-          ) : row.convocationId ? (
-            <div style={{ opacity: 0.7, fontSize: 13 }}>
-              {(() => {
-                const match = (Array.isArray(convocations) ? convocations : []).find(
-                  (c) => String(c?.id) === String(row.convocationId)
-                );
-                return match ? (match.name || match.number || "") : "";
-              })()}
-            </div>
-          ) : null}
           {row.description ? (
-            <div style={{ opacity: 0.75, fontSize: 13 }}>
-              {String(row.description).slice(0, 160)}
+            <div style={{ 
+              opacity: 0.7, 
+              fontSize: 11,
+              lineHeight: 1.3,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              wordBreak: "break-word"
+            }}>
+              {truncateText(row.description, 80)}
             </div>
           ) : null}
         </div>
@@ -100,6 +128,7 @@ export default function AdminCommitteesList({
       title: "Созыв",
       dataIndex: "convocation",
       width: 120,
+      align: "center",
       render: (convocation, row) => {
         const c =
           convocation ||
@@ -108,46 +137,62 @@ export default function AdminCommitteesList({
                 (x) => String(x?.id) === String(row.convocationId)
               )
             : null);
-        return c ? (
-          <Tag>{c.name || c.number || ""}</Tag>
-        ) : (
-          <Tag color="default">—</Tag>
+        return (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            {c ? (
+              <Tag style={{ fontSize: 11, margin: 0 }}>{c.name || c.number || ""}</Tag>
+            ) : (
+              <Tag color="default" style={{ fontSize: 11, margin: 0 }}>—</Tag>
+            )}
+          </div>
         );
       },
     },
     {
       title: "Статус",
       dataIndex: "isActive",
-      width: 100,
-      render: (isActive) =>
-        normalizeBool(isActive, true) !== false ? (
-          <Tag color="green">Активный</Tag>
-        ) : (
-          <Tag color="default">Неактивный</Tag>
-        ),
+      width: 110,
+      align: "center",
+      render: (isActive) => (
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+          {normalizeBool(isActive, true) !== false ? (
+            <Tag color="green" style={{ fontSize: 11, margin: 0 }}>Активный</Tag>
+          ) : (
+            <Tag color="default" style={{ fontSize: 11, margin: 0 }}>Неактивный</Tag>
+          )}
+        </div>
+      ),
     },
     {
-      title: "Действия",
+      title: () => <div style={{ textAlign: "center" }}>Действия</div>,
       key: "actions",
-      width: 240,
+      width: 200,
+      fixed: "right",
+      align: "center",
       render: (_, row) => (
-        <Space wrap>
-          <Button
-            disabled={!canWrite || isLocalStatic(row)}
-            onClick={() =>
-              navigate(`/admin/committees/edit/${encodeURIComponent(String(row.id))}`)
-            }
-          >
-            Редактировать
-          </Button>
-          <Button
-            danger
-            disabled={!canWrite || isLocalStatic(row)}
-            onClick={() => onDelete?.(row.id)}
-          >
-            Удалить
-          </Button>
-        </Space>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <Space size="small" wrap>
+            <Button
+              size="small"
+              disabled={!canWrite || isLocalStatic(row)}
+              onClick={() =>
+                navigate(`/admin/committees/edit/${encodeURIComponent(String(row.id))}`)
+              }
+              style={{ fontSize: 12 }}
+            >
+              Редактировать
+            </Button>
+            <Button
+              size="small"
+              danger
+              disabled={!canWrite || isLocalStatic(row)}
+              onClick={() => onDelete?.(row.id)}
+              style={{ fontSize: 12 }}
+            >
+              Удалить
+            </Button>
+          </Space>
+        </div>
       ),
     },
   ];
@@ -157,11 +202,17 @@ export default function AdminCommitteesList({
       <div className="admin-card admin-toolbar">
         <div className="admin-committees-list__toolbar-left">
           <Select
-            style={{ minWidth: 200, flex: "0 0 auto" }}
+            style={{ 
+              minWidth: isMobile ? 140 : 200, 
+              flex: isMobile ? "1 1 100%" : "0 0 auto",
+              maxWidth: isMobile ? "100%" : "none",
+              width: isMobile ? "100%" : "auto"
+            }}
             placeholder="Выберите созыв"
             value={selectedConvocationId}
             onChange={onConvocationChange}
             allowClear
+            size={isMobile ? "small" : "middle"}
           >
             <Select.Option value="all">Все созывы</Select.Option>
             {(convocations || []).map((c) => (
@@ -174,8 +225,18 @@ export default function AdminCommitteesList({
             placeholder="Поиск по названию или описанию..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="admin-input"
-            style={{ flex: "1 1 320px", minWidth: 220 }}
+            className="admin-input admin-committees-search"
+            style={{ 
+              flex: isMobile ? "1 1 200px" : "1 1 320px", 
+              minWidth: isMobile ? 150 : 220,
+              maxWidth: isMobile ? "100%" : "none",
+              ...(isMobile && {
+                height: "28px",
+                minHeight: "28px",
+                maxHeight: "28px"
+              })
+            }}
+            size="small"
           />
         </div>
         <div className="admin-committees-list__toolbar-right">
@@ -268,7 +329,9 @@ export default function AdminCommitteesList({
             columns={columns}
             dataSource={filtered}
             pagination={{ pageSize: 10, showSizeChanger: false }}
-            scroll={{ x: 920 }}
+            scroll={{ x: 900 }}
+            size="small"
+            style={{ tableLayout: "fixed" }}
           />
         )}
       </div>

@@ -4,7 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { Select } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
-import { PersonsApi } from "../api/client.js";
+import { PersonsApi, CommitteesApi } from "../api/client.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
@@ -251,6 +251,81 @@ export default function DeputiesV2() {
   const [overrides, setOverrides] = React.useState(() => readOverrides());
   const [apiDeputies, setApiDeputies] = React.useState([]);
   const [apiBusy, setApiBusy] = React.useState(false);
+  
+  // Filter options from API
+  const [apiFactions, setApiFactions] = React.useState([]);
+  const [apiDistricts, setApiDistricts] = React.useState([]);
+  const [apiConvocations, setApiConvocations] = React.useState([]);
+  const [apiCommittees, setApiCommittees] = React.useState([]);
+  const [filtersLoading, setFiltersLoading] = React.useState(false);
+
+  // Load filters from API
+  React.useEffect(() => {
+    let alive = true;
+    const loadFilters = async () => {
+      setFiltersLoading(true);
+      try {
+        const [factionsRes, districtsRes, convocationsRes, committeesRes] = await Promise.all([
+          PersonsApi.listFactionsAll().catch(() => []),
+          PersonsApi.listDistrictsAll().catch(() => []),
+          PersonsApi.listConvocationsAll().catch(() => []),
+          CommitteesApi.list({ all: true }).catch(() => []),
+        ]);
+
+        if (!alive) return;
+
+        // Normalize factions
+        const factions = Array.isArray(factionsRes) ? factionsRes : [];
+        const normalizedFactions = factions
+          .map((f) => {
+            if (typeof f === "string") return f;
+            if (f && typeof f === "object") return f.name || f.title || f.label || String(f);
+            return String(f || "");
+          })
+          .filter((f) => f && f.trim() !== "");
+        setApiFactions(normalizedFactions);
+
+        // Normalize districts
+        const districts = Array.isArray(districtsRes) ? districtsRes : [];
+        const normalizedDistricts = districts
+          .map((d) => {
+            if (typeof d === "string") return d;
+            if (d && typeof d === "object") return d.name || d.title || d.label || String(d);
+            return String(d || "");
+          })
+          .filter((d) => d && d.trim() !== "");
+        setApiDistricts(normalizedDistricts);
+
+        // Normalize convocations
+        const convocations = Array.isArray(convocationsRes) ? convocationsRes : [];
+        const normalizedConvocations = convocations
+          .map((c) => {
+            if (typeof c === "string") return normalizeConvocationToken(c);
+            if (c && typeof c === "object") {
+              const name = c.name || c.title || c.label || String(c);
+              return normalizeConvocationToken(name);
+            }
+            return normalizeConvocationToken(String(c || ""));
+          })
+          .filter((c) => c && c !== "Все");
+        setApiConvocations(normalizedConvocations);
+
+        // Normalize committees
+        const committees = Array.isArray(committeesRes) ? committeesRes : [];
+        setApiCommittees(committees);
+      } catch (error) {
+        console.error("Failed to load filters from API:", error);
+      } finally {
+        if (alive) setFiltersLoading(false);
+      }
+    };
+
+    loadFilters();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   React.useEffect(() => {
     let alive = true;
     const loadApi = async () => {
@@ -316,7 +391,11 @@ export default function DeputiesV2() {
   const [status, setStatus] = React.useState("active");
 
   const districts = React.useMemo(() => {
-    const items = Array.isArray(structureDistricts) ? structureDistricts : [];
+    // Prefer API data, fallback to structure data
+    const apiItems = Array.isArray(apiDistricts) && apiDistricts.length > 0 ? apiDistricts : [];
+    const structureItems = Array.isArray(structureDistricts) ? structureDistricts : [];
+    const items = apiItems.length > 0 ? apiItems : structureItems;
+    
     const stringItems = items
       .map((item) => {
         if (typeof item === "string") return item;
@@ -325,11 +404,16 @@ export default function DeputiesV2() {
       })
       .filter((item) => item && item.trim() !== "");
     return ["Все", ...stringItems];
-  }, [structureDistricts]);
+  }, [apiDistricts, structureDistricts]);
 
   const convocations = React.useMemo(() => {
-    const items = Array.isArray(structureConvocations) ? structureConvocations : [];
-    const fromStructure = items
+    // Prefer API data, fallback to structure data and deputies
+    const apiItems = Array.isArray(apiConvocations) && apiConvocations.length > 0 ? apiConvocations : [];
+    const structureItems = Array.isArray(structureConvocations) ? structureConvocations : [];
+    
+    const fromApi = apiItems.length > 0 ? apiItems : [];
+    
+    const fromStructure = structureItems
       .map((item) => {
         if (typeof item === "string") return item;
         if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
@@ -348,11 +432,11 @@ export default function DeputiesV2() {
       });
     }
 
-    const set = new Set([...fromStructure, ...fromDeputies]);
+    const set = new Set([...fromApi, ...fromStructure, ...fromDeputies]);
     const preferred = CONVOCATION_ORDER.filter((c) => c !== "Все" && set.has(c));
     const rest = Array.from(set).filter((c) => !preferred.includes(c)).sort();
     return ["Все", ...preferred, ...rest];
-  }, [structureConvocations, deputies, getDeputyConvocations]);
+  }, [apiConvocations, structureConvocations, deputies, getDeputyConvocations]);
 
   // Ensure selected convocation exists in data; otherwise fallback gracefully.
   React.useEffect(() => {
@@ -367,7 +451,11 @@ export default function DeputiesV2() {
   }, [convocation, deputies, getDeputyConvocations, convocations]);
 
   const factions = React.useMemo(() => {
-    const items = Array.isArray(structureFactions) ? structureFactions : [];
+    // Prefer API data, fallback to structure data
+    const apiItems = Array.isArray(apiFactions) && apiFactions.length > 0 ? apiFactions : [];
+    const structureItems = Array.isArray(structureFactions) ? structureFactions : [];
+    const items = apiItems.length > 0 ? apiItems : structureItems;
+    
     const stringItems = items
       .map((item) => {
         if (typeof item === "string") return item;
@@ -376,13 +464,24 @@ export default function DeputiesV2() {
       })
       .filter((item) => item && item.trim() !== "");
     return ["Все", ...stringItems];
-  }, [structureFactions]);
+  }, [apiFactions, structureFactions]);
 
-  const committeeOptions = React.useMemo(() => ["Все", ...(committees || []).map((c) => c.id)], [committees]);
+  const committeeOptions = React.useMemo(() => {
+    // Prefer API data, fallback to structure data
+    const apiItems = Array.isArray(apiCommittees) && apiCommittees.length > 0 ? apiCommittees : [];
+    const structureItems = Array.isArray(committees) ? committees : [];
+    const items = apiItems.length > 0 ? apiItems : structureItems;
+    return ["Все", ...items.map((c) => c.id)];
+  }, [apiCommittees, committees]);
 
   const committeeMatcher = React.useMemo(() => {
     if (committeeId === "Все") return null;
-    const c = (committees || []).find((x) => x.id === committeeId);
+    // Use API committees if available, otherwise fallback to structure committees
+    const apiItems = Array.isArray(apiCommittees) && apiCommittees.length > 0 ? apiCommittees : [];
+    const structureItems = Array.isArray(committees) ? committees : [];
+    const allCommittees = apiItems.length > 0 ? apiItems : structureItems;
+    
+    const c = allCommittees.find((x) => x.id === committeeId);
     if (!c) return null;
     const ids = new Set();
     const names = new Set();
@@ -392,7 +491,7 @@ export default function DeputiesV2() {
       if (m.name) names.add(m.name);
     });
     return { ids, names };
-  }, [committeeId, committees]);
+  }, [committeeId, apiCommittees, committees]);
 
   const filtered = React.useMemo(() => {
     const base = Array.isArray(deputies) ? deputies : [];
@@ -517,14 +616,21 @@ export default function DeputiesV2() {
                   value={committeeId}
                   onChange={setCommitteeId}
                   popupMatchSelectWidth={false}
-                  options={committeeOptions.map((id) =>
-                    id === "Все"
-                      ? { value: "Все", label: "По комитетам: Все" }
-                      : {
-                          value: id,
-                          label: `По комитетам: ` + ((committees || []).find((c) => c.id === id)?.title || id),
-                        }
-                  )}
+                  loading={filtersLoading}
+                  options={committeeOptions.map((id) => {
+                    if (id === "Все") {
+                      return { value: "Все", label: "По комитетам: Все" };
+                    }
+                    // Use API committees if available, otherwise fallback to structure committees
+                    const apiItems = Array.isArray(apiCommittees) && apiCommittees.length > 0 ? apiCommittees : [];
+                    const structureItems = Array.isArray(committees) ? committees : [];
+                    const allCommittees = apiItems.length > 0 ? apiItems : structureItems;
+                    const committee = allCommittees.find((c) => c.id === id);
+                    return {
+                      value: id,
+                      label: `По комитетам: ` + (committee?.title || committee?.name || id),
+                    };
+                  })}
                 />
                 <Select
                   value={faction}
