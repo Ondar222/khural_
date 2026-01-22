@@ -507,6 +507,14 @@ export const AppealsApi = {
       return apiFetch(`/appeals${suffix}`, { method: "GET", auth: true });
     }
   },
+  async getById(id) {
+    const sid = encodeURIComponent(String(id));
+    return apiFetch(`/appeals/${sid}`, { method: "GET", auth: true });
+  },
+  async getHistory(id) {
+    const sid = encodeURIComponent(String(id));
+    return apiFetch(`/appeals/${sid}/history`, { method: "GET", auth: true });
+  },
   async updateStatus(id, status, response) {
     // Backend expects PATCH /appeals/:id with { statusId } (number) and optionally { response } (string)
     let statusId = null;

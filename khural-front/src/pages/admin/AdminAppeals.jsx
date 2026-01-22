@@ -34,6 +34,22 @@ function normalizeStatusText(status) {
   );
 }
 
+function normalizeAppeal(a) {
+  if (!a) return null;
+  return {
+    id: String(a?.id || ""),
+    number: String(a?.number || "").trim(),
+    subject: a?.subject || a?.title || "",
+    message: a?.message || a?.text || a?.content || "",
+    response: a?.response || a?.adminResponse || a?.adminMessage || "",
+    files: Array.isArray(a?.files) ? a.files : Array.isArray(a?.fileList) ? a.fileList : [],
+    status: normalizeStatusText(a?.status),
+    createdAt: a?.createdAt || a?.created_at || "",
+    userEmail: a?.userEmail || a?.user?.email || a?.email || "",
+    userName: a?.userName || a?.user?.name || a?.name || "",
+  };
+}
+
 export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) {
   const { message } = App.useApp();
   const [q, setQ] = React.useState("");
@@ -44,6 +60,8 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
   const [statusChangeForm] = Form.useForm();
   const [uploadingFiles, setUploadingFiles] = React.useState(false);
   const [fileList, setFileList] = React.useState([]);
+  const [statusChangeFileList, setStatusChangeFileList] = React.useState([]);
+  const [uploadingStatusFiles, setUploadingStatusFiles] = React.useState(false);
   const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
   React.useEffect(() => {
@@ -78,6 +96,7 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
   const openStatusChangeModal = (appeal, newStatus) => {
     setStatusChangeAppeal({ ...appeal, newStatus });
     setStatusChangeModalOpen(true);
+    setStatusChangeFileList([]);
     statusChangeForm.setFieldsValue({
       status: newStatus,
       response: "",
@@ -87,6 +106,7 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
   const closeStatusChangeModal = () => {
     setStatusChangeModalOpen(false);
     setStatusChangeAppeal(null);
+    setStatusChangeFileList([]);
     statusChangeForm.resetFields();
   };
 
@@ -95,7 +115,28 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
     try {
       const values = await statusChangeForm.validateFields();
       await onUpdateStatus(statusChangeAppeal.id, values.status, values.response);
-      message.success("Успешно отправлено");
+      
+      // Загружаем файлы, если они были выбраны
+      const filesToUpload = statusChangeFileList.filter((file) => file.originFileObj);
+      if (filesToUpload.length > 0) {
+        setUploadingStatusFiles(true);
+        try {
+          await AppealsApi.uploadFiles(statusChangeAppeal.id, filesToUpload.map((f) => f.originFileObj));
+          message.success("Статус обновлен и файлы загружены");
+        } catch (fileError) {
+          message.warning("Статус обновлен, но не удалось загрузить файлы: " + (fileError?.message || "Ошибка"));
+        } finally {
+          setUploadingStatusFiles(false);
+        }
+      } else {
+        message.success("Успешно отправлено");
+      }
+      
+      // Обновляем список обращений
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("khural:admin:reload"));
+      }
+      
       closeStatusChangeModal();
       // Обновляем локальное состояние, если обращение открыто в детальном модальном окне
       if (selectedAppeal && String(selectedAppeal.id) === String(statusChangeAppeal.id)) {
@@ -164,7 +205,7 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
   const handleFileUpload = async () => {
     if (!selectedAppeal?.id || !fileList.length) return;
     
-    const filesToUpload = fileList.filter((file) => file.originFileObj || file.status === "uploading");
+    const filesToUpload = fileList.filter((file) => file.originFileObj);
     if (!filesToUpload.length) {
       message.warning("Выберите файлы для загрузки");
       return;
@@ -172,21 +213,49 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
 
     setUploadingFiles(true);
     try {
-      await AppealsApi.uploadFiles(selectedAppeal.id, filesToUpload.map((f) => f.originFileObj || f));
+      await AppealsApi.uploadFiles(selectedAppeal.id, filesToUpload.map((f) => f.originFileObj));
       message.success("Файлы успешно загружены");
+      
       // Обновляем список обращений
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("khural:admin:reload"));
       }
-      // Обновляем локальное состояние обращения
-      const updatedFiles = fileList
-        .filter((f) => f.status === "done")
-        .map((f) => f.response || { name: f.name, url: f.url });
-      setSelectedAppeal({ ...selectedAppeal, files: updatedFiles });
-      setFileList(fileList.map((f) => ({ ...f, status: "done", originFileObj: undefined })));
+      
+      // Загружаем обновленное обращение с сервера, чтобы получить актуальный список файлов
+      try {
+        const updatedAppeal = await AppealsApi.getById(selectedAppeal.id);
+        if (updatedAppeal) {
+          const normalized = normalizeAppeal(updatedAppeal);
+          if (normalized) {
+            setSelectedAppeal(normalized);
+            // Обновляем список файлов из обновленного обращения
+            if (normalized.files && Array.isArray(normalized.files)) {
+              setFileList(
+                normalized.files.map((file, index) => ({
+                  uid: file?.id || file?.fileId || `-${index}`,
+                  name: file?.name || file?.filename || file?.originalName || `Файл ${index + 1}`,
+                  status: "done",
+                  url: file?.url || file?.link || file?.path || "",
+                  response: file,
+                }))
+              );
+            } else {
+              setFileList([]);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Не удалось загрузить обновленное обращение:", e);
+        // Помечаем загруженные файлы как успешно загруженные
+        setFileList(fileList.map((f) => 
+          f.originFileObj 
+            ? { ...f, status: "done", originFileObj: undefined } 
+            : f
+        ));
+      }
     } catch (e) {
       message.error(e?.message || "Не удалось загрузить файлы");
-      setFileList(fileList.map((f) => (f.status === "uploading" ? { ...f, status: "error" } : f)));
+      setFileList(fileList.map((f) => (f.originFileObj ? { ...f, status: "error" } : f)));
     } finally {
       setUploadingFiles(false);
     }
@@ -578,8 +647,8 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
         onOk={handleStatusChangeSubmit}
         okText="Сохранить"
         cancelText="Отмена"
-        confirmLoading={busy}
-        okButtonProps={{ disabled: !canWrite || busy }}
+        confirmLoading={busy || uploadingStatusFiles}
+        okButtonProps={{ disabled: !canWrite || busy || uploadingStatusFiles }}
         width={600}
       >
         {statusChangeAppeal && (
@@ -621,6 +690,39 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
                 placeholder="Введите сообщение для пользователя..."
                 disabled={!canWrite || busy}
               />
+            </Form.Item>
+
+            <Form.Item
+              label="Файлы (необязательно)"
+              help="Файлы будут прикреплены к обращению и отправлены пользователю"
+            >
+              <Upload
+                fileList={statusChangeFileList}
+                onChange={({ fileList: newFileList }) => {
+                  setStatusChangeFileList(newFileList);
+                }}
+                beforeUpload={(file) => {
+                  // Не загружаем автоматически, загружаем вместе со статусом
+                  const newFileList = [...statusChangeFileList, { uid: file.uid, name: file.name, status: "uploading", originFileObj: file }];
+                  setStatusChangeFileList(newFileList);
+                  return false; // Предотвращаем автоматическую загрузку
+                }}
+                onRemove={(file) => {
+                  const newFileList = statusChangeFileList.filter((f) => f.uid !== file.uid);
+                  setStatusChangeFileList(newFileList);
+                }}
+                multiple
+                disabled={!canWrite || busy || uploadingStatusFiles}
+              >
+                <Button icon={<UploadOutlined />} disabled={!canWrite || busy || uploadingStatusFiles}>
+                  Прикрепить файл
+                </Button>
+              </Upload>
+              {statusChangeFileList.length > 0 && (
+                <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
+                  Выбрано файлов: {statusChangeFileList.length}
+                </div>
+              )}
             </Form.Item>
           </Form>
         )}

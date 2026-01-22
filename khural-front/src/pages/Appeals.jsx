@@ -1,6 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { App, Form, Input, Button, Result, Alert, Tabs, Tag, Checkbox, Popconfirm } from "antd";
+import { FileOutlined, DownloadOutlined } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext.jsx";
 import { AppealsApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
@@ -125,6 +126,7 @@ function normalizeAppeal(a) {
     subject: a?.subject || a?.title || "",
     message: a?.message || a?.text || "",
     response: a?.response || a?.adminResponse || a?.adminMessage || "",
+    files: Array.isArray(a?.files) ? a.files : Array.isArray(a?.fileList) ? a.fileList : [],
     status: String(status),
     createdAt: String(createdAt),
     userEmail: String(userEmail),
@@ -135,6 +137,10 @@ function normalizeAppeal(a) {
 
 // AppealDetailModal component in SpectrUM style
 function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
+  const [historyFiles, setHistoryFiles] = React.useState([]);
+  const [loadingHistory, setLoadingHistory] = React.useState(false);
+  const [currentAppeal, setCurrentAppeal] = React.useState(appeal);
+
   React.useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     return () => {
@@ -142,7 +148,99 @@ function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
     };
   }, [open]);
 
+  // Обновляем текущее обращение при изменении пропса
+  React.useEffect(() => {
+    setCurrentAppeal(appeal);
+  }, [appeal]);
+
+  // Загружаем актуальное обращение и историю для получения файлов
+  React.useEffect(() => {
+    if (!open || !appeal?.id || String(appeal.id).startsWith("local-")) {
+      setHistoryFiles([]);
+      setLoadingHistory(false);
+      return;
+    }
+    
+    setLoadingHistory(true);
+    
+    // Загружаем актуальное обращение и историю параллельно
+    Promise.all([
+      AppealsApi.getById(appeal.id).catch(() => null),
+      AppealsApi.getHistory(appeal.id).catch(() => null),
+    ])
+      .then(([updatedAppeal, history]) => {
+        // Обновляем обращение с актуальными данными
+        if (updatedAppeal) {
+          const normalized = normalizeAppeal(updatedAppeal);
+          setCurrentAppeal(normalized);
+        }
+        
+        // Извлекаем файлы из истории изменений
+        const allFiles = [];
+        
+        // Нормализуем ответ - может быть массив или объект
+        const historyData = Array.isArray(history) ? history : history?.data || history?.items || [];
+        
+        if (Array.isArray(historyData)) {
+          historyData.forEach((entry) => {
+            // Проверяем разные варианты структуры файлов в истории
+            if (entry?.files && Array.isArray(entry.files)) {
+              allFiles.push(...entry.files);
+            }
+            if (entry?.fileList && Array.isArray(entry.fileList)) {
+              allFiles.push(...entry.fileList);
+            }
+            if (entry?.attachments && Array.isArray(entry.attachments)) {
+              allFiles.push(...entry.attachments);
+            }
+            // Если файлы вложены в объект изменения
+            if (entry?.changes?.files && Array.isArray(entry.changes.files)) {
+              allFiles.push(...entry.changes.files);
+            }
+            // Если файлы в объекте response
+            if (entry?.response?.files && Array.isArray(entry.response.files)) {
+              allFiles.push(...entry.response.files);
+            }
+            // Если файлы в объекте appeal
+            if (entry?.appeal?.files && Array.isArray(entry.appeal.files)) {
+              allFiles.push(...entry.appeal.files);
+            }
+            // Если файлы в объекте data
+            if (entry?.data?.files && Array.isArray(entry.data.files)) {
+              allFiles.push(...entry.data.files);
+            }
+          });
+        }
+        
+        // Также проверяем файлы на верхнем уровне ответа
+        if (history?.files && Array.isArray(history.files)) {
+          allFiles.push(...history.files);
+        }
+        
+        // Убираем дубликаты по ID, name или url
+        const uniqueFiles = Array.from(
+          new Map(
+            allFiles.map((f) => [
+              f?.id || f?.fileId || f?.name || f?.filename || f?.url || f?.link || f?.path || Math.random(),
+              f,
+            ])
+          ).values()
+        );
+        setHistoryFiles(uniqueFiles);
+      })
+      .catch((e) => {
+        console.warn("Не удалось загрузить обращение или историю:", e);
+        setHistoryFiles([]);
+      })
+      .finally(() => {
+        setLoadingHistory(false);
+      });
+  }, [open, appeal?.id]);
+
   if (!open || !appeal) return null;
+
+  // Используем актуальное обращение или исходное
+  const displayAppeal = currentAppeal || appeal;
 
   const getStatusColor = (status) => {
     if (status === "Ответ отправлен") return "green";
@@ -158,20 +256,20 @@ function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
         </button>
         <div className="modal__content">
           <h3 style={{ marginTop: 0, marginBottom: 16 }}>
-            {appeal.subject || t("Обращения")}{" "}
-            {appeal.number ? <span style={{ opacity: 0.7, fontWeight: 400 }}>({appeal.number})</span> : null}
+            {displayAppeal.subject || t("Обращения")}{" "}
+            {displayAppeal.number ? <span style={{ opacity: 0.7, fontWeight: 400 }}>({displayAppeal.number})</span> : null}
           </h3>
           
-          {(appeal.fullName || appeal.userEmail) && (
+          {(displayAppeal.fullName || displayAppeal.userEmail) && (
             <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ marginBottom: 8 }}>
                 <strong>{t("Автор обращения:")}</strong>
               </div>
-              {appeal.fullName && (
-                <div style={{ marginBottom: 4, fontSize: 15 }}>{appeal.fullName}</div>
+              {displayAppeal.fullName && (
+                <div style={{ marginBottom: 4, fontSize: 15 }}>{displayAppeal.fullName}</div>
               )}
-              {appeal.userEmail && (
-                <div style={{ fontSize: 14, opacity: 0.8, color: "#0a3b72" }}>{appeal.userEmail}</div>
+              {displayAppeal.userEmail && (
+                <div style={{ fontSize: 14, opacity: 0.8, color: "#0a3b72" }}>{displayAppeal.userEmail}</div>
               )}
             </div>
           )}
@@ -179,12 +277,12 @@ function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
           <div style={{ marginBottom: 16 }}>
             <div style={{ marginBottom: 8 }}>
               <strong>{t("Статус:")}</strong>{" "}
-              <Tag color={getStatusColor(appeal.status)}>{appeal.status}</Tag>
+              <Tag color={getStatusColor(displayAppeal.status)}>{displayAppeal.status}</Tag>
             </div>
             <div style={{ opacity: 0.7, fontSize: 13, marginTop: 4 }}>
               <strong>{t("Дата создания:")}</strong>{" "}
-              {appeal.createdAt
-                ? new Date(appeal.createdAt).toLocaleString("ru-RU")
+              {displayAppeal.createdAt
+                ? new Date(displayAppeal.createdAt).toLocaleString("ru-RU")
                 : ""}
             </div>
           </div>
@@ -202,11 +300,11 @@ function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
                 fontSize: 14,
               }}
             >
-              {appeal.message || "—"}
+              {displayAppeal.message || "—"}
             </div>
           </div>
 
-          {appeal.response && (
+          {displayAppeal.response && (
             <div style={{ marginBottom: 16, marginTop: 24 }}>
               <strong style={{ display: "block", marginBottom: 8, color: "#1890ff" }}>
                 {t("Ответ администратора") || "Ответ администратора"}:
@@ -224,10 +322,78 @@ function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
                   color: "#0050b3",
                 }}
               >
-                {appeal.response}
+                {displayAppeal.response}
               </div>
             </div>
           )}
+
+          <div style={{ marginBottom: 16, marginTop: 24 }}>
+            <strong style={{ display: "block", marginBottom: 8 }}>
+              {t("Файлы") || "Файлы"}:
+              {loadingHistory && <span style={{ marginLeft: 8, fontSize: 12, opacity: 0.7 }}>(загрузка...)</span>}
+            </strong>
+            {(() => {
+              // Объединяем файлы из актуального обращения и из истории
+              const appealFiles = Array.isArray(displayAppeal.files) ? displayAppeal.files : [];
+              const allFiles = [...appealFiles, ...historyFiles];
+              // Убираем дубликаты по ID, name или url
+              const uniqueFiles = Array.from(
+                new Map(
+                  allFiles.map((f) => [
+                    f?.id || f?.fileId || f?.name || f?.filename || f?.url || f?.link || f?.path || Math.random(),
+                    f,
+                  ])
+                ).values()
+              );
+              
+              if (uniqueFiles.length === 0) {
+                return (
+                  <div style={{ padding: "12px", backgroundColor: "#f5f5f5", borderRadius: "8px", color: "#666", fontSize: 14 }}>
+                    {loadingHistory ? "Загрузка файлов..." : "Файлы не прикреплены"}
+                  </div>
+                );
+              }
+              
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {uniqueFiles.map((file, index) => {
+                    const fileUrl = file?.url || file?.link || file?.path || "";
+                    const fileName = file?.name || file?.filename || file?.originalName || `Файл ${index + 1}`;
+                    const fileId = file?.id || file?.fileId || "";
+                    
+                    return (
+                      <div
+                        key={fileId || index}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "12px",
+                          backgroundColor: "#f5f5f5",
+                          borderRadius: "8px",
+                        }}
+                      >
+                        <FileOutlined style={{ color: "#1890ff", fontSize: 18 }} />
+                        <span style={{ flex: 1, wordBreak: "break-word" }}>{fileName}</span>
+                        {fileUrl && (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<DownloadOutlined />}
+                            onClick={() => {
+                              window.open(fileUrl, "_blank");
+                            }}
+                          >
+                            {t("Скачать") || "Скачать"}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
             {typeof onDelete === "function" ? (
@@ -702,6 +868,11 @@ export default function Appeals({ embedded = false } = {}) {
                                       Есть ответ
                                     </Tag>
                                   )}
+                                  {a.files && Array.isArray(a.files) && a.files.length > 0 && (
+                                    <Tag color="green" icon={<FileOutlined />}>
+                                      {a.files.length} {a.files.length === 1 ? "файл" : "файлов"}
+                                    </Tag>
+                                  )}
                                   <div style={{ opacity: 0.7, fontSize: 12 }}>
                                     {a.createdAt ? new Date(a.createdAt).toLocaleString("ru-RU") : ""}
                                   </div>
@@ -754,6 +925,33 @@ export default function Appeals({ embedded = false } = {}) {
                                       >
                                         {a.response}
                                       </span>
+                                    </div>
+                                  )}
+                                  {a.files && Array.isArray(a.files) && a.files.length > 0 && (
+                                    <div
+                                      style={{
+                                        marginTop: 8,
+                                        padding: "8px 12px",
+                                        backgroundColor: "#f0f9ff",
+                                        border: "1px solid #bae6fd",
+                                        borderRadius: "4px",
+                                        fontSize: 13,
+                                      }}
+                                    >
+                                      <strong>
+                                        <FileOutlined style={{ marginRight: 4 }} />
+                                        Файлы ({a.files.length}):
+                                      </strong>{" "}
+                                      {a.files.slice(0, 3).map((file, idx) => {
+                                        const fileName = file?.name || file?.filename || file?.originalName || `Файл ${idx + 1}`;
+                                        return (
+                                          <span key={idx} style={{ marginRight: 8 }}>
+                                            {fileName}
+                                            {idx < Math.min(a.files.length, 3) - 1 ? "," : ""}
+                                          </span>
+                                        );
+                                      })}
+                                      {a.files.length > 3 && <span>и еще {a.files.length - 3}...</span>}
                                     </div>
                                   )}
                                   <Button
