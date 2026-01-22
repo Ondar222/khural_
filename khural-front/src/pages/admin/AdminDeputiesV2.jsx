@@ -4,6 +4,7 @@ import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { PersonsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { toPersonsApiBody } from "../../api/personsPayload.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 const STORAGE_KEY = "khural_deputies_overrides_v1";
 
@@ -873,11 +874,11 @@ export default function AdminDeputiesV2({
             label="График приема граждан (HTML)"
             name="receptionSchedule"
             tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+            getValueFromEvent={(value) => value}
           >
-            <Input.TextArea
-              autoSize={{ minRows: 3, maxRows: 8 }}
+            <TinyMCEEditor
+              height={250}
               placeholder="<p>Пн–Пт: 09:00–18:00</p>\n<p>Сб: 10:00–14:00</p>"
-              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
             />
           </Form.Item>
 
@@ -951,8 +952,12 @@ export default function AdminDeputiesV2({
             </Form.List>
           </div>
 
-          <Form.Item label="Биография" name="description">
-            <Input.TextArea autoSize={{ minRows: 4, maxRows: 10 }} />
+          <Form.Item 
+            label="Биография" 
+            name="description"
+            getValueFromEvent={(value) => value}
+          >
+            <TinyMCEEditor height={300} />
           </Form.Item>
 
           <Form.Item label="Фото (опционально)">
@@ -1109,11 +1114,11 @@ export default function AdminDeputiesV2({
             label="График приема граждан (HTML)"
             name="receptionSchedule"
             tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+            getValueFromEvent={(value) => value}
           >
-            <Input.TextArea
-              autoSize={{ minRows: 3, maxRows: 8 }}
+            <TinyMCEEditor
+              height={250}
               placeholder="<p>Пн–Пт: 09:00–18:00</p>\n<p>Сб: 10:00–14:00</p>"
-              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
             />
           </Form.Item>
 
@@ -1187,8 +1192,12 @@ export default function AdminDeputiesV2({
             </Form.List>
           </div>
 
-          <Form.Item label="Биография" name="description">
-            <Input.TextArea autoSize={{ minRows: 4, maxRows: 10 }} />
+          <Form.Item 
+            label="Биография" 
+            name="description"
+            getValueFromEvent={(value) => value}
+          >
+            <TinyMCEEditor height={300} />
           </Form.Item>
 
           <Form.Item label="Фото (опционально)">

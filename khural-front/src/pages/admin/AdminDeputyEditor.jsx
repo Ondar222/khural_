@@ -6,6 +6,7 @@ import { useData } from "../../context/DataContext.jsx";
 import { toPersonsApiBody } from "../../api/personsPayload.js";
 import { readDeputiesOverrides, writeDeputiesOverrides } from "./deputiesOverrides.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import {
   COMMITTEES_OVERRIDES_EVENT_NAME,
   COMMITTEES_OVERRIDES_STORAGE_KEY,
@@ -854,11 +855,12 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             label="Биография (HTML)"
             name="biography"
             tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a, img и т.д. Сохраняется как есть."
+            getValueFromEvent={(value) => value}
           >
-            <Input.TextArea
-              autoSize={{ minRows: 12, maxRows: 28 }}
+            <TinyMCEEditor
+              height={400}
+              disabled={loading || saving}
               placeholder="<p>Биография</p>\n<h2>Заголовок блока</h2>\n<ul><li>Пункт</li></ul>"
-              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
             />
           </Form.Item>
         </div>
@@ -885,12 +887,12 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
               label="График приема граждан (HTML)"
               name="receptionSchedule"
               tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+              getValueFromEvent={(value) => value}
             >
-              <Input.TextArea
+              <TinyMCEEditor
+                height={300}
                 disabled={loading || saving}
-                autoSize={{ minRows: 6, maxRows: 14 }}
                 placeholder="<p>Пн–Пт: 09:00–18:00</p>\n<p>Сб: 10:00–14:00</p>"
-                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
               />
             </Form.Item>
           </div>

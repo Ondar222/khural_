@@ -1,6 +1,7 @@
 import React from "react";
 import { App, Button, Input, Modal, Form, Upload, Space, Table, Select } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 const STRUCTURE_TYPE_OPTIONS = [
   { value: "committee", label: "Комитет" },
@@ -304,9 +305,13 @@ export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, bus
             </Form.Item>
           )}
 
-          <Form.Item label="Биография (HTML)" name="biography">
-            <Input.TextArea 
-              autoSize={{ minRows: 6, maxRows: 12 }} 
+          <Form.Item 
+            label="Биография (HTML)" 
+            name="biography"
+            getValueFromEvent={(value) => value}
+          >
+            <TinyMCEEditor 
+              height={300}
               placeholder="Введите HTML-код биографии"
             />
           </Form.Item>
@@ -330,11 +335,11 @@ export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, bus
             label="График приема граждан (HTML)"
             name="receptionSchedule"
             tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+            getValueFromEvent={(value) => value}
           >
-            <Input.TextArea
-              autoSize={{ minRows: 3, maxRows: 8 }}
+            <TinyMCEEditor
+              height={250}
               placeholder="<p>Пн–Пт: 09:00–18:00</p>\n<p>Сб: 10:00–14:00</p>"
-              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
             />
           </Form.Item>
 
