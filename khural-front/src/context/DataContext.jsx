@@ -572,10 +572,19 @@ export default function DataProvider({ children }) {
     (async () => {
       markLoading("news", true);
       markError("news", null);
+      // Добавляем timestamp для обхода кэша при перезагрузке
+      const cacheBuster = reloadSeq > 0 ? `?t=${Date.now()}` : "";
+      console.log(`[DataContext] Loading news data (reloadSeq: ${reloadSeq})...`);
       const [apiNewsRaw, localNewsRaw] = await Promise.all([
-        tryApiFetch("/news", { auth: false }),
+        tryApiFetch(`/news${cacheBuster}`, { auth: false }),
         fetchJson("/data/news.json"),
       ]);
+      
+      console.log(`[DataContext] News API response:`, {
+        isArray: Array.isArray(apiNewsRaw),
+        length: Array.isArray(apiNewsRaw) ? apiNewsRaw.length : 0,
+        firstItem: Array.isArray(apiNewsRaw) && apiNewsRaw.length > 0 ? apiNewsRaw[0] : null,
+      });
 
       const apiNewsArr = Array.isArray(apiNewsRaw)
         ? apiNewsRaw
@@ -594,15 +603,32 @@ export default function DataProvider({ children }) {
               (Array.isArray(n.content) ? n.content[0] : null) ||
               null;
 
-            const title = String(ru?.title || n.title || "");
+            // Извлекаем данные из локализованного контента
+            const title = String(ru?.title || n.title || "").trim();
             const excerpt = String(
               ru?.shortDescription ||
                 ru?.description ||
                 n.shortDescription ||
                 n.description ||
                 ""
-            );
-            const contentHtml = String(ru?.content || n.contentHtml || n.contentText || "");
+            ).trim();
+            const contentHtml = String(
+              ru?.content || 
+              n.contentHtml || 
+              n.contentText || 
+              ""
+            ).trim();
+            
+            // Логируем для отладки, если данные пустые
+            if (!title && !excerpt && !contentHtml) {
+              console.warn("News item with empty content:", {
+                id: n.id,
+                hasContentArray: Array.isArray(n.content),
+                contentArrayLength: Array.isArray(n.content) ? n.content.length : 0,
+                ruContent: ru,
+                rawNews: n,
+              });
+            }
 
             const img = firstImageLink(n.images || n.gallery) || firstFileLink(n.coverImage);
             // Collect all images: gallery first, then images, then coverImage if not already included
@@ -615,10 +641,17 @@ export default function DataProvider({ children }) {
               allImages.unshift(coverImg); // Put cover image first
             }
 
-            const dateStr =
-              normalizeNewsDateKey(
-                pick(n.publishedAt, n.published_at, n.createdAt, n.created_at)
-              ) || new Date().toISOString();
+            // Обрабатываем дату публикации
+            const rawDate = pick(n.publishedAt, n.published_at, n.createdAt, n.created_at);
+            let dateStr = normalizeNewsDateKey(rawDate);
+            // Если дата не установлена или невалидна, используем дату создания или текущую дату
+            if (!dateStr || dateStr === "1970-01-01T00:00:00.000Z") {
+              const createdAt = pick(n.createdAt, n.created_at);
+              dateStr = normalizeNewsDateKey(createdAt);
+              if (!dateStr || dateStr === "1970-01-01T00:00:00.000Z") {
+                dateStr = new Date().toISOString();
+              }
+            }
 
             const dedupKey = pickNewsKey(n);
             const id = String(

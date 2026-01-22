@@ -1,5 +1,5 @@
 import React from "react";
-import { App, Button, Input, Modal, Popconfirm, Space, Table, Tag, Select } from "antd";
+import { App, Button, Input, Modal, Popconfirm, Space, Table, Tag, Select, Form } from "antd";
 import { AppealsApi } from "../../api/client.js";
 
 const STATUS_OPTIONS = [
@@ -38,6 +38,9 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
   const [q, setQ] = React.useState("");
   const [selectedAppeal, setSelectedAppeal] = React.useState(null);
   const [detailModalOpen, setDetailModalOpen] = React.useState(false);
+  const [statusChangeModalOpen, setStatusChangeModalOpen] = React.useState(false);
+  const [statusChangeAppeal, setStatusChangeAppeal] = React.useState(null);
+  const [statusChangeForm] = Form.useForm();
   const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
   React.useEffect(() => {
@@ -62,19 +65,49 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
     if (!qq) return normalizedItems;
     return (normalizedItems || []).filter((a) => {
       const subject = String(a.subject || "").toLowerCase();
-      const message = String(a.message || "").toLowerCase();
+      const appealMessage = String(a.message || "").toLowerCase();
       const number = String(a.number || "").toLowerCase();
       const email = String(a.userEmail || "").toLowerCase();
-      return subject.includes(qq) || message.includes(qq) || number.includes(qq) || email.includes(qq);
+      return subject.includes(qq) || appealMessage.includes(qq) || number.includes(qq) || email.includes(qq);
     });
   }, [normalizedItems, q]);
 
-  const handleStatusChange = async (appealId, newStatus) => {
+  const openStatusChangeModal = (appeal, newStatus) => {
+    setStatusChangeAppeal({ ...appeal, newStatus });
+    setStatusChangeModalOpen(true);
+    statusChangeForm.setFieldsValue({
+      status: newStatus,
+      message: "",
+    });
+  };
+
+  const closeStatusChangeModal = () => {
+    setStatusChangeModalOpen(false);
+    setStatusChangeAppeal(null);
+    statusChangeForm.resetFields();
+  };
+
+  const handleStatusChangeSubmit = async () => {
+    if (!statusChangeAppeal) return;
     try {
-      await onUpdateStatus(appealId, newStatus);
-      message.success("Статус обновлен");
+      const values = await statusChangeForm.validateFields();
+      await onUpdateStatus(statusChangeAppeal.id, values.status, values.message);
+      message.success("Успешно отправлено");
+      closeStatusChangeModal();
+      // Обновляем локальное состояние, если обращение открыто в детальном модальном окне
+      if (selectedAppeal && String(selectedAppeal.id) === String(statusChangeAppeal.id)) {
+        setSelectedAppeal({ ...selectedAppeal, status: values.status });
+      }
     } catch (e) {
+      if (e?.errorFields) return; // Валидация формы
       message.error(e?.message || "Не удалось обновить статус");
+    }
+  };
+
+  const handleStatusChange = async (appealId, newStatus) => {
+    const appeal = normalizedItems.find((a) => String(a.id) === String(appealId));
+    if (appeal) {
+      openStatusChangeModal(appeal, newStatus);
     }
   };
 
@@ -241,7 +274,7 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
                 <div className="admin-appeals-list__card-actions">
                   <Select
                     value={row.status}
-                    onChange={(newStatus) => handleStatusChange(row.id, newStatus)}
+                    onChange={(newStatus) => openStatusChangeModal(row, newStatus)}
                     disabled={!canWrite || busy}
                     options={statusOptions}
                     size="large"
@@ -374,8 +407,7 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
               <Select
                 value={selectedAppeal.status}
                 onChange={(newStatus) => {
-                  handleStatusChange(selectedAppeal.id, newStatus);
-                  setSelectedAppeal({ ...selectedAppeal, status: newStatus });
+                  openStatusChangeModal(selectedAppeal, newStatus);
                 }}
                 disabled={!canWrite || busy}
                 style={{ width: "100%" }}
@@ -386,6 +418,61 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
               />
             </div>
           </div>
+        )}
+      </Modal>
+
+      <Modal
+        title="Изменить статус обращения"
+        open={statusChangeModalOpen}
+        onCancel={closeStatusChangeModal}
+        onOk={handleStatusChangeSubmit}
+        okText="Сохранить"
+        cancelText="Отмена"
+        confirmLoading={busy}
+        okButtonProps={{ disabled: !canWrite || busy }}
+        width={600}
+      >
+        {statusChangeAppeal && (
+          <Form form={statusChangeForm} layout="vertical">
+            <Form.Item label="Обращение" style={{ marginBottom: 16 }}>
+              <div>
+                {statusChangeAppeal.number ? `№ ${statusChangeAppeal.number}` : ""}
+                {statusChangeAppeal.subject ? ` · ${statusChangeAppeal.subject}` : ""}
+              </div>
+            </Form.Item>
+
+            {statusChangeAppeal.status && (
+              <Form.Item label="Текущий статус" style={{ marginBottom: 16 }}>
+                <Tag color={getStatusColor(statusChangeAppeal.status)}>{statusChangeAppeal.status}</Tag>
+              </Form.Item>
+            )}
+
+            <Form.Item
+              name="status"
+              label="Новый статус"
+              rules={[{ required: true, message: "Выберите статус" }]}
+            >
+              <Select
+                disabled={!canWrite || busy}
+                options={STATUS_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: opt.label,
+                }))}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="message"
+              label="Сообщение (необязательно)"
+              help="Сообщение будет отправлено пользователю вместе с изменением статуса"
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder="Введите сообщение для пользователя..."
+                disabled={!canWrite || busy}
+              />
+            </Form.Item>
+          </Form>
         )}
       </Modal>
     </div>

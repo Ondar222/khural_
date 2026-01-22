@@ -190,7 +190,21 @@ export async function apiFetch(
   
   // Логирование для отладки (только для POST/PATCH/DELETE)
   if (method !== "GET" && body) {
-    console.log(`[API] ${method} ${url}`, { body, headers: { ...finalHeaders, Authorization: finalHeaders.Authorization ? "Bearer ***" : undefined } });
+    console.log(`[API] ${method} ${url}`, { 
+      body, 
+      headers: { ...finalHeaders, Authorization: finalHeaders.Authorization ? "Bearer ***" : undefined } 
+    });
+  }
+  
+  // Дополнительное логирование для запросов к новостям
+  if (path.includes("/news") && (method === "PATCH" || method === "POST")) {
+    console.log(`[API News] ${method} ${url}`, {
+      path,
+      method,
+      hasBody: !!body,
+      bodySize: body ? JSON.stringify(body).length : 0,
+      auth: !!finalHeaders.Authorization,
+    });
   }
   
   let res;
@@ -256,6 +270,24 @@ export async function apiFetch(
       errorMessage = `Endpoint не найден (404). Проверьте правильность URL API.`;
     } else if (res.status === 401) {
       errorMessage = data?.message || data?.error || "Токен авторизации истек. Пожалуйста, войдите заново.";
+    } else if (res.status === 400) {
+      // Детальная обработка ошибок валидации
+      console.error(`[API] 400 Bad Request для ${method} ${url}`);
+      console.error(`[API] Request body:`, body ? JSON.stringify(body, null, 2) : "нет тела");
+      console.error(`[API] Response data:`, data);
+      
+      if (data?.message) {
+        errorMessage = `Ошибка валидации: ${data.message}`;
+      } else if (data?.error) {
+        errorMessage = `Ошибка валидации: ${data.error}`;
+      } else if (Array.isArray(data?.errors)) {
+        const errorsList = data.errors.map(e => e.message || e).join(", ");
+        errorMessage = `Ошибки валидации: ${errorsList}`;
+      } else if (typeof data === "string") {
+        errorMessage = `Ошибка валидации: ${data}`;
+      } else {
+        errorMessage = `Ошибка валидации (400). Проверьте формат отправляемых данных.`;
+      }
     } else if (data && (data.message || data.error)) {
       errorMessage = data.message || data.error;
     }
@@ -475,8 +507,8 @@ export const AppealsApi = {
       return apiFetch(`/appeals${suffix}`, { method: "GET", auth: true });
     }
   },
-  async updateStatus(id, status) {
-    // Backend expects PATCH /appeals/:id with { statusId } (number)
+  async updateStatus(id, status, message) {
+    // Backend expects PATCH /appeals/:id with { statusId } (number) and optionally { message } (string)
     let statusId = null;
     if (typeof status === "number") {
       statusId = status;
@@ -497,7 +529,11 @@ export const AppealsApi = {
     if (!statusId) {
       throw new Error("Не удалось определить ID статуса обращения");
     }
-    return apiFetch(`/appeals/${id}`, { method: "PATCH", body: { statusId }, auth: true });
+    const body = { statusId };
+    if (message && typeof message === "string" && message.trim()) {
+      body.message = message.trim();
+    }
+    return apiFetch(`/appeals/${id}`, { method: "PATCH", body, auth: true });
   },
   async remove(id) {
     const sid = encodeURIComponent(String(id));

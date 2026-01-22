@@ -1037,11 +1037,11 @@ export function useAdminData() {
     }
   }, [message, reload, reloadDataContext]);
 
-  const updateAppealStatus = React.useCallback(async (id, status) => {
+  const updateAppealStatus = React.useCallback(async (id, status, message) => {
     setBusy(true);
     try {
-      await AppealsApi.updateStatus(id, status);
-      message.success("Статус обращения обновлен");
+      await AppealsApi.updateStatus(id, status, message);
+      // Сообщение об успехе показывается в компоненте
       // Обновляем локальный список
       setAppeals((prev) =>
         prev.map((a) => (String(a.id) === String(id) ? { ...a, status } : a))
@@ -1050,7 +1050,7 @@ export function useAdminData() {
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [reload]);
 
   const deleteAppeal = React.useCallback(async (id) => {
     setBusy(true);

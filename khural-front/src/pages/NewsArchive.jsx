@@ -102,8 +102,27 @@ export default function NewsArchive() {
   );
 
   if (selected) {
-    const idx = (news || []).findIndex((n) => n.id === selected);
+    const idx = (news || []).findIndex((n) => String(n.id) === String(selected));
     const item = idx >= 0 ? (news || [])[idx] : null;
+    
+    // Логируем для отладки
+    if (item) {
+      console.log(`[NewsArchive] Found news item:`, {
+        id: item.id,
+        title: item.title,
+        hasExcerpt: !!item.excerpt,
+        excerptLength: item.excerpt?.length || 0,
+        hasContentHtml: !!item.contentHtml,
+        contentHtmlLength: item.contentHtml?.length || 0,
+        date: item.date,
+      });
+    } else {
+      console.warn(`[NewsArchive] News item not found:`, {
+        selectedId: selected,
+        availableIds: (news || []).map(n => n.id),
+        newsCount: (news || []).length,
+      });
+    }
     if (!item) {
       return (
         <section className="section">

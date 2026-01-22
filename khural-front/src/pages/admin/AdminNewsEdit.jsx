@@ -20,6 +20,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const [newCategoryName, setNewCategoryName] = React.useState("");
   const [loadingNews, setLoadingNews] = React.useState(true);
   const [newsData, setNewsData] = React.useState(null);
+  const [saving, setSaving] = React.useState(false);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
   const { reload: reloadPublicData, news: publicNews } = useData();
   
@@ -243,6 +244,13 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       return;
     }
     
+    if (saving) {
+      console.warn("Save already in progress, ignoring duplicate click");
+      return;
+    }
+    
+    setSaving(true);
+    let payload = null; // Для использования в catch блоке
     try {
       const values = await form.validateFields();
 
@@ -283,6 +291,15 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       // Проверяем, что есть хотя бы русский контент
       if (contentArray.length === 0) {
         antdMessage.error("Заполните хотя бы русский заголовок или контент");
+        setSaving(false);
+        return;
+      }
+      
+      // Проверяем обязательные поля для русского контента
+      const ruContent = contentArray.find(c => c.locale === "ru");
+      if (!ruContent || (!ruContent.title && !ruContent.content)) {
+        antdMessage.error("Заполните заголовок или контент для русского языка");
+        setSaving(false);
         return;
       }
 
@@ -299,7 +316,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         }
       }
 
-      const payload = {
+      payload = {
         categoryId: values.categoryId,
         slug: values.slug || undefined,
         publishedAt: publishedAtValue,
@@ -307,12 +324,23 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         content: contentArray,
       };
 
-      console.log("Saving news with payload:", payload);
-      await NewsApi.patch(newsId, payload);
+      console.log("Saving news with payload:", JSON.stringify(payload, null, 2));
+      console.log("News ID:", newsId);
+      console.log("API endpoint:", `/news/${newsId}`);
+      
+      const result = await NewsApi.patch(newsId, payload);
+      console.log("News update response:", result);
+      
+      // Проверяем, что ответ успешный
+      if (!result) {
+        throw new Error("API вернул пустой ответ");
+      }
 
       // Обложка (только новые файлы)
       if (coverImage?.originFileObj) {
+        console.log("Uploading cover image...");
         await NewsApi.uploadCover(newsId, coverImage.originFileObj);
+        console.log("Cover image uploaded");
       }
 
       // Новые картинки галереи (добавляем)
@@ -320,26 +348,94 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         .filter((f) => f.originFileObj)
         .map((f) => f.originFileObj);
       if (newGalleryFiles.length) {
+        console.log(`Uploading ${newGalleryFiles.length} gallery images...`);
         await NewsApi.uploadGallery(newsId, newGalleryFiles);
+        console.log("Gallery images uploaded");
+      }
+
+      // Проверяем, что данные действительно сохранились
+      try {
+        console.log("Verifying saved data...");
+        const updatedNews = await NewsApi.getById(newsId);
+        console.log("Verified saved news:", updatedNews);
+        const savedContent = Array.isArray(updatedNews.content) ? updatedNews.content : [];
+        const savedRu = savedContent.find((c) => c.locale === "ru");
+        if (savedRu) {
+          console.log("Saved RU content:", {
+            title: savedRu.title,
+            contentLength: savedRu.content?.length || 0,
+            shortDescription: savedRu.shortDescription,
+          });
+        } else {
+          console.warn("No Russian content found in saved news!");
+        }
+      } catch (verifyError) {
+        console.warn("Could not verify saved news:", verifyError);
       }
 
       antdMessage.success("Новость обновлена");
       
-      // Принудительно перезагружаем данные перед навигацией
+      // Принудительно перезагружаем данные несколько раз для надежности
       if (reloadPublicData) {
         reloadPublicData();
         // Даем время на обновление данных
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Перезагружаем еще раз для надежности
+        reloadPublicData();
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       navigate("/admin/news");
     } catch (error) {
       console.error("Error saving news:", error);
+      console.error("Error details:", {
+        message: error?.message,
+        status: error?.status,
+        data: error?.data,
+        stack: error?.stack,
+      });
+      
       if (error?.errorFields) {
         antdMessage.warning("Проверьте заполнение полей");
+        setSaving(false);
         return;
       }
-      antdMessage.error(error?.message || "Не удалось обновить новость");
+      
+      // Более детальные сообщения об ошибках
+      let errorMessage = "Не удалось обновить новость";
+      if (error?.status === 401) {
+        errorMessage = "Ошибка авторизации. Проверьте, что вы вошли в систему.";
+      } else if (error?.status === 403) {
+        errorMessage = "Нет прав на редактирование новостей";
+      } else if (error?.status === 404) {
+        errorMessage = "Новость не найдена";
+      } else if (error?.status === 400) {
+        // Детальная обработка ошибок валидации
+        console.error("400 Bad Request - детали ошибки:", {
+          message: error?.message,
+          data: error?.data,
+          payload: payload,
+        });
+        
+        if (error?.data?.message) {
+          errorMessage = `Ошибка валидации: ${error.data.message}`;
+        } else if (Array.isArray(error?.data?.errors)) {
+          const errorsList = error.data.errors.map(e => e.message || e).join(", ");
+          errorMessage = `Ошибки валидации: ${errorsList}`;
+        } else if (error?.message) {
+          errorMessage = `Ошибка валидации: ${error.message}`;
+        } else {
+          errorMessage = `Ошибка валидации (400). Проверьте, что все обязательные поля заполнены правильно.`;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      }
+      
+      antdMessage.error(errorMessage);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -365,8 +461,13 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
           </div>
           <div className="admin-news-editor__hero-actions">
             <Button onClick={() => navigate("/admin/news")}>Отмена</Button>
-            <Button type="primary" onClick={handleSubmit} loading={busy} disabled={!canWrite}>
-              Сохранить
+            <Button 
+              type="primary" 
+              onClick={handleSubmit} 
+              loading={saving || busy} 
+              disabled={!canWrite || saving}
+            >
+              {saving ? "Сохранение..." : "Сохранить"}
             </Button>
           </div>
         </div>
