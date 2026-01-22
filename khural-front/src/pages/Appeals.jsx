@@ -664,7 +664,8 @@ export default function Appeals({ embedded = false } = {}) {
   const content = (
     <>
       <div className={embedded ? "" : "container"}>
-        <h1 className="h1-compact">{t("Обращения граждан")}</h1>
+        {!embedded && <h1 className="h1-compact">{t("Обращения граждан")}</h1>}
+        {embedded && <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>{t("Обращения граждан")}</h2>}
 
         {!isAuthenticated ? (
           <Alert
