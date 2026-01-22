@@ -1,6 +1,6 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
-import { AboutApi } from "../api/client.js";
+import { AboutApi, ConvocationsApi, CommitteesApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import PersonDetail from "../components/PersonDetail.jsx";
@@ -155,6 +155,252 @@ function useQuery() {
     };
   }, []);
   return q;
+}
+
+function normalizeConvocationToken(raw) {
+  const s = String(raw || "").replace(/\u00A0/g, " ").trim();
+  if (!s) return "";
+  // Strip common words to avoid "VIII созыв созыв"
+  const cleaned = s
+    .replace(/\(.*?\)/g, " ")
+    .replace(/архив/gi, " ")
+    .replace(/созыв(а|ы)?/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const roman = cleaned.match(/\b([IVX]{1,8})\b/i);
+  if (roman) return roman[1].toUpperCase();
+  const num = cleaned.match(/\b(\d{1,2})\b/);
+  if (num) return num[1];
+  return cleaned;
+}
+
+function formatConvocationLabel(c) {
+  const name = String(c?.name || c?.number || "").trim();
+  const token = normalizeConvocationToken(name || c?.id);
+  if (!token) return name || "Созыв";
+  const low = name.toLowerCase();
+  if (low.includes("созыв")) return name;
+  return `Созыв ${token}`;
+}
+
+function toConvocationIdStrFromCommittee(c) {
+  const v = c?.convocation?.id ?? c?.convocationId ?? null;
+  if (v === null || v === undefined || v === "") return "";
+  return String(v);
+}
+
+function committeeConvocationMatchKeys(c) {
+  const keys = new Set();
+  if (!c) return [];
+  const idStr = toConvocationIdStrFromCommittee(c);
+  if (idStr) keys.add(idStr);
+  const token = normalizeConvocationToken(c?.convocation?.name || c?.convocation?.number || "");
+  if (token) keys.add(token);
+  return Array.from(keys);
+}
+
+function ReportsAllConvocationsPage() {
+  const [convocations, setConvocations] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const list = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
+        if (!alive) return;
+        const normalized = Array.isArray(list) ? list.map((x) => {
+          if (typeof x === "string") {
+            const token = normalizeConvocationToken(x);
+            return { id: token || x, name: x, number: token };
+          }
+          if (x && typeof x === "object") {
+            const token = normalizeConvocationToken(x.name || x.number || "");
+            return {
+              id: x.id ?? token,
+              name: x.name || x.number || "",
+              number: token || x.number || "",
+            };
+          }
+          return null;
+        }).filter(Boolean) : [];
+        
+        // Ensure we have at least I, II, III, IV convocations
+        const requiredConvocations = ["I", "II", "III", "IV"];
+        const existingTokens = new Set(normalized.map(c => normalizeConvocationToken(c.name || c.number || "")));
+        requiredConvocations.forEach(token => {
+          if (!existingTokens.has(token)) {
+            normalized.push({ id: token, name: `Созыв ${token}`, number: token });
+          }
+        });
+        
+        setConvocations(normalized);
+      } catch (error) {
+        console.error("Failed to load convocations:", error);
+        if (alive) setConvocations([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Sort convocations: Roman numerals first (VIII, VII, VI, etc.), then numbers, then others
+  const sortedConvocations = React.useMemo(() => {
+    const romanOrder = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I"];
+    return [...convocations].sort((a, b) => {
+      const aToken = normalizeConvocationToken(a.name || a.number || "");
+      const bToken = normalizeConvocationToken(b.name || b.number || "");
+      const aRomanIndex = romanOrder.indexOf(aToken);
+      const bRomanIndex = romanOrder.indexOf(bToken);
+      
+      if (aRomanIndex !== -1 && bRomanIndex !== -1) {
+        return aRomanIndex - bRomanIndex;
+      }
+      if (aRomanIndex !== -1) return -1;
+      if (bRomanIndex !== -1) return 1;
+      
+      const aNum = parseInt(aToken, 10);
+      const bNum = parseInt(bToken, 10);
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return bNum - aNum; // Descending order
+      }
+      if (!isNaN(aNum)) return -1;
+      if (!isNaN(bNum)) return 1;
+      
+      return (a.name || "").localeCompare(b.name || "");
+    });
+  }, [convocations]);
+
+  return (
+    <section className="section section-page">
+      <div className="container">
+        <div className="page-grid">
+          <div>
+            <h1>Отчеты всех Созывов</h1>
+            {loading ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
+            ) : sortedConvocations.length > 0 ? (
+              <ul style={{ listStyle: "disc", paddingLeft: 24, marginTop: 20 }}>
+                {sortedConvocations.map((conv) => {
+                  const label = formatConvocationLabel(conv);
+                  const convNumber = normalizeConvocationToken(conv.name || conv.number || "");
+                  // Create link to reports page for this convocation
+                  const reportTitle = `Отчеты о деятельности комитетов ${convNumber} созыва`;
+                  const href = `/section?title=${encodeURIComponent(reportTitle)}`;
+                  
+                  return (
+                    <li key={conv.id || conv.name} style={{ marginBottom: 8 }}>
+                      <a href={href} style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}>
+                        {label}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <div className="card" style={{ padding: 24, marginTop: 20 }}>
+                <p style={{ marginTop: 0 }}>Список созывов пока пуст.</p>
+              </div>
+            )}
+          </div>
+          <SideNav title="Разделы" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ConvocationReportsPage({ convocationNumber }) {
+  const { committees: committeesFromContext } = useData();
+  const [committees, setCommittees] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const list = await CommitteesApi.list({ all: true }).catch(() => []);
+        if (!alive) return;
+        
+        // Filter committees by convocation
+        const convKeys = new Set([convocationNumber]);
+        const filtered = Array.isArray(list) ? list.filter((c) => {
+          if (!c) return false;
+          const matchKeys = committeeConvocationMatchKeys(c);
+          return matchKeys.some(key => convKeys.has(key));
+        }) : [];
+        
+        // Also check committees from context
+        const fromContext = Array.isArray(committeesFromContext) ? committeesFromContext.filter((c) => {
+          if (!c) return false;
+          const matchKeys = committeeConvocationMatchKeys(c);
+          return matchKeys.some(key => convKeys.has(key));
+        }) : [];
+        
+        // Merge and deduplicate
+        const all = [...filtered, ...fromContext];
+        const seen = new Set();
+        const unique = all.filter((c) => {
+          const id = String(c?.id ?? "");
+          if (!id || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+        
+        setCommittees(unique);
+      } catch (error) {
+        console.error("Failed to load committees:", error);
+        if (alive) setCommittees([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [convocationNumber, committeesFromContext]);
+
+  return (
+    <section className="section section-page">
+      <div className="container">
+        <div className="page-grid">
+          <div>
+            <h1>Отчеты о деятельности комитетов {convocationNumber} созыва</h1>
+            {loading ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
+            ) : committees.length > 0 ? (
+              <>
+                <ul style={{ listStyle: "disc", paddingLeft: 24, marginTop: 20 }}>
+                  {committees.map((committee) => (
+                    <li key={committee.id} style={{ marginBottom: 8 }}>
+                      <a
+                        href={`/committee?id=${encodeURIComponent(committee.id)}#reports`}
+                        style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}
+                      >
+                        {committee.title || committee.name || "Комитет"}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <div className="card" style={{ padding: 24, marginTop: 20 }}>
+                <p style={{ marginTop: 0 }}>
+                  Список комитетов для {convocationNumber} созыва пока пуст.
+                </p>
+              </div>
+            )}
+          </div>
+          <SideNav title="Разделы" />
+        </div>
+      </div>
+    </section>
+  );
 }
 
 const STRUCTURE_TYPE_LABELS = {
@@ -919,6 +1165,20 @@ export default function SectionPage() {
           </div>
         </section>
       );
+    }
+
+    // Special handling for "Отчеты всех Созывов" page
+    if (title === "Отчеты всех Созывов") {
+      return <ReportsAllConvocationsPage />;
+    }
+
+    // Special handling for "Отчеты о деятельности комитетов X созыва" pages
+    const reportsMatch = title.match(/^Отчеты о деятельности комитетов\s+([IVX]+|\d+)\s+созыва$/i);
+    if (reportsMatch) {
+      const convNumber = normalizeConvocationToken(reportsMatch[1]);
+      if (convNumber) {
+        return <ConvocationReportsPage convocationNumber={convNumber} />;
+      }
     }
 
     return <SectionCmsDetail title={title} noGoldUnderline={noGoldUnderline} />;

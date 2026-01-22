@@ -21,6 +21,7 @@ export default function SideNav({
     { label: "Депутаты", href: "/deputies?convocation=VIII" },
     { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
     { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
+    { label: "Отчеты всех Созывов", href: "/section?title=" + encodeURIComponent("Отчеты всех Созывов") },
     // Пользовательские страницы, созданные через админку
     // { label: "Страницы", href: "/pages" },
     {
