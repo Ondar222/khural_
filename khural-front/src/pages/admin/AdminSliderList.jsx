@@ -117,15 +117,40 @@ export default function AdminSliderList({
     {
       title: "Слайд",
       dataIndex: "title",
+      width: windowWidth > 1024 ? 600 : undefined,
+      ellipsis: false,
       render: (_, row) => (
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 800 }}>{row.title || "(без заголовка)"}</div>
+        <div 
+          className="admin-slider-title-cell"
+          style={{ 
+            display: "grid", 
+            gap: 6,
+            maxWidth: windowWidth > 1024 ? "600px" : "100%",
+            width: windowWidth > 1024 ? "600px" : "100%",
+            overflowWrap: "break-word", 
+            wordWrap: "break-word",
+            wordBreak: "break-word",
+            whiteSpace: "normal",
+            overflow: "hidden",
+            boxSizing: "border-box"
+          }}
+        >
+          <div style={{ fontWeight: 800, lineHeight: "1.4" }}>{row.title || "(без заголовка)"}</div>
           {row.description ? (
-            <div style={{ opacity: 0.75, fontSize: 13 }}>{String(row.description).slice(0, 140)}</div>
+            <div style={{ 
+              opacity: 0.75, 
+              fontSize: 13, 
+              lineHeight: "1.4",
+              overflowWrap: "break-word",
+              wordWrap: "break-word",
+              whiteSpace: "normal"
+            }}>
+              {String(row.description)}
+            </div>
           ) : null}
           {row.url ? (
-            <div style={{ opacity: 0.65, fontSize: 12 }}>
-              Ссылка: <code>{row.url}</code>
+            <div style={{ opacity: 0.65, fontSize: 12, lineHeight: "1.4" }}>
+              Ссылка: <code style={{ wordBreak: "break-all" }}>{row.url}</code>
             </div>
           ) : null}
         </div>
@@ -153,13 +178,14 @@ export default function AdminSliderList({
     {
       title: "Действия",
       key: "actions",
-      width: 420,
+      width: 180,
       render: (_, row) => (
-        <Space wrap>
+        <Space direction="vertical" size="small" style={{ width: "100%" }}>
           <Button
-            size={isTablet ? "small" : "middle"}
+            size="small"
             disabled={!canWrite}
             onClick={() => navigate(`/admin/slider/edit/${encodeURIComponent(String(row.id))}`)}
+            block
           >
             Редактировать
           </Button>
@@ -173,31 +199,36 @@ export default function AdminSliderList({
               return false;
             }}
           >
-            <Button size={isTablet ? "small" : "middle"} disabled={!canWrite}>
+            <Button size="small" disabled={!canWrite} block>
               Картинка
             </Button>
           </Upload>
 
-          <Button
-            size={isTablet ? "small" : "middle"}
-            disabled={!canWrite}
-            onClick={() => moveRow(row.id, -1)}
-          >
-            ↑
-          </Button>
-          <Button
-            size={isTablet ? "small" : "middle"}
-            disabled={!canWrite}
-            onClick={() => moveRow(row.id, +1)}
-          >
-            ↓
-          </Button>
+          <Space size="small" style={{ width: "100%" }}>
+            <Button
+              size="small"
+              disabled={!canWrite}
+              onClick={() => moveRow(row.id, -1)}
+              style={{ flex: 1 }}
+            >
+              ↑
+            </Button>
+            <Button
+              size="small"
+              disabled={!canWrite}
+              onClick={() => moveRow(row.id, +1)}
+              style={{ flex: 1 }}
+            >
+              ↓
+            </Button>
+          </Space>
 
           <Button
             danger
-            size={isTablet ? "small" : "middle"}
+            size="small"
             disabled={!canWrite}
             onClick={() => handleDelete(row.id, row.title)}
+            block
           >
             Удалить
           </Button>
@@ -339,10 +370,11 @@ export default function AdminSliderList({
                         marginTop: '4px',
                         wordWrap: 'break-word',
                         overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
+                        whiteSpace: 'normal',
                         textAlign: 'center',
                       }}>
-                        {String(row.description).slice(0, 120)}
-                        {String(row.description).length > 120 ? '...' : ''}
+                        {String(row.description)}
                       </div>
                     ) : null}
                     {row.url ? (
@@ -469,62 +501,38 @@ export default function AdminSliderList({
       overflowX: 'hidden',
       boxSizing: 'border-box',
     }}>
-      <div className="admin-card admin-toolbar" style={{
-        padding: isTablet ? '16px' : '20px',
-        marginBottom: '16px',
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: '12px',
-        alignItems: isMobile ? 'stretch' : 'center',
-      }}>
+      <div className="admin-card admin-toolbar">
         <Input
           placeholder="Поиск по заголовку..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"
-          size={isTablet ? "middle" : "large"}
-          style={{
-            flex: 1,
-            maxWidth: isMobile ? '100%' : '400px',
-            width: '100%',
-          }}
         />
-        <Button
-          type="primary"
-          onClick={() => {
-            if (maxReached) {
-              message.error("Максимум 5 слайдов. Удалите существующий слайд, чтобы добавить новый.");
-              return;
-            }
-            navigate("/admin/slider/create");
-          }}
-          disabled={!canWrite || maxReached}
-          loading={busy}
-          size={isTablet ? "middle" : "large"}
-          style={{ fontWeight: 600 }}
-        >
-          + Добавить слайд
-        </Button>
+        <Space wrap>
+          <Button
+            type="primary"
+            onClick={() => {
+              if (maxReached) {
+                message.error("Максимум 5 слайдов. Удалите существующий слайд, чтобы добавить новый.");
+                return;
+              }
+              navigate("/admin/slider/create");
+            }}
+            disabled={!canWrite || maxReached}
+            loading={busy}
+          >
+            + Добавить слайд
+          </Button>
+        </Space>
       </div>
 
-      <div className="admin-card admin-table" style={{
-        padding: 0,
-        overflowX: 'auto',
-        maxWidth: '100%',
-        boxSizing: 'border-box',
-      }}>
+      <div className="admin-card admin-table">
         <Table
           rowKey={(r) => String(r.id)}
           columns={columns}
           dataSource={filtered}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: !isTablet,
-            showQuickJumper: !isTablet,
-            size: isTablet ? 'small' : 'default',
-          }}
-          scroll={isTablet ? { x: 'max-content' } : undefined}
-          size={isTablet ? 'small' : 'middle'}
+          pagination={{ pageSize: 10 }}
+          scroll={windowWidth > 1024 ? { x: "max-content" } : undefined}
         />
       </div>
     </div>

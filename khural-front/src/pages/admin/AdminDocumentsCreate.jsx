@@ -1,6 +1,7 @@
 import React from "react";
 import { App, Button, Input, Form, Upload, Space, Select, Switch } from "antd";
 import { useHashRoute } from "../../Router.jsx";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 const TYPE_OPTIONS = [
   { value: "laws", label: "Законы" },
@@ -28,6 +29,7 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
       }
       await onCreate({
         ...values,
+        description: values.descriptionRu || "",
         descriptionRu: values.descriptionRu || "",
         descriptionTy: values.descriptionTy || "",
         fileRu,
@@ -83,17 +85,25 @@ export default function AdminDocumentsCreate({ onCreate, busy, canWrite }) {
               <Select options={TYPE_OPTIONS} />
             </Form.Item>
 
-            <Form.Item label="Описание (русский)" name="descriptionRu">
-              <Input.TextArea
-                autoSize={{ minRows: 6, maxRows: 18 }}
-                placeholder="<p>Описание на русском языке</p>"
+            <Form.Item 
+              label="Описание (русский)" 
+              name="descriptionRu"
+              getValueFromEvent={(value) => value}
+            >
+              <TinyMCEEditor
+                height={300}
+                placeholder="Описание на русском языке"
                 disabled={busy || !canWrite}
               />
             </Form.Item>
-            <Form.Item label="Описание (тувинский)" name="descriptionTy">
-              <Input.TextArea
-                autoSize={{ minRows: 6, maxRows: 18 }}
-                placeholder="<p>Описание на тувинском языке</p>"
+            <Form.Item 
+              label="Описание (тувинский)" 
+              name="descriptionTy"
+              getValueFromEvent={(value) => value}
+            >
+              <TinyMCEEditor
+                height={300}
+                placeholder="Описание на тувинском языке"
                 disabled={busy || !canWrite}
               />
             </Form.Item>

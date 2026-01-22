@@ -3,6 +3,7 @@ import { App, Button, Input, Form, Upload, Space, Select, Switch, Card, Divider,
 import { useHashRoute } from "../../Router.jsx";
 import { DocumentsApi, TranslationApi } from "../../api/client.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 const TYPE_OPTIONS = [
   { value: "laws", label: "Законы" },
@@ -105,6 +106,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
       }
       await onUpdate?.(documentId, {
         ...values,
+        description: values.descriptionRu || "",
         descriptionRu: values.descriptionRu || "",
         descriptionTy: values.descriptionTy || "",
         fileRu,
@@ -341,17 +343,25 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
               <Select options={TYPE_OPTIONS} />
             </Form.Item>
 
-            <Form.Item label="Описание (русский)" name="descriptionRu">
-              <Input.TextArea
-                autoSize={{ minRows: 6, maxRows: 18 }}
-                placeholder="<p>Описание на русском языке</p>"
+            <Form.Item 
+              label="Описание (русский)" 
+              name="descriptionRu"
+              getValueFromEvent={(value) => value}
+            >
+              <TinyMCEEditor
+                height={300}
+                placeholder="Описание на русском языке"
                 disabled={loading || busy || !canWrite}
               />
             </Form.Item>
-            <Form.Item label="Описание (тувинский)" name="descriptionTy">
-              <Input.TextArea
-                autoSize={{ minRows: 6, maxRows: 18 }}
-                placeholder="<p>Описание на тувинском языке</p>"
+            <Form.Item 
+              label="Описание (тувинский)" 
+              name="descriptionTy"
+              getValueFromEvent={(value) => value}
+            >
+              <TinyMCEEditor
+                height={300}
+                placeholder="Описание на тувинском языке"
                 disabled={loading || busy || !canWrite}
               />
             </Form.Item>

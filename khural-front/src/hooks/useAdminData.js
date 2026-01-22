@@ -571,6 +571,8 @@ export function useAdminData() {
   const createDocument = React.useCallback(async ({
     title,
     description,
+    descriptionRu,
+    descriptionTy,
     type,
     category,
     number,
@@ -606,9 +608,12 @@ export function useAdminData() {
       };
       const created = await DocumentsApi.create({
         title: safeString(title),
-        content: safeString(description) || "",
+        content: safeString(description || descriptionRu) || "",
         type: mapDocType(type),
-        metadata: category ? { category } : undefined,
+        metadata: category ? { 
+          category,
+          ...(descriptionTy ? { descriptionTy: safeString(descriptionTy) } : {})
+        } : (descriptionTy ? { descriptionTy: safeString(descriptionTy) } : undefined),
         number: safeString(number),
         publishedAt: date ? Date.parse(date) : undefined,
         isPublished: isPublished ?? false,
@@ -627,7 +632,7 @@ export function useAdminData() {
 
   const updateDocument = React.useCallback(async (
     id,
-    { title, description, type, category, number, date, fileRu, fileTy, isPublished }
+    { title, description, descriptionRu, descriptionTy, type, category, number, date, fileRu, fileTy, isPublished }
   ) => {
     setBusy(true);
     try {
@@ -656,9 +661,12 @@ export function useAdminData() {
       };
       await DocumentsApi.patch(id, {
         title: safeString(title),
-        content: safeString(description) || "",
+        content: safeString(description || descriptionRu) || "",
         type: mapDocType(type),
-        metadata: category ? { category } : undefined,
+        metadata: category ? { 
+          category,
+          ...(descriptionTy ? { descriptionTy: safeString(descriptionTy) } : {})
+        } : (descriptionTy ? { descriptionTy: safeString(descriptionTy) } : undefined),
         number: safeString(number),
         publishedAt: date ? Date.parse(date) : undefined,
         isPublished: isPublished ?? false,

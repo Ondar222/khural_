@@ -76,51 +76,74 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
     {
       title: "Название",
       dataIndex: "title",
-      render: (v) => <div className="admin-docs-list__title">{v || "—"}</div>,
+      width: windowWidth > 1024 ? 600 : undefined,
+      ellipsis: false,
+      render: (v) => (
+        <div 
+          className="admin-docs-title-cell"
+          style={{ 
+            maxWidth: windowWidth > 1024 ? "600px" : "100%",
+            width: windowWidth > 1024 ? "600px" : "100%",
+            overflowWrap: "break-word", 
+            wordWrap: "break-word",
+            wordBreak: "break-word",
+            lineHeight: "1.4",
+            whiteSpace: "normal",
+            overflow: "hidden",
+            boxSizing: "border-box"
+          }}
+        >
+          {v || "—"}
+        </div>
+      ),
     },
     {
       title: "№ / Дата",
       key: "meta",
-      width: 160,
+      width: 140,
       render: (_, row) => (
-        <div className="admin-docs-list__meta">
+        <div style={{ fontSize: "13px", lineHeight: "1.4" }}>
           <div>{row.number || "—"}</div>
-          <div>{row.publishedAt ? new Date(row.publishedAt).toLocaleDateString("ru-RU") : "—"}</div>
+          <div style={{ opacity: 0.8, marginTop: "2px" }}>
+            {row.publishedAt ? new Date(row.publishedAt).toLocaleDateString("ru-RU") : "—"}
+          </div>
         </div>
       ),
     },
     {
       title: "Тип",
       dataIndex: "type",
-      width: 180,
+      width: 150,
       render: (v) => renderTypeTag(v),
     },
     {
       title: "Файлы",
       key: "files",
-      width: 120,
+      width: 100,
       render: (_, row) => renderFilesTag(row),
     },
     {
       title: "Действия",
       key: "actions",
-      width: 220,
+      width: 180,
       render: (_, row) => (
-        <Space wrap className="admin-docs-list__actions">
+        <Space direction="vertical" size="small" style={{ width: "100%" }}>
           <Button
-            size={isTablet ? "small" : "middle"}
+            size="small"
             onClick={() => {
               navigate(`/admin/documents/${row.id}`);
             }}
             disabled={!canWrite}
+            block
           >
             Редактировать
           </Button>
-          <Button
-            danger
-            size={isTablet ? "small" : "middle"}
-            onClick={() => confirmDelete(row)}
+          <Button 
+            danger 
+            size="small"
+            onClick={() => confirmDelete(row)} 
             disabled={!canWrite}
+            block
           >
             Удалить
           </Button>
@@ -130,70 +153,28 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
   ];
 
   const toolbar = (
-    <div className="admin-card admin-toolbar admin-docs-list__toolbar">
-      <div className="admin-docs-list__toolbar-left">
-        <Input
-          placeholder="Поиск по названию..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="admin-input"
-          size={isMobile ? "large" : "middle"}
-        />
-      </div>
-      <div className="admin-docs-list__toolbar-right">
+    <div className="admin-card admin-toolbar">
+      <Input
+        placeholder="Поиск по названию..."
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        className="admin-input"
+      />
+      <Space wrap>
         <Button
           type="primary"
           onClick={() => navigate("/admin/documents/create")}
           disabled={!canWrite}
-          size={isMobile ? "large" : "middle"}
+          loading={busy}
         >
           + Создать документ
         </Button>
-      </div>
+      </Space>
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <div className="admin-grid admin-docs-list">
-        {toolbar}
-
-        {Array.isArray(filtered) && filtered.length ? (
-          <div className="admin-cards admin-docs-list__cards">
-            {filtered.map((row) => (
-              <div key={String(row.id)} className="admin-card admin-docs-list__card">
-                <div className="admin-docs-list__card-head">
-                  <div className="admin-docs-list__card-title">{row.title || "—"}</div>
-                  <div className="admin-docs-list__badges">
-                    {renderTypeTag(row.type)}
-                    {renderFilesTag(row)}
-                  </div>
-                  <div className="admin-docs-list__meta">
-                    <div>{row.number || "—"}</div>
-                    <div>{row.publishedAt ? new Date(row.publishedAt).toLocaleDateString("ru-RU") : "—"}</div>
-                  </div>
-                </div>
-
-                <div className="admin-docs-list__card-actions">
-                  <Button onClick={() => navigate(`/admin/documents/${row.id}`)} disabled={!canWrite} block>
-                    Редактировать
-                  </Button>
-                  <Button danger onClick={() => confirmDelete(row)} disabled={!canWrite} block>
-                    Удалить
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="admin-card admin-docs-list__empty">Нет данных</div>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="admin-grid admin-docs-list">
+    <div className="admin-grid">
       {toolbar}
 
       <div className="admin-card admin-table">
@@ -201,13 +182,8 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
           rowKey={(r) => String(r.id)}
           columns={columns}
           dataSource={filtered}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: !isTablet,
-            showQuickJumper: !isTablet,
-            size: isTablet ? "small" : "default",
-          }}
-          scroll={isTablet ? { x: "max-content" } : undefined}
+          pagination={{ pageSize: 10 }}
+          scroll={windowWidth > 1024 ? { x: "max-content" } : undefined}
         />
       </div>
     </div>

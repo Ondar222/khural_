@@ -5985,75 +5985,6 @@ body.admin-mode[data-admin-theme="light"] .admin-pages-list__row--system > td {
 }
 
 /* Documents list */
-.admin-docs-list__toolbar {
-  gap: 14px;
-}
-.admin-docs-list__toolbar-left {
-  flex: 1 1 520px;
-  min-width: min(520px, 100%);
-}
-.admin-docs-list__toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.admin-docs-list__title {
-  font-weight: 900;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.admin-docs-list__meta {
-  font-size: 12px;
-  opacity: 0.85;
-  line-height: 1.35;
-}
-.admin-docs-list__actions .ant-btn {
-  font-weight: 700;
-}
-.admin-docs-list__cards {
-  gap: 12px;
-}
-.admin-docs-list__card {
-  display: grid;
-  gap: 12px;
-}
-.admin-docs-list__card-title {
-  font-weight: 900;
-  font-size: 16px;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-.admin-docs-list__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.admin-docs-list__card-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.admin-docs-list__empty {
-  padding: 28px 16px;
-  text-align: center;
-  opacity: 0.7;
-}
-@media (max-width: 768px) {
-  .admin-docs-list__toolbar {
-    padding: 16px;
-  }
-  .admin-docs-list__toolbar-right {
-    width: 100%;
-  }
-  .admin-docs-list__toolbar-right .ant-btn {
-    flex: 1 1 auto;
-  }
-  .admin-docs-list__card-actions {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* Events list */
 .admin-events-list__toolbar {
@@ -7459,6 +7390,20 @@ body.admin-mode .admin-table .ant-table-tbody > tr > td {
 }
 body.admin-mode[data-admin-theme="light"] .admin-table .ant-table-tbody > tr > td {
   border-bottom-color: rgba(15, 23, 42, 0.06);
+}
+/* Разрешаем перенос текста в колонке названия документов */
+body.admin-mode .admin-table .ant-table-tbody > tr > td .admin-docs-title-cell {
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+}
+/* Разрешаем перенос текста в колонке слайдов */
+body.admin-mode .admin-table .ant-table-tbody > tr > td .admin-slider-title-cell {
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
 }
 @media (max-width: 959px) {
   body.admin-mode .admin-table .ant-table {
