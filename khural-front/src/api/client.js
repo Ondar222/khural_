@@ -535,6 +535,40 @@ export const AppealsApi = {
     }
     return apiFetch(`/appeals/${id}`, { method: "PATCH", body, auth: true });
   },
+  async uploadFiles(id, files) {
+    const sid = encodeURIComponent(String(id));
+    const formData = new FormData();
+    const fileArray = Array.isArray(files) ? files : files ? [files] : [];
+    fileArray.forEach((file) => {
+      if (file && (file instanceof File || file.originFileObj)) {
+        formData.append("files", file.originFileObj || file);
+      }
+    });
+    
+    // Для FormData используем прямой fetch, так как apiFetch пытается сериализовать в JSON
+    const url = API_BASE_URL.replace(/\/+$/, "") + "/" + `appeals/${sid}/files`.replace(/^\/+/, "");
+    const token = getAuthToken();
+    const headers = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    // Не устанавливаем Content-Type - браузер сам установит с boundary для FormData
+    
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      const error = new Error(errorData?.message || `Request failed: ${res.status}`);
+      error.status = res.status;
+      throw error;
+    }
+    
+    return await res.json().catch(() => ({}));
+  },
   async remove(id) {
     const sid = encodeURIComponent(String(id));
     // Some deployments expose admin-only delete under /appeals/admin/:id

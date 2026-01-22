@@ -178,6 +178,8 @@ function normalizeAppeal(a) {
     number: String(number || "").trim(),
     subject: a?.subject || a?.title || "",
     message: a?.message || a?.text || a?.content || "",
+    response: a?.response || a?.adminResponse || a?.adminMessage || "",
+    files: Array.isArray(a?.files) ? a.files : Array.isArray(a?.fileList) ? a.fileList : [],
     status: String(s?.name || "Принято"),
     statusId: s?.id ?? null,
     statusCode: s?.code ?? null,

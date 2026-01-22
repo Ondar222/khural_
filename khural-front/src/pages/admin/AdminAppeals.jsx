@@ -1,5 +1,6 @@
 import React from "react";
-import { App, Button, Input, Modal, Popconfirm, Space, Table, Tag, Select, Form } from "antd";
+import { App, Button, Input, Modal, Popconfirm, Space, Table, Tag, Select, Form, Upload } from "antd";
+import { FileOutlined, DownloadOutlined, UploadOutlined, DeleteOutlined } from "@ant-design/icons";
 import { AppealsApi } from "../../api/client.js";
 
 const STATUS_OPTIONS = [
@@ -41,6 +42,8 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
   const [statusChangeModalOpen, setStatusChangeModalOpen] = React.useState(false);
   const [statusChangeAppeal, setStatusChangeAppeal] = React.useState(null);
   const [statusChangeForm] = Form.useForm();
+  const [uploadingFiles, setUploadingFiles] = React.useState(false);
+  const [fileList, setFileList] = React.useState([]);
   const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
   React.useEffect(() => {
@@ -113,15 +116,20 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
 
   const handleDelete = async (row) => {
     if (!row?.id) return;
+    if (!canWrite) {
+      message.warning("Нет прав на удаление");
+      return;
+    }
     try {
       await AppealsApi.remove(row.id);
       message.success("Обращение удалено");
-      // Ask admin data hook to refresh list (AdminAppealsPage doesn't pass callbacks).
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("khural:admin:reload"));
-      }
+      // Закрываем модальное окно, если удаляемое обращение открыто
       if (selectedAppeal && String(selectedAppeal.id) === String(row.id)) {
         closeDetailModal();
+      }
+      // Обновляем список обращений через событие
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("khural:admin:reload"));
       }
     } catch (e) {
       message.error(e?.message || "Не удалось удалить обращение");
@@ -131,11 +139,57 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
   const openDetailModal = (appeal) => {
     setSelectedAppeal(appeal);
     setDetailModalOpen(true);
+    // Инициализируем список файлов из обращения
+    if (appeal?.files && Array.isArray(appeal.files)) {
+      setFileList(
+        appeal.files.map((file, index) => ({
+          uid: file?.id || file?.fileId || `-${index}`,
+          name: file?.name || file?.filename || file?.originalName || `Файл ${index + 1}`,
+          status: "done",
+          url: file?.url || file?.link || file?.path || "",
+          response: file,
+        }))
+      );
+    } else {
+      setFileList([]);
+    }
   };
 
   const closeDetailModal = () => {
     setDetailModalOpen(false);
     setSelectedAppeal(null);
+    setFileList([]);
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedAppeal?.id || !fileList.length) return;
+    
+    const filesToUpload = fileList.filter((file) => file.originFileObj || file.status === "uploading");
+    if (!filesToUpload.length) {
+      message.warning("Выберите файлы для загрузки");
+      return;
+    }
+
+    setUploadingFiles(true);
+    try {
+      await AppealsApi.uploadFiles(selectedAppeal.id, filesToUpload.map((f) => f.originFileObj || f));
+      message.success("Файлы успешно загружены");
+      // Обновляем список обращений
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("khural:admin:reload"));
+      }
+      // Обновляем локальное состояние обращения
+      const updatedFiles = fileList
+        .filter((f) => f.status === "done")
+        .map((f) => f.response || { name: f.name, url: f.url });
+      setSelectedAppeal({ ...selectedAppeal, files: updatedFiles });
+      setFileList(fileList.map((f) => ({ ...f, status: "done", originFileObj: undefined })));
+    } catch (e) {
+      message.error(e?.message || "Не удалось загрузить файлы");
+      setFileList(fileList.map((f) => (f.status === "uploading" ? { ...f, status: "error" } : f)));
+    } finally {
+      setUploadingFiles(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -401,6 +455,102 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
                 {selectedAppeal.message || "—"}
               </div>
             </div>
+
+            <div>
+              <div style={{ marginBottom: 8, fontWeight: 600 }}>Файлы:</div>
+              <Upload
+                fileList={fileList}
+                onChange={({ fileList: newFileList }) => {
+                  setFileList(newFileList);
+                }}
+                beforeUpload={(file) => {
+                  // Не загружаем автоматически, загружаем по кнопке
+                  const newFileList = [...fileList, { uid: file.uid, name: file.name, status: "uploading", originFileObj: file }];
+                  setFileList(newFileList);
+                  return false; // Предотвращаем автоматическую загрузку
+                }}
+                onRemove={(file) => {
+                  const newFileList = fileList.filter((f) => f.uid !== file.uid);
+                  setFileList(newFileList);
+                }}
+                multiple
+                disabled={!canWrite || busy || uploadingFiles}
+              >
+                <Button icon={<UploadOutlined />} disabled={!canWrite || busy || uploadingFiles}>
+                  Прикрепить файл
+                </Button>
+              </Upload>
+              {fileList.some((f) => f.originFileObj || f.status === "uploading") && (
+                <Button
+                  type="primary"
+                  onClick={handleFileUpload}
+                  loading={uploadingFiles}
+                  disabled={!canWrite || busy || uploadingFiles}
+                  style={{ marginTop: 8 }}
+                >
+                  Загрузить файлы
+                </Button>
+              )}
+              {selectedAppeal.files && Array.isArray(selectedAppeal.files) && selectedAppeal.files.length > 0 && (
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>Загруженные файлы:</div>
+                  {selectedAppeal.files.map((file, index) => {
+                    const fileUrl = file?.url || file?.link || file?.path || "";
+                    const fileName = file?.name || file?.filename || file?.originalName || `Файл ${index + 1}`;
+                    const fileId = file?.id || file?.fileId || "";
+                    
+                    return (
+                      <div
+                        key={fileId || index}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "8px 12px",
+                          backgroundColor: "#f5f5f5",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        <FileOutlined style={{ color: "#1890ff" }} />
+                        <span style={{ flex: 1, wordBreak: "break-word" }}>{fileName}</span>
+                        {fileUrl && (
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<DownloadOutlined />}
+                            onClick={() => {
+                              window.open(fileUrl, "_blank");
+                            }}
+                          >
+                            Скачать
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {selectedAppeal.response && (
+              <div>
+                <div style={{ marginBottom: 8, fontWeight: 600 }}>Ответ администратора:</div>
+                <div
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    lineHeight: "1.6",
+                    padding: "12px",
+                    backgroundColor: "#e6f7ff",
+                    border: "1px solid #91d5ff",
+                    borderRadius: "4px",
+                    color: "#0050b3",
+                  }}
+                >
+                  {selectedAppeal.response}
+                </div>
+              </div>
+            )}
 
             <div>
               <div style={{ marginBottom: 8, fontWeight: 600 }}>Изменить статус:</div>
