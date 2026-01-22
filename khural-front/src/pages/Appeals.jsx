@@ -268,71 +268,99 @@ export default function Appeals({ embedded = false } = {}) {
   const isMineAppeal = React.useCallback(
     (appeal) => {
       if (!appeal) return false;
+      if (!user) return false; // Если нет пользователя, не показываем обращение
+      
       const id = String(appeal?.id || "");
+      // Локальные черновики всегда наши
       if (id.startsWith("local-")) return true;
+      
       const myEmail = String(user?.email || "").trim().toLowerCase();
-      const email =
+      const myId = String(user?.id || "").trim();
+      
+      // Если у нас нет ни email, ни id - не можем проверить
+      if (!myEmail && !myId) return false;
+      
+      // Проверяем email обращения
+      const appealEmail =
         String(appeal?.userEmail || appeal?.user?.email || appeal?.email || "")
           .trim()
           .toLowerCase();
-      if (myEmail && email) return myEmail === email;
-      const myId = String(user?.id || "").trim();
-      const ownerId = String(appeal?.userId || appeal?.user?.id || "").trim();
-      if (myId && ownerId) return myId === ownerId;
-      return false;
+      
+      // Проверяем ID обращения
+      const ownerId = String(appeal?.userId || appeal?.user?.id || appeal?.user_id || "").trim();
+      
+      // Строгая проверка: должно совпадать И email ИЛИ id
+      const emailMatch = myEmail && appealEmail && myEmail === appealEmail;
+      const idMatch = myId && ownerId && myId === ownerId;
+      
+      // Возвращаем true только если есть совпадение по email ИЛИ по id
+      return emailMatch || idMatch;
     },
-    [user?.email, user?.id]
+    [user]
   );
 
   React.useEffect(() => {
     // keep local history isolated per user
+    if (!user) {
+      setHistory([]);
+      return;
+    }
+    // Очищаем историю при смене пользователя
     const local = loadLocal(user);
     const hid = loadHiddenIds(user);
     setHiddenIds(hid);
+    // Строгая фильтрация - только обращения текущего пользователя
     const filtered = (Array.isArray(local) ? local : [])
-      .filter(isMineAppeal)
+      .filter((a) => {
+        const isMine = isMineAppeal(a);
+        // Если обращение не наше, не включаем его
+        return isMine;
+      })
       .filter((a) => !hid.has(String(a?.id ?? "")));
-    if (filtered.length !== (Array.isArray(local) ? local.length : 0)) {
-      saveLocal(user, filtered);
-    }
+    // Всегда сохраняем отфильтрованные данные для очистки хранилища от чужих обращений
+    saveLocal(user, filtered);
     setHistory(filtered);
-  }, [user?.id, user?.email]);
+  }, [user, isMineAppeal]);
 
   const loadHistory = React.useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) {
+      setHistory([]);
+      return;
+    }
     setHistoryBusy(true);
     try {
       const res = await AppealsApi.listMine({ page: 1, limit: 50 });
       const hid = loadHiddenIds(user);
       setHiddenIds(hid);
-      const items = normalizeServerList(res)
-        .map(normalizeAppeal)
-        .filter(isMineAppeal)
-        .filter((a) => !hid.has(String(a?.id ?? "")));
-      if (items.length) {
-        setHistory(items);
-        saveLocal(user, items);
-      } else {
-        // if backend returns empty, keep local cache
-        const local = loadLocal(user);
-        const filtered = (Array.isArray(local) ? local : [])
-          .filter(isMineAppeal)
-          .filter((a) => !hid.has(String(a?.id ?? "")));
-        if (filtered.length !== (Array.isArray(local) ? local.length : 0)) {
-          saveLocal(user, filtered);
+      
+      // Нормализуем и строго фильтруем - только обращения текущего пользователя
+      const allItems = normalizeServerList(res).map(normalizeAppeal);
+      const myItems = allItems.filter((a) => {
+        const isMine = isMineAppeal(a);
+        // Дополнительная проверка: если обращение не наше, не включаем его
+        if (!isMine) {
+          return false;
         }
-        setHistory(filtered);
-      }
+        return !hid.has(String(a?.id ?? ""));
+      });
+      
+      // Всегда сохраняем только отфильтрованные данные
+      // Это очистит локальное хранилище от чужих обращений
+      setHistory(myItems);
+      saveLocal(user, myItems);
     } catch {
+      // При ошибке загружаем из локального хранилища, но строго фильтруем
       const local = loadLocal(user);
       const hid = loadHiddenIds(user);
       setHiddenIds(hid);
       const filtered = (Array.isArray(local) ? local : [])
-        .filter(isMineAppeal)
+        .filter((a) => {
+          const isMine = isMineAppeal(a);
+          return isMine;
+        })
         .filter((a) => !hid.has(String(a?.id ?? "")));
-      if (filtered.length !== (Array.isArray(local) ? local.length : 0)) {
-        saveLocal(user, filtered);
-      }
+      // Всегда сохраняем отфильтрованные данные для очистки хранилища
+      saveLocal(user, filtered);
       setHistory(filtered);
     } finally {
       setHistoryBusy(false);
@@ -637,10 +665,13 @@ export default function Appeals({ embedded = false } = {}) {
                         </Button>
                       </div>
                       <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-                        {(history || []).length === 0 ? (
-                          <div style={{ opacity: 0.75 }}>Пока обращений нет</div>
-                        ) : (
-                          (history || []).map((a) => (
+                        {(() => {
+                          // Строгая фильтрация - показываем только обращения текущего пользователя
+                          const myAppeals = (history || []).filter((a) => isMineAppeal(a));
+                          if (myAppeals.length === 0) {
+                            return <div style={{ opacity: 0.75 }}>Пока обращений нет</div>;
+                          }
+                          return myAppeals.map((a) => (
                             <div key={a.id} className="card" style={{ padding: 12 }}>
                               <div
                                 style={{
@@ -755,8 +786,8 @@ export default function Appeals({ embedded = false } = {}) {
                                 </div>
                               ) : null}
                             </div>
-                          ))
-                        )}
+                          ));
+                        })()}
                       </div>
                       <div style={{ marginTop: 12, opacity: 0.7, fontSize: 12 }}>
                         Статусы: «Принято», «В работе», «Ответ отправлен».
