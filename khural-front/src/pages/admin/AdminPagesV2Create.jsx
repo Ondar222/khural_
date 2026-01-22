@@ -4,6 +4,7 @@ import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from
 import { AboutApi, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { upsertPageOverride } from "../../utils/pagesOverrides.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 function slugify(input) {
   return String(input || "")
@@ -262,12 +263,12 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
           <Form.Item
             label="Содержимое (HTML)"
             name="content"
-            tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a, img и т.д. Сохраняется как есть."
+            tooltip="Используйте редактор для форматирования текста"
+            getValueFromEvent={(value) => value}
           >
-            <Input.TextArea
-              autoSize={{ minRows: 12, maxRows: 28 }}
-              placeholder="<p>Содержимое страницы</p>\n<h2>Заголовок</h2>\n<ul><li>Пункт списка</li></ul>"
-              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+            <TinyMCEEditor
+              height={400}
+              placeholder="Содержимое страницы"
             />
           </Form.Item>
 

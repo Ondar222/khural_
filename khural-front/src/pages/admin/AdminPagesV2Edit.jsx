@@ -4,6 +4,7 @@ import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from
 import { AboutApi, apiFetch, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { getPageOverrideById, upsertPageOverride } from "../../utils/pagesOverrides.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 function normalizeList(res) {
   if (Array.isArray(res)) return res;
@@ -275,13 +276,13 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           <Form.Item
             label="Содержимое (HTML)"
             name="content"
-            tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a, img и т.д. Сохраняется как есть."
+            tooltip="Используйте редактор для форматирования текста"
+            getValueFromEvent={(value) => value}
           >
-            <Input.TextArea
+            <TinyMCEEditor
+              height={400}
+              placeholder="Содержимое страницы"
               disabled={loading}
-              autoSize={{ minRows: 12, maxRows: 28 }}
-              placeholder="<p>Содержимое страницы</p>\n<h2>Заголовок</h2>\n<ul><li>Пункт списка</li></ul>"
-              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
             />
           </Form.Item>
 

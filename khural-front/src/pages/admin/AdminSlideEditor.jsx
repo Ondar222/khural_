@@ -1,7 +1,8 @@
 import React from "react";
-import { App, Button, Form, Input, Space, Switch, Upload } from "antd";
+import { App, Button, Form, Input, Switch, Upload } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { SliderApi } from "../../api/client.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 function splitDateAndDescription(desc) {
   const s = String(desc || "");
@@ -37,7 +38,6 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
   const [saving, setSaving] = React.useState(false);
   const [imageFile, setImageFile] = React.useState(null);
   const titleValue = Form.useWatch("title", form);
-  const descriptionHtml = Form.useWatch("description", form);
 
   React.useEffect(() => {
     if (mode !== "edit") return;
@@ -166,12 +166,12 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
           <Form.Item
             label="Описание (HTML)"
             name="description"
-            tooltip="Вставьте HTML (p, h1-h6, strong/em, a, ul/ol/li, img и т.д.)"
+            tooltip="Используйте редактор для форматирования текста"
+            getValueFromEvent={(value) => value}
           >
-            <Input.TextArea
-              autoSize={{ minRows: 10, maxRows: 24 }}
-              placeholder="<p>Описание</p>"
-              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+            <TinyMCEEditor
+              height={400}
+              placeholder="Описание"
               disabled={loading || saving}
             />
           </Form.Item>

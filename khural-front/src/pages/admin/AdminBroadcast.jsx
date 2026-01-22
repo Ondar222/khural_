@@ -1,6 +1,7 @@
 import React from "react";
 import { App, Button, Form, Input, Select, Switch, Card, Space, Divider, Alert } from "antd";
 import { useAdminData } from "../../hooks/useAdminData.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 const BROADCAST_TYPE_OPTIONS = [
   { value: "vk", label: "VK (ВКонтакте)" },
@@ -168,9 +169,13 @@ export default function AdminBroadcast() {
             <Input placeholder="Например: Трансляция заседания Верховного Хурала" />
           </Form.Item>
 
-          <Form.Item label="Описание" name="description">
-            <Input.TextArea
-              rows={3}
+          <Form.Item 
+            label="Описание" 
+            name="description"
+            getValueFromEvent={(value) => value}
+          >
+            <TinyMCEEditor
+              height={300}
               placeholder="Краткое описание трансляции"
             />
           </Form.Item>
