@@ -316,46 +316,118 @@ function ReportsAllConvocationsPage() {
 
 function ConvocationReportsPage({ convocationNumber }) {
   const { committees: committeesFromContext } = useData();
+  const [convocation, setConvocation] = React.useState(null);
   const [committees, setCommittees] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [currentView, setCurrentView] = React.useState("committees"); // "committees" or "documents"
+  const [reportsCategory, setReportsCategory] = React.useState("reports");
+  const [selectedCommittee, setSelectedCommittee] = React.useState(null);
+  const [selectedYear, setSelectedYear] = React.useState(null);
+  const [selectedCategory, setSelectedCategory] = React.useState(null); // For documents view
+  const [selectedYearForCategory, setSelectedYearForCategory] = React.useState(null); // For documents view
+
+  // Extract year from date string
+  const extractYear = React.useCallback((dateStr) => {
+    if (!dateStr) return null;
+    const match = String(dateStr).match(/(\d{4})/);
+    return match ? match[1] : null;
+  }, []);
 
   React.useEffect(() => {
     let alive = true;
     (async () => {
       try {
         setLoading(true);
-        const list = await CommitteesApi.list({ all: true }).catch(() => []);
+        
+        // Load convocation
+        const conv = await ConvocationsApi.getById(convocationNumber).catch(() => null);
         if (!alive) return;
         
-        // Filter committees by convocation
-        const convKeys = new Set([convocationNumber]);
-        const filtered = Array.isArray(list) ? list.filter((c) => {
-          if (!c) return false;
-          const matchKeys = committeeConvocationMatchKeys(c);
-          return matchKeys.some(key => convKeys.has(key));
-        }) : [];
+        // If not found by id, try to find in list
+        let convocationData = conv;
+        if (!convocationData) {
+          const list = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
+          const token = normalizeConvocationToken(convocationNumber);
+          convocationData = Array.isArray(list) ? list.find((c) => {
+            const cToken = normalizeConvocationToken(c.name || c.number || "");
+            return cToken === token || String(c.id) === String(convocationNumber);
+          }) : null;
+        }
         
-        // Also check committees from context
-        const fromContext = Array.isArray(committeesFromContext) ? committeesFromContext.filter((c) => {
-          if (!c) return false;
-          const matchKeys = committeeConvocationMatchKeys(c);
-          return matchKeys.some(key => convKeys.has(key));
-        }) : [];
-        
-        // Merge and deduplicate
-        const all = [...filtered, ...fromContext];
-        const seen = new Set();
-        const unique = all.filter((c) => {
-          const id = String(c?.id ?? "");
-          if (!id || seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        });
-        
-        setCommittees(unique);
+        if (convocationData) {
+          setConvocation(convocationData);
+          
+          // Extract unique committee IDs from documents
+          const documents = Array.isArray(convocationData.documents) ? convocationData.documents : [];
+          const committeeIds = new Set();
+          const hasDocumentsWithoutCommittee = documents.some(doc => !doc.committeeId);
+          documents.forEach((doc) => {
+            if (doc.committeeId) {
+              committeeIds.add(String(doc.committeeId));
+            }
+          });
+          
+          // Load committees
+          const allCommittees = await CommitteesApi.list({ all: true }).catch(() => []);
+          const fromContext = Array.isArray(committeesFromContext) ? committeesFromContext : [];
+          const all = [...allCommittees, ...fromContext];
+          
+          // Filter committees that have documents or match convocation
+          const convKeys = new Set([convocationNumber, normalizeConvocationToken(convocationNumber)]);
+          const relevant = all.filter((c) => {
+            if (!c) return false;
+            // Include if has documents for this convocation
+            if (committeeIds.has(String(c.id))) return true;
+            // If there are documents without committeeId, show all committees that match convocation
+            if (hasDocumentsWithoutCommittee) {
+              const matchKeys = committeeConvocationMatchKeys(c);
+              return matchKeys.some(key => convKeys.has(key));
+            }
+            // Or if matches convocation (only if no documents without committeeId)
+            const matchKeys = committeeConvocationMatchKeys(c);
+            return matchKeys.some(key => convKeys.has(key));
+          });
+          
+          // Deduplicate
+          const seen = new Set();
+          const unique = relevant.filter((c) => {
+            const id = String(c?.id ?? "");
+            if (!id || seen.has(id)) return false;
+            seen.add(id);
+            return true;
+          });
+          
+          // Add virtual committee for documents without committeeId
+          if (hasDocumentsWithoutCommittee) {
+            unique.push({
+              id: "general",
+              title: "Общие документы",
+              name: "Общие документы",
+            });
+          }
+          
+          // Also add committees that are referenced in documents but not found in list
+          committeeIds.forEach((cid) => {
+            if (!unique.find(c => String(c.id) === cid)) {
+              unique.push({
+                id: cid,
+                title: `Комитет (ID: ${cid})`,
+                name: `Комитет (ID: ${cid})`,
+              });
+            }
+          });
+          
+          setCommittees(unique);
+        } else {
+          setConvocation(null);
+          setCommittees([]);
+        }
       } catch (error) {
-        console.error("Failed to load committees:", error);
-        if (alive) setCommittees([]);
+        console.error("Failed to load convocation:", error);
+        if (alive) {
+          setConvocation(null);
+          setCommittees([]);
+        }
       } finally {
         if (alive) setLoading(false);
       }
@@ -365,33 +437,607 @@ function ConvocationReportsPage({ convocationNumber }) {
     };
   }, [convocationNumber, committeesFromContext]);
 
+  // Group documents by committee, category, and year
+  const documentsByCommittee = React.useMemo(() => {
+    if (!convocation || !Array.isArray(convocation.documents)) return {};
+    
+    const grouped = {};
+    convocation.documents.forEach((doc) => {
+      const committeeId = doc.committeeId || "general";
+      if (!grouped[committeeId]) {
+        grouped[committeeId] = { agendas: [], reports: [] };
+      }
+      const category = doc.category === "agenda" ? "agendas" : "reports";
+      if (Array.isArray(grouped[committeeId][category])) {
+        grouped[committeeId][category].push(doc);
+      }
+    });
+    
+    return grouped;
+  }, [convocation]);
+
+  // Get documents for selected committee and category
+  const currentDocuments = React.useMemo(() => {
+    if (!selectedCommittee) return [];
+    const committeeId = String(selectedCommittee.id);
+    const category = reportsCategory === "agendas" ? "agendas" : "reports";
+    return documentsByCommittee[committeeId]?.[category] || [];
+  }, [selectedCommittee, reportsCategory, documentsByCommittee]);
+
+  // Group current documents by year
+  const documentsByYear = React.useMemo(() => {
+    const grouped = {};
+    currentDocuments.forEach((doc) => {
+      const year = extractYear(doc.date);
+      if (year) {
+        if (!grouped[year]) grouped[year] = [];
+        grouped[year].push(doc);
+      }
+    });
+    const sortedYears = Object.keys(grouped).sort((a, b) => parseInt(b) - parseInt(a));
+    return { grouped, sortedYears };
+  }, [currentDocuments, extractYear]);
+
+  // Group all documents by category and year (for "Documents" view)
+  const documentsByCategoryAndYear = React.useMemo(() => {
+    if (!convocation || !Array.isArray(convocation.documents)) return {};
+    
+    const grouped = {};
+    convocation.documents.forEach((doc) => {
+      const category = doc.category === "agenda" ? "agenda" : "report";
+      if (!grouped[category]) {
+        grouped[category] = {};
+      }
+      const year = extractYear(doc.date);
+      if (year) {
+        if (!grouped[category][year]) {
+          grouped[category][year] = [];
+        }
+        grouped[category][year].push(doc);
+      }
+    });
+    
+    // Sort years for each category
+    const result = {};
+    Object.keys(grouped).forEach((category) => {
+      const years = Object.keys(grouped[category]).sort((a, b) => parseInt(b) - parseInt(a));
+      result[category] = {
+        years,
+        documents: grouped[category],
+      };
+    });
+    
+    return result;
+  }, [convocation, extractYear]);
+
+  // Handle URL hash for navigation
+  React.useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      
+      // Check if we're in documents view
+      if (hash === "#documents" || hash.startsWith("#documents-")) {
+        setCurrentView("documents");
+        setSelectedCommittee(null);
+        
+        // Parse category and year from hash like #documents-agenda-2023
+        const categoryMatch = hash.match(/#documents-(agenda|report)(?:-(\d{4}))?/);
+        if (categoryMatch) {
+          setSelectedCategory(categoryMatch[1]);
+          setSelectedYearForCategory(categoryMatch[2] || null);
+        } else {
+          setSelectedCategory(null);
+          setSelectedYearForCategory(null);
+        }
+      } else {
+        setCurrentView("committees");
+        setSelectedCategory(null);
+        setSelectedYearForCategory(null);
+        
+        if (hash.includes("#agendas")) setReportsCategory("agendas");
+        else if (hash.includes("#reports")) setReportsCategory("reports");
+        
+        const yearMatch = hash.match(/-(\d{4})/);
+        if (yearMatch) setSelectedYear(yearMatch[1]);
+        else setSelectedYear(null);
+      }
+    };
+    handleHashChange();
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="section section-page">
+        <div className="container">
+          <div className="page-grid">
+            <div>
+              <h1>Отчеты о деятельности комитетов {convocationNumber} созыва</h1>
+              <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
+            </div>
+            <SideNav title="Разделы" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!convocation) {
+    return (
+      <section className="section section-page">
+        <div className="container">
+          <div className="page-grid">
+            <div>
+              <h1>Отчеты о деятельности комитетов {convocationNumber} созыва</h1>
+              <div className="card" style={{ padding: 24, marginTop: 20 }}>
+                <p style={{ marginTop: 0 }}>Созыв {convocationNumber} не найден.</p>
+              </div>
+            </div>
+            <SideNav title="Разделы" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Show documents view if selected
+  if (currentView === "documents" && !selectedCommittee) {
+    const hasDocuments = convocation && Array.isArray(convocation.documents) && convocation.documents.length > 0;
+    const categories = Object.keys(documentsByCategoryAndYear);
+    
+    return (
+      <section className="section section-page">
+        <div className="container">
+          <div className="page-grid">
+            <div>
+              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentView("committees");
+                    setSelectedCategory(null);
+                    setSelectedYearForCategory(null);
+                    window.location.hash = "";
+                  }}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    border: "1px solid rgba(0, 51, 102, 0.2)",
+                    background: "#fff",
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                >
+                  ← Комитеты
+                </button>
+                <h1 style={{ margin: 0, fontSize: 24 }}>Документы {convocationNumber} созыва</h1>
+              </div>
+
+              {hasDocuments ? (
+                <>
+                  {!selectedCategory ? (
+                    <div style={{ marginTop: 24 }}>
+                      <h2 style={{ marginBottom: 20 }}>Категории документов</h2>
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                        {categories.includes("agenda") && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory("agenda");
+                              setSelectedYearForCategory(null);
+                              window.location.hash = "#documents-agenda";
+                            }}
+                            style={{
+                              padding: "12px 24px",
+                              borderRadius: 8,
+                              border: "1px solid rgba(0, 51, 102, 0.2)",
+                              background: "#fff",
+                              cursor: "pointer",
+                              fontSize: 16,
+                              fontWeight: 700,
+                            }}
+                          >
+                            Повестки ({documentsByCategoryAndYear.agenda?.years?.reduce((sum, y) => sum + (documentsByCategoryAndYear.agenda.documents[y]?.length || 0), 0) || 0})
+                          </button>
+                        )}
+                        {categories.includes("report") && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory("report");
+                              setSelectedYearForCategory(null);
+                              window.location.hash = "#documents-report";
+                            }}
+                            style={{
+                              padding: "12px 24px",
+                              borderRadius: 8,
+                              border: "1px solid rgba(0, 51, 102, 0.2)",
+                              background: "#fff",
+                              cursor: "pointer",
+                              fontSize: 16,
+                              fontWeight: 700,
+                            }}
+                          >
+                            Отчеты ({documentsByCategoryAndYear.report?.years?.reduce((sum, y) => sum + (documentsByCategoryAndYear.report.documents[y]?.length || 0), 0) || 0})
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 24 }}>
+                      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(null);
+                            setSelectedYearForCategory(null);
+                            window.location.hash = "#documents";
+                          }}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: 6,
+                            border: "1px solid rgba(0, 51, 102, 0.2)",
+                            background: "#fff",
+                            cursor: "pointer",
+                            fontSize: 14,
+                          }}
+                        >
+                          ← Категории
+                        </button>
+                        <h2 style={{ margin: 0, fontSize: 20 }}>
+                          {selectedCategory === "agenda" ? "Повестки" : "Отчеты"}
+                        </h2>
+                      </div>
+
+                      {!selectedYearForCategory ? (
+                        <div>
+                          <h3 style={{ marginTop: 20, marginBottom: 16 }}>Годы</h3>
+                          <ul style={{ listStyle: "disc", paddingLeft: 24 }}>
+                            {documentsByCategoryAndYear[selectedCategory]?.years.map((year) => (
+                              <li key={year} style={{ marginBottom: 8 }}>
+                                <a
+                                  href={`#documents-${selectedCategory}-${year}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setSelectedYearForCategory(year);
+                                    window.location.hash = `#documents-${selectedCategory}-${year}`;
+                                  }}
+                                  style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}
+                                >
+                                  {year} год ({documentsByCategoryAndYear[selectedCategory].documents[year]?.length || 0} документов)
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedYearForCategory(null);
+                                window.location.hash = `#documents-${selectedCategory}`;
+                              }}
+                              style={{
+                                padding: "6px 12px",
+                                borderRadius: 6,
+                                border: "1px solid rgba(0, 51, 102, 0.2)",
+                                background: "#fff",
+                                cursor: "pointer",
+                                fontSize: 14,
+                              }}
+                            >
+                              ← Годы
+                            </button>
+                            <h3 style={{ margin: 0, fontSize: 18 }}>{selectedYearForCategory} год</h3>
+                          </div>
+                          <div className="law-list" style={{ marginTop: 20 }}>
+                            {documentsByCategoryAndYear[selectedCategory]?.documents[selectedYearForCategory]?.map((doc, idx) => {
+                              const fileUrl = doc.fileLink || (doc.fileId ? `/files/${doc.fileId}` : "");
+                              return (
+                                <div key={doc.id || idx} className="law-item" style={{ marginBottom: 16 }}>
+                                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                                    <a
+                                      href={fileUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{ color: "#2563eb", textDecoration: "none", fontWeight: 600 }}
+                                    >
+                                      {doc.title || "Документ без названия"}
+                                    </a>
+                                    {doc.size && (
+                                      <span style={{ fontSize: 12, color: "#6b7280", marginLeft: "auto" }}>
+                                        {doc.size}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {doc.date && (
+                                    <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
+                                      Дата: {doc.date}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="card" style={{ padding: 24, marginTop: 20 }}>
+                  <p style={{ marginTop: 0 }}>Документы для {convocationNumber} созыва пока отсутствуют.</p>
+                </div>
+              )}
+            </div>
+            <SideNav title="Разделы" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // If no committee selected, show list of committees
+  if (!selectedCommittee) {
+    const hasDocuments = convocation && Array.isArray(convocation.documents) && convocation.documents.length > 0;
+    
+    return (
+      <section className="section section-page">
+        <div className="container">
+          <div className="page-grid">
+            <div>
+              <h1>Отчеты о деятельности комитетов {convocationNumber} созыва</h1>
+              
+              {/* Navigation buttons */}
+              <div style={{ display: "flex", gap: 12, marginTop: 20, marginBottom: 20 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentView("committees");
+                    window.location.hash = "";
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(0, 51, 102, 0.2)",
+                    background: currentView === "committees" ? "rgba(0, 51, 102, 0.1)" : "#fff",
+                    color: currentView === "committees" ? "#003366" : "#6b7280",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontSize: 15,
+                  }}
+                >
+                  Комитеты
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentView("documents");
+                    setSelectedCategory(null);
+                    setSelectedYearForCategory(null);
+                    window.location.hash = "#documents";
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(0, 51, 102, 0.2)",
+                    background: currentView === "documents" ? "rgba(0, 51, 102, 0.1)" : "#fff",
+                    color: currentView === "documents" ? "#003366" : "#6b7280",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontSize: 15,
+                  }}
+                >
+                  Документы
+                </button>
+              </div>
+
+              {committees.length > 0 ? (
+                <ul style={{ listStyle: "disc", paddingLeft: 24, marginTop: 20 }}>
+                  {committees.map((committee) => {
+                    const committeeId = String(committee.id);
+                    const hasDocs = documentsByCommittee[committeeId] && 
+                      (documentsByCommittee[committeeId].agendas.length > 0 || 
+                       documentsByCommittee[committeeId].reports.length > 0);
+                    
+                    return (
+                      <li key={committee.id} style={{ marginBottom: 8 }}>
+                        <a
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSelectedCommittee(committee);
+                            setSelectedYear(null);
+                            setReportsCategory("reports");
+                            window.location.hash = "#reports";
+                          }}
+                          style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}
+                        >
+                          {committee.title || committee.name || "Комитет"}
+                          {hasDocs && <span style={{ marginLeft: 8, fontSize: 12, color: "#6b7280" }}>(есть документы)</span>}
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : hasDocuments ? (
+                <div className="card" style={{ padding: 24, marginTop: 20 }}>
+                  <p style={{ marginTop: 0 }}>
+                    Документы найдены, но не привязаны к комитетам. Пожалуйста, укажите комитеты в документах через админ-панель.
+                  </p>
+                  <p style={{ marginTop: 12, fontSize: 14, color: "#6b7280" }}>
+                    Всего документов: {convocation.documents.length}
+                  </p>
+                </div>
+              ) : (
+                <div className="card" style={{ padding: 24, marginTop: 20 }}>
+                  <p style={{ marginTop: 0 }}>
+                    Список комитетов для {convocationNumber} созыва пока пуст.
+                  </p>
+                </div>
+              )}
+            </div>
+            <SideNav title="Разделы" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Show documents for selected committee
   return (
     <section className="section section-page">
       <div className="container">
         <div className="page-grid">
           <div>
-            <h1>Отчеты о деятельности комитетов {convocationNumber} созыва</h1>
-            {loading ? (
-              <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
-            ) : committees.length > 0 ? (
+            <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCommittee(null);
+                  setSelectedYear(null);
+                  window.location.hash = "";
+                }}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: 6,
+                  border: "1px solid rgba(0, 51, 102, 0.2)",
+                  background: "#fff",
+                  cursor: "pointer",
+                  fontSize: 14,
+                }}
+              >
+                ← Назад к списку комитетов
+              </button>
+              <h1 style={{ margin: 0, fontSize: 24 }}>
+                {selectedCommittee.title || selectedCommittee.name || "Комитет"}
+              </h1>
+            </div>
+
+            <h2 style={{ marginTop: 24 }}>Повестки и отчеты</h2>
+            
+            {/* Category selector */}
+            <div style={{ display: "flex", gap: 12, marginTop: 20, marginBottom: 24 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setReportsCategory("agendas");
+                  setSelectedYear(null);
+                  window.location.hash = "#agendas";
+                }}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 8,
+                  border: "1px solid rgba(0, 51, 102, 0.2)",
+                  background: reportsCategory === "agendas" ? "rgba(0, 51, 102, 0.1)" : "#fff",
+                  color: reportsCategory === "agendas" ? "#003366" : "#6b7280",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontSize: 15,
+                }}
+              >
+                Повестки
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setReportsCategory("reports");
+                  setSelectedYear(null);
+                  window.location.hash = "#reports";
+                }}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: 8,
+                  border: "1px solid rgba(0, 51, 102, 0.2)",
+                  background: reportsCategory === "reports" ? "rgba(0, 51, 102, 0.1)" : "#fff",
+                  color: reportsCategory === "reports" ? "#003366" : "#6b7280",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontSize: 15,
+                }}
+              >
+                Отчеты
+              </button>
+            </div>
+
+            {documentsByYear.sortedYears.length > 0 ? (
               <>
-                <ul style={{ listStyle: "disc", paddingLeft: 24, marginTop: 20 }}>
-                  {committees.map((committee) => (
-                    <li key={committee.id} style={{ marginBottom: 8 }}>
-                      <a
-                        href={`/committee?id=${encodeURIComponent(committee.id)}#reports`}
-                        style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}
+                {!selectedYear ? (
+                  <ul style={{ listStyle: "disc", paddingLeft: 24, marginTop: 20 }}>
+                    {documentsByYear.sortedYears.map((year) => (
+                      <li key={year} style={{ marginBottom: 8 }}>
+                        <a
+                          href={`#${reportsCategory}-${year}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSelectedYear(year);
+                            window.location.hash = `#${reportsCategory}-${year}`;
+                          }}
+                          style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}
+                        >
+                          {year} год
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div>
+                    <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedYear(null);
+                          window.location.hash = `#${reportsCategory}`;
+                        }}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: 6,
+                          border: "1px solid rgba(0, 51, 102, 0.2)",
+                          background: "#fff",
+                          cursor: "pointer",
+                          fontSize: 14,
+                        }}
                       >
-                        {committee.title || committee.name || "Комитет"}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+                        ← Назад
+                      </button>
+                      <h3 style={{ margin: 0 }}>{selectedYear} год</h3>
+                    </div>
+                    <ul style={{ listStyle: "none", padding: 0, marginTop: 16 }}>
+                      {documentsByYear.grouped[selectedYear].map((doc, idx) => (
+                        <li key={idx} style={{ marginBottom: 12, padding: 12, background: "#f9fafb", borderRadius: 6 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", padding: "4px 8px", background: "#fff", borderRadius: 4 }}>
+                              DOC
+                            </span>
+                            <div style={{ flex: 1 }}>
+                              <a
+                                href={doc.fileLink || (doc.fileId ? `/files/${doc.fileId}` : "#")}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
+                              >
+                                {doc.title || `${reportsCategory === "agendas" ? "Повестка" : "Отчет"} от ${doc.date || ""} г.`}
+                              </a>
+                              {doc.size && (
+                                <span style={{ marginLeft: 8, fontSize: 13, color: "#6b7280" }}>
+                                  ({doc.size})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </>
             ) : (
               <div className="card" style={{ padding: 24, marginTop: 20 }}>
                 <p style={{ marginTop: 0 }}>
-                  Список комитетов для {convocationNumber} созыва пока пуст.
+                  {reportsCategory === "agendas" ? "Повестки" : "Отчеты"} для этого комитета пока не добавлены.
                 </p>
               </div>
             )}

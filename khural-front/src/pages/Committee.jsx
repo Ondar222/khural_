@@ -85,11 +85,41 @@ export default function Committee() {
   // Get current section from URL hash or default to "about"
   const [currentSection, setCurrentSection] = React.useState(() => {
     const hash = window.location.hash;
+    if (hash.includes("#documents")) return "documents";
     if (hash.includes("#reports")) return "reports";
     if (hash.includes("#plans")) return "plans";
     if (hash.includes("#activities")) return "activities";
     if (hash.includes("#staff")) return "staff";
     return "about";
+  });
+
+  // State for reports/agendas navigation (must be declared before useEffect that uses them)
+  const [reportsCategory, setReportsCategory] = React.useState(() => {
+    if (typeof window === "undefined") return "reports";
+    const hash = window.location.hash;
+    if (hash.includes("#agendas")) return "agendas";
+    return "reports";
+  });
+  const [selectedYear, setSelectedYear] = React.useState(() => {
+    if (typeof window === "undefined") return null;
+    const hash = window.location.hash;
+    const yearMatch = hash.match(/#(?:reports|agendas)-(\d{4})/);
+    return yearMatch ? yearMatch[1] : null;
+  });
+
+  // State for documents view (grouped by category and year)
+  const [documentsCategory, setDocumentsCategory] = React.useState(() => {
+    if (typeof window === "undefined") return null;
+    const hash = window.location.hash;
+    if (hash.includes("#documents-agenda")) return "agenda";
+    if (hash.includes("#documents-report")) return "report";
+    return null;
+  });
+  const [documentsYear, setDocumentsYear] = React.useState(() => {
+    if (typeof window === "undefined") return null;
+    const hash = window.location.hash;
+    const yearMatch = hash.match(/#documents-(?:agenda|report)-(\d{4})/);
+    return yearMatch ? yearMatch[1] : null;
   });
 
   React.useEffect(() => {
@@ -125,12 +155,42 @@ export default function Committee() {
   React.useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
-      if (hash.includes("#reports")) setCurrentSection("reports");
-      else if (hash.includes("#plans")) setCurrentSection("plans");
+      if (hash.includes("#documents")) {
+        setCurrentSection("documents");
+        if (hash.includes("#documents-agenda")) {
+          setDocumentsCategory("agenda");
+          const yearMatch = hash.match(/#documents-agenda-(\d{4})/);
+          setDocumentsYear(yearMatch ? yearMatch[1] : null);
+        } else if (hash.includes("#documents-report")) {
+          setDocumentsCategory("report");
+          const yearMatch = hash.match(/#documents-report-(\d{4})/);
+          setDocumentsYear(yearMatch ? yearMatch[1] : null);
+        } else {
+          setDocumentsCategory(null);
+          setDocumentsYear(null);
+        }
+      } else if (hash.includes("#reports") || hash.includes("#agendas")) {
+        setCurrentSection("reports");
+        if (hash.includes("#agendas")) {
+          setReportsCategory("agendas");
+          const yearMatch = hash.match(/#agendas-(\d{4})/);
+          setSelectedYear(yearMatch ? yearMatch[1] : null);
+        } else {
+          setReportsCategory("reports");
+          const yearMatch = hash.match(/#reports-(\d{4})/);
+          setSelectedYear(yearMatch ? yearMatch[1] : null);
+        }
+      } else if (hash.includes("#plans")) setCurrentSection("plans");
       else if (hash.includes("#activities")) setCurrentSection("activities");
       else if (hash.includes("#staff")) setCurrentSection("staff");
-      else setCurrentSection("about");
+      else {
+        setCurrentSection("about");
+        setSelectedYear(null);
+        setDocumentsCategory(null);
+        setDocumentsYear(null);
+      }
     };
+    handleHashChange(); // Call immediately to set initial state
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
@@ -168,6 +228,87 @@ export default function Committee() {
       position: typeof d?.position === "string" ? d.position : "",
     };
   }, [deputies]);
+
+  // Extract year from date string (must be before early return)
+  const extractYear = React.useCallback((dateStr) => {
+    if (!dateStr) return null;
+    const match = String(dateStr).match(/(\d{4})/);
+    return match ? match[1] : null;
+  }, []);
+
+  // Group documents by year (must be before early return)
+  const groupByYear = React.useCallback((items) => {
+    const grouped = {};
+    items.forEach((item) => {
+      const year = extractYear(item.date || item.year);
+      if (year) {
+        if (!grouped[year]) grouped[year] = [];
+        grouped[year].push(item);
+      }
+    });
+    // Sort years descending
+    const sortedYears = Object.keys(grouped).sort((a, b) => parseInt(b) - parseInt(a));
+    return { grouped, sortedYears };
+  }, [extractYear]);
+
+  // Get reports, plans, activities, staff (only if committee exists)
+  const reports = committee ? (Array.isArray(committee.reports) ? committee.reports : []) : [];
+  const agendas = committee ? (Array.isArray(committee.agendas) ? committee.agendas : []) : [];
+  const plans = committee ? (Array.isArray(committee.plans) ? committee.plans : []) : [];
+  const activities = committee ? (Array.isArray(committee.activities) ? committee.activities : []) : [];
+  const staff = committee ? (Array.isArray(committee.staff) ? committee.staff : []) : [];
+
+  // Group by year (must be before early return)
+  const { grouped: agendasByYear, sortedYears: agendaYears } = groupByYear(agendas);
+  const { grouped: reportsByYear, sortedYears: reportYears } = groupByYear(reports);
+
+  // Group all documents by category and year (for "Documents" view)
+  const documentsByCategoryAndYear = React.useMemo(() => {
+    if (!committee) return {};
+    
+    // Combine reports and agendas with category markers
+    const allDocs = [
+      ...reports.map(doc => ({ ...doc, category: "report" })),
+      ...agendas.map(doc => ({ ...doc, category: "agenda" })),
+    ];
+    
+    const grouped = {};
+    allDocs.forEach((doc) => {
+      const category = doc.category || "report";
+      if (!grouped[category]) {
+        grouped[category] = {};
+      }
+      const year = extractYear(doc.date);
+      if (year) {
+        if (!grouped[category][year]) {
+          grouped[category][year] = [];
+        }
+        grouped[category][year].push(doc);
+      }
+    });
+    
+    // Sort years for each category
+    const result = {};
+    Object.keys(grouped).forEach((category) => {
+      const years = Object.keys(grouped[category]).sort((a, b) => parseInt(b) - parseInt(a));
+      result[category] = {
+        years,
+        documents: grouped[category],
+      };
+    });
+    
+    return result;
+  }, [committee, reports, agendas, extractYear]);
+
+  // Resolve members only if committee exists
+  const members = committee ? ((committee.members || []).map(resolveMember).filter(Boolean)) : [];
+  // Находим председателя (тот, у кого роль содержит "председатель")
+  const leader = members.find((m) => 
+    m.role && m.role.toLowerCase().includes("председатель")
+  ) || members[0];
+  // Остальные члены (исключаем председателя)
+  const rest = members.filter((m) => m.id !== leader?.id);
+  const backToCommittee = committee ? encodeURIComponent(`/committee?id=${encodeURIComponent(committee.id)}`) : "";
 
   // Если нет id - показываем список комитетов
   if (!committee) {
@@ -250,20 +391,6 @@ export default function Committee() {
     );
   }
 
-  // Resolve members only if committee exists
-  const members = committee ? ((committee.members || []).map(resolveMember).filter(Boolean)) : [];
-  // Находим председателя (тот, у кого роль содержит "председатель")
-  const leader = members.find((m) => 
-    m.role && m.role.toLowerCase().includes("председатель")
-  ) || members[0];
-  // Остальные члены (исключаем председателя)
-  const rest = members.filter((m) => m.id !== leader?.id);
-  // Get reports, plans, activities, staff (only if committee exists)
-  const reports = committee ? (Array.isArray(committee.reports) ? committee.reports : []) : [];
-  const plans = committee ? (Array.isArray(committee.plans) ? committee.plans : []) : [];
-  const activities = committee ? (Array.isArray(committee.activities) ? committee.activities : []) : [];
-  const staff = committee ? (Array.isArray(committee.staff) ? committee.staff : []) : [];
-  const backToCommittee = committee ? encodeURIComponent(`/committee?id=${encodeURIComponent(committee.id)}`) : "";
 
   return (
     <section className="section">
@@ -448,44 +575,213 @@ export default function Committee() {
               </>
             )}
 
-            {/* Отчеты */}
+            {/* Отчеты и Повестки */}
             {currentSection === "reports" && (
               <div>
-                <h2 style={{ marginTop: 24 }}>Отчеты комитета</h2>
-                {reports.length > 0 ? (
-                  <div style={{ marginTop: 16 }}>
-                    {reports.map((report, idx) => (
-                      <div key={idx} className="card" style={{ marginBottom: 16, padding: 20 }}>
-                        <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>
-                          {report.title || `Отчет ${idx + 1}`}
-                        </div>
-                        {report.date && (
-                          <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
-                            Дата: {report.date}
+                <h2 style={{ marginTop: 24 }}>Отчеты и повестки комитета</h2>
+                
+                {/* Category selector */}
+                <div style={{ display: "flex", gap: 12, marginTop: 20, marginBottom: 24 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReportsCategory("agendas");
+                      setSelectedYear(null);
+                      window.location.hash = "#agendas";
+                    }}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: 8,
+                      border: "1px solid rgba(0, 51, 102, 0.2)",
+                      background: reportsCategory === "agendas" ? "rgba(0, 51, 102, 0.1)" : "#fff",
+                      color: reportsCategory === "agendas" ? "#003366" : "#6b7280",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontSize: 15,
+                    }}
+                  >
+                    Повестки
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReportsCategory("reports");
+                      setSelectedYear(null);
+                      window.location.hash = "#reports";
+                    }}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: 8,
+                      border: "1px solid rgba(0, 51, 102, 0.2)",
+                      background: reportsCategory === "reports" ? "rgba(0, 51, 102, 0.1)" : "#fff",
+                      color: reportsCategory === "reports" ? "#003366" : "#6b7280",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      fontSize: 15,
+                    }}
+                  >
+                    Отчеты
+                  </button>
+                </div>
+
+                {reportsCategory === "agendas" ? (
+                  <>
+                    {agendaYears.length > 0 ? (
+                      <>
+                        {!selectedYear ? (
+                          <ul style={{ listStyle: "disc", paddingLeft: 24, marginTop: 20 }}>
+                            {agendaYears.map((year) => (
+                              <li key={year} style={{ marginBottom: 8 }}>
+                                <a
+                                  href={`#agendas-${year}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setSelectedYear(year);
+                                    window.location.hash = `#agendas-${year}`;
+                                  }}
+                                  style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}
+                                >
+                                  {year} год
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div>
+                            <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedYear(null);
+                                  window.location.hash = "#agendas";
+                                }}
+                                style={{
+                                  padding: "6px 12px",
+                                  borderRadius: 6,
+                                  border: "1px solid rgba(0, 51, 102, 0.2)",
+                                  background: "#fff",
+                                  cursor: "pointer",
+                                  fontSize: 14,
+                                }}
+                              >
+                                ← Назад
+                              </button>
+                              <h3 style={{ margin: 0 }}>{selectedYear} год</h3>
+                            </div>
+                            <ul style={{ listStyle: "none", padding: 0, marginTop: 16 }}>
+                              {agendasByYear[selectedYear].map((agenda, idx) => (
+                                <li key={idx} style={{ marginBottom: 12, padding: 12, background: "#f9fafb", borderRadius: 6 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", padding: "4px 8px", background: "#fff", borderRadius: 4 }}>
+                                      DOC
+                                    </span>
+                                    <div style={{ flex: 1 }}>
+                                      <a
+                                        href={agenda.fileLink || (agenda.fileId ? `/files/${agenda.fileId}` : "#")}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
+                                      >
+                                        {agenda.title || `Повестка заседания комитета от ${agenda.date || ""} г.`}
+                                      </a>
+                                      {agenda.size && (
+                                        <span style={{ marginLeft: 8, fontSize: 13, color: "#6b7280" }}>
+                                          ({agenda.size})
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
                         )}
-                        {report.description && (
-                          <div style={{ marginBottom: 12, lineHeight: 1.6 }}>
-                            {report.description}
-                          </div>
-                        )}
-                        {(report.fileLink || report.fileId) && (
-                          <a
-                            href={report.fileLink || `/files/${report.fileId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn--primary"
-                          >
-                            Скачать отчет
-                          </a>
-                        )}
+                      </>
+                    ) : (
+                      <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
+                        Повестки пока не добавлены
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 ) : (
-                  <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
-                    Отчеты пока не добавлены
-                  </div>
+                  <>
+                    {reportYears.length > 0 ? (
+                      <>
+                        {!selectedYear ? (
+                          <ul style={{ listStyle: "disc", paddingLeft: 24, marginTop: 20 }}>
+                            {reportYears.map((year) => (
+                              <li key={year} style={{ marginBottom: 8 }}>
+                                <a
+                                  href={`#reports-${year}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setSelectedYear(year);
+                                    window.location.hash = `#reports-${year}`;
+                                  }}
+                                  style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}
+                                >
+                                  {year} год
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div>
+                            <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedYear(null);
+                                  window.location.hash = "#reports";
+                                }}
+                                style={{
+                                  padding: "6px 12px",
+                                  borderRadius: 6,
+                                  border: "1px solid rgba(0, 51, 102, 0.2)",
+                                  background: "#fff",
+                                  cursor: "pointer",
+                                  fontSize: 14,
+                                }}
+                              >
+                                ← Назад
+                              </button>
+                              <h3 style={{ margin: 0 }}>{selectedYear} год</h3>
+                            </div>
+                            <ul style={{ listStyle: "none", padding: 0, marginTop: 16 }}>
+                              {reportsByYear[selectedYear].map((report, idx) => (
+                                <li key={idx} style={{ marginBottom: 12, padding: 12, background: "#f9fafb", borderRadius: 6 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", padding: "4px 8px", background: "#fff", borderRadius: 4 }}>
+                                      DOC
+                                    </span>
+                                    <div style={{ flex: 1 }}>
+                                      <a
+                                        href={report.fileLink || (report.fileId ? `/files/${report.fileId}` : "#")}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
+                                      >
+                                        {report.title || `Отчет от ${report.date || ""} г.`}
+                                      </a>
+                                      {report.size && (
+                                        <span style={{ marginLeft: 8, fontSize: 13, color: "#6b7280" }}>
+                                          ({report.size})
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
+                        Отчеты пока не добавлены
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -617,11 +913,179 @@ export default function Committee() {
                 )}
               </div>
             )}
+
+            {/* Документы */}
+            {currentSection === "documents" && (
+              <div>
+                <h2 style={{ marginTop: 24 }}>Документы комитета</h2>
+                
+                {Object.keys(documentsByCategoryAndYear).length > 0 ? (
+                  <>
+                    {!documentsCategory ? (
+                      <div style={{ marginTop: 24 }}>
+                        <h3 style={{ marginBottom: 20 }}>Категории документов</h3>
+                        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                          {Object.keys(documentsByCategoryAndYear).includes("agenda") && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDocumentsCategory("agenda");
+                                setDocumentsYear(null);
+                                window.location.hash = "#documents-agenda";
+                              }}
+                              style={{
+                                padding: "12px 24px",
+                                borderRadius: 8,
+                                border: "1px solid rgba(0, 51, 102, 0.2)",
+                                background: "#fff",
+                                cursor: "pointer",
+                                fontSize: 16,
+                                fontWeight: 700,
+                              }}
+                            >
+                              Повестки ({documentsByCategoryAndYear.agenda?.years?.reduce((sum, y) => sum + (documentsByCategoryAndYear.agenda.documents[y]?.length || 0), 0) || 0})
+                            </button>
+                          )}
+                          {Object.keys(documentsByCategoryAndYear).includes("report") && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDocumentsCategory("report");
+                                setDocumentsYear(null);
+                                window.location.hash = "#documents-report";
+                              }}
+                              style={{
+                                padding: "12px 24px",
+                                borderRadius: 8,
+                                border: "1px solid rgba(0, 51, 102, 0.2)",
+                                background: "#fff",
+                                cursor: "pointer",
+                                fontSize: 16,
+                                fontWeight: 700,
+                              }}
+                            >
+                              Отчеты ({documentsByCategoryAndYear.report?.years?.reduce((sum, y) => sum + (documentsByCategoryAndYear.report.documents[y]?.length || 0), 0) || 0})
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 24 }}>
+                        <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDocumentsCategory(null);
+                              setDocumentsYear(null);
+                              window.location.hash = "#documents";
+                            }}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: 6,
+                              border: "1px solid rgba(0, 51, 102, 0.2)",
+                              background: "#fff",
+                              cursor: "pointer",
+                              fontSize: 14,
+                            }}
+                          >
+                            ← Категории
+                          </button>
+                          <h3 style={{ margin: 0, fontSize: 20 }}>
+                            {documentsCategory === "agenda" ? "Повестки" : "Отчеты"}
+                          </h3>
+                        </div>
+
+                        {!documentsYear ? (
+                          <div>
+                            <h4 style={{ marginTop: 20, marginBottom: 16 }}>Годы</h4>
+                            <ul style={{ listStyle: "disc", paddingLeft: 24 }}>
+                              {documentsByCategoryAndYear[documentsCategory]?.years.map((year) => (
+                                <li key={year} style={{ marginBottom: 8 }}>
+                                  <a
+                                    href={`#documents-${documentsCategory}-${year}`}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setDocumentsYear(year);
+                                      window.location.hash = `#documents-${documentsCategory}-${year}`;
+                                    }}
+                                    style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}
+                                  >
+                                    {year} год ({documentsByCategoryAndYear[documentsCategory].documents[year]?.length || 0} документов)
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDocumentsYear(null);
+                                  window.location.hash = `#documents-${documentsCategory}`;
+                                }}
+                                style={{
+                                  padding: "6px 12px",
+                                  borderRadius: 6,
+                                  border: "1px solid rgba(0, 51, 102, 0.2)",
+                                  background: "#fff",
+                                  cursor: "pointer",
+                                  fontSize: 14,
+                                }}
+                              >
+                                ← Годы
+                              </button>
+                              <h4 style={{ margin: 0, fontSize: 18 }}>{documentsYear} год</h4>
+                            </div>
+                            <div className="law-list" style={{ marginTop: 20 }}>
+                              {documentsByCategoryAndYear[documentsCategory]?.documents[documentsYear]?.map((doc, idx) => {
+                                const fileUrl = doc.fileLink || (doc.fileId ? `/files/${doc.fileId}` : "");
+                                return (
+                                  <div key={doc.id || idx} className="law-item" style={{ marginBottom: 16 }}>
+                                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                                      <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: "#2563eb", textDecoration: "none", fontWeight: 600 }}
+                                      >
+                                        {doc.title || "Документ без названия"}
+                                      </a>
+                                      {doc.size && (
+                                        <span style={{ fontSize: 12, color: "#6b7280", marginLeft: "auto" }}>
+                                          {doc.size}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {doc.date && (
+                                      <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
+                                        Дата: {doc.date}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
+                    Документы пока не добавлены
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <SideNav
             title={committee.name || committee.title}
             links={[
               { label: "О комитете", href: `/committee?id=${committee.id}#about` },
+              { label: "Документы", href: `/committee?id=${committee.id}#documents` },
+              { label: "Повестки", href: `/committee?id=${committee.id}#agendas` },
               { label: "Отчеты", href: `/committee?id=${committee.id}#reports` },
               { label: "Планы", href: `/committee?id=${committee.id}#plans` },
               { label: "Деятельность", href: `/committee?id=${committee.id}#activities` },
