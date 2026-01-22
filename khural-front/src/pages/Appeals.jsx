@@ -124,6 +124,7 @@ function normalizeAppeal(a) {
     number: String(number || "").trim(),
     subject: a?.subject || a?.title || "",
     message: a?.message || a?.text || "",
+    response: a?.response || a?.adminResponse || a?.adminMessage || "",
     status: String(status),
     createdAt: String(createdAt),
     userEmail: String(userEmail),
@@ -204,6 +205,29 @@ function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
               {appeal.message || "—"}
             </div>
           </div>
+
+          {appeal.response && (
+            <div style={{ marginBottom: 16, marginTop: 24 }}>
+              <strong style={{ display: "block", marginBottom: 8, color: "#1890ff" }}>
+                {t("Ответ администратора") || "Ответ администратора"}:
+              </strong>
+              <div
+                style={{
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  lineHeight: "1.6",
+                  padding: "16px",
+                  backgroundColor: "#e6f7ff",
+                  border: "1px solid #91d5ff",
+                  borderRadius: "8px",
+                  fontSize: 14,
+                  color: "#0050b3",
+                }}
+              >
+                {appeal.response}
+              </div>
+            </div>
+          )}
 
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
             {typeof onDelete === "function" ? (
@@ -642,6 +666,11 @@ export default function Appeals({ embedded = false } = {}) {
                                   >
                                     {a.status}
                                   </Tag>
+                                  {a.response && (
+                                    <Tag color="blue" style={{ borderStyle: "dashed" }}>
+                                      Есть ответ
+                                    </Tag>
+                                  )}
                                   <div style={{ opacity: 0.7, fontSize: 12 }}>
                                     {a.createdAt ? new Date(a.createdAt).toLocaleString("ru-RU") : ""}
                                   </div>
@@ -670,6 +699,32 @@ export default function Appeals({ embedded = false } = {}) {
                                   >
                                     {a.message}
                                   </div>
+                                  {a.response && (
+                                    <div
+                                      style={{
+                                        marginTop: 8,
+                                        padding: "8px 12px",
+                                        backgroundColor: "#e6f7ff",
+                                        border: "1px solid #91d5ff",
+                                        borderRadius: "4px",
+                                        fontSize: 13,
+                                        color: "#0050b3",
+                                      }}
+                                    >
+                                      <strong>Ответ администратора:</strong>{" "}
+                                      <span
+                                        style={{
+                                          display: "-webkit-box",
+                                          WebkitLineClamp: 2,
+                                          WebkitBoxOrient: "vertical",
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                        }}
+                                      >
+                                        {a.response}
+                                      </span>
+                                    </div>
+                                  )}
                                   <Button
                                     type="link"
                                     size="small"

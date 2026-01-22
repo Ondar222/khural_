@@ -507,8 +507,8 @@ export const AppealsApi = {
       return apiFetch(`/appeals${suffix}`, { method: "GET", auth: true });
     }
   },
-  async updateStatus(id, status, message) {
-    // Backend expects PATCH /appeals/:id with { statusId } (number) and optionally { message } (string)
+  async updateStatus(id, status, response) {
+    // Backend expects PATCH /appeals/:id with { statusId } (number) and optionally { response } (string)
     let statusId = null;
     if (typeof status === "number") {
       statusId = status;
@@ -530,8 +530,8 @@ export const AppealsApi = {
       throw new Error("Не удалось определить ID статуса обращения");
     }
     const body = { statusId };
-    if (message && typeof message === "string" && message.trim()) {
-      body.message = message.trim();
+    if (response && typeof response === "string" && response.trim()) {
+      body.response = response.trim();
     }
     return apiFetch(`/appeals/${id}`, { method: "PATCH", body, auth: true });
   },

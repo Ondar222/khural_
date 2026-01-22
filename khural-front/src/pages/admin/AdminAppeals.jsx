@@ -77,7 +77,7 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
     setStatusChangeModalOpen(true);
     statusChangeForm.setFieldsValue({
       status: newStatus,
-      message: "",
+      response: "",
     });
   };
 
@@ -91,7 +91,7 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
     if (!statusChangeAppeal) return;
     try {
       const values = await statusChangeForm.validateFields();
-      await onUpdateStatus(statusChangeAppeal.id, values.status, values.message);
+      await onUpdateStatus(statusChangeAppeal.id, values.status, values.response);
       message.success("Успешно отправлено");
       closeStatusChangeModal();
       // Обновляем локальное состояние, если обращение открыто в детальном модальном окне
@@ -462,7 +462,7 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
             </Form.Item>
 
             <Form.Item
-              name="message"
+              name="response"
               label="Сообщение (необязательно)"
               help="Сообщение будет отправлено пользователю вместе с изменением статуса"
             >

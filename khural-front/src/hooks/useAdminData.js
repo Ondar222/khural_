@@ -1037,10 +1037,10 @@ export function useAdminData() {
     }
   }, [message, reload, reloadDataContext]);
 
-  const updateAppealStatus = React.useCallback(async (id, status, message) => {
+  const updateAppealStatus = React.useCallback(async (id, status, response) => {
     setBusy(true);
     try {
-      await AppealsApi.updateStatus(id, status, message);
+      await AppealsApi.updateStatus(id, status, response);
       // Сообщение об успехе показывается в компоненте
       // Обновляем локальный список
       setAppeals((prev) =>
