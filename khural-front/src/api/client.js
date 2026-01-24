@@ -757,17 +757,20 @@ export const CommentsApi = {
   },
 };
 
+// Accessibility endpoints
 export const AccessibilityApi = {
-  async getSettings({ sessionId } = {}) {
+  async getSettings(sessionId) {
+    // GET /accessibility/settings?sessionId=... - Получить настройки доступности
     const qs = new URLSearchParams();
     if (sessionId) qs.set("sessionId", sessionId);
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return apiFetch(`/accessibility/settings${suffix}`, { method: "GET", auth: true });
   },
-  async saveSettings({ sessionId, fontSize, colorScheme, contrast, disableAnimations } = {}) {
+  async saveSettings(data) {
+    // POST /accessibility/settings - Сохранить настройки доступности
     return apiFetch("/accessibility/settings", {
       method: "POST",
-      body: { sessionId, fontSize, colorScheme, contrast, disableAnimations },
+      body: data,
       auth: true,
     });
   },
