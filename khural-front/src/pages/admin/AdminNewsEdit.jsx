@@ -136,10 +136,28 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         // Заполняем форму
         // Для краткого описания убираем HTML теги (это должно быть простым текстом)
         // Для подробного описания (content) оставляем HTML, так как используется TinyMCE
+        // Обрабатываем publishedAt: может быть timestamp (число) или ISO строка
+        let publishedAtValue = null;
+        if (news.publishedAt) {
+          if (typeof news.publishedAt === "number") {
+            // Timestamp в миллисекундах
+            publishedAtValue = dayjs(news.publishedAt);
+          } else if (typeof news.publishedAt === "string") {
+            // ISO строка или другая строка
+            publishedAtValue = dayjs(news.publishedAt);
+          } else {
+            publishedAtValue = dayjs(news.publishedAt);
+          }
+          // Проверяем, что dayjs объект валидный
+          if (!publishedAtValue.isValid()) {
+            publishedAtValue = null;
+          }
+        }
+        
         form.setFieldsValue({
           categoryId: news.category?.id,
           slug: news.slug,
-          publishedAt: news.publishedAt ? dayjs(news.publishedAt) : null,
+          publishedAt: publishedAtValue,
           isPublished: news.isPublished ?? false,
           shortDescriptionRu: stripHtmlTags(ruContent.shortDescription || ""),
           titleRu: ruContent.title || "",
@@ -304,22 +322,32 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       }
 
       // JSON-патч для текстовых данных
+      // Бэкенд ожидает timestamp в миллисекундах (число), а не ISO строку
       let publishedAtValue = undefined;
       if (values.publishedAt) {
+        let timestamp;
         if (values.publishedAt && typeof values.publishedAt.valueOf === "function") {
-          // dayjs объект
-          publishedAtValue = values.publishedAt.toISOString();
+          // dayjs объект - используем valueOf() для получения timestamp в миллисекундах
+          timestamp = values.publishedAt.valueOf();
         } else if (values.publishedAt instanceof Date) {
-          publishedAtValue = values.publishedAt.toISOString();
+          timestamp = values.publishedAt.getTime();
+        } else if (typeof values.publishedAt === "number") {
+          // Уже timestamp
+          timestamp = values.publishedAt;
         } else {
-          publishedAtValue = new Date(values.publishedAt).toISOString();
+          // Строка - конвертируем в Date и получаем timestamp
+          timestamp = new Date(values.publishedAt).getTime();
+        }
+        // Проверяем, что timestamp валидный
+        if (!isNaN(timestamp) && timestamp > 0) {
+          publishedAtValue = timestamp;
         }
       }
 
       payload = {
         categoryId: values.categoryId,
         slug: values.slug || undefined,
-        publishedAt: publishedAtValue,
+        ...(publishedAtValue !== undefined ? { publishedAt: publishedAtValue } : { publishedAt: null }),
         isPublished: values.isPublished ?? false,
         content: contentArray,
       };
@@ -353,13 +381,48 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         console.log("Gallery images uploaded");
       }
 
-      // Проверяем, что данные действительно сохранились
+      // Проверяем, что данные действительно сохранились и обновляем форму
       try {
         console.log("Verifying saved data...");
         const updatedNews = await NewsApi.getById(newsId);
         console.log("Verified saved news:", updatedNews);
-        const savedContent = Array.isArray(updatedNews.content) ? updatedNews.content : [];
-        const savedRu = savedContent.find((c) => c.locale === "ru");
+        
+        // Обновляем форму с сохраненными данными
+        const contentArray = Array.isArray(updatedNews.content) ? updatedNews.content : [];
+        const ruContent = contentArray.find((c) => c.locale === "ru") || {};
+        const tyvContent = contentArray.find((c) => c.locale === "tyv") || {};
+        
+        // Обрабатываем publishedAt из ответа
+        let publishedAtValue = null;
+        if (updatedNews.publishedAt) {
+          if (typeof updatedNews.publishedAt === "number") {
+            publishedAtValue = dayjs(updatedNews.publishedAt);
+          } else {
+            publishedAtValue = dayjs(updatedNews.publishedAt);
+          }
+          if (!publishedAtValue.isValid()) {
+            publishedAtValue = null;
+          }
+        }
+        
+        // Обновляем форму с актуальными данными
+        form.setFieldsValue({
+          categoryId: updatedNews.category?.id,
+          slug: updatedNews.slug,
+          publishedAt: publishedAtValue,
+          isPublished: updatedNews.isPublished ?? false,
+          shortDescriptionRu: stripHtmlTags(ruContent.shortDescription || ""),
+          titleRu: ruContent.title || "",
+          contentRu: decodeHtmlEntities(ruContent.content || ""),
+          shortDescriptionTy: stripHtmlTags(tyvContent.shortDescription || ""),
+          titleTy: tyvContent.title || "",
+          contentTy: decodeHtmlEntities(tyvContent.content || ""),
+        });
+        
+        // Обновляем локальное состояние
+        setNewsData(updatedNews);
+        
+        const savedRu = ruContent;
         if (savedRu) {
           console.log("Saved RU content:", {
             title: savedRu.title,
@@ -539,6 +602,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
                 format="DD.MM.YYYY HH:mm"
                 style={{ width: "100%" }}
                 placeholder="Выберите дату публикации"
+                allowClear
               />
             </Form.Item>
             <Form.Item label="Опубликовано" name="isPublished" valuePropName="checked" initialValue={false}>

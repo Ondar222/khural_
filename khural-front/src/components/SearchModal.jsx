@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { SearchApi } from "../api/client.js";
+import { formatNewsDateTime } from "../utils/dateFormat.js";
 
 export default function SearchModal({ open, onClose }) {
   const { news, documents } = useData();
@@ -100,7 +101,7 @@ export default function SearchModal({ open, onClose }) {
         id: `news-${n.id}`,
         type: "news",
         title: n.title,
-        meta: new Date(n.date).toLocaleDateString("ru-RU"),
+        meta: formatNewsDateTime(n.date),
         href: "/news",
       }));
     const docMatches = documents

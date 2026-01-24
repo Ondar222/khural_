@@ -6,6 +6,7 @@ import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import NewsImageCarousel from "../components/NewsImageCarousel.jsx";
+import { formatNewsDateTime } from "../utils/dateFormat.js";
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
@@ -175,7 +176,7 @@ export default function NewsArchive() {
               <div>
                 <h1 style={{ marginBottom: 8, display: "block" }}>{item.title}</h1>
                 <div style={{ color: "#6b7280", marginBottom: 16 }}>
-                  {new Date(item.date).toLocaleDateString("ru-RU")} · {item.category}
+                  {formatNewsDateTime(item.date)} · {item.category}
                 </div>
               </div>
             </div>
@@ -381,7 +382,7 @@ export default function NewsArchive() {
                       style={{ display: "block", padding: 12 }}
                     >
                       <div style={{ fontSize: 14, color: "#6b7280" }}>
-                        {new Date(n.date).toLocaleDateString("ru-RU")}
+                        {formatNewsDateTime(n.date)}
                       </div>
                       <div style={{ fontWeight: 700 }}>{n.title}</div>
                     </a>
@@ -521,7 +522,7 @@ export default function NewsArchive() {
                           {n.title}
                         </div>
                         <div style={{ color: "#6b7280", marginTop: 6 }}>
-                          {new Date(n.date).toLocaleDateString("ru-RU")}
+                          {formatNewsDateTime(n.date)}
                         </div>
                       </div>
                     </a>

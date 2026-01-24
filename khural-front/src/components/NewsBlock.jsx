@@ -5,6 +5,7 @@ import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "./DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { formatNewsDateTime } from "../utils/dateFormat.js";
 
 export default function NewsBlock() {
   const { news, loading, errors, reload } = useData();
@@ -173,7 +174,7 @@ export default function NewsBlock() {
                     </div>
                     <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>{n.title}</div>
                     <div style={{ color: "#6b7280", marginTop: 6 }}>
-                      {new Date(n.date).toLocaleDateString("ru-RU")}
+                      {formatNewsDateTime(n.date)}
                     </div>
                   </div>
                 </a>
