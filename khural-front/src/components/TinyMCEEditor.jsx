@@ -1,38 +1,26 @@
-import React from "react";
-import { Editor } from "@tinymce/tinymce-react";
+import React from 'react';
+import { Editor } from '@tinymce/tinymce-react';
 
-const DEFAULT_INIT = {
-  menubar: false,
-  language: "ru",
-  plugins: "lists link code",
-  toolbar:
-    "undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist | link | code",
-  content_style:
-    "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; }",
-  branding: false,
-  promotion: false,
-};
+export default function TinyMCEEditor({ value, onChange, placeholder, height = 400, disabled, minHeight }) {
+  const handleEditorChange = (content, editor) => {
+    if (onChange) {
+      onChange(content);
+    }
+  };
 
-export default function TinyMCEEditor({
-  value,
-  onChange,
-  height = 360,
-  disabled,
-  placeholder,
-  minHeight,
-}) {
   return (
     <Editor
-      apiKey="zj1t6pxsv8516ry4gn6wcalzrl656avlisb6ue81tegf0rjg"
-      value={value ?? ""}
-      onEditorChange={(val) => onChange?.(val)}
+      apiKey='zj1t6pxsv8516ry4gn6wcalzrl656avlisb6ue81tegf0rjg'
+      value={value ?? ''}
+      onEditorChange={handleEditorChange}
       disabled={disabled}
       init={{
-        ...DEFAULT_INIT,
-        height: height ?? 360,
+        height: height ?? 400,
         min_height: minHeight,
-        placeholder: placeholder ?? "",
-      }}
-    />
-  );
-}
+        menubar: false,
+        plugins: [
+          'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+          'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'ai', 'uploadcare', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown', 'importword', 'exportword', 'exportpdf'
+        ],
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography uploadcare | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+        placeholder: placeholder || '',
