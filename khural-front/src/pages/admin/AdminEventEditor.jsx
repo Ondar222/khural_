@@ -1,6 +1,8 @@
 import React from "react";
 import { App, Button, Form, Input } from "antd";
 import { useHashRoute } from "../../Router.jsx";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
+import { stripHtmlTags, decodeHtmlEntities } from "../../utils/html.js";
 
 export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpdate, busy, canWrite }) {
   const { message } = App.useApp();
@@ -10,7 +12,6 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
   const [loading, setLoading] = React.useState(mode === "edit");
 
   const titleValue = Form.useWatch("title", form);
-  const descHtml = Form.useWatch("desc", form);
 
   React.useEffect(() => {
     if (mode !== "edit") return;
@@ -20,12 +21,14 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
     setLoading(true);
     try {
       if (!found) return;
+      // Убираем HTML теги из описания при загрузке
+      const descValue = found.desc ? decodeHtmlEntities(stripHtmlTags(String(found.desc))) : "";
       form.setFieldsValue({
         date: found.date || "",
         time: found.time || "",
         place: found.place || "",
         title: found.title || "",
-        desc: found.desc || "",
+        desc: descValue,
       });
     } finally {
       setLoading(false);
@@ -100,12 +103,14 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
             <Input disabled={loading || saving} />
           </Form.Item>
 
-          <Form.Item label="Описание" name="desc">
-            <Input.TextArea
-              autoSize={{ minRows: 6, maxRows: 18 }}
-              placeholder="<p>Описание</p>"
-              value={typeof descHtml === "string" ? descHtml : ""}
-              onChange={(e) => form.setFieldValue("desc", e.target.value)}
+          <Form.Item 
+            label="Описание" 
+            name="desc"
+            getValueFromEvent={(value) => value}
+          >
+            <TinyMCEEditor
+              height={400}
+              placeholder="Описание события"
               disabled={loading || saving}
             />
           </Form.Item>
