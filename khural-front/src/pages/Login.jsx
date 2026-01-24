@@ -97,7 +97,10 @@ export default function Login() {
           <Form.Item
             label="Email"
             name="email"
-            rules={[{ required: true, message: "Введите email" }]}
+            rules={[
+              { required: true, message: "Введите email" },
+              { type: "email", message: "Введите корректный email" }
+            ]}
           >
             <Input type="email" placeholder="you@example.org" />
           </Form.Item>

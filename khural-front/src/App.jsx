@@ -73,6 +73,7 @@ import AdminConvocationsEditPage from "./pages/admin/AdminConvocationsEditPage.j
 import AdminConvocationsDocumentsPage from "./pages/admin/AdminConvocationsDocumentsPage.jsx";
 import AdminConvocationsDocumentEditPage from "./pages/admin/AdminConvocationsDocumentEditPage.jsx";
 import AdminCommitteesPage from "./pages/admin/AdminCommitteesPage.jsx";
+import AdminSettingsPage from "./pages/admin/AdminSettingsPage.jsx";
 import AdminCommitteesCreatePage from "./pages/admin/AdminCommitteesCreatePage.jsx";
 import AdminCommitteesEditPage from "./pages/admin/AdminCommitteesEditPage.jsx";
 import AdminPortalsPage from "./pages/admin/AdminPortalsPage.jsx";
@@ -203,6 +204,7 @@ export default function App() {
                           "/admin/slider/create": AdminProtected(AdminSliderCreatePage),
                           "/admin/slider/edit/:id": AdminProtected(AdminSliderEditPage),
                           "/admin/appeals": AdminProtected(AdminAppealsPage),
+                          "/admin/settings": AdminProtected(AdminSettingsPage),
                           "/admin/env": AdminProtected(AdminEnvDocsPage),
                           "/admin/broadcast": AdminProtected(AdminBroadcastPage),
                           "/feedback": Feedback,

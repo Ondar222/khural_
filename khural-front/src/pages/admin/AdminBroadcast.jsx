@@ -21,62 +21,92 @@ export default function AdminBroadcast() {
 
   // Загружаем текущие настройки трансляции
   React.useEffect(() => {
-    // Сначала проверяем localStorage
-    let broadcast = null;
-    try {
-      const local = localStorage.getItem("admin_settings_broadcast");
-      if (local) {
-        broadcast = JSON.parse(local);
-      }
-    } catch (e) {
-      // ignore
-    }
-    
-    // Если нет в localStorage, ищем в settings из API
-    if (!broadcast && adminData.settings) {
-      const settings = adminData.settings;
+    const loadBroadcastSettings = async () => {
+      if (!adminData.isAuthenticated) return;
       
-      if (Array.isArray(settings)) {
-        const broadcastSetting = settings.find((s) => s?.key === "broadcast");
-        if (broadcastSetting?.value) {
-          try {
-            broadcast = JSON.parse(broadcastSetting.value);
-          } catch (e) {
-            broadcast = {};
+      let broadcast = null;
+      
+      // Сначала проверяем localStorage (fallback)
+      try {
+        const local = localStorage.getItem("admin_settings_broadcast");
+        if (local) {
+          broadcast = JSON.parse(local);
+        }
+      } catch (e) {
+        // ignore
+      }
+      
+      // Загружаем из API через SettingsApi
+      try {
+        const { SettingsApi } = await import("../../api/client.js");
+        const broadcastValue = await SettingsApi.getByKey("broadcast").catch(() => null);
+        
+        if (broadcastValue) {
+          // Может быть объект или строка JSON
+          if (typeof broadcastValue === "string") {
+            try {
+              broadcast = JSON.parse(broadcastValue);
+            } catch {
+              broadcast = {};
+            }
+          } else if (broadcastValue.broadcast) {
+            // Если API вернул объект с полем broadcast
+            const value = broadcastValue.broadcast;
+            if (typeof value === "string") {
+              try {
+                broadcast = JSON.parse(value);
+              } catch {
+                broadcast = {};
+              }
+            } else {
+              broadcast = value;
+            }
+          } else {
+            broadcast = broadcastValue;
           }
         }
-      } else if (typeof settings === "object") {
-        const settingsBroadcast = settings.broadcast || settings.stream || settings.vk_stream || {};
-        if (typeof settingsBroadcast === "string") {
-          try {
-            broadcast = JSON.parse(settingsBroadcast);
-          } catch (e) {
-            broadcast = {};
+      } catch (error) {
+        console.warn("Failed to load broadcast settings from API:", error);
+      }
+      
+      // Fallback: используем settings из adminData
+      if (!broadcast && adminData.settings) {
+        const settings = adminData.settings;
+        if (typeof settings === "object" && settings.broadcast) {
+          const settingsBroadcast = settings.broadcast;
+          if (typeof settingsBroadcast === "string") {
+            try {
+              broadcast = JSON.parse(settingsBroadcast);
+            } catch {
+              broadcast = {};
+            }
+          } else {
+            broadcast = settingsBroadcast;
           }
-        } else {
-          broadcast = settingsBroadcast;
         }
       }
-    }
+      
+      if (!broadcast || typeof broadcast !== "object") {
+        broadcast = {};
+      }
+      
+      form.setFieldsValue({
+        type: broadcast.type || broadcast.platform || "vk",
+        title: broadcast.title || broadcast.name || "",
+        description: broadcast.description || "",
+        vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key || "",
+        vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url || "",
+        obsRtmpUrl: broadcast.obs_rtmp_url || broadcast.obsRtmpUrl || broadcast.rtmp_url || "",
+        obsStreamKey: broadcast.obs_stream_key || broadcast.obsStreamKey || broadcast.obs_key || "",
+        youtubeVideoId: broadcast.youtube_video_id || broadcast.youtubeVideoId || "",
+        youtubeUrl: broadcast.youtube_url || broadcast.youtubeUrl || "",
+        embedUrl: broadcast.embed_url || broadcast.embedUrl || "",
+        isActive: broadcast.is_active !== false && broadcast.isActive !== false,
+      });
+    };
     
-    if (!broadcast || typeof broadcast !== "object") {
-      broadcast = {};
-    }
-    
-    form.setFieldsValue({
-      type: broadcast.type || broadcast.platform || "vk",
-      title: broadcast.title || broadcast.name || "",
-      description: broadcast.description || "",
-      vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key || "",
-      vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url || "",
-      obsRtmpUrl: broadcast.obs_rtmp_url || broadcast.obsRtmpUrl || broadcast.rtmp_url || "",
-      obsStreamKey: broadcast.obs_stream_key || broadcast.obsStreamKey || broadcast.obs_key || "",
-      youtubeVideoId: broadcast.youtube_video_id || broadcast.youtubeVideoId || "",
-      youtubeUrl: broadcast.youtube_url || broadcast.youtubeUrl || "",
-      embedUrl: broadcast.embed_url || broadcast.embedUrl || "",
-      isActive: broadcast.is_active !== false && broadcast.isActive !== false,
-    });
-  }, [adminData.settings, form]);
+    loadBroadcastSettings();
+  }, [adminData.isAuthenticated, adminData.settings, form]);
 
   const handleSave = async () => {
     if (!adminData.canWrite) {
@@ -104,15 +134,11 @@ export default function AdminBroadcast() {
         is_active: values.isActive !== false,
       };
 
-      // Сохраняем через API settings
+      // Сохраняем через SettingsApi
       try {
-        const { apiFetch } = await import("../../api/client.js");
-        await apiFetch("/settings", {
-          method: "PATCH",
-          body: {
-            broadcast: JSON.stringify(broadcastData),
-          },
-          auth: true,
+        const { SettingsApi } = await import("../../api/client.js");
+        await SettingsApi.update({
+          broadcast: JSON.stringify(broadcastData),
         });
         message.success("Настройки трансляции сохранены");
       } catch (apiError) {

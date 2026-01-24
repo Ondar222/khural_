@@ -1,5 +1,5 @@
 import React from "react";
-import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi } from "../api/client.js";
+import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi, EventsApi } from "../api/client.js";
 import {
   readNewsOverrides,
   NEWS_OVERRIDES_EVENT_NAME,
@@ -693,7 +693,8 @@ export default function DataProvider({ children }) {
       markLoading("events", true);
       markError("events", null);
       try {
-        const apiEvents = await tryApiFetch("/calendar", { auth: false });
+        // Используем EventsApi.list() для получения событий с поддержкой фильтрации
+        const apiEvents = await EventsApi.list();
         if (Array.isArray(apiEvents)) {
           // Если массив пустой, все равно используем его (не fallback на JSON)
           if (apiEvents.length === 0) {

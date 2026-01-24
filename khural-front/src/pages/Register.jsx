@@ -48,27 +48,44 @@ export default function Register() {
             name="surname"
             rules={[{ required: true, message: "Введите фамилию" }]}
           >
-            <Input />
+            <Input placeholder="Иванов" />
           </Form.Item>
-          <Form.Item label="Имя" name="name" rules={[{ required: true, message: "Введите имя" }]}>
-            <Input />
+          <Form.Item 
+            label="Имя" 
+            name="name" 
+            rules={[{ required: true, message: "Введите имя" }]}
+          >
+            <Input placeholder="Иван" />
           </Form.Item>
-          <Form.Item label="Телефон" name="phone">
-            <Input placeholder="+7..." />
+          <Form.Item 
+            label="Телефон" 
+            name="phone"
+            rules={[
+              { required: false },
+              { pattern: /^[\d\s\+\-\(\)]+$/, message: "Введите корректный номер телефона" }
+            ]}
+          >
+            <Input placeholder="+7 (999) 123-45-67" />
           </Form.Item>
           <Form.Item
             label="Email"
             name="email"
-            rules={[{ required: true, message: "Введите email" }]}
+            rules={[
+              { required: true, message: "Введите email" },
+              { type: "email", message: "Введите корректный email" }
+            ]}
           >
             <Input type="email" placeholder="you@example.org" />
           </Form.Item>
           <Form.Item
             label="Пароль"
             name="password"
-            rules={[{ required: true, message: "Введите пароль" }]}
+            rules={[
+              { required: true, message: "Введите пароль" },
+              { min: 6, message: "Пароль должен быть не менее 6 символов" }
+            ]}
           >
-            <Input.Password />
+            <Input.Password placeholder="••••••••" />
           </Form.Item>
           <Form.Item name="role" hidden>
             <Input />

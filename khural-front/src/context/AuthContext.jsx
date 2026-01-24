@@ -33,8 +33,9 @@ function toRoleString(role) {
 
 function normalizeUser(u) {
   if (!u || typeof u !== "object") return null;
-  const firstName = u.firstName || u.name || u.firstname || "";
-  const lastName = u.lastName || u.surname || u.lastname || "";
+  // Поддержка полей из Swagger API: surname, name, phone, email, password, role
+  const firstName = u.name || u.firstName || u.firstname || "";
+  const lastName = u.surname || u.lastName || u.lastname || "";
   const roleStr =
     toRoleString(u?.role) ||
     toRoleString(u?.role_id) ||
@@ -46,9 +47,20 @@ function normalizeUser(u) {
     Boolean(u?.admin_access) ||
     Boolean(u?.role?.admin_access) ||
     String(roleStr).toLowerCase() === "admin";
+  
+  // Формируем полное имя из surname и name, если они есть
+  const fullName = [lastName, firstName].filter(Boolean).join(" ") || 
+                   u?.name || 
+                   [firstName, lastName].filter(Boolean).join(" ") || 
+                   u?.email || "";
+  
   return {
     ...u,
-    name: u?.name || [firstName, lastName].filter(Boolean).join(" ") || u?.email,
+    surname: u.surname || u.lastName || u.lastname || "",
+    name: fullName, // Полное имя для отображения (surname + name)
+    firstName: firstName, // Имя отдельно
+    phone: u.phone || "",
+    email: u.email || "",
     role: roleStr,
     admin: adminAccess,
   };

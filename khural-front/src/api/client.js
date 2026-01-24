@@ -1107,20 +1107,78 @@ export const TranslationApi = {
 
 // Calendar (events) endpoints
 export const EventsApi = {
-  async list() {
-    return apiFetch("/calendar", { method: "GET", auth: false });
+  async list(params) {
+    // GET /calendar - Получить список событий с фильтрацией
+    const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+    return apiFetch(`/calendar${qs}`, { method: "GET", auth: false });
+  },
+  async getByMonth(year, month) {
+    // GET /calendar/month/{year}/{month} - Получить события за конкретный месяц
+    return apiFetch(`/calendar/month/${year}/${month}`, { method: "GET", auth: false });
+  },
+  async getByYear(year) {
+    // GET /calendar/year/{year} - Получить события за конкретный год
+    return apiFetch(`/calendar/year/${year}`, { method: "GET", auth: false });
   },
   async getById(id) {
+    // GET /calendar/{id} - Получить детальную информацию о событии
     return apiFetch(`/calendar/${id}`, { method: "GET", auth: false });
   },
   async create(body) {
+    // POST /calendar - Создать новое событие (только для администраторов)
     return apiFetch("/calendar", { method: "POST", body, auth: true });
   },
   async patch(id, body) {
+    // PATCH /calendar/{id} - Обновить событие (только для администраторов)
     return apiFetch(`/calendar/${id}`, { method: "PATCH", body, auth: true });
   },
   async remove(id) {
+    // DELETE /calendar/{id} - Удалить событие (только для администраторов)
     return apiFetch(`/calendar/${id}`, { method: "DELETE", auth: true });
+  },
+};
+
+// Calendar event types endpoints
+export const EventTypesApi = {
+  async listAll() {
+    // GET /calendar/types/all - Получить все типы событий
+    return apiFetch("/calendar/types/all", { method: "GET", auth: false });
+  },
+  async create(body) {
+    // POST /calendar/types - Создать новый тип события (только для администраторов)
+    return apiFetch("/calendar/types", { method: "POST", body, auth: true });
+  },
+  async patch(id, body) {
+    // PATCH /calendar/types/{id} - Обновить тип события (только для администраторов)
+    return apiFetch(`/calendar/types/${id}`, { method: "PATCH", body, auth: true });
+  },
+  async remove(id) {
+    // DELETE /calendar/types/{id} - Удалить тип события (только для администраторов)
+    return apiFetch(`/calendar/types/${id}`, { method: "DELETE", auth: true });
+  },
+};
+
+// Settings endpoints
+export const SettingsApi = {
+  async getAll() {
+    // GET /settings - Получить все настройки (только для администраторов)
+    return apiFetch("/settings", { method: "GET", auth: true });
+  },
+  async update(data) {
+    // PATCH /settings - Обновить настройки (только для администраторов)
+    return apiFetch("/settings", { method: "PATCH", body: data, auth: true });
+  },
+  async getByKey(key) {
+    // GET /settings/{key} - Получить настройку по ключу (только для администраторов)
+    return apiFetch(`/settings/${key}`, { method: "GET", auth: true });
+  },
+  async setAppealsRecipientEmail(email) {
+    // PATCH /settings/appeals-recipient-email - Установить email для получения уведомлений о новых обращениях
+    return apiFetch("/settings/appeals-recipient-email", {
+      method: "PATCH",
+      body: { email },
+      auth: true,
+    });
   },
 };
 

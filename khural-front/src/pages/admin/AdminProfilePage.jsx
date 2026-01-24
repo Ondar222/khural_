@@ -1,9 +1,9 @@
 import React from "react";
-import { Button, Upload, App, Form, Input, Space } from "antd";
+import { Button, Upload, App, Form, Input, Space, Card, Divider } from "antd";
 import AdminShell from "./AdminShell.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { readAdminAvatar, writeAdminAvatar } from "./adminAvatar.js";
-import { AuthApi } from "../../api/client.js";
+import { AuthApi, SettingsApi } from "../../api/client.js";
 
 export default function AdminProfilePage() {
   const adminData = useAdminData();
@@ -12,6 +12,11 @@ export default function AdminProfilePage() {
   const [form] = Form.useForm();
   const [editing, setEditing] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [settingsForm] = Form.useForm();
+  const [settingsLoading, setSettingsLoading] = React.useState(false);
+  const [settingsSaving, setSettingsSaving] = React.useState(false);
+  const [settings, setSettings] = React.useState(null);
+  const [appealsEmailForm] = Form.useForm();
 
   React.useEffect(() => {
     const onAvatar = () => setAvatarUrl(readAdminAvatar());
@@ -36,6 +41,53 @@ export default function AdminProfilePage() {
       });
     }
   }, [adminData.user, form]);
+
+  // Загружаем настройки
+  React.useEffect(() => {
+    const loadSettings = async () => {
+      if (!adminData.isAuthenticated) return;
+      
+      setSettingsLoading(true);
+      try {
+        const data = await SettingsApi.getAll();
+        setSettings(data);
+        
+        // Заполняем форму настроек
+        if (data && typeof data === "object") {
+          const formValues = {};
+          Object.keys(data).forEach((key) => {
+            if (key === "appeals-recipient-email") return;
+            formValues[key] = data[key];
+          });
+          settingsForm.setFieldsValue(formValues);
+        }
+      } catch (error) {
+        console.error("Failed to load settings:", error);
+      } finally {
+        setSettingsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [adminData.isAuthenticated, settingsForm]);
+
+  // Загружаем email для уведомлений о обращениях
+  React.useEffect(() => {
+    const loadAppealsEmail = async () => {
+      if (!adminData.isAuthenticated) return;
+      
+      try {
+        const data = await SettingsApi.getByKey("appeals-recipient-email").catch(() => null);
+        if (data?.email) {
+          appealsEmailForm.setFieldsValue({ email: data.email });
+        }
+      } catch (error) {
+        // Игнорируем ошибку, если ключ не существует
+      }
+    };
+
+    loadAppealsEmail();
+  }, [adminData.isAuthenticated, appealsEmailForm]);
 
   const handleSave = async () => {
     try {
@@ -69,6 +121,65 @@ export default function AdminProfilePage() {
       message.error(error?.message || "Не удалось обновить профиль");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    if (!adminData.canWrite) {
+      message.warning("Нет прав на запись");
+      return;
+    }
+
+    try {
+      const values = await settingsForm.validateFields();
+      setSettingsSaving(true);
+
+      // Преобразуем значения в формат для API
+      const updateData = {};
+      Object.keys(values).forEach((key) => {
+        if (values[key] === undefined || values[key] === null || values[key] === "") return;
+        
+        const value = values[key];
+        if (value && typeof value === "object" && !(value instanceof Date) && !Array.isArray(value)) {
+          updateData[key] = JSON.stringify(value);
+        } else if (Array.isArray(value)) {
+          updateData[key] = JSON.stringify(value);
+        } else {
+          updateData[key] = value;
+        }
+      });
+
+      await SettingsApi.update(updateData);
+      message.success("Настройки сохранены");
+      
+      // Перезагружаем настройки
+      const updated = await SettingsApi.getAll();
+      setSettings(updated);
+    } catch (error) {
+      if (error?.errorFields) return;
+      message.error(error?.message || "Не удалось сохранить настройки");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const handleSaveAppealsEmail = async () => {
+    if (!adminData.canWrite) {
+      message.warning("Нет прав на запись");
+      return;
+    }
+
+    try {
+      const values = await appealsEmailForm.validateFields();
+      setSettingsSaving(true);
+
+      await SettingsApi.setAppealsRecipientEmail(values.email);
+      message.success("Email для уведомлений сохранен");
+    } catch (error) {
+      if (error?.errorFields) return;
+      message.error(error?.message || "Не удалось сохранить email");
+    } finally {
+      setSettingsSaving(false);
     }
   };
 
@@ -245,6 +356,116 @@ export default function AdminProfilePage() {
               Выйти
             </Button>
           </div>
+        </div>
+
+        {/* Настройки */}
+        <div className="admin-card" style={{ marginTop: 24 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 20 }}>Настройки системы</h2>
+          
+          {settingsLoading ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>
+              Загрузка настроек...
+            </div>
+          ) : (
+            <>
+              <Card 
+                title="Общие настройки" 
+                style={{ marginBottom: 16 }}
+                bodyStyle={{ padding: 20 }}
+              >
+                <Form layout="vertical" form={settingsForm}>
+                  {settings && typeof settings === "object" && Object.keys(settings).length > 0 ? (
+                    Object.keys(settings)
+                      .filter((key) => key !== "appeals-recipient-email")
+                      .map((key) => {
+                        const value = settings[key];
+                        const isJsonString = typeof value === "string" && 
+                          (value.trim().startsWith("{") || value.trim().startsWith("["));
+                        
+                        return (
+                          <Form.Item
+                            key={key}
+                            label={<span style={{ fontFamily: "monospace", fontSize: 13 }}>{key}</span>}
+                            name={key}
+                            rules={[{ required: false }]}
+                            help={isJsonString ? "JSON значение" : undefined}
+                          >
+                            {isJsonString ? (
+                              <Input.TextArea
+                                rows={4}
+                                placeholder="JSON значение"
+                                disabled={!adminData.canWrite || settingsSaving}
+                                style={{ fontFamily: "monospace", fontSize: 12 }}
+                              />
+                            ) : (
+                              <Input
+                                placeholder="Значение"
+                                disabled={!adminData.canWrite || settingsSaving}
+                              />
+                            )}
+                          </Form.Item>
+                        );
+                      })
+                  ) : (
+                    <div style={{ color: "#6b7280", padding: 20, textAlign: "center" }}>
+                      Настройки не найдены или пусты
+                    </div>
+                  )}
+                  
+                  <Form.Item>
+                    <Button
+                      type="primary"
+                      onClick={handleSaveSettings}
+                      loading={settingsSaving}
+                      disabled={!adminData.canWrite}
+                    >
+                      Сохранить настройки
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </Card>
+
+              <Card 
+                title="Email для уведомлений о обращениях"
+                bodyStyle={{ padding: 20 }}
+              >
+                <Form layout="vertical" form={appealsEmailForm}>
+                  <Form.Item
+                    label="Email"
+                    name="email"
+                    rules={[
+                      { required: false },
+                      { type: "email", message: "Введите корректный email" }
+                    ]}
+                    help="Email для получения уведомлений о новых обращениях"
+                  >
+                    <Input
+                      type="email"
+                      placeholder="admin@example.org"
+                      disabled={!adminData.canWrite || settingsSaving}
+                    />
+                  </Form.Item>
+                  
+                  <Form.Item>
+                    <Button
+                      type="primary"
+                      onClick={handleSaveAppealsEmail}
+                      loading={settingsSaving}
+                      disabled={!adminData.canWrite}
+                    >
+                      Сохранить email
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </Card>
+            </>
+          )}
+
+          {!adminData.canWrite && adminData.isAuthenticated ? (
+            <div className="admin-card admin-card--warning" style={{ marginTop: 16 }}>
+              Для записи в API войдите (или настройте API базу).
+            </div>
+          ) : null}
         </div>
       </div>
     </AdminShell>
