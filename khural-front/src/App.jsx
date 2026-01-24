@@ -71,6 +71,7 @@ import AdminConvocationsPage from "./pages/admin/AdminConvocationsPage.jsx";
 import AdminConvocationsCreatePage from "./pages/admin/AdminConvocationsCreatePage.jsx";
 import AdminConvocationsEditPage from "./pages/admin/AdminConvocationsEditPage.jsx";
 import AdminConvocationsDocumentsPage from "./pages/admin/AdminConvocationsDocumentsPage.jsx";
+import AdminConvocationsDocumentEditPage from "./pages/admin/AdminConvocationsDocumentEditPage.jsx";
 import AdminCommitteesPage from "./pages/admin/AdminCommitteesPage.jsx";
 import AdminCommitteesCreatePage from "./pages/admin/AdminCommitteesCreatePage.jsx";
 import AdminCommitteesEditPage from "./pages/admin/AdminCommitteesEditPage.jsx";
@@ -189,6 +190,8 @@ export default function App() {
                           "/admin/convocations/create": AdminProtected(AdminConvocationsCreatePage),
                           "/admin/convocations/edit/:id": AdminProtected(AdminConvocationsEditPage),
                           "/admin/convocations/documents": AdminProtected(AdminConvocationsDocumentsPage),
+                          "/admin/convocations/documents/:convocationId/create": AdminProtected(AdminConvocationsDocumentEditPage),
+                          "/admin/convocations/documents/:convocationId/edit/:documentId": AdminProtected(AdminConvocationsDocumentEditPage),
                           "/admin/committees": AdminProtected(AdminCommitteesPage),
                           "/admin/committees/create": AdminProtected(AdminCommitteesCreatePage),
                           "/admin/committees/edit/:id": AdminProtected(AdminCommitteesEditPage),

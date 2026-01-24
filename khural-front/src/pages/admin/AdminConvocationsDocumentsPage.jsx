@@ -1,6 +1,7 @@
 import React from "react";
-import { App, Button, Input, Select, Form, Space, Table, Tag, Modal } from "antd";
+import { App, Button, Input, Select, Space, Table, Tag, Modal } from "antd";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { useHashRoute } from "../../Router.jsx";
 import AdminShell from "./AdminShell.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { ConvocationsApi, CommitteesApi } from "../../api/client.js";
@@ -8,15 +9,21 @@ import { ConvocationsApi, CommitteesApi } from "../../api/client.js";
 export default function AdminConvocationsDocumentsPage() {
   const adminData = useAdminData();
   const { message } = App.useApp();
-  const [docForm] = Form.useForm();
+  const { navigate, route } = useHashRoute();
   
-  const [selectedConvocation, setSelectedConvocation] = React.useState(null);
+  // Восстанавливаем выбранный созыв из URL параметров
+  const getInitialConvocation = React.useCallback(() => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    const convId = params.get("convocation");
+    return convId ? convId : null;
+  }, []);
+  
+  const [selectedConvocation, setSelectedConvocation] = React.useState(getInitialConvocation);
   const [convocation, setConvocation] = React.useState(null);
   const [committees, setCommittees] = React.useState([]);
   const [documents, setDocuments] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
-  const [editingDoc, setEditingDoc] = React.useState(null);
-  const [docModalOpen, setDocModalOpen] = React.useState(false);
 
   // Load convocations and committees
   React.useEffect(() => {
@@ -37,86 +44,76 @@ export default function AdminConvocationsDocumentsPage() {
   }, []);
 
   // Load selected convocation with documents
-  React.useEffect(() => {
+  const loadConvocation = React.useCallback(async () => {
     if (!selectedConvocation) {
       setConvocation(null);
       setDocuments([]);
       return;
     }
     
-    let alive = true;
     setLoading(true);
-    (async () => {
-      try {
-        const conv = await ConvocationsApi.getById(selectedConvocation).catch(() => null);
-        if (!alive) return;
-        
-        if (conv) {
-          setConvocation(conv);
-          setDocuments(Array.isArray(conv.documents) ? conv.documents : []);
+    try {
+      const conv = await ConvocationsApi.getById(selectedConvocation).catch(() => null);
+      
+      if (conv) {
+        setConvocation(conv);
+        setDocuments(Array.isArray(conv.documents) ? conv.documents : []);
+      } else {
+        // Try to find in list
+        const list = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
+        const found = Array.isArray(list) ? list.find(c => String(c.id) === String(selectedConvocation)) : null;
+        if (found) {
+          setConvocation(found);
+          setDocuments(Array.isArray(found.documents) ? found.documents : []);
         } else {
-          // Try to find in list
-          const list = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
-          const found = Array.isArray(list) ? list.find(c => String(c.id) === String(selectedConvocation)) : null;
-          if (found) {
-            setConvocation(found);
-            setDocuments(Array.isArray(found.documents) ? found.documents : []);
-          } else {
-            setConvocation(null);
-            setDocuments([]);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load convocation:", error);
-        if (alive) {
           setConvocation(null);
           setDocuments([]);
         }
-      } finally {
-        if (alive) setLoading(false);
       }
-    })();
-    return () => { alive = false; };
+    } catch (error) {
+      console.error("Failed to load convocation:", error);
+      setConvocation(null);
+      setDocuments([]);
+    } finally {
+      setLoading(false);
+    }
   }, [selectedConvocation]);
 
-  const handleSaveDocument = async () => {
-    if (!adminData.canWrite || !convocation) return;
-    
-    try {
-      const values = await docForm.validateFields();
-      const docData = {
-        id: editingDoc?.id || `doc-${Date.now()}`,
-        category: values.category,
-        date: values.date,
-        title: values.title,
-        fileLink: values.fileLink?.trim() || undefined,
-        fileId: values.fileId?.trim() || undefined,
-        size: values.size?.trim() || undefined,
-        committeeId: values.committeeId || undefined,
-      };
+  React.useEffect(() => {
+    loadConvocation();
+  }, [loadConvocation]);
 
-      const updatedDocs = editingDoc
-        ? documents.map(d => d.id === editingDoc.id ? docData : d)
-        : [...documents, docData];
-
-      // Update convocation with new documents array
-      const updatedConvocation = {
-        ...convocation,
-        documents: updatedDocs,
-      };
-
-      await ConvocationsApi.patch(convocation.id, updatedConvocation);
-      setConvocation(updatedConvocation);
-      setDocuments(updatedDocs);
-      setDocModalOpen(false);
-      setEditingDoc(null);
-      docForm.resetFields();
-      message.success(editingDoc ? "Документ обновлен" : "Документ добавлен");
-    } catch (error) {
-      if (error?.errorFields) return;
-      message.error(error?.message || "Не удалось сохранить документ");
+  // Обновляем URL при изменении выбранного созыва
+  React.useEffect(() => {
+    if (selectedConvocation && typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("convocation", selectedConvocation);
+      window.history.replaceState({}, "", url.toString());
     }
-  };
+  }, [selectedConvocation]);
+
+  // Перезагружаем данные при возврате на страницу (например, после редактирования)
+  React.useEffect(() => {
+    if (selectedConvocation && route === "/admin/convocations/documents") {
+      // Небольшая задержка для гарантии, что навигация завершена
+      const timer = setTimeout(() => {
+        loadConvocation();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [route, selectedConvocation, loadConvocation]);
+  
+  // Восстанавливаем выбранный созыв из URL при монтировании и изменении route
+  React.useEffect(() => {
+    if (route === "/admin/convocations/documents" && typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const convId = urlParams.get("convocation");
+      if (convId && convId !== selectedConvocation) {
+        setSelectedConvocation(convId);
+      }
+    }
+  }, [route]);
+
 
   const handleDeleteDocument = (docId) => {
     Modal.confirm({
@@ -134,9 +131,9 @@ export default function AdminConvocationsDocumentsPage() {
             documents: updatedDocs,
           };
           await ConvocationsApi.patch(convocation.id, updatedConvocation);
-          setConvocation(updatedConvocation);
-          setDocuments(updatedDocs);
           message.success("Документ удален");
+          // Перезагружаем данные с сервера для актуальности
+          await loadConvocation();
         } catch (error) {
           message.error(error?.message || "Не удалось удалить документ");
         }
@@ -144,29 +141,33 @@ export default function AdminConvocationsDocumentsPage() {
     });
   };
 
+  // Обновляем URL при изменении выбранного созыва
+  React.useEffect(() => {
+    if (selectedConvocation) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("convocation", selectedConvocation);
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [selectedConvocation]);
+
   const handleEditDocument = (doc) => {
-    setEditingDoc(doc);
-    docForm.setFieldsValue({
-      category: doc.category || "report",
-      date: doc.date || "",
-      title: doc.title || "",
-      fileLink: doc.fileLink || "",
-      fileId: doc.fileId || "",
-      size: doc.size || "",
-      committeeId: doc.committeeId || undefined,
-    });
-    setDocModalOpen(true);
+    navigate(`/admin/convocations/documents/${selectedConvocation}/edit/${encodeURIComponent(String(doc.id))}`);
   };
 
   const handleNewDocument = () => {
-    setEditingDoc(null);
-    docForm.resetFields();
-    docForm.setFieldsValue({
-      category: "report",
-      date: new Date().toISOString().split("T")[0],
-    });
-    setDocModalOpen(true);
+    navigate(`/admin/convocations/documents/${selectedConvocation}/create`);
   };
+  
+  // Перезагружаем данные при возврате на страницу (например, после редактирования)
+  React.useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && selectedConvocation) {
+        loadConvocation();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [selectedConvocation, loadConvocation]);
 
   const convocationOptions = React.useMemo(() => {
     const convs = Array.isArray(adminData.convocations) ? adminData.convocations : [];
@@ -226,12 +227,6 @@ export default function AdminConvocationsDocumentsPage() {
         const committee = committees.find(c => String(c.id) === String(committeeId));
         return committee ? (committee.title || committee.name) : committeeId;
       },
-    },
-    {
-      title: "Размер",
-      dataIndex: "size",
-      width: 100,
-      render: (size) => size || "—",
     },
     {
       title: "Действия",
@@ -364,109 +359,6 @@ export default function AdminConvocationsDocumentsPage() {
         </>
       )}
 
-      <Modal
-        title={editingDoc ? "Редактировать документ" : "Добавить документ"}
-        open={docModalOpen}
-        onOk={handleSaveDocument}
-        onCancel={() => {
-          setDocModalOpen(false);
-          setEditingDoc(null);
-          docForm.resetFields();
-        }}
-        width={600}
-        okText="Сохранить"
-        cancelText="Отмена"
-        okButtonProps={{ disabled: !adminData.canWrite }}
-      >
-        <Form
-          form={docForm}
-          layout="vertical"
-          initialValues={{ category: "report" }}
-        >
-          <Form.Item
-            label="Категория"
-            name="category"
-            rules={[{ required: true, message: "Выберите категорию" }]}
-          >
-            <Select>
-              <Select.Option value="agenda">Повестка</Select.Option>
-              <Select.Option value="report">Отчет</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="Название документа"
-            name="title"
-            rules={[{ required: true, message: "Введите название" }]}
-          >
-            <Input placeholder="Например: Повестка заседания комитета от 09.02.2023 г." />
-          </Form.Item>
-
-          <Form.Item
-            label="Дата"
-            name="date"
-            rules={[{ required: true, message: "Введите дату" }]}
-          >
-            <Input placeholder="2023-02-09 или 09.02.2023" />
-          </Form.Item>
-
-          <Form.Item
-            label="Комитет"
-            name="committeeId"
-          >
-            <Select
-              placeholder="Выберите комитет (опционально)"
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              options={committeeOptions}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Ссылка на файл"
-            name="fileLink"
-            tooltip="Прямая ссылка на файл. Обязательно, если не указан ID файла"
-            rules={[
-              ({ getFieldValue }) => ({
-                validator: (_, value) => {
-                  if (!value && !getFieldValue("fileId")) {
-                    return Promise.reject(new Error("Укажите ссылку на файл или ID файла"));
-                  }
-                  return Promise.resolve();
-                },
-              }),
-            ]}
-          >
-            <Input placeholder="https://example.com/file.doc или /files/doc.doc" />
-          </Form.Item>
-
-          <Form.Item
-            label="ID файла"
-            name="fileId"
-            tooltip="ID файла для генерации ссылки /files/{fileId}. Обязательно, если не указана ссылка"
-            rules={[
-              ({ getFieldValue }) => ({
-                validator: (_, value) => {
-                  if (!value && !getFieldValue("fileLink")) {
-                    return Promise.reject(new Error("Укажите ID файла или ссылку на файл"));
-                  }
-                  return Promise.resolve();
-                },
-              }),
-            ]}
-          >
-            <Input placeholder="doc-123" />
-          </Form.Item>
-
-          <Form.Item
-            label="Размер файла"
-            name="size"
-          >
-            <Input placeholder="33.6 КБ" />
-          </Form.Item>
-        </Form>
-      </Modal>
     </AdminShell>
   );
 }

@@ -397,6 +397,19 @@ export const AuthApi = {
       }
     }
   },
+  async updateProfile(data) {
+    // Update current user profile
+    // Try PATCH /user/me first, then fallback to PATCH /user
+    try {
+      return await apiFetch("/user/me", { method: "PATCH", body: data, auth: true });
+    } catch {
+      try {
+        return await apiFetch("/user", { method: "PATCH", body: data, auth: true });
+      } catch {
+        return apiFetch("/auth/profile", { method: "PATCH", body: data, auth: true });
+      }
+    }
+  },
 };
 
 export const PublicApi = {

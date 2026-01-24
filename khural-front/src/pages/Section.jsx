@@ -735,21 +735,29 @@ function ConvocationReportsPage({ convocationNumber }) {
                           </div>
                           <div className="law-list" style={{ marginTop: 20 }}>
                             {documentsByCategoryAndYear[selectedCategory]?.documents[selectedYearForCategory]?.map((doc, idx) => {
-                              const fileUrl = doc.fileLink || (doc.fileId ? `/files/${doc.fileId}` : "");
+                              // Формируем URL файла: используем fileLink если есть, иначе формируем из fileId
+                              let fileUrl = "";
+                              if (doc.fileLink) {
+                                fileUrl = normalizeFilesUrl(doc.fileLink);
+                              } else if (doc.fileId) {
+                                // Используем правильный формат API: /files/v2/{id}
+                                fileUrl = normalizeFilesUrl(`/files/v2/${doc.fileId}`);
+                              }
                               return (
                                 <div key={doc.id || idx} className="law-item" style={{ marginBottom: 16 }}>
                                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                                    <a
-                                      href={fileUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      style={{ color: "#2563eb", textDecoration: "none", fontWeight: 600 }}
-                                    >
-                                      {doc.title || "Документ без названия"}
-                                    </a>
-                                    {doc.size && (
-                                      <span style={{ fontSize: 12, color: "#6b7280", marginLeft: "auto" }}>
-                                        {doc.size}
+                                    {fileUrl ? (
+                                      <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: "#2563eb", textDecoration: "none", fontWeight: 600 }}
+                                      >
+                                        {doc.title || "Документ без названия"}
+                                      </a>
+                                    ) : (
+                                      <span style={{ color: "#6b7280", fontWeight: 600 }}>
+                                        {doc.title || "Документ без названия"}
                                       </span>
                                     )}
                                   </div>
@@ -1014,7 +1022,7 @@ function ConvocationReportsPage({ convocationNumber }) {
                             </span>
                             <div style={{ flex: 1 }}>
                               <a
-                                href={doc.fileLink || (doc.fileId ? `/files/${doc.fileId}` : "#")}
+                                href={doc.fileLink ? normalizeFilesUrl(doc.fileLink) : (doc.fileId ? normalizeFilesUrl(`/files/v2/${doc.fileId}`) : "#")}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}

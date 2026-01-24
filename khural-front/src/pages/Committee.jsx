@@ -3,7 +3,7 @@ import { useData } from "../context/DataContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
-import { CommitteesApi } from "../api/client.js";
+import { CommitteesApi, ConvocationsApi } from "../api/client.js";
 import {
   COMMITTEES_OVERRIDES_EVENT_NAME,
   COMMITTEES_OVERRIDES_STORAGE_KEY,
@@ -251,9 +251,61 @@ export default function Committee() {
     return { grouped, sortedYears };
   }, [extractYear]);
 
+  // Load documents from convocations for this committee
+  const [convocationDocuments, setConvocationDocuments] = React.useState([]);
+  
+  React.useEffect(() => {
+    if (!committee?.id) {
+      setConvocationDocuments([]);
+      return;
+    }
+    
+    let alive = true;
+    (async () => {
+      try {
+        // Load all convocations
+        const convocations = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
+        if (!alive) return;
+        
+        // Extract documents for this committee from all convocations
+        const committeeId = String(committee.id);
+        const allDocs = [];
+        
+        (Array.isArray(convocations) ? convocations : []).forEach((conv) => {
+          const docs = Array.isArray(conv.documents) ? conv.documents : [];
+          docs.forEach((doc) => {
+            if (doc.committeeId && String(doc.committeeId) === committeeId) {
+              allDocs.push(doc);
+            }
+          });
+        });
+        
+        setConvocationDocuments(allDocs);
+      } catch (error) {
+        console.error("Failed to load convocation documents:", error);
+        if (alive) setConvocationDocuments([]);
+      }
+    })();
+    
+    return () => { alive = false; };
+  }, [committee?.id]);
+
   // Get reports, plans, activities, staff (only if committee exists)
-  const reports = committee ? (Array.isArray(committee.reports) ? committee.reports : []) : [];
-  const agendas = committee ? (Array.isArray(committee.agendas) ? committee.agendas : []) : [];
+  // Combine committee's own reports/agendas with documents from convocations
+  const committeeReports = committee ? (Array.isArray(committee.reports) ? committee.reports : []) : [];
+  const committeeAgendas = committee ? (Array.isArray(committee.agendas) ? committee.agendas : []) : [];
+  
+  // Merge convocation documents with committee's own documents
+  const reports = React.useMemo(() => {
+    const convReports = convocationDocuments.filter(doc => doc.category === "report");
+    return [...committeeReports, ...convReports];
+  }, [committeeReports, convocationDocuments]);
+  
+  const agendas = React.useMemo(() => {
+    const convAgendas = convocationDocuments.filter(doc => doc.category === "agenda");
+    return [...committeeAgendas, ...convAgendas];
+  }, [committeeAgendas, convocationDocuments]);
+  
   const plans = committee ? (Array.isArray(committee.plans) ? committee.plans : []) : [];
   const activities = committee ? (Array.isArray(committee.activities) ? committee.activities : []) : [];
   const staff = committee ? (Array.isArray(committee.staff) ? committee.staff : []) : [];
@@ -677,7 +729,7 @@ export default function Committee() {
                                     </span>
                                     <div style={{ flex: 1 }}>
                                       <a
-                                        href={agenda.fileLink || (agenda.fileId ? `/files/${agenda.fileId}` : "#")}
+                                        href={agenda.fileLink ? normalizeFilesUrl(agenda.fileLink) : (agenda.fileId ? normalizeFilesUrl(`/files/v2/${agenda.fileId}`) : "#")}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
@@ -756,7 +808,7 @@ export default function Committee() {
                                     </span>
                                     <div style={{ flex: 1 }}>
                                       <a
-                                        href={report.fileLink || (report.fileId ? `/files/${report.fileId}` : "#")}
+                                        href={report.fileLink ? normalizeFilesUrl(report.fileLink) : (report.fileId ? normalizeFilesUrl(`/files/v2/${report.fileId}`) : "#")}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
@@ -1040,18 +1092,24 @@ export default function Committee() {
                             </div>
                             <div className="law-list" style={{ marginTop: 20 }}>
                               {documentsByCategoryAndYear[documentsCategory]?.documents[documentsYear]?.map((doc, idx) => {
-                                const fileUrl = doc.fileLink || (doc.fileId ? `/files/${doc.fileId}` : "");
+                                const fileUrl = doc.fileLink ? normalizeFilesUrl(doc.fileLink) : (doc.fileId ? normalizeFilesUrl(`/files/v2/${doc.fileId}`) : "");
                                 return (
                                   <div key={doc.id || idx} className="law-item" style={{ marginBottom: 16 }}>
                                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                                      <a
-                                        href={fileUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ color: "#2563eb", textDecoration: "none", fontWeight: 600 }}
-                                      >
-                                        {doc.title || "Документ без названия"}
-                                      </a>
+                                      {fileUrl ? (
+                                        <a
+                                          href={fileUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          style={{ color: "#2563eb", textDecoration: "none", fontWeight: 600 }}
+                                        >
+                                          {doc.title || "Документ без названия"}
+                                        </a>
+                                      ) : (
+                                        <span style={{ color: "#6b7280", fontWeight: 600 }}>
+                                          {doc.title || "Документ без названия"}
+                                        </span>
+                                      )}
                                       {doc.size && (
                                         <span style={{ fontSize: 12, color: "#6b7280", marginLeft: "auto" }}>
                                           {doc.size}
