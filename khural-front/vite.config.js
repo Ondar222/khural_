@@ -23,13 +23,13 @@ export default defineConfig({
     proxy: {
       "/api": {
         // khural-backend now listens on 4000 by default
-        target: "http://localhost:4000",
+        target: "http://localhost:3004",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
       // Proxy files to avoid CORP/CORS issues when backend serves /files cross-origin
       "/files": {
-        target: process.env.VITE_API_BASE_URL || "http://localhost:4000",
+        target: process.env.VITE_API_BASE_URL || "http://localhost:3004",
         changeOrigin: true,
         secure: false,
       },
