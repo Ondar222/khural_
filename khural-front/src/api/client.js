@@ -173,8 +173,8 @@ export async function apiFetch(
   
   const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
   
-  // Логируем полный URL для отладки (только для запросов к convocations)
-  if (path.includes("convocations")) {
+  // Логируем полный URL для отладки (только для запросов к convocations и committees)
+  if (path.includes("convocations") || path.includes("committees")) {
     console.log(`[API] ${method} ${url} (API_BASE_URL: ${API_BASE_URL}, path: ${path})`);
   }
   

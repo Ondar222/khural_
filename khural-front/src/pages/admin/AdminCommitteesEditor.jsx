@@ -1,8 +1,8 @@
 import React from "react";
 import { App, Button, Form, Input, Switch, Select, Space, Divider, InputNumber, Tag } from "antd";
 import { useHashRoute } from "../../Router.jsx";
-import { toCommitteeHtml } from "../../utils/committeeHtml.js";
 import { normalizeBool } from "../../utils/bool.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 export default function AdminCommitteesEditor({
   mode,
@@ -407,42 +407,20 @@ export default function AdminCommitteesEditor({
             </Form.Item>
 
             <Form.Item 
-              label={<span style={{ fontWeight: 600, fontSize: 14 }}>Краткое описание (HTML)</span>}
+              label={<span style={{ fontWeight: 600, fontSize: 14 }}>Краткое описание</span>}
               name="description"
               style={{ marginBottom: 0 }}
-              extra={
-                <span style={{ opacity: 0.75 }}>
-                  Можно использовать теги: <code>{`p, a, h1-h6, ul, ol, li, br, strong, em`}</code>. На сайте теги не отображаются как текст — они рендерятся.
-                </span>
-              }
             >
-              <Input.TextArea
-                autoSize={{ minRows: 4, maxRows: 8 }}
-                placeholder="<p>Введите описание комитета...</p>"
+              <TinyMCEEditor
+                value={descriptionValue || ""}
+                onChange={(content) => {
+                  form.setFieldsValue({ description: content });
+                }}
+                placeholder="Введите описание комитета..."
                 disabled={loading || saving}
-                showCount
-                maxLength={5000}
-                style={{ resize: 'vertical' }}
+                height={300}
               />
             </Form.Item>
-
-            {descriptionValue ? (
-              <div
-                className="admin-card"
-                style={{
-                  padding: 16,
-                  borderRadius: 14,
-                  background: "rgba(255, 255, 255, 0.55)",
-                  border: "1px solid rgba(15, 23, 42, 0.08)",
-                }}
-              >
-                <div style={{ fontWeight: 800, marginBottom: 10 }}>Превью на сайте</div>
-                <div
-                  style={{ lineHeight: 1.65, color: "#374151" }}
-                  dangerouslySetInnerHTML={{ __html: toCommitteeHtml(descriptionValue) }}
-                />
-              </div>
-            ) : null}
           </div>
 
           <Divider style={{ margin: "18px 0 14px" }} />

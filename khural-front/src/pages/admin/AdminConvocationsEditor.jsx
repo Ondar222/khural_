@@ -2,6 +2,7 @@ import React from "react";
 import { App, Button, Form, Input, Switch, Select, Space, Tag, Empty } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 export default function AdminConvocationsEditor({
   mode,
@@ -22,6 +23,7 @@ export default function AdminConvocationsEditor({
 
   const numberValue = Form.useWatch("number", form);
   const isActiveValue = Form.useWatch("isActive", form);
+  const descriptionValue = Form.useWatch("description", form);
 
   const extractNumber = React.useCallback((raw) => {
     const s = String(raw || "").trim();
@@ -161,10 +163,14 @@ export default function AdminConvocationsEditor({
           </Form.Item>
 
           <Form.Item label="Краткое описание" name="description">
-            <Input.TextArea
-              autoSize={{ minRows: 3, maxRows: 6 }}
-              placeholder="Краткое описание созыва"
+            <TinyMCEEditor
+              value={descriptionValue || ""}
+              onChange={(content) => {
+                form.setFieldsValue({ description: content });
+              }}
+              placeholder="Введите описание созыва..."
               disabled={loading || saving}
+              height={300}
             />
           </Form.Item>
 

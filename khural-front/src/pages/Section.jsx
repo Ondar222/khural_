@@ -8,6 +8,7 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
 import { APPARATUS_NAV_LINKS } from "../utils/apparatusLinks.js";
 import { APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
+import { normalizeBool } from "../utils/bool.js";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 
 const SECTION_TITLE_TO_SLUG = {
@@ -199,8 +200,24 @@ function committeeConvocationMatchKeys(c) {
   return Array.from(keys);
 }
 
+function stripTags(input) {
+  return String(input || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+}
+
+function getChairman(c) {
+  if (!c) return "";
+  if (typeof c.head === "string" && c.head.trim()) return c.head.trim();
+  const members = Array.isArray(c.members) ? c.members : [];
+  const chair = members.find((m) => {
+    const role = String(m?.role || "").toLowerCase();
+    return role.includes("председатель") || role.includes("chairman");
+  });
+  if (chair?.name) return chair.name;
+  return "";
+}
+
 function ReportsAllConvocationsPage() {
-  const { committees: committeesFromContext } = useData();
+  const { committees: committeesFromContext, persons } = useData();
   const [convocations, setConvocations] = React.useState([]);
   const [committees, setCommittees] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -210,42 +227,103 @@ function ReportsAllConvocationsPage() {
     (async () => {
       try {
         setLoading(true);
-        const [list, allCommittees] = await Promise.all([
-          ConvocationsApi.list({ activeOnly: false }).catch(() => []),
-          CommitteesApi.list({ all: true }).catch(() => [])
-        ]);
+        const list = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
         if (!alive) return;
         
-        const normalized = Array.isArray(list) ? list.map((x) => {
+        // Нормализуем созывы и загружаем полные данные с документами (как в ConvocationReportsPage)
+        const normalized = [];
+        for (const x of Array.isArray(list) ? list : []) {
+          let conv = null;
           if (typeof x === "string") {
             const token = normalizeConvocationToken(x);
-            return { id: token || x, name: x, number: token };
-          }
-          if (x && typeof x === "object") {
+            conv = { id: token || x, name: x, number: token, originalId: token || x };
+          } else if (x && typeof x === "object") {
             const token = normalizeConvocationToken(x.name || x.number || "");
-            return {
+            conv = {
+              ...x,
               id: x.id ?? token,
               name: x.name || x.number || "",
               number: token || x.number || "",
+              originalId: x.id,
             };
           }
+          
+          if (conv && conv.id) {
+            // Загружаем полные данные с документами, если их нет
+            if (!conv.documents || conv.documents.length === 0) {
+              try {
+                const fullData = await ConvocationsApi.getById(conv.id).catch(() => null);
+                if (fullData && Array.isArray(fullData.documents) && fullData.documents.length > 0) {
+                  conv = { ...conv, documents: fullData.documents };
+                } else if (fullData && fullData.documents) {
+                  conv = { ...conv, documents: fullData.documents };
+                }
+              } catch (e) {
+                console.warn(`[ReportsAllConvocationsPage] Ошибка загрузки документов для созыва ${conv.id}:`, e);
+              }
+            }
+            normalized.push(conv);
+          }
+        }
+        
+        // Загружаем все комитеты один раз (как на странице Convocations)
+        console.log("[ReportsAllConvocationsPage] Загрузка комитетов с API...");
+        const apiCommittees = await CommitteesApi.list({ all: true }).catch((err) => {
+          console.error("[ReportsAllConvocationsPage] Ошибка загрузки комитетов:", err);
           return null;
-        }).filter(Boolean) : [];
+        });
+        console.log("[ReportsAllConvocationsPage] Загружено комитетов с API:", apiCommittees ? (Array.isArray(apiCommittees) ? apiCommittees.length : "не массив") : "null");
+        if (apiCommittees && Array.isArray(apiCommittees) && apiCommittees.length > 0) {
+          console.log("[ReportsAllConvocationsPage] Первые 3 комитета:", apiCommittees.slice(0, 3).map(c => ({
+            id: c.id,
+            name: c.name || c.title,
+            convocationId: c.convocationId,
+            convocation: c.convocation,
+          })));
+        }
+        
+        if (!alive) return;
         
         // Ensure we have at least I, II, III, IV convocations
         const requiredConvocations = ["I", "II", "III", "IV"];
         const existingTokens = new Set(normalized.map(c => normalizeConvocationToken(c.name || c.number || "")));
+        // Создаем маппинг римских цифр к числовым ID из API
+        const romanToNumericId = {};
+        normalized.forEach(c => {
+          const token = normalizeConvocationToken(c.name || c.number || "");
+          if (token && c.originalId) {
+            romanToNumericId[token] = c.originalId;
+          }
+        });
+        console.log("[ReportsAllConvocationsPage] Маппинг римских цифр к ID:", romanToNumericId);
+        
         requiredConvocations.forEach(token => {
           if (!existingTokens.has(token)) {
-            normalized.push({ id: token, name: `Созыв ${token}`, number: token });
+            // Если есть числовой ID для этого токена, используем его
+            const numericId = romanToNumericId[token];
+            normalized.push({ 
+              id: numericId || token, 
+              name: `Созыв ${token}`, 
+              number: token,
+              originalId: numericId,
+            });
+          } else {
+            // Обновляем существующий созыв, чтобы он имел и числовой ID, и токен
+            const existing = normalized.find(c => normalizeConvocationToken(c.name || c.number || "") === token);
+            if (existing && existing.originalId && !existing.id) {
+              existing.id = existing.originalId;
+            }
           }
         });
         
         setConvocations(normalized);
         
-        // Load committees
+        // Объединяем комитеты из API и из контекста (как на странице Convocations)
         const fromContext = Array.isArray(committeesFromContext) ? committeesFromContext : [];
-        const all = [...(Array.isArray(allCommittees) ? allCommittees : []), ...fromContext];
+        const apiList = Array.isArray(apiCommittees) ? apiCommittees : [];
+        const all = [...apiList, ...fromContext];
+        console.log("[ReportsAllConvocationsPage] Итого комитетов после объединения:", all.length);
+        console.log("[ReportsAllConvocationsPage] Из API:", apiList.length, "Из контекста:", fromContext.length);
         setCommittees(all);
       } catch (error) {
         console.error("Failed to load convocations:", error);
@@ -289,30 +367,102 @@ function ReportsAllConvocationsPage() {
     });
   }, [convocations]);
 
-  // Group committees by convocation
-  const committeesByConvocation = React.useMemo(() => {
-    const grouped = {};
-    for (const conv of sortedConvocations) {
-      const convKeys = new Set([conv.id, conv.number, normalizeConvocationToken(conv.name || conv.number || "")]);
-      const convCommittees = [];
+  // Функция для получения ключей созыва (точно как на странице Convocations)
+  const convocationMatchKeys = React.useCallback((c) => {
+    const keys = new Set();
+    if (!c) return [];
+    const id = String(c?.id ?? "").trim();
+    if (id) keys.add(id);
+    const token = normalizeConvocationToken(c?.name || c?.number || c?.id || "");
+    if (token) keys.add(token);
+    return Array.from(keys);
+  }, []);
+
+  // Функция проверки активности комитета (как на странице Convocations)
+  const isCommitteeActive = React.useCallback((c) => {
+    if (!c) return false;
+    return normalizeBool(c?.isActive, true) !== false;
+  }, []);
+
+  // Group committees by convocation - сначала по прямым связям, затем через документы
+  const committeesByConvocationKey = React.useMemo(() => {
+    const map = new Map();
+    console.log("[ReportsAllConvocationsPage] Начало группировки комитетов");
+    console.log("[ReportsAllConvocationsPage] Всего комитетов:", committees.length);
+    console.log("[ReportsAllConvocationsPage] Всего созывов:", convocations.length);
+    
+    // Сначала группируем по прямым связям (convocationId)
+    for (const c of Array.isArray(committees) ? committees : []) {
+      if (!c) continue;
+      const isActive = isCommitteeActive(c);
+      if (!isActive) {
+        console.log(`[ReportsAllConvocationsPage] Комитет "${c.name || c.title}" (ID: ${c.id}) пропущен - неактивен`);
+        continue;
+      }
+      const keys = committeeConvocationMatchKeys(c);
+      console.log(`[ReportsAllConvocationsPage] Комитет "${c.name || c.title}" (ID: ${c.id}):`, {
+        keys,
+        convocation: c.convocation,
+        convocationId: c.convocationId,
+        convocation_id: c.convocation_id,
+        isActive: c.isActive,
+      });
       
-      for (const committee of Array.isArray(committees) ? committees : []) {
-        if (!committee) continue;
-        const matchKeys = committeeConvocationMatchKeys(committee);
-        const committeeConvId = String(committee?.convocation?.id ?? "");
-        const committeeConvToken = normalizeConvocationToken(committee?.convocation?.name || committee?.convocation?.number || "");
+      if (!keys.length) {
+        const list = map.get("__none__") || [];
+        list.push(c);
+        map.set("__none__", list);
+        continue;
+      }
+      for (const key of keys) {
+        const list = map.get(key) || [];
+        if (!list.some((x) => String(x?.id ?? "") === String(c?.id ?? ""))) list.push(c);
+        map.set(key, list);
+      }
+    }
+    
+    // Дополнительно связываем через документы (если у комитетов нет convocationId)
+    for (const conv of Array.isArray(convocations) ? convocations : []) {
+      if (!conv) continue;
+      const convKeys = convocationMatchKeys(conv);
+      const documents = Array.isArray(conv.documents) ? conv.documents : [];
+      const committeeIdsFromDocs = new Set();
+      
+      documents.forEach((doc) => {
+        if (doc.committeeId) {
+          committeeIdsFromDocs.add(String(doc.committeeId));
+        }
+      });
+      
+      if (committeeIdsFromDocs.size > 0) {
+        console.log(`[ReportsAllConvocationsPage] Созыв "${formatConvocationLabel(conv)}" имеет документы с комитетами:`, Array.from(committeeIdsFromDocs));
         
-        if (matchKeys.some(key => convKeys.has(key)) || 
-            (committeeConvId && convKeys.has(committeeConvId)) ||
-            (committeeConvToken && convKeys.has(committeeConvToken))) {
-          convCommittees.push(committee);
+        // Находим комитеты по ID из документов
+        for (const c of Array.isArray(committees) ? committees : []) {
+          if (!c || !isCommitteeActive(c)) continue;
+          const cid = String(c?.id ?? "");
+          if (committeeIdsFromDocs.has(cid)) {
+            // Добавляем комитет ко всем ключам созыва
+            for (const key of convKeys) {
+              const list = map.get(key) || [];
+              if (!list.some((x) => String(x?.id ?? "") === cid)) {
+                list.push(c);
+                map.set(key, list);
+                console.log(`[ReportsAllConvocationsPage] Добавлен комитет "${c.name || c.title}" к ключу "${key}" через документы`);
+              }
+            }
+          }
         }
       }
-      
-      grouped[conv.id || conv.number] = convCommittees;
     }
-    return grouped;
-  }, [sortedConvocations, committees]);
+    
+    console.log("[ReportsAllConvocationsPage] Ключи в Map:", Array.from(map.keys()));
+    console.log("[ReportsAllConvocationsPage] Количество комитетов по ключам:", 
+      Array.from(map.entries()).map(([key, list]) => `${key}: ${list.length}`).join(", "));
+    
+    return map;
+  }, [committees, convocations, isCommitteeActive, convocationMatchKeys]);
+  
 
   return (
     <section className="section section-page">
@@ -324,54 +474,96 @@ function ReportsAllConvocationsPage() {
               <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
             ) : sortedConvocations.length > 0 ? (
               <div style={{ marginTop: 20 }}>
-                {sortedConvocations.map((conv) => {
-                  const label = formatConvocationLabel(conv);
-                  const convNumber = normalizeConvocationToken(conv.name || conv.number || "");
-                  const reportTitle = `Отчеты о деятельности комитетов ${convNumber} созыва`;
+                {sortedConvocations.map((c) => {
+                  const idStr = String(c?.id ?? "");
+                  const title = formatConvocationLabel(c);
+                  const keys = convocationMatchKeys(c);
+                  console.log(`[ReportsAllConvocationsPage] Созыв "${title}" (ID: ${c.id}, originalId: ${c.originalId}): ключи:`, keys);
+                  const list = keys.flatMap((k) => {
+                    const committees = committeesByConvocationKey.get(k) || [];
+                    console.log(`[ReportsAllConvocationsPage] Для ключа "${k}" найдено комитетов:`, committees.length);
+                    return committees;
+                  });
+                  const uniq = new Map();
+                  for (const it of list) {
+                    const cid = String(it?.id ?? "");
+                    if (!cid) continue;
+                    if (!uniq.has(cid)) uniq.set(cid, it);
+                  }
+                  const committeesList = Array.from(uniq.values());
+                  console.log(`[ReportsAllConvocationsPage] Для созыва "${title}" итого комитетов:`, committeesList.length);
+                  const token = normalizeConvocationToken(c?.name || c?.number || c?.id || "");
+                  const reportTitle = `Отчеты о деятельности комитетов ${token} созыва`;
                   const href = `/section?title=${encodeURIComponent(reportTitle)}`;
-                  const convCommittees = committeesByConvocation[conv.id || conv.number] || [];
-                  
+
                   return (
                     <div
-                      key={conv.id || conv.name}
-                      className="card"
+                      key={idStr || title}
+                      className="tile"
                       style={{
-                        padding: 20,
-                        marginBottom: 16,
-                        borderRadius: 12,
+                        borderRadius: 18,
+                        padding: 16,
                         border: "1px solid rgba(17, 24, 39, 0.10)",
+                        background: "#fff",
                       }}
                     >
-                      <div style={{ marginBottom: 12 }}>
-                        <a
-                          href={href}
-                          style={{
-                            color: "#2563eb",
-                            textDecoration: "none",
-                            fontSize: 18,
-                            fontWeight: 700,
-                          }}
-                        >
-                          {label}
+                      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+                        <div style={{ fontWeight: 800, fontSize: 18 }}>{title}</div>
+                        <a className="link" href={href} style={{ whiteSpace: "nowrap" }}>
+                          Отчеты →
                         </a>
                       </div>
-                      {convCommittees.length > 0 ? (
-                        <div style={{ marginTop: 12 }}>
-                          <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
-                            Комитеты ({convCommittees.length}):
-                          </div>
-                          <ul style={{ listStyle: "disc", paddingLeft: 24, margin: 0 }}>
-                            {convCommittees.map((committee) => (
-                              <li key={committee.id} style={{ marginBottom: 4 }}>
-                                <span style={{ fontSize: 14 }}>
-                                  {committee.title || committee.name || "Комитет"}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
+                      {c?.description ? (
+                        <div style={{ marginTop: 8, color: "var(--muted, #6b7280)", lineHeight: 1.45 }}>
+                          {stripTags(String(c.description))}
+                        </div>
+                      ) : null}
+
+                      <div style={{ marginTop: 12, fontWeight: 700 }}>Комитеты созыва</div>
+                      {committeesList.length ? (
+                        <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+                          {committeesList.map((k) => {
+                            const cid = String(k?.id ?? "");
+                            const name = String(k?.name || k?.title || "").trim() || "Комитет";
+                            const chairman = getChairman(k);
+                            const desc = stripTags(k?.description || "");
+                            const phone = String(k?.phone || "").trim();
+                            const email = String(k?.email || "").trim();
+                            const website = String(k?.website || "").trim();
+                            const address = String(k?.address || "").trim();
+                            return (
+                              <a
+                                key={cid || name}
+                                className="tile link"
+                                href={`/committee?id=${encodeURIComponent(cid)}`}
+                                style={{ padding: 12, borderRadius: 14, display: "grid", gap: 6 }}
+                              >
+                                <div style={{ fontWeight: 800 }}>{name}</div>
+                                {chairman ? (
+                                  <div style={{ opacity: 0.85 }}>
+                                    <span style={{ opacity: 0.7 }}>Председатель: </span>
+                                    {chairman}
+                                  </div>
+                                ) : null}
+                                {desc ? (
+                                  <div style={{ opacity: 0.75 }}>
+                                    {desc.length > 220 ? `${desc.slice(0, 220)}…` : desc}
+                                  </div>
+                                ) : null}
+                                {phone || email || website || address ? (
+                                  <div style={{ opacity: 0.75, display: "grid", gap: 2 }}>
+                                    {phone ? <div>Тел.: {phone}</div> : null}
+                                    {email ? <div>Email: {email}</div> : null}
+                                    {website ? <div>Сайт: {website}</div> : null}
+                                    {address ? <div>Адрес: {address}</div> : null}
+                                  </div>
+                                ) : null}
+                              </a>
+                            );
+                          })}
                         </div>
                       ) : (
-                        <div style={{ marginTop: 8, fontSize: 14, color: "#6b7280" }}>
+                        <div style={{ marginTop: 8, color: "var(--muted, #6b7280)" }}>
                           Комитеты для этого созыва пока не указаны.
                         </div>
                       )}

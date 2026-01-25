@@ -213,6 +213,20 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
     return `Созыв ${raw}`;
   }, []);
 
+  // Функция для удаления HTML тегов из текста
+  const stripHtmlTags = React.useCallback((html) => {
+    if (!html) return "";
+    const text = String(html);
+    // Создаем временный элемент для извлечения текста
+    if (typeof document !== "undefined") {
+      const tmp = document.createElement("DIV");
+      tmp.innerHTML = text;
+      return tmp.textContent || tmp.innerText || text.replace(/<[^>]*>/g, "");
+    }
+    // Fallback для SSR
+    return text.replace(/<[^>]*>/g, "");
+  }, []);
+
   const isConvocationActive = React.useCallback(
     (row) => normalizeBool(row?.isActive, true) !== false,
     []
@@ -263,7 +277,7 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
           </div>
           {row.description ? (
             <div style={{ opacity: 0.75, fontSize: 13 }}>
-              {String(row.description).slice(0, 160)}
+              {stripHtmlTags(row.description).slice(0, 160)}
             </div>
           ) : null}
         </div>
@@ -417,8 +431,8 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
                             lineHeight: 1.5,
                             marginTop: 4,
                           }}>
-                            {String(row.description).slice(0, 120)}
-                            {String(row.description).length > 120 ? '...' : ''}
+                            {stripHtmlTags(row.description).slice(0, 120)}
+                            {stripHtmlTags(row.description).length > 120 ? '...' : ''}
                           </div>
                         )}
                       </div>
