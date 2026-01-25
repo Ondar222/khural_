@@ -33,6 +33,43 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Proxy для PDF файлов с khural.rtyva.ru для обхода CORS и X-Frame-Options
+      "/pdf-proxy": {
+        target: "https://khural.rtyva.ru",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/pdf-proxy/, ""),
+        configure: (proxy, _options) => {
+          proxy.on("proxyRes", (proxyRes, req, res) => {
+            // Убираем заголовки, которые блокируют встраивание
+            delete proxyRes.headers["x-frame-options"];
+            delete proxyRes.headers["X-Frame-Options"];
+            delete proxyRes.headers["frame-ancestors"];
+            // Добавляем CORS заголовки
+            proxyRes.headers["Access-Control-Allow-Origin"] = "*";
+            proxyRes.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
+            proxyRes.headers["Access-Control-Allow-Headers"] = "*";
+          });
+        },
+      },
+      // Proxy для изображений с khural.rtyva.ru для обхода CORS
+      "/img-proxy": {
+        target: "https://khural.rtyva.ru",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/img-proxy/, ""),
+        configure: (proxy, _options) => {
+          proxy.on("proxyRes", (proxyRes, req, res) => {
+            // Добавляем CORS заголовки для изображений
+            proxyRes.headers["Access-Control-Allow-Origin"] = "*";
+            proxyRes.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
+            proxyRes.headers["Access-Control-Allow-Headers"] = "*";
+            // Убираем ограничения на встраивание
+            delete proxyRes.headers["x-frame-options"];
+            delete proxyRes.headers["X-Frame-Options"];
+          });
+        },
+      },
     },
   },
 });

@@ -216,16 +216,25 @@ export default function Deputies() {
               >
                 <div className="grid cols-3">
                   {filtered.map((d) => {
-                    // Проверяем все возможные источники фото
-                    const photoSources = [
-                      d.photo,
-                      d.image?.link,
-                      d.image?.url,
-                      d.photoUrl,
-                      d.photo_url,
-                    ].filter(Boolean);
-                    const photoRaw = photoSources.length > 0 ? photoSources[0] : "";
-                    const photo = normalizeFilesUrl(photoRaw);
+                    // Фото уже нормализовано в DataContext через normalizePhotoUrl
+                    // Но на всякий случай проверяем и нормализуем еще раз, если нужно
+                    let photo = d.photo || "";
+                    // Если фото пустое или не полный URL, пробуем нормализовать
+                    if (photo && String(photo).trim() !== "" && !photo.startsWith("http")) {
+                      photo = normalizeFilesUrl(photo);
+                    }
+                    // Если фото все еще пустое, пробуем альтернативные источники
+                    if (!photo || String(photo).trim() === "") {
+                      const altSources = [
+                        d.image?.link,
+                        d.image?.url,
+                        d.photoUrl,
+                        d.photo_url,
+                      ].filter(Boolean);
+                      if (altSources.length > 0) {
+                        photo = normalizeFilesUrl(altSources[0]);
+                      }
+                    }
                     const receptionText =
                       typeof d.reception === "string"
                         ? d.reception
@@ -328,20 +337,32 @@ export default function Deputies() {
                     return (
                       <div key={d.id} className="gov-card">
                         <div className="gov-card__top">
-                          {photo && String(photo).trim() !== "" ? (
+                          {photo && String(photo).trim() !== "" && String(photo).trim() !== "undefined" && String(photo).trim() !== "null" ? (
                             <img
                               className="gov-card__avatar"
                               src={photo}
-                              alt=""
+                              alt={d.name || ""}
                               loading="lazy"
                               decoding="async"
                               onError={(e) => {
-                                // Если фото не загрузилось, скрываем его
-                                e.target.style.display = "none";
-                                const placeholder = e.target.parentElement?.querySelector(".gov-card__avatar-placeholder");
-                                if (placeholder) {
-                                  placeholder.style.display = "block";
+                                // Если фото не загрузилось из-за CORS, пробуем загрузить через прокси
+                                const img = e.target;
+                                const currentSrc = img.src || photo;
+                                
+                                // Если это URL с khural.rtyva.ru и мы еще не пробовали прокси
+                                if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                                  img.dataset.proxyTried = "true";
+                                  const proxyUrl = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                                  // Пробуем загрузить через прокси
+                                  img.src = proxyUrl;
+                                } else {
+                                  // Если прокси не помог или это не khural.rtyva.ru, скрываем изображение
+                                  img.style.display = "none";
                                 }
+                              }}
+                              onLoad={(e) => {
+                                // Если изображение загрузилось успешно, показываем его
+                                e.target.style.display = "";
                               }}
                             />
                           ) : (
@@ -355,6 +376,50 @@ export default function Deputies() {
                         ) : (
                           <div className="gov-card__role">Депутат</div>
                         )}
+                        {/* Краткая биография - первые несколько слов */}
+                        {(() => {
+                          // Проверяем все возможные источники биографии
+                          const bioText = String(
+                            d.biography || 
+                            d.bio || 
+                            d.description || 
+                            ""
+                          ).trim();
+                          if (!bioText) return null;
+                          // Убираем HTML теги и декодируем HTML entities
+                          let bioPlain = bioText
+                            .replace(/<[^>]*>/g, "")
+                            .replace(/&nbsp;/g, " ")
+                            .replace(/&lt;/g, "<")
+                            .replace(/&gt;/g, ">")
+                            .replace(/&quot;/g, '"')
+                            .replace(/&#39;/g, "'")
+                            .replace(/&amp;/g, "&")
+                            .replace(/&[a-z]+;/gi, " ")
+                            .trim();
+                          if (!bioPlain || bioPlain.length < 10) return null;
+                          // Берем первые 60 символов или до конца первого предложения
+                          let shortBio = bioPlain.length > 60 ? bioPlain.substring(0, 60) : bioPlain;
+                          // Пытаемся обрезать по точке, если она есть в первых 60 символах
+                          const lastDot = shortBio.lastIndexOf(".");
+                          if (lastDot > 20) {
+                            shortBio = shortBio.substring(0, lastDot + 1);
+                          } else {
+                            // Иначе обрезаем по пробелу, чтобы не резать слова
+                            const lastSpace = shortBio.lastIndexOf(" ");
+                            if (lastSpace > 30) {
+                              shortBio = shortBio.substring(0, lastSpace);
+                            }
+                            if (bioPlain.length > shortBio.length) {
+                              shortBio += "...";
+                            }
+                          }
+                          return (
+                            <div className="gov-card__bio" style={{ fontSize: "0.9em", color: "#666", marginTop: "8px", marginBottom: "8px", lineHeight: "1.4" }}>
+                              {shortBio}
+                            </div>
+                          );
+                        })()}
                         <ul className="gov-meta">
                           {address && (
                             <li>

@@ -228,9 +228,10 @@ export default function Documents() {
                                   ) : null}
                                   <a
                                     className="btn"
-                                    href={d.id ? `#/documents/${d.id}` : url || "#"}
-                                    target={d.id ? "_blank" : "_blank"}
+                                    href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
+                                    target="_blank"
                                     rel="noopener noreferrer"
+                                    download={url && !url.includes(".pdf") ? true : undefined}
                                   >
                                     Открыть ↗
                                   </a>
@@ -273,9 +274,10 @@ export default function Documents() {
                             ) : null}
                             <a
                               className="btn"
-                              href={d.id ? `#/documents/${d.id}` : url || "#"}
+                              href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
                               target="_blank"
                               rel="noopener noreferrer"
+                              download={url && !url.includes(".pdf") ? true : undefined}
                             >
                               Открыть ↗
                             </a>

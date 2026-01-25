@@ -1273,10 +1273,9 @@ export default function DataProvider({ children }) {
         };
         
         const deletedDocs = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
-        setDocuments(
-          apiDocs
-            .filter((d) => !deletedDocs.has(String(d?.id ?? "")))
-            .map((d) => ({
+        const apiDocsList = apiDocs
+          .filter((d) => !deletedDocs.has(String(d?.id ?? "")))
+          .map((d) => ({
             id: d.id,
             title: d.title,
             desc: d.content || d.description || "",
@@ -1286,8 +1285,79 @@ export default function DataProvider({ children }) {
               d?.category?.name || typeLabels[d.type] || d.type || "Документы",
             type: typeMapping[d.type] || d.type || "other",
             url: d.metadata?.url || firstFileLink(d.pdfFile) || (d.metadata?.pdfFileTyLink ? String(d.metadata.pdfFileTyLink) : "") || "",
-          }))
-        );
+          }));
+        
+        // Загружаем документы из JSON файлов в persons_doc
+        const [zakonyData, zakony2Data, postamovleniyaData] = await Promise.all([
+          fetchJson("/persons_doc/zakony.json").catch(() => []),
+          fetchJson("/persons_doc/zakony2.json").catch(() => []),
+          fetchJson("/persons_doc/postamovleniya_VH.json").catch(() => []),
+        ]);
+        
+        // Парсим документы из zakony.json и zakony2.json
+        const parseZakonyDoc = (row) => {
+          if (!row || !row.IE_NAME) return null;
+          const fileUrl = String(row.IP_PROP28 || "").trim();
+          if (!fileUrl) return null;
+          
+          // Нормализуем URL файла
+          const normalizedUrl = fileUrl.startsWith("/upload/") 
+            ? `https://khural.rtyva.ru${fileUrl}` 
+            : fileUrl.startsWith("http") 
+              ? fileUrl 
+              : `https://khural.rtyva.ru/${fileUrl}`;
+          
+          return {
+            id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
+            title: String(row.IE_NAME || "").trim(),
+            desc: "", // Описание не нужно по требованию пользователя
+            date: String(row.IP_PROP27 || "").trim(),
+            number: String(row.IP_PROP26 || "").trim(),
+            category: "Законы Республики Тыва",
+            type: "laws",
+            url: normalizedUrl,
+          };
+        };
+        
+        // Парсим документы из postamovleniya_VH.json
+        const parsePostamovleniyaDoc = (row) => {
+          if (!row || !row.IE_NAME) return null;
+          const fileUrl = String(row.IP_PROP59 || "").trim();
+          if (!fileUrl) return null;
+          
+          // Нормализуем URL файла
+          const normalizedUrl = fileUrl.startsWith("/upload/") 
+            ? `https://khural.rtyva.ru${fileUrl}` 
+            : fileUrl.startsWith("http") 
+              ? fileUrl 
+              : `https://khural.rtyva.ru/${fileUrl}`;
+          
+          return {
+            id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
+            title: String(row.IE_NAME || "").trim(),
+            desc: "", // Описание не нужно по требованию пользователя
+            date: String(row.IP_PROP58 || "").trim(),
+            number: String(row.IP_PROP57 || "").trim(),
+            category: "Постановления ВХ РТ",
+            type: "resolutions",
+            url: normalizedUrl,
+          };
+        };
+        
+        const zakonyDocs = (Array.isArray(zakonyData) ? zakonyData : [])
+          .map(parseZakonyDoc)
+          .filter(Boolean);
+        
+        const zakony2Docs = (Array.isArray(zakony2Data) ? zakony2Data : [])
+          .map(parseZakonyDoc)
+          .filter(Boolean);
+        
+        const postamovleniyaDocs = (Array.isArray(postamovleniyaData) ? postamovleniyaData : [])
+          .map(parsePostamovleniyaDoc)
+          .filter(Boolean);
+        
+        // Объединяем все документы: сначала из API, затем из JSON файлов
+        setDocuments([...apiDocsList, ...zakonyDocs, ...zakony2Docs, ...postamovleniyaDocs]);
       } catch (e) {
         markError("documents", e);
         setDocuments([]);
