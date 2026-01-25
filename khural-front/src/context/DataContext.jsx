@@ -127,7 +127,21 @@ function mergeDeputiesWithOverrides(base, overrides) {
     if (!id) continue;
     if (deletedIds.has(id)) continue;
     const override = updatedById[id];
-    out.push(override ? { ...it, ...override } : it);
+    if (override) {
+      // Умное слияние: сохраняем важные поля из базового объекта, если они отсутствуют в override
+      const merged = { ...it, ...override };
+      // Восстанавливаем фото, если оно было в базовом объекте, но отсутствует в override
+      if (!override.photo && it.photo) {
+        merged.photo = it.photo;
+      }
+      // Восстанавливаем изображение, если оно было в базовом объекте
+      if (!override.image && it.image) {
+        merged.image = it.image;
+      }
+      out.push(merged);
+    } else {
+      out.push(it);
+    }
     seen.add(id);
   }
 
