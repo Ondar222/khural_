@@ -56,13 +56,21 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
         })
     : null;
 
-  const scheduleHtmlRaw =
+  // Извлекаем график приема из reception/receptionSchedule, но исключаем биографию
+  const receptionRaw =
     (receptionScheduleObj && typeof receptionScheduleObj.notes === "string" && receptionScheduleObj.notes) ||
-    (typeof item.receptionSchedule === "string" ? item.receptionSchedule : "");
+    (typeof item.receptionSchedule === "string" ? item.receptionSchedule : "") ||
+    (typeof item.reception === "string" ? item.reception : "");
+  const receptionPlain = stripTags(receptionRaw).replace(/&nbsp;/g, " ");
+  // Проверяем, что это не биография (не показываем биографию в графике приема)
+  const isReceptionBiography = receptionPlain.length > 200 || 
+    /родился|родилась|окончил|окончила|работал|работала|награды|награжден|избран|назначен|окончил|окончила|работал|работала/i.test(receptionPlain);
+  
+  const scheduleHtmlRaw = !isReceptionBiography ? receptionRaw : "";
   const scheduleHtml = decodeHtmlEntities(scheduleHtmlRaw);
   const schedulePlain = stripTags(scheduleHtml);
   const schedule = scheduleFromWorkingDays ||
-    (typeof item.receptionSchedule === "string"
+    (!isReceptionBiography && typeof item.receptionSchedule === "string"
       ? item.receptionSchedule.split("\n").map((line) => {
           const parts = line.split(/[:-]/);
           if (parts.length >= 2) {

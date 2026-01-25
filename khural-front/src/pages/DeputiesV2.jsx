@@ -109,6 +109,54 @@ function toDisplay(v) {
   return stripTags(String(v));
 }
 
+/** Извлекает адрес, время работы и кабинет из reception */
+function extractReceptionInfo(v) {
+  const raw =
+    typeof v === "string"
+      ? v
+      : v && typeof v === "object" && typeof v.notes === "string"
+        ? v.notes
+        : "";
+  let plain = String(raw || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  // Если текст слишком длинный (более 150 символов) или содержит ключевые слова биографии, не показываем его в карточке
+  const isBiography = plain.length > 150 || 
+    /родился|родилась|окончил|окончила|работал|работала|награды|награжден|избран|назначен/i.test(plain);
+  
+  if (isBiography) {
+    return { address: "", workTime: "", office: "" };
+  }
+  
+  let address = "";
+  let workTime = "";
+  let office = "";
+  
+  if (plain) {
+    // Ищем адрес (г. Кызыл, ул. Ленина, д. 32)
+    const addressMatch = plain.match(/(г\.\s*[^,\n]+(?:,\s*ул\.\s*[^,\n]+(?:,\s*д\.\s*\d+)?)?)/i);
+    if (addressMatch) {
+      address = addressMatch[1].trim();
+    }
+    // Ищем кабинет
+    const officeMatch = plain.match(/кабинет\s*(\d+)/i);
+    if (officeMatch) {
+      office = `кабинет ${officeMatch[1]}`;
+    }
+    // Ищем время работы (09:00-11:00 или "третий понедельник месяца, 09:00-11:00")
+    const timeMatch = plain.match(/(\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2})/);
+    if (timeMatch) {
+      workTime = timeMatch[1];
+    } else {
+      // Ищем описание времени типа "третий понедельник месяца"
+      const dayMatch = plain.match(/((?:первый|второй|третий|четвертый|последний)\s+(?:понедельник|вторник|среда|четверг|пятница)\s+месяца)/i);
+      if (dayMatch) {
+        workTime = dayMatch[1];
+      }
+    }
+  }
+  
+  return { address, workTime, office };
+}
+
 function normalizeApiDeputy(p) {
   const toText = (v) => {
     if (v === undefined || v === null) return "";
@@ -686,36 +734,25 @@ export default function DeputiesV2() {
                             <div className="gov-card__role">Депутат</div>
                           )}
                           <ul className="gov-meta">
-                            {ended && (
-                              <li>
-                                <span>✅</span>
-                                <span>Созыв завершен</span>
-                              </li>
-                            )}
-                            {d.reception && (
-                              <li>
-                                <span>⏰</span>
-                                <span>Приём: {toDisplay(d.reception)}</span>
-                              </li>
-                            )}
-                            {d.district && (
-                              <li>
-                                <span>🏛️</span>
-                                <span>{toDisplay(d.district)}</span>
-                              </li>
-                            )}
-                            {d.faction && (
-                              <li>
-                                <span>👥</span>
-                                <span>{toDisplay(d.faction)}</span>
-                              </li>
-                            )}
-                            {convs.length ? (
-                              <li>
-                                <span>🎖️</span>
-                                <span>Созыв: {convs.map(toDisplay).join(", ")}</span>
-                              </li>
-                            ) : null}
+                            {(() => {
+                              const receptionInfo = extractReceptionInfo(d.reception);
+                              const address = d.address || receptionInfo.address;
+                              return address || receptionInfo.office ? (
+                                <li>
+                                  <span>📍</span>
+                                  <span>{address}{receptionInfo.office ? (address ? `, ${receptionInfo.office}` : receptionInfo.office) : ""}</span>
+                                </li>
+                              ) : null;
+                            })()}
+                            {(() => {
+                              const receptionInfo = extractReceptionInfo(d.reception);
+                              return receptionInfo.workTime ? (
+                                <li>
+                                  <span>⏰</span>
+                                  <span>Время работы: {receptionInfo.workTime}</span>
+                                </li>
+                              ) : null;
+                            })()}
                             {d.contacts?.phone && (
                               <li>
                                 <span>📞</span>

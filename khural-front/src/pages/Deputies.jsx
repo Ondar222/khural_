@@ -216,14 +216,94 @@ export default function Deputies() {
               >
                 <div className="grid cols-3">
                   {filtered.map((d) => {
-                    const photo = normalizeFilesUrl(d.photo || (d.image && d.image.link) || "");
+                    // Проверяем все возможные источники фото
+                    const photoSources = [
+                      d.photo,
+                      d.image?.link,
+                      d.image?.url,
+                      d.photoUrl,
+                      d.photo_url,
+                    ].filter(Boolean);
+                    const photoRaw = photoSources.length > 0 ? photoSources[0] : "";
+                    const photo = normalizeFilesUrl(photoRaw);
                     const receptionText =
                       typeof d.reception === "string"
                         ? d.reception
                         : d.reception && typeof d.reception === "object" && typeof d.reception.notes === "string"
                           ? d.reception.notes
                           : "";
-                    const receptionPlain = String(receptionText || "").replace(/<[^>]*>/g, "").trim();
+                    // Убираем HTML теги
+                    let receptionPlain = String(receptionText || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+                    // Если текст слишком длинный (более 150 символов) или содержит ключевые слова биографии, не показываем его в карточке
+                    // Биография должна показываться только на странице "Подробнее"
+                    const isBiography = receptionPlain.length > 150 || 
+                      /родился|родилась|окончил|окончила|работал|работала|награды|награжден|избран|назначен/i.test(receptionPlain);
+                    
+                    // Извлекаем адрес, время работы и кабинет из reception (если это не биография)
+                    // Сначала используем адрес из данных депутата, если он есть
+                    let address = String(d.address || "").trim();
+                    let workTime = "";
+                    let office = "";
+                    
+                    // Если адреса нет в данных, пытаемся извлечь из reception
+                    if (!address && !isBiography && receptionPlain) {
+                      // Ищем адрес (г. Кызыл, ул. Ленина, д. 32)
+                      const addressMatch = receptionPlain.match(/(г\.\s*[^,\n]+(?:,\s*ул\.\s*[^,\n]+(?:,\s*д\.\s*\d+)?)?)/i);
+                      if (addressMatch) {
+                        address = addressMatch[1].trim();
+                      }
+                    }
+                    
+                    // Извлекаем время работы и кабинет из reception
+                    if (!isBiography && receptionPlain) {
+                      // Ищем кабинет
+                      const officeMatch = receptionPlain.match(/кабинет\s*(\d+)/i);
+                      if (officeMatch) {
+                        office = `кабинет ${officeMatch[1]}`;
+                      }
+                      // Ищем время работы (09:00-11:00 или "третий понедельник месяца, 09:00-11:00")
+                      const timeMatch = receptionPlain.match(/(\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2})/);
+                      if (timeMatch) {
+                        workTime = timeMatch[1];
+                      } else {
+                        // Ищем описание времени типа "третий понедельник месяца"
+                        const dayMatch = receptionPlain.match(/((?:первый|второй|третий|четвертый|последний)\s+(?:понедельник|вторник|среда|четверг|пятница)\s+месяца)/i);
+                        if (dayMatch) {
+                          workTime = dayMatch[1];
+                        }
+                      }
+                    }
+                    
+                    // Также проверяем schedule для времени работы, если оно есть
+                    if (!workTime && Array.isArray(d.schedule) && d.schedule.length > 0) {
+                      const scheduleText = d.schedule
+                        .map((s) => {
+                          const day = s?.day ? String(s.day) : "";
+                          const time = s?.time ? String(s.time) : "";
+                          return [day, time].filter(Boolean).join(": ");
+                        })
+                        .filter(Boolean)
+                        .join(", ");
+                      if (scheduleText) {
+                        workTime = scheduleText;
+                      }
+                    }
+                    
+                    // Также проверяем receptionSchedule для времени работы
+                    if (!workTime && d.receptionSchedule) {
+                      const receptionScheduleText = typeof d.receptionSchedule === "string" 
+                        ? d.receptionSchedule 
+                        : (d.receptionSchedule?.notes || "");
+                      const schedulePlain = String(receptionScheduleText || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+                      const timeMatch2 = schedulePlain.match(/(\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2})/);
+                      if (timeMatch2) {
+                        workTime = timeMatch2[1];
+                      }
+                    }
+                    
+                    if (isBiography) {
+                      receptionPlain = ""; // Не показываем биографию в карточке
+                    }
                     
                     // Получаем комитеты депутата
                     const committeeIds = Array.isArray(d.committeeIds) 
@@ -248,13 +328,21 @@ export default function Deputies() {
                     return (
                       <div key={d.id} className="gov-card">
                         <div className="gov-card__top">
-                          {photo ? (
+                          {photo && String(photo).trim() !== "" ? (
                             <img
                               className="gov-card__avatar"
                               src={photo}
                               alt=""
                               loading="lazy"
                               decoding="async"
+                              onError={(e) => {
+                                // Если фото не загрузилось, скрываем его
+                                e.target.style.display = "none";
+                                const placeholder = e.target.parentElement?.querySelector(".gov-card__avatar-placeholder");
+                                if (placeholder) {
+                                  placeholder.style.display = "block";
+                                }
+                              }}
                             />
                           ) : (
                             <div className="gov-card__avatar" aria-hidden="true" />
@@ -268,52 +356,28 @@ export default function Deputies() {
                           <div className="gov-card__role">Депутат</div>
                         )}
                         <ul className="gov-meta">
-                          {receptionPlain && (
+                          {address && (
+                            <li>
+                              <span>📍</span>
+                              <span>{address}{office ? `, ${office}` : ""}</span>
+                            </li>
+                          )}
+                          {workTime && (
                             <li>
                               <span>⏰</span>
-                              <span>Приём: {receptionPlain}</span>
+                              <span>Время работы: {workTime}</span>
                             </li>
                           )}
-                          {deputyCommittees.length > 0 && (
-                            <li>
-                              <span>📋</span>
-                              <span>Комитеты: {deputyCommittees.join(", ")}</span>
-                            </li>
-                          )}
-                          {d.district && (
-                            <li>
-                              <span>🏛️</span>
-                              <span>{typeof d.district === "string" ? d.district : String(d.district || "")}</span>
-                            </li>
-                          )}
-                          {d.faction && (
-                            <li>
-                              <span>👥</span>
-                              <span>{typeof d.faction === "string" ? d.faction : String(d.faction || "")}</span>
-                            </li>
-                          )}
-                          {(() => {
-                            // Обрабатываем созывы - могут быть массивом или строкой
-                            const convocations = Array.isArray(d.convocations) 
-                              ? d.convocations.map((c) => (typeof c === "string" ? c : c?.name || c?.title || String(c || "")))
-                              : (d.convocation ? [String(d.convocation)] : []);
-                            return convocations.length > 0 ? (
-                              <li>
-                                <span>🎖️</span>
-                                <span>Созывы: {convocations.join(", ")}</span>
-                              </li>
-                            ) : null;
-                          })()}
-                          {d.contacts?.phone && (
+                          {(d.contacts?.phone || d.phoneNumber || d.phone) && (
                             <li>
                               <span>📞</span>
-                              <span>{d.contacts.phone}</span>
+                              <span>{String(d.contacts?.phone || d.phoneNumber || d.phone || "").trim()}</span>
                             </li>
                           )}
-                          {d.contacts?.email && (
+                          {(d.contacts?.email || d.email) && (
                             <li>
                               <span>✉️</span>
-                              <span>{d.contacts.email}</span>
+                              <span>{String(d.contacts?.email || d.email || "").trim()}</span>
                             </li>
                           )}
                         </ul>

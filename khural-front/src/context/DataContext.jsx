@@ -397,13 +397,331 @@ function normalizeDeputyItem(d) {
     return String(v).trim();
   };
   if (!d || typeof d !== "object") return d;
+  
+  // Проверяем все возможные источники фото
+  const photoSources = [
+    d.photo,
+    d.image?.link,
+    d.image?.url,
+    d.photoUrl,
+    d.photo_url,
+  ].filter(Boolean);
+  
+  // Нормализуем фото, чтобы оно всегда было полным URL
+  const photoRaw = photoSources.length > 0 ? photoSources[0] : (d.photo || (d.image && d.image.link) || "");
+  const photo = normalizePhotoUrl(photoRaw);
+  
   return {
     ...d,
     id: String(d.id ?? d._id ?? d.personId ?? ""),
+    photo: photo, // Гарантируем нормализованное фото
     faction: toText(d.faction),
     district: toText(d.district),
     convocation: toText(d.convocation),
+    // Гарантируем наличие contacts объекта
+    contacts: d.contacts || {},
+    // Гарантируем наличие address
+    address: d.address || "",
   };
+}
+
+function normalizePersonName(s) {
+  return String(s ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
+
+/** Преобразует путь фото в полный URL через khural.rtyva.ru */
+function normalizePhotoUrl(pic) {
+  if (!pic) return "";
+  const s = String(pic).trim();
+  if (!s || s === "undefined" || s === "null") return "";
+  
+  // Если уже полный URL, проверяем, не является ли он путем через другой домен для /upload/
+  if (/^https?:\/\//i.test(s) || s.startsWith("//")) {
+    // Если это URL содержит /upload/iblock/ или /upload/, преобразуем в khural.rtyva.ru
+    if (s.includes("/upload/iblock/") || s.includes("/upload/")) {
+      try {
+        const url = new URL(s);
+        if (url.pathname.startsWith("/upload/")) {
+          return `${KHURAL_UPLOAD_BASE}${url.pathname}${url.search}${url.hash}`;
+        }
+      } catch {
+        // Если не удалось распарсить, извлекаем путь вручную
+        const uploadMatch = s.match(/(\/upload\/iblock\/[^\s"']*)/i) || s.match(/(\/upload\/[^\s"']*)/i);
+        if (uploadMatch) {
+          return `${KHURAL_UPLOAD_BASE}${uploadMatch[1]}`;
+        }
+      }
+    }
+    return s;
+  }
+  
+  // Если путь начинается с /upload/ или upload/, преобразуем в полный URL
+  if (s.startsWith("/upload/") || s.startsWith("upload/")) {
+    const path = s.startsWith("/") ? s : `/${s}`;
+    return `${KHURAL_UPLOAD_BASE}${path}`;
+  }
+  
+  // Если путь содержит /upload/iblock/ где-то внутри, извлекаем его
+  const uploadMatch = s.match(/(\/upload\/iblock\/[^\s"']*)/i) || s.match(/(\/upload\/[^\s"']*)/i);
+  if (uploadMatch) {
+    return `${KHURAL_UPLOAD_BASE}${uploadMatch[1]}`;
+  }
+  
+  // Для других путей добавляем / если нужно
+  return s.startsWith("/") ? s : `/${s}`;
+}
+
+/** Извлекает телефон из текста (например, из IE_PREVIEW_TEXT) */
+function extractPhoneFromText(text) {
+  if (!text) return "";
+  // Убираем HTML entities и теги
+  const cleanText = text.replace(/&nbsp;/g, " ").replace(/<[^>]*>/g, " ");
+  // Ищем паттерны типа "тел. +7(39422) - 21632", "тел. 8-983-590-99-97", "тел: 8-923-263-75-53"
+  // Сначала ищем после "тел." или "тел:"
+  const telMatch = cleanText.match(/тел[.:]\s*([+\d\s\-(),]+)/i);
+  if (telMatch) {
+    // Берем первый номер телефона (до запятой или конца строки)
+    const phones = telMatch[1].split(",")[0].trim();
+    // Очищаем от лишних пробелов и символов
+    const phone = phones.replace(/\s+/g, "").replace(/[^\d+\-()]/g, "");
+    if (phone.length >= 8) return phone;
+  }
+  // Если не нашли через "тел.", ищем любой номер телефона
+  const phonePattern = /(\+?\d[\d\s\-()]{8,})/g;
+  const match = cleanText.match(phonePattern);
+  if (match) {
+    const phone = match[0].replace(/\s+/g, "").replace(/[^\d+\-()]/g, "");
+    if (phone.length >= 8) return phone;
+  }
+  return "";
+}
+
+/** Извлекает email из текста */
+function extractEmailFromText(text) {
+  if (!text) return "";
+  const emailPattern = /[\w.-]+@[\w.-]+\.\w+/gi;
+  const match = text.match(emailPattern);
+  return match ? match[0] : "";
+}
+
+/** Извлекает поля из одной записи (deputaty.json или deputaty_vseh_sozyvov.json) */
+function parsePersonInfoRow(row) {
+  const id = row?.IE_ID ?? row?.IE_XML_ID;
+  if (id == null) return null;
+  const name = String(row?.IE_NAME ?? "").trim();
+  if (!name) return null;
+  const pic = String(row?.IE_PREVIEW_PICTURE ?? "").trim();
+  const bio = String(row?.IE_DETAIL_TEXT ?? "").trim();
+  const preview = String(row?.IE_PREVIEW_TEXT ?? "").trim();
+  // Телефон может быть в IP_PROP8 или в IE_PREVIEW_TEXT
+  const phoneFromProp = String(row?.IP_PROP8 ?? "").trim();
+  const phoneFromText = extractPhoneFromText(preview);
+  const phone = phoneFromProp || phoneFromText || "";
+  // Email может быть в IP_PROP9 или в IE_PREVIEW_TEXT
+  const emailFromProp = String(row?.IP_PROP9 ?? "").trim();
+  const emailFromText = extractEmailFromText(preview);
+  const email = emailFromProp || emailFromText || "";
+  const conv = String(row?.IP_PROP15 ?? "").trim();
+  const pos = String(row?.IP_PROP22 ?? "").trim();
+  const pos128 = String(row?.IP_PROP128 ?? "").trim();
+  const pos132 = String(row?.IP_PROP132 ?? "").trim();
+  const position = pos || pos128 || pos132 || "";
+  return {
+    ieId: String(id),
+    name,
+    photo: normalizePhotoUrl(pic),
+    bio: bio || "",
+    reception: preview || "",
+    phone: phone || "",
+    email: email || "",
+    convocation: conv || "",
+    position: position || "",
+  };
+}
+
+/** Строит Map(нормализованное имя -> { photo, bio, ... }) из массива записей */
+function buildPersonInfoMap(raw) {
+  const arr = Array.isArray(raw) ? raw : [];
+  const byId = new Map();
+  for (const row of arr) {
+    const v = parsePersonInfoRow(row);
+    if (!v) continue;
+    if (byId.has(v.ieId)) continue;
+    byId.set(v.ieId, v);
+  }
+  const byName = new Map();
+  for (const v of byId.values()) {
+    const n = normalizePersonName(v.name);
+    if (!n) continue;
+    if (!byName.has(n)) byName.set(n, v);
+  }
+  return { byName, byId };
+}
+
+/** Объединяет две персон-мапы по имени: base — база, overlay заполняет пустые поля */
+function mergePersonInfoMaps(base, overlay) {
+  const byName = new Map(base.byName);
+  for (const [n, ov] of overlay.byName) {
+    const cur = byName.get(n);
+    if (!cur) {
+      byName.set(n, { ...ov });
+      continue;
+    }
+    const merged = { ...cur };
+    if (!merged.photo && ov.photo) merged.photo = ov.photo;
+    if (!merged.bio && ov.bio) merged.bio = ov.bio;
+    if (!merged.reception && ov.reception) merged.reception = ov.reception;
+    if (!merged.phone && ov.phone) merged.phone = ov.phone;
+    if (!merged.email && ov.email) merged.email = ov.email;
+    if (!merged.convocation && ov.convocation) merged.convocation = ov.convocation;
+    if (!merged.position && ov.position) merged.position = ov.position;
+    byName.set(n, merged);
+  }
+  const byId = new Map();
+  for (const v of byName.values()) {
+    byId.set(v.ieId, v);
+  }
+  return { byName, byId };
+}
+
+function enrichDeputyWithPersonInfo(dep, info) {
+  if (!info || !dep) return dep;
+  const out = { ...dep };
+  // Гарантируем наличие contacts объекта
+  if (!out.contacts) out.contacts = {};
+  
+  // Проверяем все возможные источники фото в dep
+  const depPhotoSources = [
+    out.photo,
+    out.image?.link,
+    out.image?.url,
+    out.photoUrl,
+    out.photo_url,
+  ].filter(Boolean);
+  
+  // Проверяем, что фото действительно отсутствует (пустая строка или undefined/null)
+  const currentPhoto = depPhotoSources.length > 0 
+    ? String(depPhotoSources[0]).trim() 
+    : String(out.photo || "").trim();
+  const hasPhoto = currentPhoto !== "" && currentPhoto !== "undefined" && currentPhoto !== "null" && !currentPhoto.startsWith("http://localhost");
+  
+  // Проверяем фото из info
+  const infoPhoto = String(info.photo || "").trim();
+  const hasInfoPhoto = infoPhoto !== "" && infoPhoto !== "undefined" && infoPhoto !== "null";
+  
+  // Приоритет: если есть фото в dep, используем его, иначе берем из info
+  if (hasPhoto) {
+    out.photo = normalizePhotoUrl(currentPhoto); // Нормализуем существующее фото
+  } else if (hasInfoPhoto) {
+    out.photo = normalizePhotoUrl(infoPhoto); // Нормализуем фото при добавлении из info
+  } else {
+    // Если фото нет нигде, убеждаемся, что поле пустое
+    out.photo = "";
+  }
+  
+  // Биография только из IE_DETAIL_TEXT, не из reception
+  if (!out.bio && !out.biography && info.bio) {
+    out.bio = info.bio;
+    out.biography = info.bio;
+  }
+  
+  // Reception (график приема) из IE_PREVIEW_TEXT, но только если это не биография
+  const receptionPlain = String(info.reception || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  const isReceptionBiography = receptionPlain.length > 200 || 
+    /родился|родилась|окончил|окончила|работал|работала|награды|награжден|избран|назначен/i.test(receptionPlain);
+  if (!out.reception && info.reception && !isReceptionBiography) {
+    out.reception = info.reception;
+  }
+  if (!out.receptionSchedule && info.reception && !isReceptionBiography) {
+    out.receptionSchedule = info.reception;
+  }
+  
+  // Извлекаем адрес из reception для карточек (если адрес еще не установлен)
+  if (!out.address || String(out.address).trim() === "") {
+    if (info.reception && !isReceptionBiography) {
+      const addressMatch = receptionPlain.match(/(г\.\s*[^,\n]+(?:,\s*ул\.\s*[^,\n]+(?:,\s*д\.\s*\d+)?)?)/i);
+      if (addressMatch) {
+        out.address = addressMatch[1].trim();
+      }
+    }
+  }
+  
+  // Контакты - добавляем только если их еще нет
+  if (!out.contacts.phone && info.phone && String(info.phone).trim() !== "") {
+    out.contacts = { ...out.contacts, phone: info.phone };
+  }
+  if (!out.contacts.email && info.email && String(info.email).trim() !== "") {
+    out.contacts = { ...out.contacts, email: info.email };
+  }
+  
+  if (!out.convocation && info.convocation) out.convocation = info.convocation;
+  if (!out.district && info.position) out.district = info.position;
+  if (!out.position && info.position) out.position = info.position;
+  
+  return out;
+}
+
+/** Экспортируемая функция для обогащения депутата из JSON файлов (используется в Government.jsx) */
+export async function enrichDeputyFromPersonInfo(dep) {
+  if (!dep || !dep.name) return dep;
+  try {
+    const [personInfoVseh, personInfoDeputaty] = await Promise.all([
+      fetch("/persons_info/deputaty_vseh_sozyvov.json").then((r) => r.ok ? r.json() : []).catch(() => []),
+      fetch("/persons_info/deputaty.json").then((r) => r.ok ? r.json() : []).catch(() => []),
+    ]);
+    const mapVseh = buildPersonInfoMap(personInfoVseh);
+    const mapDep = buildPersonInfoMap(personInfoDeputaty);
+    const personInfoMap = mergePersonInfoMaps(mapDep, mapVseh);
+    const info = personInfoMap.byName.get(normalizePersonName(dep.name));
+    return enrichDeputyWithPersonInfo(dep, info);
+  } catch (e) {
+    console.warn("Failed to enrich deputy from person info:", e);
+    return dep;
+  }
+}
+
+function addMissingDeputiesFromPersonInfo(list, personInfoMap) {
+  const { byName, byId } = personInfoMap;
+  const existing = new Set((list || []).map((d) => normalizePersonName(d?.name ?? "")));
+  const added = [];
+  for (const v of byId.values()) {
+    const n = normalizePersonName(v.name);
+    if (!n || existing.has(n)) continue;
+    existing.add(n);
+    
+    // Извлекаем адрес из reception, если это не биография
+    const receptionPlain = String(v.reception || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+    const isReceptionBiography = receptionPlain.length > 200 || 
+      /родился|родилась|окончил|окончила|работал|работала|награды|награжден|избран|назначен/i.test(receptionPlain);
+    let address = "";
+    if (!isReceptionBiography && receptionPlain) {
+      const addressMatch = receptionPlain.match(/(г\.\s*[^,\n]+(?:,\s*ул\.\s*[^,\n]+(?:,\s*д\.\s*\d+)?)?)/i);
+      if (addressMatch) {
+        address = addressMatch[1].trim();
+      }
+    }
+    
+    added.push({
+      id: `json-${v.ieId}`,
+      name: v.name,
+      photo: normalizePhotoUrl(v.photo || ""), // Нормализуем фото
+      bio: v.bio || "",
+      biography: v.bio || "",
+      reception: !isReceptionBiography ? v.reception : "",
+      receptionSchedule: !isReceptionBiography ? v.reception : "",
+      convocation: v.convocation || "",
+      district: v.position || "",
+      position: v.position || "Депутат",
+      address: address, // Добавляем адрес
+      contacts: { phone: v.phone || "", email: v.email || "" },
+    });
+  }
+  return [...(list || []), ...added];
 }
 
 function mergeSlidesWithOverrides(baseSlides, overrides) {
@@ -747,6 +1065,14 @@ export default function DataProvider({ children }) {
     (async () => {
       markLoading("deputies", true);
       markError("deputies", null);
+      const [personInfoVseh, personInfoDeputaty] = await Promise.all([
+        fetchJson("/persons_info/deputaty_vseh_sozyvov.json").catch(() => []),
+        fetchJson("/persons_info/deputaty.json").catch(() => []),
+      ]);
+      const mapVseh = buildPersonInfoMap(personInfoVseh);
+      const mapDep = buildPersonInfoMap(personInfoDeputaty);
+      const personInfoMap = mergePersonInfoMaps(mapDep, mapVseh);
+
       try {
         const apiPersons = await tryApiFetch("/persons", { auth: false });
         if (Array.isArray(apiPersons) && apiPersons.length) {
@@ -811,12 +1137,27 @@ export default function DataProvider({ children }) {
               return typeof val === "string" ? val : String(val || "");
             })(),
             // Prefer stored image link, fallback to seeded photoUrl or old JSON photo
-            photo:
-              firstFileLink(p.image) ||
-              pick(p.photoUrl, p.photo_url) ||
-              local?.photo ||
-              p.photo ||
-              "",
+            // Важно: нормализуем каждый источник отдельно, чтобы не потерять фото
+            photo: (() => {
+              const imgLink = firstFileLink(p.image);
+              const photoUrl = pick(p.photoUrl, p.photo_url);
+              const localPhoto = local?.photo;
+              const pPhoto = p.photo;
+              
+              // Пробуем каждый источник по очереди и нормализуем сразу
+              let photo = "";
+              if (imgLink && String(imgLink).trim() !== "" && String(imgLink).trim() !== "undefined" && String(imgLink).trim() !== "null") {
+                photo = normalizePhotoUrl(imgLink);
+              } else if (photoUrl && String(photoUrl).trim() !== "" && String(photoUrl).trim() !== "undefined" && String(photoUrl).trim() !== "null") {
+                photo = normalizePhotoUrl(photoUrl);
+              } else if (localPhoto && String(localPhoto).trim() !== "" && String(localPhoto).trim() !== "undefined" && String(localPhoto).trim() !== "null") {
+                photo = normalizePhotoUrl(localPhoto);
+              } else if (pPhoto && String(pPhoto).trim() !== "" && String(pPhoto).trim() !== "undefined" && String(pPhoto).trim() !== "null") {
+                photo = normalizePhotoUrl(pPhoto);
+              }
+              
+              return photo;
+            })(),
             contacts: {
               phone: pick(p.phoneNumber, p.phone_number, p.phone) || local?.contacts?.phone || "",
               email: p.email || local?.contacts?.email || "",
@@ -840,19 +1181,71 @@ export default function DataProvider({ children }) {
             })(),
           };
         });
-          setDeputiesBase(mapped.map(normalizeDeputyItem));
+        const enriched = mapped.map((d) => {
+          const info = personInfoMap.byName.get(normalizePersonName(d.name));
+          const enrichedDep = enrichDeputyWithPersonInfo(d, info);
+          // Гарантируем нормализацию фото после обогащения
+          // Проверяем все возможные источники фото
+          const photoSources = [
+            enrichedDep.photo,
+            enrichedDep.image?.link,
+            enrichedDep.photoUrl,
+            enrichedDep.photo_url,
+          ].filter(Boolean);
+          
+          if (photoSources.length > 0) {
+            // Берем первое доступное фото и нормализуем
+            const photoToUse = photoSources[0];
+            if (photoToUse && String(photoToUse).trim() !== "" && String(photoToUse).trim() !== "undefined" && String(photoToUse).trim() !== "null") {
+              enrichedDep.photo = normalizePhotoUrl(photoToUse);
+            } else {
+              enrichedDep.photo = "";
+            }
+          } else {
+            enrichedDep.photo = "";
+          }
+          return enrichedDep;
+        });
+        const withMissing = addMissingDeputiesFromPersonInfo(enriched, personInfoMap);
+          setDeputiesBase(withMissing.map(normalizeDeputyItem));
           markLoading("deputies", false);
         } else {
           // API вернул пустой массив или невалидные данные - используем локальные данные
           const localDeps = await fetchJson("/data/deputies.json").catch(() => []);
-          setDeputiesBase((Array.isArray(localDeps) ? localDeps : []).map(normalizeDeputyItem));
+          const base = Array.isArray(localDeps) ? localDeps : [];
+          // Нормализуем фото и контакты из локальных данных перед обогащением
+          const normalizedBase = base.map((d) => ({
+            ...d,
+            photo: normalizePhotoUrl(d?.photo || ""),
+            contacts: d?.contacts || { phone: "", email: "" },
+            address: d?.address || "",
+          }));
+          const enriched = normalizedBase.map((d) => {
+            const info = personInfoMap.byName.get(normalizePersonName(d?.name ?? ""));
+            return enrichDeputyWithPersonInfo(d, info);
+          });
+          const withMissing = addMissingDeputiesFromPersonInfo(enriched, personInfoMap);
+          setDeputiesBase(withMissing.map(normalizeDeputyItem));
           markLoading("deputies", false);
         }
       } catch (e) {
         // API недоступен - используем локальные данные
         console.warn("Persons API недоступен, используем локальные данные", e);
         const localDeps = await fetchJson("/data/deputies.json").catch(() => []);
-        setDeputiesBase((Array.isArray(localDeps) ? localDeps : []).map(normalizeDeputyItem));
+        const base = Array.isArray(localDeps) ? localDeps : [];
+        // Нормализуем фото и контакты из локальных данных перед обогащением
+        const normalizedBase = base.map((d) => ({
+          ...d,
+          photo: normalizePhotoUrl(d?.photo || ""),
+          contacts: d?.contacts || { phone: "", email: "" },
+          address: d?.address || "",
+        }));
+        const enriched = normalizedBase.map((d) => {
+          const info = personInfoMap.byName.get(normalizePersonName(d?.name ?? ""));
+          return enrichDeputyWithPersonInfo(d, info);
+        });
+        const withMissing = addMissingDeputiesFromPersonInfo(enriched, personInfoMap);
+        setDeputiesBase(withMissing.map(normalizeDeputyItem));
         markLoading("deputies", false);
       }
 

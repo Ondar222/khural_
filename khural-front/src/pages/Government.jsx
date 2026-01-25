@@ -1,5 +1,5 @@
 import React from "react";
-import { useData } from "../context/DataContext.jsx";
+import { useData, enrichDeputyFromPersonInfo } from "../context/DataContext.jsx";
 import { Select } from "antd";
 import PersonDetail from "../components/PersonDetail.jsx";
 import SideNav from "../components/SideNav.jsx";
@@ -158,7 +158,9 @@ export default function Government() {
       try {
         const res = await PersonsApi.getById(selectedId);
         if (!alive) return;
-        const normalized = normalizeApiDeputyForDetail(res);
+        let normalized = normalizeApiDeputyForDetail(res);
+        // Обогащаем данные из JSON файлов (фото, биография, контакты и т.д.)
+        normalized = await enrichDeputyFromPersonInfo(normalized);
         if (alive) setSelectedDeputy(normalized);
       } catch (error) {
         console.error("Failed to fetch deputy:", error);
@@ -166,7 +168,10 @@ export default function Government() {
         if (alive) {
           const localDeputy = (deputies || []).find((d) => String(d?.id) === selectedId);
           if (localDeputy) {
-            setSelectedDeputy(normalizeApiDeputyForDetail(localDeputy));
+            // Локальные данные уже обогащены из JSON в DataContext, но обогатим еще раз на всякий случай
+            let normalized = normalizeApiDeputyForDetail(localDeputy);
+            normalized = await enrichDeputyFromPersonInfo(normalized);
+            setSelectedDeputy(normalized);
           } else {
             setSelectedDeputy(null);
           }
@@ -247,14 +252,52 @@ export default function Government() {
     [deputies, district, convocation, faction]
   );
 
-  const toReceptionPlain = React.useCallback((v) => {
+  /** Извлекает адрес, время работы и кабинет из reception */
+  const extractReceptionInfo = React.useCallback((v) => {
     const raw =
       typeof v === "string"
         ? v
         : v && typeof v === "object" && typeof v.notes === "string"
           ? v.notes
           : "";
-    return String(raw || "").replace(/<[^>]*>/g, "").trim();
+    let plain = String(raw || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+    // Если текст слишком длинный (более 150 символов) или содержит ключевые слова биографии, не показываем его в карточке
+    const isBiography = plain.length > 150 || 
+      /родился|родилась|окончил|окончила|работал|работала|награды|награжден|избран|назначен/i.test(plain);
+    
+    if (isBiography) {
+      return { address: "", workTime: "", office: "" };
+    }
+    
+    let address = "";
+    let workTime = "";
+    let office = "";
+    
+    if (plain) {
+      // Ищем адрес (г. Кызыл, ул. Ленина, д. 32)
+      const addressMatch = plain.match(/(г\.\s*[^,\n]+(?:,\s*ул\.\s*[^,\n]+(?:,\s*д\.\s*\d+)?)?)/i);
+      if (addressMatch) {
+        address = addressMatch[1].trim();
+      }
+      // Ищем кабинет
+      const officeMatch = plain.match(/кабинет\s*(\d+)/i);
+      if (officeMatch) {
+        office = `кабинет ${officeMatch[1]}`;
+      }
+      // Ищем время работы (09:00-11:00 или "третий понедельник месяца, 09:00-11:00")
+      const timeMatch = plain.match(/(\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2})/);
+      if (timeMatch) {
+        workTime = timeMatch[1];
+      } else {
+        // Ищем описание времени типа "третий понедельник месяца"
+        const dayMatch = plain.match(/((?:первый|второй|третий|четвертый|последний)\s+(?:понедельник|вторник|среда|четверг|пятница)\s+месяца)/i);
+        if (dayMatch) {
+          workTime = dayMatch[1];
+        }
+      }
+    }
+    
+    return { address, workTime, office };
   }, []);
 
   // Committees expand/collapse (Структура)
@@ -655,32 +698,25 @@ export default function Government() {
                           <div className="gov-card__role">{t("Депутат")}</div>
                         )}
                         <ul className="gov-meta">
-                          {toReceptionPlain(d.reception) && (
-                            <li>
-                              <span>⏰</span>
-                              <span>
-                                {t("Приём:")} {toReceptionPlain(d.reception)}
-                              </span>
-                            </li>
-                          )}
-                          {d.district && (
-                            <li>
-                              <span>🏛️</span>
-                              <span>{typeof d.district === "string" ? d.district : String(d.district || "")}</span>
-                            </li>
-                          )}
-                          {d.faction && (
-                            <li>
-                              <span>👥</span>
-                              <span>{typeof d.faction === "string" ? d.faction : String(d.faction || "")}</span>
-                            </li>
-                          )}
-                          {d.convocation && (
-                            <li>
-                              <span>🎖️</span>
-                              <span>Созыв: {typeof d.convocation === "string" ? d.convocation : String(d.convocation || "")}</span>
-                            </li>
-                          )}
+                          {(() => {
+                            const receptionInfo = extractReceptionInfo(d.reception);
+                            const address = d.address || receptionInfo.address;
+                            return address || receptionInfo.office ? (
+                              <li>
+                                <span>📍</span>
+                                <span>{address}{receptionInfo.office ? (address ? `, ${receptionInfo.office}` : receptionInfo.office) : ""}</span>
+                              </li>
+                            ) : null;
+                          })()}
+                          {(() => {
+                            const receptionInfo = extractReceptionInfo(d.reception);
+                            return receptionInfo.workTime ? (
+                              <li>
+                                <span>⏰</span>
+                                <span>{t("Время работы:")} {receptionInfo.workTime}</span>
+                              </li>
+                            ) : null;
+                          })()}
                           {d.contacts?.phone && (
                             <li>
                               <span>📞</span>

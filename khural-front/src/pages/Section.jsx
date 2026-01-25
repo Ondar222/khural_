@@ -1499,24 +1499,25 @@ function DeputyGrid({ deputies, structureType, backHref }) {
             <div className="gov-card__name">{d.name}</div>
             <div className="gov-card__role">{getDeputyTitle(d, structureType)}</div>
             <ul className="gov-meta">
-              {d.district && (
-                <li>
-                  <span>🏛️</span>
-                  <span>{typeof d.district === "string" ? d.district : String(d.district || "")}</span>
-                </li>
-              )}
-              {d.faction && (
-                <li>
-                  <span>👥</span>
-                  <span>{typeof d.faction === "string" ? d.faction : String(d.faction || "")}</span>
-                </li>
-              )}
-              {d.convocation && (
-                <li>
-                  <span>🎖️</span>
-                  <span>Созыв: {typeof d.convocation === "string" ? d.convocation : String(d.convocation || "")}</span>
-                </li>
-              )}
+              {(() => {
+                const receptionInfo = extractReceptionInfo(d.reception);
+                const address = d.address || receptionInfo.address;
+                return address || receptionInfo.office ? (
+                  <li>
+                    <span>📍</span>
+                    <span>{address}{receptionInfo.office ? (address ? `, ${receptionInfo.office}` : receptionInfo.office) : ""}</span>
+                  </li>
+                ) : null;
+              })()}
+              {(() => {
+                const receptionInfo = extractReceptionInfo(d.reception);
+                return receptionInfo.workTime ? (
+                  <li>
+                    <span>⏰</span>
+                    <span>Время работы: {receptionInfo.workTime}</span>
+                  </li>
+                ) : null;
+              })()}
               {d.contacts?.phone && (
                 <li>
                   <span>📞</span>
