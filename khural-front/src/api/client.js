@@ -1273,7 +1273,20 @@ export const CommitteesApi = {
     if (all) qs.set("all", "true");
     if (convocationId) qs.set("convocationId", String(convocationId));
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return apiFetch(`/committees${suffix}`, { method: "GET", auth: false });
+    const result = await apiFetch(`/committees${suffix}`, { method: "GET", auth: false });
+    console.log("[CommitteesApi.list] Результат:", result, "Тип:", typeof result, "Массив:", Array.isArray(result));
+    // Если результат обернут в объект, извлекаем массив
+    if (result && typeof result === "object" && !Array.isArray(result)) {
+      if (Array.isArray(result.data)) {
+        console.log("[CommitteesApi.list] Извлечен массив из result.data");
+        return result.data;
+      }
+      if (Array.isArray(result.committees)) {
+        console.log("[CommitteesApi.list] Извлечен массив из result.committees");
+        return result.committees;
+      }
+    }
+    return result;
   },
   async getById(id) {
     return apiFetch(`/committees/${id}`, { method: "GET", auth: false });

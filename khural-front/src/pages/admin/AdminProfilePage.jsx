@@ -314,7 +314,7 @@ export default function AdminProfilePage() {
                 </Form.Item>
               </Form>
             ) : (
-              <div className="admin-profile__grid">
+            <div className="admin-profile__grid">
                 <div className="admin-profile__item">
                   <div className="admin-profile__label">Фамилия</div>
                   <div className="admin-profile__value">{adminData.user?.surname || "—"}</div>
@@ -327,26 +327,26 @@ export default function AdminProfilePage() {
                   <div className="admin-profile__label">Телефон</div>
                   <div className="admin-profile__value">{adminData.user?.phone || "—"}</div>
                 </div>
-                <div className="admin-profile__item">
-                  <div className="admin-profile__label">Email</div>
-                  <div className="admin-profile__value">{adminData.user?.email || "—"}</div>
+              <div className="admin-profile__item">
+                <div className="admin-profile__label">Email</div>
+                <div className="admin-profile__value">{adminData.user?.email || "—"}</div>
+              </div>
+              <div className="admin-profile__item">
+                <div className="admin-profile__label">Роль</div>
+                <div className="admin-profile__value">{adminData.user?.role || "—"}</div>
+              </div>
+              <div className="admin-profile__item">
+                <div className="admin-profile__label">Тема</div>
+                <div className="admin-profile__value">
+                  {adminData.themeMode === "light" ? "Светлая" : "Тёмная"}
                 </div>
-                <div className="admin-profile__item">
-                  <div className="admin-profile__label">Роль</div>
-                  <div className="admin-profile__value">{adminData.user?.role || "—"}</div>
-                </div>
-                <div className="admin-profile__item">
-                  <div className="admin-profile__label">Тема</div>
-                  <div className="admin-profile__value">
-                    {adminData.themeMode === "light" ? "Светлая" : "Тёмная"}
-                  </div>
-                </div>
+              </div>
                 <div className="admin-profile__item" style={{ gridColumn: "1 / -1" }}>
                   <Button type="primary" onClick={() => setEditing(true)}>
                     Редактировать профиль
                   </Button>
                 </div>
-              </div>
+            </div>
             )}
           </div>
 

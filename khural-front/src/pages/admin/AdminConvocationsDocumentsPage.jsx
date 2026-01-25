@@ -336,6 +336,38 @@ export default function AdminConvocationsDocumentsPage() {
                 </div>
               </div>
 
+              {/* Комитеты созыва */}
+              {(() => {
+                const convCommittees = committees.filter(c => {
+                  const cConvId = c?.convocation?.id || c?.convocationId || c?.convocation;
+                  return String(cConvId) === String(convocation.id);
+                });
+                
+                if (convCommittees.length > 0) {
+                  return (
+                    <div className="admin-card" style={{ marginBottom: 16 }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
+                        Комитеты созыва ({convCommittees.length})
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {convCommittees.map((c) => (
+                          <Tag key={c.id} color="blue" style={{ fontSize: 13, padding: "4px 12px" }}>
+                            {c.name || c.title || `Комитет ${c.id}`}
+                          </Tag>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="admin-card" style={{ marginBottom: 16, padding: 16 }}>
+                    <div style={{ opacity: 0.6, fontSize: 13 }}>
+                      Комитеты для этого созыва пока не указаны
+                    </div>
+                  </div>
+                );
+              })()}
+
               {documents.length > 0 ? (
                 <div className="admin-card">
                   <Table

@@ -2,6 +2,7 @@ import React from "react";
 import { Button, Input, Space, Table, Tag, App } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
+import { CommitteesApi } from "../../api/client.js";
 
 export default function AdminConvocationsList({ items, onDelete, busy, canWrite }) {
   const { navigate } = useHashRoute();
@@ -10,6 +11,121 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
   const [windowWidth, setWindowWidth] = React.useState(
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
+  const [committees, setCommittees] = React.useState([]);
+
+  // Логируем структуру созывов для отладки
+  React.useEffect(() => {
+    if (Array.isArray(items) && items.length > 0) {
+      console.log("[AdminConvocationsList] Созывы:", items.map(c => ({
+        id: c.id,
+        id_type: typeof c.id,
+        name: c.name,
+        number: c.number,
+      })));
+    }
+  }, [items]);
+
+  // Загружаем комитеты и перезагружаем при изменении
+  const loadCommittees = React.useCallback(async () => {
+    try {
+      const comms = await CommitteesApi.list({ all: true }).catch(() => []);
+      const commsArray = Array.isArray(comms) ? comms : [];
+      console.log("[AdminConvocationsList] Загружено комитетов:", commsArray.length);
+      // Логируем структуру ВСЕХ комитетов для отладки
+      commsArray.forEach((c, idx) => {
+        console.log(`[AdminConvocationsList] Комитет ${idx + 1}:`, {
+          id: c.id,
+          name: c.name || c.title,
+          convocation: c.convocation,
+          convocationId: c.convocationId,
+          convocation_type: typeof c.convocation,
+          convocationId_type: typeof c.convocationId,
+          allFields: Object.keys(c),
+        });
+      });
+      setCommittees(commsArray);
+    } catch (error) {
+      console.error("Failed to load committees:", error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadCommittees();
+  }, [loadCommittees]);
+
+  // Перезагружаем комитеты при фокусе на окне (например, после создания комитета)
+  React.useEffect(() => {
+    const handleFocus = () => {
+      loadCommittees();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [loadCommittees]);
+
+  // Получаем комитеты для созыва
+  const getCommitteesForConvocation = React.useCallback((convocationId) => {
+    if (!convocationId) {
+      console.log("[AdminConvocationsList] getCommitteesForConvocation: convocationId пустой");
+      return [];
+    }
+    
+    console.log(`[AdminConvocationsList] Ищем комитеты для созыва ID: ${convocationId}, тип: ${typeof convocationId}`);
+    console.log(`[AdminConvocationsList] Всего комитетов для проверки: ${committees.length}`);
+    
+    // Нормализуем ID созыва для сравнения
+    const normalizedConvId = String(convocationId).trim();
+    const numericConvId = Number(convocationId);
+    
+    const result = committees.filter(c => {
+      // Проверяем все возможные варианты связи
+      let cConvId = null;
+      let source = null;
+      
+      // Вариант 1: вложенный объект convocation.id
+      if (c?.convocation && typeof c.convocation === "object" && c.convocation.id !== undefined) {
+        cConvId = c.convocation.id;
+        source = "convocation.id";
+      }
+      // Вариант 2: прямое поле convocationId
+      else if (c?.convocationId !== undefined && c?.convocationId !== null) {
+        cConvId = c.convocationId;
+        source = "convocationId";
+      }
+      // Вариант 3: поле convocation как ID (не объект)
+      else if (c?.convocation !== undefined && c?.convocation !== null && typeof c.convocation !== "object") {
+        cConvId = c.convocation;
+        source = "convocation (direct)";
+      }
+      
+      if (cConvId === null || cConvId === undefined) {
+        return false;
+      }
+      
+      // Сравниваем как строки и как числа
+      const cConvIdStr = String(cConvId).trim();
+      const cConvIdNum = Number(cConvId);
+      
+      const matchStr = cConvIdStr === normalizedConvId;
+      const matchNum = Number.isFinite(cConvIdNum) && Number.isFinite(numericConvId) && cConvIdNum === numericConvId;
+      const match = matchStr || matchNum;
+      
+      if (match) {
+        console.log(`[AdminConvocationsList] ✓ Найден комитет для созыва ${convocationId}:`, {
+          committeeId: c.id,
+          committeeName: c.name || c.title,
+          cConvId,
+          source,
+          matchStr,
+          matchNum,
+        });
+      }
+      
+      return match;
+    });
+    
+    console.log(`[AdminConvocationsList] Для созыва ${convocationId} найдено комитетов: ${result.length}`);
+    return result;
+  }, [committees]);
 
   // Отслеживание размера окна для адаптивности
   React.useEffect(() => {
@@ -85,6 +201,32 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
           ) : null}
         </div>
       ),
+    },
+    {
+      title: "Комитеты",
+      key: "committees",
+      width: 300,
+      render: (_, row) => {
+        const convCommittees = getCommitteesForConvocation(row.id);
+        
+        if (convCommittees.length === 0) {
+          return <span style={{ opacity: 0.5, fontSize: 13 }}>Нет комитетов</span>;
+        }
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {convCommittees.slice(0, 3).map((c) => (
+              <Tag key={c.id} style={{ margin: 0 }}>
+                {c.name || c.title || `Комитет ${c.id}`}
+              </Tag>
+            ))}
+            {convCommittees.length > 3 && (
+              <span style={{ opacity: 0.7, fontSize: 12 }}>
+                +{convCommittees.length - 3} еще
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: "Статус",
@@ -240,6 +382,46 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
                         )}
                       </div>
                     </div>
+
+                    {/* Комитеты */}
+                    {(() => {
+                      const convCommittees = getCommitteesForConvocation(row.id);
+                      if (convCommittees.length > 0) {
+                        return (
+                          <div style={{
+                            marginTop: 8,
+                            paddingTop: 12,
+                            borderTop: '1px solid rgba(0,0,0,0.06)',
+                          }}>
+                            <div style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: 'rgba(0,0,0,0.65)',
+                              marginBottom: 8,
+                            }}>
+                              Комитеты ({convCommittees.length}):
+                            </div>
+                            <div style={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: 6,
+                            }}>
+                              {convCommittees.slice(0, 3).map((c) => (
+                                <Tag key={c.id} style={{ margin: 0, fontSize: 12 }}>
+                                  {c.name || c.title || `Комитет ${c.id}`}
+                                </Tag>
+                              ))}
+                              {convCommittees.length > 3 && (
+                                <Tag style={{ margin: 0, fontSize: 12, opacity: 0.7 }}>
+                                  +{convCommittees.length - 3}
+                                </Tag>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
 
                     {/* Кнопки действий */}
                     <div style={{

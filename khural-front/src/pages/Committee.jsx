@@ -47,7 +47,7 @@ function mergeCommitteesWithOverrides(base, overrides) {
 }
 
 export default function Committee() {
-  const { committees: committeesFromContext, deputies, loading, errors, reload } = useData();
+  const { committees: committeesFromContext, deputies, convocations, loading, errors, reload } = useData();
   const [committee, setCommittee] = React.useState(null);
   const [apiCommittees, setApiCommittees] = React.useState(null);
   const [overridesSeq, setOverridesSeq] = React.useState(0);
@@ -55,9 +55,31 @@ export default function Committee() {
   React.useEffect(() => {
     let alive = true;
     (async () => {
-      const list = await CommitteesApi.list({ all: true }).catch(() => null);
-      if (!alive) return;
-      if (Array.isArray(list)) setApiCommittees(list);
+      try {
+        console.log("[Committee] Загрузка комитетов через API...");
+        const list = await CommitteesApi.list({ all: true });
+        console.log("[Committee] Ответ API:", list);
+        console.log("[Committee] Тип ответа:", typeof list, Array.isArray(list));
+        if (!alive) return;
+        if (Array.isArray(list)) {
+          console.log("[Committee] Установлено комитетов:", list.length);
+          setApiCommittees(list);
+        } else {
+          console.warn("[Committee] API вернул не массив:", list);
+          // Если API вернул объект с data, попробуем извлечь массив
+          if (list && typeof list === "object" && Array.isArray(list.data)) {
+            console.log("[Committee] Извлечен массив из list.data:", list.data.length);
+            setApiCommittees(list.data);
+          } else if (list && typeof list === "object" && Array.isArray(list.committees)) {
+            console.log("[Committee] Извлечен массив из list.committees:", list.committees.length);
+            setApiCommittees(list.committees);
+          }
+        }
+      } catch (error) {
+        console.error("[Committee] Ошибка загрузки комитетов:", error);
+        if (!alive) return;
+        // Не устанавливаем null, чтобы использовать данные из контекста
+      }
     })();
     return () => {
       alive = false;
@@ -79,7 +101,14 @@ export default function Committee() {
 
   const committees = React.useMemo(() => {
     const base = Array.isArray(apiCommittees) ? apiCommittees : committeesFromContext;
-    return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
+    const merged = mergeCommitteesWithOverrides(base, readCommitteesOverrides());
+    console.log("[Committee] Итоговый список комитетов:", {
+      apiCommittees: apiCommittees?.length || 0,
+      committeesFromContext: committeesFromContext?.length || 0,
+      merged: merged?.length || 0,
+      base: Array.isArray(base) ? base.length : "не массив",
+    });
+    return merged;
   }, [apiCommittees, committeesFromContext, overridesSeq]);
   
   // Get current section from URL hash or default to "about"
@@ -443,6 +472,32 @@ export default function Committee() {
                         <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14, color: "#003366", lineHeight: 1.3 }}>
                           {title}
                         </div>
+                        {(() => {
+                          const convId = c?.convocation?.id || c?.convocationId || c?.convocation;
+                          let convName = null;
+                          
+                          if (convId && Array.isArray(convocations)) {
+                            const conv = convocations.find(conv => String(conv.id) === String(convId) || String(conv.name) === String(convId) || String(conv.number) === String(convId));
+                            if (conv) {
+                              convName = conv.name || conv.number || `Созыв ${conv.id}`;
+                            }
+                          }
+                          if (!convName && c?.convocation?.name) {
+                            convName = c.convocation.name;
+                          } else if (!convName && c?.convocation?.number) {
+                            convName = c.convocation.number;
+                          } else if (!convName && typeof convId === "string" && convId.toLowerCase().includes("созыв")) {
+                            convName = convId;
+                          } else if (!convName && convId) {
+                            convName = `Созыв ${convId}`;
+                          }
+                          
+                          return convName ? (
+                            <div style={{ color: "#1e40af", fontSize: 13, marginTop: 8, fontWeight: 600 }}>
+                              Созыв: {convName}
+                            </div>
+                          ) : null;
+                        })()}
                         {chairman && typeof chairman === "string" && (
                           <div style={{ color: "#6b7280", fontSize: 14, marginTop: 10, lineHeight: 1.5 }}>
                             <strong style={{ color: "#374151" }}>Председатель:</strong> {chairman}
@@ -478,6 +533,44 @@ export default function Committee() {
                 {committee.name || committee.title}
               </h1>
             </div>
+
+            {/* Информация о созыве */}
+            {(() => {
+              const convId = committee?.convocation?.id || committee?.convocationId || committee?.convocation;
+              let convName = null;
+              
+              if (convId) {
+                // Пробуем найти созыв в списке созывов
+                if (Array.isArray(convocations)) {
+                  const conv = convocations.find(c => String(c.id) === String(convId) || String(c.name) === String(convId) || String(c.number) === String(convId));
+                  if (conv) {
+                    convName = conv.name || conv.number || `Созыв ${conv.id}`;
+                  }
+                }
+                // Если не нашли в списке, используем значение из комитета
+                if (!convName && committee?.convocation?.name) {
+                  convName = committee.convocation.name;
+                } else if (!convName && committee?.convocation?.number) {
+                  convName = committee.convocation.number;
+                } else if (!convName && typeof convId === "string" && convId.toLowerCase().includes("созыв")) {
+                  convName = convId;
+                } else if (!convName) {
+                  convName = `Созыв ${convId}`;
+                }
+              }
+              
+              if (convName) {
+                return (
+                  <div style={{ marginTop: 16, padding: 16, background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: "#1e40af" }}>Созыв:</span>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: "#1e3a8a" }}>{convName}</span>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Краткая информация о комитете */}
             {(committee.shortDescription || committee.description) && (

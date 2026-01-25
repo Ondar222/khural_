@@ -20,8 +20,8 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
     if (!id) return;
     
     const loadEvent = async () => {
-      setLoading(true);
-      try {
+    setLoading(true);
+    try {
         // Сначала ищем в переданном списке items
         let found = (Array.isArray(items) ? items : []).find((e) => String(e?.id) === id) || null;
         
@@ -83,19 +83,19 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
           }
         }
         
-        form.setFieldsValue({
+      form.setFieldsValue({
           date: dateValue,
           time: timeValue,
-          place: found.place || "",
-          title: found.title || "",
+        place: found.place || "",
+        title: found.title || "",
           desc: descValue,
-        });
+      });
       } catch (error) {
         console.error("Error loading event:", error);
         message.error("Ошибка при загрузке события");
-      } finally {
-        setLoading(false);
-      }
+    } finally {
+      setLoading(false);
+    }
     };
     
     loadEvent();

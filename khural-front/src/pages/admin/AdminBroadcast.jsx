@@ -24,23 +24,23 @@ export default function AdminBroadcast() {
     const loadBroadcastSettings = async () => {
       if (!adminData.isAuthenticated) return;
       
-      let broadcast = null;
+    let broadcast = null;
       
       // Сначала проверяем localStorage (fallback)
-      try {
-        const local = localStorage.getItem("admin_settings_broadcast");
-        if (local) {
-          broadcast = JSON.parse(local);
-        }
-      } catch (e) {
-        // ignore
+    try {
+      const local = localStorage.getItem("admin_settings_broadcast");
+      if (local) {
+        broadcast = JSON.parse(local);
       }
-      
+    } catch (e) {
+      // ignore
+    }
+    
       // Загружаем из API через SettingsApi
       try {
         const { SettingsApi } = await import("../../api/client.js");
         const broadcastValue = await SettingsApi.getByKey("broadcast").catch(() => null);
-        
+      
         if (broadcastValue) {
           // Может быть объект или строка JSON
           if (typeof broadcastValue === "string") {
@@ -53,14 +53,14 @@ export default function AdminBroadcast() {
             // Если API вернул объект с полем broadcast
             const value = broadcastValue.broadcast;
             if (typeof value === "string") {
-              try {
+          try {
                 broadcast = JSON.parse(value);
               } catch {
-                broadcast = {};
-              }
+            broadcast = {};
+          }
             } else {
               broadcast = value;
-            }
+        }
           } else {
             broadcast = broadcastValue;
           }
@@ -74,35 +74,35 @@ export default function AdminBroadcast() {
         const settings = adminData.settings;
         if (typeof settings === "object" && settings.broadcast) {
           const settingsBroadcast = settings.broadcast;
-          if (typeof settingsBroadcast === "string") {
-            try {
-              broadcast = JSON.parse(settingsBroadcast);
+        if (typeof settingsBroadcast === "string") {
+          try {
+            broadcast = JSON.parse(settingsBroadcast);
             } catch {
-              broadcast = {};
-            }
-          } else {
-            broadcast = settingsBroadcast;
+            broadcast = {};
           }
+        } else {
+          broadcast = settingsBroadcast;
         }
       }
-      
-      if (!broadcast || typeof broadcast !== "object") {
-        broadcast = {};
-      }
-      
-      form.setFieldsValue({
-        type: broadcast.type || broadcast.platform || "vk",
-        title: broadcast.title || broadcast.name || "",
-        description: broadcast.description || "",
-        vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key || "",
-        vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url || "",
-        obsRtmpUrl: broadcast.obs_rtmp_url || broadcast.obsRtmpUrl || broadcast.rtmp_url || "",
-        obsStreamKey: broadcast.obs_stream_key || broadcast.obsStreamKey || broadcast.obs_key || "",
-        youtubeVideoId: broadcast.youtube_video_id || broadcast.youtubeVideoId || "",
-        youtubeUrl: broadcast.youtube_url || broadcast.youtubeUrl || "",
-        embedUrl: broadcast.embed_url || broadcast.embedUrl || "",
-        isActive: broadcast.is_active !== false && broadcast.isActive !== false,
-      });
+    }
+    
+    if (!broadcast || typeof broadcast !== "object") {
+      broadcast = {};
+    }
+    
+    form.setFieldsValue({
+      type: broadcast.type || broadcast.platform || "vk",
+      title: broadcast.title || broadcast.name || "",
+      description: broadcast.description || "",
+      vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key || "",
+      vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url || "",
+      obsRtmpUrl: broadcast.obs_rtmp_url || broadcast.obsRtmpUrl || broadcast.rtmp_url || "",
+      obsStreamKey: broadcast.obs_stream_key || broadcast.obsStreamKey || broadcast.obs_key || "",
+      youtubeVideoId: broadcast.youtube_video_id || broadcast.youtubeVideoId || "",
+      youtubeUrl: broadcast.youtube_url || broadcast.youtubeUrl || "",
+      embedUrl: broadcast.embed_url || broadcast.embedUrl || "",
+      isActive: broadcast.is_active !== false && broadcast.isActive !== false,
+    });
     };
     
     loadBroadcastSettings();
@@ -138,7 +138,7 @@ export default function AdminBroadcast() {
       try {
         const { SettingsApi } = await import("../../api/client.js");
         await SettingsApi.update({
-          broadcast: JSON.stringify(broadcastData),
+            broadcast: JSON.stringify(broadcastData),
         });
         message.success("Настройки трансляции сохранены");
       } catch (apiError) {

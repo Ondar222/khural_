@@ -1,5 +1,5 @@
 import React from "react";
-import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi, EventsApi } from "../api/client.js";
+import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi, EventsApi, CommitteesApi } from "../api/client.js";
 import {
   readNewsOverrides,
   NEWS_OVERRIDES_EVENT_NAME,
@@ -950,12 +950,40 @@ export default function DataProvider({ children }) {
       .catch((e) => markError("authorities", e))
       .finally(() => markLoading("authorities", false));
 
-    // Committees are a static structure file (with members/staff); always load them.
+    // Committees: сначала пробуем загрузить из API, затем fallback на статический файл
     markLoading("committees", true);
-    fetchJson("/data/committees.json")
-      .then(setCommittees)
-      .catch((e) => markError("committees", e))
-      .finally(() => markLoading("committees", false));
+    (async () => {
+      try {
+        // Пробуем загрузить из API
+        const apiCommittees = await CommitteesApi.list({ all: true }).catch(() => null);
+        if (Array.isArray(apiCommittees) && apiCommittees.length > 0) {
+          console.log("[DataContext] Загружено комитетов из API:", apiCommittees.length);
+          setCommittees(apiCommittees);
+          markLoading("committees", false);
+          return;
+        }
+        // Если API не вернул данные или вернул пустой массив, пробуем статический файл
+        console.log("[DataContext] API не вернул комитеты, загружаем из статического файла");
+        const staticCommittees = await fetchJson("/data/committees.json").catch(() => null);
+        if (Array.isArray(staticCommittees)) {
+          // Объединяем данные из API и статического файла
+          const merged = Array.isArray(apiCommittees) && apiCommittees.length > 0
+            ? [...apiCommittees, ...staticCommittees.filter(s => !apiCommittees.find(a => String(a.id) === String(s.id)))]
+            : staticCommittees;
+          console.log("[DataContext] Загружено комитетов из статического файла:", staticCommittees.length, "Итого:", merged.length);
+          setCommittees(merged);
+        } else if (Array.isArray(apiCommittees)) {
+          // Если есть данные из API, используем их
+          setCommittees(apiCommittees);
+        }
+      } catch (e) {
+        console.error("[DataContext] Ошибка загрузки комитетов:", e);
+        markError("committees", e);
+        setCommittees([]);
+      } finally {
+        markLoading("committees", false);
+      }
+    })();
 
     // About pages/structure are API-first (if backend filled), otherwise keep empty and use page fallbacks.
     (async () => {
