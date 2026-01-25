@@ -16,7 +16,6 @@ export default function SideNav({
     //   label: "Руководство парламента",
     //   href: "/section?title=" + encodeURIComponent("Руководство парламента"),
     // },
-    { label: "Созывы", href: "/convocations" },
     // "Депутаты" — по умолчанию показываем текущий созыв (если есть в данных)
     { label: "Депутаты", href: "/deputies?convocation=VIII" },
     { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
@@ -30,6 +29,7 @@ export default function SideNav({
     },
     { label: "Депутатские фракции", href: "/section?title=" + encodeURIComponent("Депутатские фракции") },
     { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
+    { label: "Созывы", href: "/convocations" },
     { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
     {
       label: "Совет по взаимодействию с представительными органами муниципальных образований",

@@ -280,6 +280,7 @@ export default function Header() {
                 <a href="/about">{t("aboutVH")}</a>
                 <a href="/section">{t("structure")}</a>
                 <a href="/committee">{t("committees")}</a>
+                <a href="/convocations">{t("convocations") || "Созывы"}</a>
                 <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
                 <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
                   {t("factions")}
@@ -502,6 +503,7 @@ export default function Header() {
             <a href="/about">{t("aboutVH")}</a>
             <a href="/section">{t("structure")}</a>
             <a href="/committee">{t("committees")}</a>
+            <a href="/convocations">{t("convocations") || "Созывы"}</a>
             <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
             <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
               {t("factions")}
@@ -771,6 +773,12 @@ export default function Header() {
             <a className="tile link" href="/committee" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("committees")}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/convocations" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("convocations") || "Созывы"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
