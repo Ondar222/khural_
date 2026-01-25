@@ -68,6 +68,11 @@ export default function NewsBlock() {
     setCurrentPage(1);
   }, [category]);
 
+  // Прокрутка вверх при смене страницы
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
+
   return (
     <section className="section">
       <div className="container">
