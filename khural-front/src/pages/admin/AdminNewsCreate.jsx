@@ -6,6 +6,61 @@ import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
+// Функция для сжатия изображения
+function compressImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        // Вычисляем новые размеры
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = width * ratio;
+          height = height * ratio;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: file.type,
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          file.type,
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Функция для удаления base64 изображений из HTML
+function removeBase64Images(html) {
+  if (!html) return html;
+  // Удаляем data:image в src атрибутах
+  return String(html).replace(/src="data:image[^"]*"/gi, 'src=""');
+}
+
 // Проверка, что метод существует при загрузке модуля
 if (typeof NewsApi.createCategory !== 'function') {
   console.error('NewsApi.createCategory is missing! Available methods:', Object.keys(NewsApi));
@@ -182,11 +237,11 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
     try {
       const values = await form.validateFields();
       
-      // Получаем контент из текстовых полей (raw HTML)
-      const contentRu = decodeHtmlEntities(values.contentRu || "");
-      const contentTy = decodeHtmlEntities(values.contentTy || "");
-      const shortRu = decodeHtmlEntities(values.shortDescriptionRu || "");
-      const shortTy = decodeHtmlEntities(values.shortDescriptionTy || "");
+      // Получаем контент из текстовых полей (raw HTML) и удаляем base64 изображения
+      const contentRu = removeBase64Images(decodeHtmlEntities(values.contentRu || ""));
+      const contentTy = removeBase64Images(decodeHtmlEntities(values.contentTy || ""));
+      const shortRu = removeBase64Images(decodeHtmlEntities(values.shortDescriptionRu || ""));
+      const shortTy = removeBase64Images(decodeHtmlEntities(values.shortDescriptionTy || ""));
       
       // Формируем массив локализованного контента
       const contentArray = [];
@@ -211,6 +266,25 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         });
       }
       
+      // Сжимаем изображения перед отправкой
+      antdMessage.loading({ content: "Сжатие изображений...", key: "compressing", duration: 0 });
+      let compressedCover = null;
+      if (coverImage) {
+        compressedCover = await compressImage(coverImage);
+        console.log(`[AdminNewsCreate] Обложка: ${(coverImage.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedCover.size / 1024 / 1024).toFixed(2)}MB`);
+      }
+      
+      const compressedImages = [];
+      if (images && images.length > 0) {
+        for (const file of images) {
+          const compressed = await compressImage(file);
+          compressedImages.push(compressed);
+          console.log(`[AdminNewsCreate] Изображение ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressed.size / 1024 / 1024).toFixed(2)}MB`);
+        }
+      }
+      
+      antdMessage.destroy("compressing");
+      
       // Формируем FormData для multipart/form-data
       const formData = new FormData();
       
@@ -228,14 +302,28 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       formData.append("isPublished", String(values.isPublished ?? false));
       formData.append("content", JSON.stringify(contentArray));
       
-      // Добавляем файлы
-      if (coverImage) {
-        formData.append("cover", coverImage);
+      // Добавляем сжатые файлы
+      if (compressedCover) {
+        formData.append("cover", compressedCover);
       }
-      if (images && images.length > 0) {
-        images.forEach((file) => {
+      if (compressedImages.length > 0) {
+        compressedImages.forEach((file) => {
           formData.append("gallery", file);
         });
+      }
+      
+      // Проверяем общий размер данных (примерно)
+      let totalSize = 0;
+      const contentSize = new Blob([JSON.stringify(contentArray)]).size;
+      totalSize += contentSize;
+      if (compressedCover) totalSize += compressedCover.size;
+      compressedImages.forEach(img => totalSize += img.size);
+      
+      const totalSizeMB = totalSize / 1024 / 1024;
+      console.log(`[AdminNewsCreate] Общий размер данных: ${totalSizeMB.toFixed(2)}MB`);
+      
+      if (totalSizeMB > 10) {
+        antdMessage.warning(`Размер данных очень большой (${totalSizeMB.toFixed(2)}MB). Это может вызвать ошибку. Попробуйте уменьшить размер изображений.`);
       }
       
       await onCreate(formData);
@@ -246,10 +334,15 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       // Обработка ошибок авторизации
       if (error?.status === 401) {
         antdMessage.error("Сессия истекла. Пожалуйста, войдите заново.");
-        // Перенаправляем на страницу входа
         setTimeout(() => {
           navigate("/login?next=" + encodeURIComponent("/admin/news/create"));
         }, 1500);
+        return;
+      }
+      
+      // Обработка ошибки 413 (Request Entity Too Large)
+      if (error?.status === 413 || error?.message?.includes("413") || error?.message?.includes("Entity Too Large")) {
+        antdMessage.error("Размер данных слишком большой. Пожалуйста, уменьшите размер изображений или сократите текст.");
         return;
       }
       
