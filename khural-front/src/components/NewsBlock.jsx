@@ -184,21 +184,57 @@ export default function NewsBlock() {
           
           {/* Пагинация */}
           {totalPages > 1 && (
-            <div style={{ marginTop: 32, display: "flex", justifyContent: "center", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ 
+              marginTop: 24, 
+              display: "flex", 
+              justifyContent: "flex-end", 
+              alignItems: "center", 
+              gap: 6,
+              flexWrap: "wrap" 
+            }}>
               <button
-                className="btn"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 style={{
-                  opacity: currentPage === 1 ? 0.5 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "6px 12px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: currentPage === 1 ? "#9ca3af" : "#374151",
+                  background: currentPage === 1 ? "#f3f4f6" : "#ffffff",
+                  border: `1px solid ${currentPage === 1 ? "#e5e7eb" : "#d1d5db"}`,
+                  borderRadius: 6,
                   cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
+                  minHeight: 32,
+                }}
+                onMouseEnter={(e) => {
+                  if (currentPage !== 1) {
+                    e.target.style.background = "#f9fafb";
+                    e.target.style.borderColor = "#9ca3af";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentPage !== 1) {
+                    e.target.style.background = "#ffffff";
+                    e.target.style.borderColor = "#d1d5db";
+                  }
                 }}
                 aria-label="Предыдущая страница"
               >
                 ← Назад
               </button>
               
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ 
+                display: "flex", 
+                gap: 3, 
+                alignItems: "center",
+                background: "#f9fafb",
+                padding: 3,
+                borderRadius: 6,
+              }}>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
                   if (totalPages <= 5) {
@@ -211,19 +247,39 @@ export default function NewsBlock() {
                     pageNum = currentPage - 2 + i;
                   }
                   
+                  const isActive = currentPage === pageNum;
+                  
                   return (
                     <button
                       key={pageNum}
-                      className="btn"
                       onClick={() => setCurrentPage(pageNum)}
                       style={{
-                        background: currentPage === pageNum ? "#003366" : "#fff",
-                        color: currentPage === pageNum ? "#fff" : "#003366",
-                        border: "1px solid #003366",
-                        minWidth: 40,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: 32,
+                        height: 32,
+                        fontSize: 13,
+                        fontWeight: isActive ? 600 : 500,
+                        color: isActive ? "#ffffff" : "#374151",
+                        background: isActive ? "#003366" : "transparent",
+                        border: "none",
+                        borderRadius: 5,
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) {
+                          e.target.style.background = "#e5e7eb";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) {
+                          e.target.style.background = "transparent";
+                        }
                       }}
                       aria-label={`Страница ${pageNum}`}
-                      aria-current={currentPage === pageNum ? "page" : undefined}
+                      aria-current={isActive ? "page" : undefined}
                     >
                       {pageNum}
                     </button>
@@ -232,21 +288,39 @@ export default function NewsBlock() {
               </div>
               
               <button
-                className="btn"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 style={{
-                  opacity: currentPage === totalPages ? 0.5 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "6px 12px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: currentPage === totalPages ? "#9ca3af" : "#374151",
+                  background: currentPage === totalPages ? "#f3f4f6" : "#ffffff",
+                  border: `1px solid ${currentPage === totalPages ? "#e5e7eb" : "#d1d5db"}`,
+                  borderRadius: 6,
                   cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
+                  minHeight: 32,
+                }}
+                onMouseEnter={(e) => {
+                  if (currentPage !== totalPages) {
+                    e.target.style.background = "#f9fafb";
+                    e.target.style.borderColor = "#9ca3af";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentPage !== totalPages) {
+                    e.target.style.background = "#ffffff";
+                    e.target.style.borderColor = "#d1d5db";
+                  }
                 }}
                 aria-label="Следующая страница"
               >
                 Вперёд →
               </button>
-              
-              <div style={{ fontSize: 14, color: "#6b7280", marginLeft: 8 }}>
-                Страница {currentPage} из {totalPages}
-              </div>
             </div>
           )}
         </DataState>
