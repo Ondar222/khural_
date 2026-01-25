@@ -4643,6 +4643,14 @@ body.hc-yb .ant-btn {
   border-color: rgba(255, 215, 0, 0.45);
   transform: none; /* prevent jump in side menus */
 }
+.sidenav--card .tile.link.active,
+.sidenav--card .tile.link[aria-current="page"],
+.sidenav--about .tile.link.active,
+.sidenav--about .tile.link[aria-current="page"] {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: rgba(255, 215, 0, 0.3);
+  color: #1e3a8a;
+}
 .sidenav h3 {
   font-size: 18px;
   margin-bottom: 12px;

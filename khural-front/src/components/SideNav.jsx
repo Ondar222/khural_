@@ -51,14 +51,27 @@ export default function SideNav({
     <aside className={`sidenav ${className || ""}`.trim()} aria-label="Ссылки раздела">
       <h3 style={{ marginTop: 0 }}>{titleText}</h3>
       <div className="sidenav__list">
-        {links.map((l, i) => (
-          <a key={i} className="tile link" href={l.href}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              <span aria-hidden="true">‹</span>
-              {typeof l.label === "string" ? t(l.label) : l.label}
-            </span>
-          </a>
-        ))}
+        {links.map((l, i) => {
+          const isActive = l.isActive || false;
+          return (
+            <a
+              key={i}
+              className={`tile link ${isActive ? "active" : ""}`}
+              href={l.href}
+              aria-current={isActive ? "page" : undefined}
+              onClick={(e) => {
+                if (l.onClick) {
+                  l.onClick(e);
+                }
+              }}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <span aria-hidden="true">‹</span>
+                {typeof l.label === "string" ? t(l.label) : l.label}
+              </span>
+            </a>
+          );
+        })}
       </div>
     </aside>
   );

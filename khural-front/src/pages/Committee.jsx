@@ -131,6 +131,8 @@ export default function Committee() {
     } else {
       setCommittee(null);
     }
+    // Прокручиваем вверх при загрузке или изменении комитета
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [committees]);
 
   React.useEffect(() => {
@@ -143,6 +145,8 @@ export default function Committee() {
       } else {
         setCommittee(null);
       }
+      // Прокручиваем вверх при навигации
+      window.scrollTo({ top: 0, behavior: "instant" });
     };
     window.addEventListener("popstate", onNav);
     window.addEventListener("app:navigate", onNav);
@@ -155,7 +159,7 @@ export default function Committee() {
   React.useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
-      if (hash.includes("#documents")) {
+      if (hash === "#documents" || hash.startsWith("#documents")) {
         setCurrentSection("documents");
         if (hash.includes("#documents-agenda")) {
           setDocumentsCategory("agenda");
@@ -169,31 +173,48 @@ export default function Committee() {
           setDocumentsCategory(null);
           setDocumentsYear(null);
         }
-      } else if (hash.includes("#reports") || hash.includes("#agendas")) {
+      } else if (hash === "#agendas" || hash.startsWith("#agendas")) {
         setCurrentSection("reports");
-        if (hash.includes("#agendas")) {
-          setReportsCategory("agendas");
-          const yearMatch = hash.match(/#agendas-(\d{4})/);
-          setSelectedYear(yearMatch ? yearMatch[1] : null);
-        } else {
-          setReportsCategory("reports");
-          const yearMatch = hash.match(/#reports-(\d{4})/);
-          setSelectedYear(yearMatch ? yearMatch[1] : null);
-        }
-      } else if (hash.includes("#plans")) setCurrentSection("plans");
-      else if (hash.includes("#activities")) setCurrentSection("activities");
-      else if (hash.includes("#staff")) setCurrentSection("staff");
-      else {
+        setReportsCategory("agendas");
+        const yearMatch = hash.match(/#agendas-(\d{4})/);
+        setSelectedYear(yearMatch ? yearMatch[1] : null);
+      } else if (hash === "#reports" || hash.startsWith("#reports")) {
+        setCurrentSection("reports");
+        setReportsCategory("reports");
+        const yearMatch = hash.match(/#reports-(\d{4})/);
+        setSelectedYear(yearMatch ? yearMatch[1] : null);
+      } else if (hash === "#plans" || hash.startsWith("#plans")) {
+        setCurrentSection("plans");
+      } else if (hash === "#activities" || hash.startsWith("#activities")) {
+        setCurrentSection("activities");
+      } else if (hash === "#staff" || hash.startsWith("#staff")) {
+        setCurrentSection("staff");
+      } else {
+        // Default to "about" section (including #about or empty hash)
         setCurrentSection("about");
         setSelectedYear(null);
         setDocumentsCategory(null);
         setDocumentsYear(null);
+        setReportsCategory("reports"); // Reset to default
       }
+      // Прокручиваем вверх при изменении hash
+      window.scrollTo({ top: 0, behavior: "smooth" });
     };
     handleHashChange(); // Call immediately to set initial state
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
+  
+  // Прокручиваем вверх при загрузке страницы комитета
+  React.useEffect(() => {
+    if (committee) {
+      // Небольшая задержка, чтобы убедиться, что контент загружен
+      const timer = setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "instant" });
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [committee?.id]);
 
   // Resolve members only if committee exists (moved before conditional return)
   const resolveMember = React.useCallback((m) => {
@@ -1139,16 +1160,94 @@ export default function Committee() {
             )}
           </div>
           <SideNav
+            className="sidenav--card"
             title={committee.name || committee.title}
             links={[
-              { label: "О комитете", href: `/committee?id=${committee.id}#about` },
-              { label: "Документы", href: `/committee?id=${committee.id}#documents` },
-              { label: "Повестки", href: `/committee?id=${committee.id}#agendas` },
-              { label: "Отчеты", href: `/committee?id=${committee.id}#reports` },
-              { label: "Планы", href: `/committee?id=${committee.id}#plans` },
-              { label: "Деятельность", href: `/committee?id=${committee.id}#activities` },
-              { label: "Сотрудники", href: `/committee?id=${committee.id}#staff` },
-            ]}
+              { 
+                label: "О комитете", 
+                href: `/committee?id=${committee.id}#about`,
+                onClick: (e) => {
+                  e.preventDefault();
+                  window.location.hash = "#about";
+                  window.dispatchEvent(new Event("hashchange"));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              },
+              { 
+                label: "Документы", 
+                href: `/committee?id=${committee.id}#documents`,
+                onClick: (e) => {
+                  e.preventDefault();
+                  window.location.hash = "#documents";
+                  window.dispatchEvent(new Event("hashchange"));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              },
+              { 
+                label: "Повестки", 
+                href: `/committee?id=${committee.id}#agendas`,
+                onClick: (e) => {
+                  e.preventDefault();
+                  window.location.hash = "#agendas";
+                  window.dispatchEvent(new Event("hashchange"));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              },
+              { 
+                label: "Отчеты", 
+                href: `/committee?id=${committee.id}#reports`,
+                onClick: (e) => {
+                  e.preventDefault();
+                  window.location.hash = "#reports";
+                  window.dispatchEvent(new Event("hashchange"));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              },
+              { 
+                label: "Планы", 
+                href: `/committee?id=${committee.id}#plans`,
+                onClick: (e) => {
+                  e.preventDefault();
+                  window.location.hash = "#plans";
+                  window.dispatchEvent(new Event("hashchange"));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              },
+              { 
+                label: "Деятельность", 
+                href: `/committee?id=${committee.id}#activities`,
+                onClick: (e) => {
+                  e.preventDefault();
+                  window.location.hash = "#activities";
+                  window.dispatchEvent(new Event("hashchange"));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              },
+              { 
+                label: "Сотрудники", 
+                href: `/committee?id=${committee.id}#staff`,
+                onClick: (e) => {
+                  e.preventDefault();
+                  window.location.hash = "#staff";
+                  window.dispatchEvent(new Event("hashchange"));
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              },
+            ].map(link => {
+              const isActive = 
+                (link.href.includes("#about") && currentSection === "about") ||
+                (link.href.includes("#documents") && currentSection === "documents") ||
+                (link.href.includes("#agendas") && currentSection === "reports" && reportsCategory === "agendas") ||
+                (link.href.includes("#reports") && currentSection === "reports" && reportsCategory === "reports") ||
+                (link.href.includes("#plans") && currentSection === "plans") ||
+                (link.href.includes("#activities") && currentSection === "activities") ||
+                (link.href.includes("#staff") && currentSection === "staff");
+              
+              return {
+                ...link,
+                isActive,
+              };
+            })}
           />
         </div>
       </div>

@@ -200,7 +200,9 @@ function committeeConvocationMatchKeys(c) {
 }
 
 function ReportsAllConvocationsPage() {
+  const { committees: committeesFromContext } = useData();
   const [convocations, setConvocations] = React.useState([]);
+  const [committees, setCommittees] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -208,8 +210,12 @@ function ReportsAllConvocationsPage() {
     (async () => {
       try {
         setLoading(true);
-        const list = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
+        const [list, allCommittees] = await Promise.all([
+          ConvocationsApi.list({ activeOnly: false }).catch(() => []),
+          CommitteesApi.list({ all: true }).catch(() => [])
+        ]);
         if (!alive) return;
+        
         const normalized = Array.isArray(list) ? list.map((x) => {
           if (typeof x === "string") {
             const token = normalizeConvocationToken(x);
@@ -236,9 +242,17 @@ function ReportsAllConvocationsPage() {
         });
         
         setConvocations(normalized);
+        
+        // Load committees
+        const fromContext = Array.isArray(committeesFromContext) ? committeesFromContext : [];
+        const all = [...(Array.isArray(allCommittees) ? allCommittees : []), ...fromContext];
+        setCommittees(all);
       } catch (error) {
         console.error("Failed to load convocations:", error);
-        if (alive) setConvocations([]);
+        if (alive) {
+          setConvocations([]);
+          setCommittees([]);
+        }
       } finally {
         if (alive) setLoading(false);
       }
@@ -246,7 +260,7 @@ function ReportsAllConvocationsPage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [committeesFromContext]);
 
   // Sort convocations: Roman numerals first (VIII, VII, VI, etc.), then numbers, then others
   const sortedConvocations = React.useMemo(() => {
@@ -275,6 +289,31 @@ function ReportsAllConvocationsPage() {
     });
   }, [convocations]);
 
+  // Group committees by convocation
+  const committeesByConvocation = React.useMemo(() => {
+    const grouped = {};
+    for (const conv of sortedConvocations) {
+      const convKeys = new Set([conv.id, conv.number, normalizeConvocationToken(conv.name || conv.number || "")]);
+      const convCommittees = [];
+      
+      for (const committee of Array.isArray(committees) ? committees : []) {
+        if (!committee) continue;
+        const matchKeys = committeeConvocationMatchKeys(committee);
+        const committeeConvId = String(committee?.convocation?.id ?? "");
+        const committeeConvToken = normalizeConvocationToken(committee?.convocation?.name || committee?.convocation?.number || "");
+        
+        if (matchKeys.some(key => convKeys.has(key)) || 
+            (committeeConvId && convKeys.has(committeeConvId)) ||
+            (committeeConvToken && convKeys.has(committeeConvToken))) {
+          convCommittees.push(committee);
+        }
+      }
+      
+      grouped[conv.id || conv.number] = convCommittees;
+    }
+    return grouped;
+  }, [sortedConvocations, committees]);
+
   return (
     <section className="section section-page">
       <div className="container">
@@ -284,23 +323,62 @@ function ReportsAllConvocationsPage() {
             {loading ? (
               <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
             ) : sortedConvocations.length > 0 ? (
-              <ul style={{ listStyle: "disc", paddingLeft: 24, marginTop: 20 }}>
+              <div style={{ marginTop: 20 }}>
                 {sortedConvocations.map((conv) => {
                   const label = formatConvocationLabel(conv);
                   const convNumber = normalizeConvocationToken(conv.name || conv.number || "");
-                  // Create link to reports page for this convocation
                   const reportTitle = `Отчеты о деятельности комитетов ${convNumber} созыва`;
                   const href = `/section?title=${encodeURIComponent(reportTitle)}`;
+                  const convCommittees = committeesByConvocation[conv.id || conv.number] || [];
                   
                   return (
-                    <li key={conv.id || conv.name} style={{ marginBottom: 8 }}>
-                      <a href={href} style={{ color: "#2563eb", textDecoration: "none", fontSize: 16 }}>
-                        {label}
-                      </a>
-                    </li>
+                    <div
+                      key={conv.id || conv.name}
+                      className="card"
+                      style={{
+                        padding: 20,
+                        marginBottom: 16,
+                        borderRadius: 12,
+                        border: "1px solid rgba(17, 24, 39, 0.10)",
+                      }}
+                    >
+                      <div style={{ marginBottom: 12 }}>
+                        <a
+                          href={href}
+                          style={{
+                            color: "#2563eb",
+                            textDecoration: "none",
+                            fontSize: 18,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {label}
+                        </a>
+                      </div>
+                      {convCommittees.length > 0 ? (
+                        <div style={{ marginTop: 12 }}>
+                          <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}>
+                            Комитеты ({convCommittees.length}):
+                          </div>
+                          <ul style={{ listStyle: "disc", paddingLeft: 24, margin: 0 }}>
+                            {convCommittees.map((committee) => (
+                              <li key={committee.id} style={{ marginBottom: 4 }}>
+                                <span style={{ fontSize: 14 }}>
+                                  {committee.title || committee.name || "Комитет"}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: 8, fontSize: 14, color: "#6b7280" }}>
+                          Комитеты для этого созыва пока не указаны.
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
-              </ul>
+              </div>
             ) : (
               <div className="card" style={{ padding: 24, marginTop: 20 }}>
                 <p style={{ marginTop: 0 }}>Список созывов пока пуст.</p>
@@ -339,22 +417,63 @@ function ConvocationReportsPage({ convocationNumber }) {
       try {
         setLoading(true);
         
-        // Load convocation
-        const conv = await ConvocationsApi.getById(convocationNumber).catch(() => null);
+        // Load all convocations and find by number/name (not just ID)
+        const list = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
         if (!alive) return;
         
-        // If not found by id, try to find in list
-        let convocationData = conv;
-        if (!convocationData) {
-          const list = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
-          const token = normalizeConvocationToken(convocationNumber);
-          convocationData = Array.isArray(list) ? list.find((c) => {
+        const token = normalizeConvocationToken(convocationNumber);
+        let convocationData = null;
+        
+        // Try to find by ID first (if convocationNumber is numeric)
+        if (!isNaN(parseInt(convocationNumber, 10))) {
+          const byId = await ConvocationsApi.getById(convocationNumber).catch(() => null);
+          if (byId) {
+            convocationData = byId;
+          }
+        }
+        
+        // If not found by ID, search in list by token/name/number
+        if (!convocationData && Array.isArray(list)) {
+          convocationData = list.find((c) => {
             const cToken = normalizeConvocationToken(c.name || c.number || "");
-            return cToken === token || String(c.id) === String(convocationNumber);
-          }) : null;
+            const cId = String(c.id || "");
+            return cToken === token || 
+                   cId === String(convocationNumber) ||
+                   (c.name && String(c.name).toLowerCase().includes(String(convocationNumber).toLowerCase())) ||
+                   (c.number && String(c.number) === String(convocationNumber));
+          });
+        }
+        
+        // If still not found, try to get full data by ID if we have it
+        if (!convocationData && token) {
+          // Try to find by matching token in any field
+          for (const c of Array.isArray(list) ? list : []) {
+            const cToken = normalizeConvocationToken(c.name || c.number || c.id || "");
+            if (cToken === token) {
+              // Try to get full data by ID
+              if (c.id) {
+                const full = await ConvocationsApi.getById(c.id).catch(() => null);
+                if (full) {
+                  convocationData = full;
+                  break;
+                }
+              }
+              convocationData = c;
+              break;
+            }
+          }
         }
         
         if (convocationData) {
+          // Ensure we have the latest data with documents
+          // If we found by list, try to get full data by ID
+          if (convocationData.id && (!convocationData.documents || convocationData.documents.length === 0)) {
+            const fullData = await ConvocationsApi.getById(convocationData.id).catch(() => null);
+            if (fullData && Array.isArray(fullData.documents) && fullData.documents.length > 0) {
+              convocationData = fullData;
+            }
+          }
+          
           setConvocation(convocationData);
           
           // Extract unique committee IDs from documents
@@ -372,20 +491,21 @@ function ConvocationReportsPage({ convocationNumber }) {
           const fromContext = Array.isArray(committeesFromContext) ? committeesFromContext : [];
           const all = [...allCommittees, ...fromContext];
           
-          // Filter committees that have documents or match convocation
+          // Filter committees that match convocation OR have documents for this convocation
           const convKeys = new Set([convocationNumber, normalizeConvocationToken(convocationNumber)]);
           const relevant = all.filter((c) => {
             if (!c) return false;
-            // Include if has documents for this convocation
+            // Always include if has documents for this convocation
             if (committeeIds.has(String(c.id))) return true;
-            // If there are documents without committeeId, show all committees that match convocation
-            if (hasDocumentsWithoutCommittee) {
-              const matchKeys = committeeConvocationMatchKeys(c);
-              return matchKeys.some(key => convKeys.has(key));
-            }
-            // Or if matches convocation (only if no documents without committeeId)
+            // Always include if matches convocation (by convocationId or convocation name/number)
             const matchKeys = committeeConvocationMatchKeys(c);
-            return matchKeys.some(key => convKeys.has(key));
+            if (matchKeys.some(key => convKeys.has(key))) return true;
+            // Also check if committee's convocation matches by ID
+            const committeeConvId = String(c?.convocation?.id ?? "");
+            const committeeConvToken = normalizeConvocationToken(c?.convocation?.name || c?.convocation?.number || "");
+            if (committeeConvId && convKeys.has(committeeConvId)) return true;
+            if (committeeConvToken && convKeys.has(committeeConvToken)) return true;
+            return false;
           });
           
           // Deduplicate
@@ -546,6 +666,19 @@ function ConvocationReportsPage({ convocationNumber }) {
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
+
+  // Debug logging
+  React.useEffect(() => {
+    if (convocation) {
+      console.log("ConvocationReportsPage: convocation data:", {
+        id: convocation.id,
+        name: convocation.name,
+        number: convocation.number,
+        documentsCount: Array.isArray(convocation.documents) ? convocation.documents.length : 0,
+        documents: convocation.documents,
+      });
+    }
+  }, [convocation]);
 
   if (loading) {
     return (
