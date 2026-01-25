@@ -2,6 +2,8 @@
   {
     "id": "agro",
     "title": "Комитет по аграрной политике, земельным отношениям, природопользованию, экологии и делам коренных малочисленных народов",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-kuular-aidys", "name": "Куулар Айдыс Леонидович", "role": "Председатель Комитета" },
       { "id": "dep-mongush-ulyana", "name": "Монгуш Ульяна Байыр-ооловна", "role": "Член Комитета" },
@@ -19,6 +21,8 @@
   {
     "id": "infra",
     "title": "Комитет по развитию инфраструктуры и промышленной политике",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-khuurak-eres", "name": "Хуурак Эрес Михайлович", "role": "Председатель Комитета" },
       { "id": "dep-kuular-lodoi-damba", "name": "Куулар Лодой-Дамба Эртинеевич", "role": "Член Комитета" },
@@ -35,6 +39,8 @@
   {
     "id": "youth",
     "title": "Комитет по молодежной, информационной политике, физической культуре и спорту, развитию институтов гражданского общества",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-dongak-ayas", "name": "Донгак Аяс Дадар-оолович", "role": "Председатель Комитета" },
       { "id": "dep-oorzhak-rolan", "name": "Ооржак Ролан Чадамбаевич", "role": "Член Комитета" },
@@ -51,6 +57,8 @@
   {
     "id": "security",
     "title": "Комитет по безопасности и правопорядку",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-sanchat-ayas", "name": "Санчат Аяс Сергеевич", "role": "Председатель Комитета" },
       { "id": "dep-dongak-ayas", "name": "Донгак Аяс Дадар-оолович", "role": "Член Комитета" },
@@ -68,6 +76,8 @@
   {
     "id": "health",
     "title": "Комитет по охране здоровья, занятости населения и социальной политике",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-kalbak-dolaan", "name": "Калбак Долаан Давааевич", "role": "Председатель Комитета" },
       { "id": "dep-mongush-ulyana", "name": "Монгуш Ульяна Байыр-ооловна", "role": "Член Комитета" },
@@ -84,6 +94,8 @@
   {
     "id": "const",
     "title": "Комитет по конституционно‑правовой политике и местному самоуправлению",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-osmolovskaya-lyudmila", "name": "Осмоловская Людмила Леонидовна", "role": "Председатель Комитета" },
       { "id": "d2", "name": "Биче-оол Буян Владимириович", "role": "Член Комитета" },
@@ -100,6 +112,8 @@
   {
     "id": "econ",
     "title": "Комитет по экономической, финансово‑бюджетной и налоговой политике, предпринимательству, туризму и государственной собственности",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-listkov-andrei", "name": "Листков Андрей Георгиевич", "role": "Председатель Комитета" },
       { "id": "dep-dudko-anatoly", "name": "Дудко Анатолий Олегович", "role": "Член Комитета" },
@@ -116,6 +130,8 @@
   {
     "id": "edu",
     "title": "Комитет по образованию, культуре, науке и национальной политике",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-munge-belekmaa", "name": "Мунге Белекмаа Владимировна", "role": "Председатель Комитета" },
       { "id": "dep-mongush-ayana", "name": "Монгуш Аяна Кан-ооловна", "role": "Член Комитета" },
@@ -133,6 +149,8 @@
   {
     "id": "smi-obshestvo",
     "title": "Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-oorzhak-rolan", "name": "Ооржак Ролан Чадамбаевич", "role": "Председатель Комитета" }
     ],
@@ -141,8 +159,40 @@
   {
     "id": "mezhregionalnye-svyazi",
     "title": "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным и международным связям",
+    "convocation": { "id": "VII", "name": "VII", "isActive": true },
+    "isActive": true,
     "members": [
       { "id": "dep-tamoev-roman", "name": "Тамоев Роман Телманович", "role": "Председатель Комитета" }
+    ],
+    "staff": []
+  },
+  {
+    "id": "edu-i",
+    "title": "Комитет по образованию, культуре, науке и национальной политике",
+    "convocation": { "id": "I", "name": "Первый созыв (2010 - 2014 гг.)", "isActive": false },
+    "isActive": false,
+    "members": [
+      { "id": "dep-hovenmai-lidia", "name": "Ховенмей Лидия Михайловна", "role": "Член Комитета" }
+    ],
+    "staff": []
+  },
+  {
+    "id": "security-ii",
+    "title": "Комитет по безопасности и правопорядку",
+    "convocation": { "id": "II", "name": "Второй созыв (2014 - 2019 гг.)", "isActive": false },
+    "isActive": false,
+    "members": [
+      { "id": "dep-kyzyl-ool-herel", "name": "Кызыл-оол Херел Васильевич", "role": "Член Комитета" }
+    ],
+    "staff": []
+  },
+  {
+    "id": "health-ii",
+    "title": "Комитет по охране здоровья, занятости населения и социальной политике",
+    "convocation": { "id": "II", "name": "Второй созыв (2014 - 2019 гг.)", "isActive": false },
+    "isActive": false,
+    "members": [
+      { "id": "dep-dongak-aleksandra", "name": "Донгак Александра Хаяаевна", "role": "Член Комитета" }
     ],
     "staff": []
   }
