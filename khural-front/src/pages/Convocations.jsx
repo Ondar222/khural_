@@ -438,6 +438,19 @@ export default function Convocations() {
                           {stripTags(String(c.description))}
                         </div>
                       ) : null}
+                      {c?.stats ? (
+                        <div style={{ marginTop: 8, display: "flex", gap: 16, flexWrap: "wrap", fontSize: 14 }}>
+                          <div>
+                            <span style={{ fontWeight: 600 }}>Депутатов:</span> {c.stats.deputies}
+                          </div>
+                          <div>
+                            <span style={{ fontWeight: 600 }}>Законов:</span> {c.stats.laws}
+                          </div>
+                          <div>
+                            <span style={{ fontWeight: 600 }}>Постановлений:</span> {c.stats.resolutions}
+                          </div>
+                        </div>
+                      ) : null}
 
                       <div style={{ marginTop: 12, fontWeight: 700 }}>Комитеты созыва</div>
                       {committeesList.length ? (

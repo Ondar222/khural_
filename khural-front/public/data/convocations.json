@@ -1,0 +1,67 @@
+[
+  {
+    "id": "I",
+    "name": "Первый созыв (2010 - 2014 гг.)",
+    "number": "I",
+    "years": "2010-2014",
+    "isActive": false,
+    "description": "34 депутатов. Принято 2 законов и 0 постановлений.",
+    "stats": {
+      "deputies": 34,
+      "laws": 2,
+      "resolutions": 0
+    }
+  },
+  {
+    "id": "II",
+    "name": "Второй созыв (2014 - 2019 гг.)",
+    "number": "II",
+    "years": "2014-2019",
+    "isActive": false,
+    "description": "30 депутатов. Принято 294 законов и 938 постановлений.",
+    "stats": {
+      "deputies": 30,
+      "laws": 294,
+      "resolutions": 938
+    }
+  },
+  {
+    "id": "III",
+    "name": "Третий созыв (2019 - 2024 гг.)",
+    "number": "III",
+    "years": "2019-2024",
+    "isActive": false,
+    "description": "36 депутатов. Принято 502 законов и 2506 постановлений.",
+    "stats": {
+      "deputies": 36,
+      "laws": 502,
+      "resolutions": 2506
+    }
+  },
+  {
+    "id": "IV",
+    "name": "Четвертый созыв (2024 - по наст. вр)",
+    "number": "IV",
+    "years": "2024-н.в.",
+    "isActive": false,
+    "description": "33 депутатов. Принято 148 законов и 688 постановлений.",
+    "stats": {
+      "deputies": 33,
+      "laws": 148,
+      "resolutions": 688
+    }
+  },
+  {
+    "id": "VII",
+    "name": "Седьмой созыв",
+    "number": "VII",
+    "years": "2024-н.в.",
+    "isActive": true,
+    "description": "Действующий созыв Верховного Хурала (парламента) Республики Тыва.",
+    "stats": {
+      "deputies": 32,
+      "laws": 0,
+      "resolutions": 0
+    }
+  }
+]
