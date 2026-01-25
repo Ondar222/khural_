@@ -1,6 +1,7 @@
 import React from "react";
 // TMP_MARKER
 import { App, Button, Input, Form, Upload, Select, DatePicker, Switch } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import { useHashRoute } from "../../Router.jsx";
 import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
@@ -721,7 +722,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
               });
             }}
             fileList={images}
-            itemRender={(originNode, file) => {
+            itemRender={(originNode, file, fileList, actions) => {
               const url = file.url || (file.thumbUrl) || (file.originFileObj ? URL.createObjectURL(file.originFileObj) : null);
               return url ? (
                 <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -735,11 +736,29 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
                       borderRadius: '8px',
                     }}
                   />
+                  <Button
+                    type="primary"
+                    danger
+                    icon={<DeleteOutlined />}
+                    size="small"
+                    shape="circle"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      actions.remove();
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: 4,
+                      right: 4,
+                      zIndex: 10,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    }}
+                  />
                 </div>
               ) : originNode;
             }}
           >
-            {images.length < 10 && <div><div className="ant-upload-text">Загрузить</div></div>}
+            <div><div className="ant-upload-text">Загрузить</div></div>
           </Upload>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { App, Button, Input, Form, Upload, Select, DatePicker, Switch } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import { useHashRoute } from "../../Router.jsx";
 import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
@@ -7,6 +8,84 @@ import dayjs from "dayjs";
 import { useData } from "../../context/DataContext.jsx";
 import { decodeHtmlEntities, stripHtmlTags } from "../../utils/html.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
+
+// Функция для сжатия изображения
+function compressImage(file, maxWidth = 1200, maxHeight = 800, quality = 0.7, maxSizeMB = 0.3) {
+  return new Promise((resolve) => {
+    // Если файл уже маленький, не сжимаем
+    if (file.size < maxSizeMB * 1024 * 1024) {
+      resolve(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        // Вычисляем новые размеры
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Пробуем разные уровни качества
+        const tryCompress = (q) => {
+          canvas.toBlob(
+            (blob) => {
+              if (blob && blob.size <= maxSizeMB * 1024 * 1024) {
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                console.log(`[AdminNewsEdit] ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+                resolve(compressedFile);
+              } else if (q > 0.3) {
+                tryCompress(q - 0.1);
+              } else {
+                const compressedFile = new File([blob || new Blob()], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              }
+            },
+            "image/jpeg",
+            q
+          );
+        };
+
+        tryCompress(quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Функция для удаления base64 изображений из HTML
+function removeBase64Images(html) {
+  if (!html) return html;
+  let cleaned = String(html);
+  cleaned = cleaned.replace(/src="data:image[^"]*"/gi, 'src=""');
+  cleaned = cleaned.replace(/background-image:\s*url\(['"]?data:image[^'"]*['"]?\)/gi, '');
+  cleaned = cleaned.replace(/<img[^>]*src=["']data:image[^"']*["'][^>]*>/gi, '');
+  return cleaned;
+}
 
 export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const { navigate } = useHashRoute();
@@ -273,8 +352,9 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       const values = await form.validateFields();
 
       // Получаем контент: TinyMCE возвращает HTML напрямую, краткое описание - обычный текст
-      const contentRu = String(values.contentRu || "").trim();
-      const contentTy = String(values.contentTy || "").trim();
+      // Удаляем base64 изображения из HTML контента перед сохранением
+      const contentRu = removeBase64Images(String(values.contentRu || "").trim());
+      const contentTy = removeBase64Images(String(values.contentTy || "").trim());
       // Убираем HTML теги из краткого описания (оно должно быть простым текстом)
       const shortRu = stripHtmlTags(String(values.shortDescriptionRu || "").trim());
       const shortTy = stripHtmlTags(String(values.shortDescriptionTy || "").trim());
@@ -364,21 +444,51 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         throw new Error("API вернул пустой ответ");
       }
 
-      // Обложка (только новые файлы)
+      // Обложка (только новые файлы) - сжимаем перед загрузкой
       if (coverImage?.originFileObj) {
-        console.log("Uploading cover image...");
-        await NewsApi.uploadCover(newsId, coverImage.originFileObj);
-        console.log("Cover image uploaded");
+        try {
+          console.log("Compressing cover image...");
+          const compressedCover = await compressImage(coverImage.originFileObj, 1200, 800, 0.7, 0.3);
+          console.log("Uploading cover image...");
+          await NewsApi.uploadCover(newsId, compressedCover);
+          console.log("Cover image uploaded");
+        } catch (error) {
+          console.error("Error uploading cover:", error);
+          if (error?.message?.includes("413") || error?.status === 413) {
+            antdMessage.error("Размер обложки слишком большой. Попробуйте загрузить изображение меньшего размера.");
+          } else if (error?.message?.includes("CORS") || error?.name === "TypeError") {
+            antdMessage.error("Ошибка загрузки обложки. Проверьте подключение к серверу.");
+          } else {
+            antdMessage.error(`Не удалось загрузить обложку: ${error?.message || "Неизвестная ошибка"}`);
+          }
+          throw error;
+        }
       }
 
-      // Новые картинки галереи (добавляем)
+      // Новые картинки галереи (добавляем) - сжимаем перед загрузкой
       const newGalleryFiles = (images || [])
         .filter((f) => f.originFileObj)
         .map((f) => f.originFileObj);
       if (newGalleryFiles.length) {
-        console.log(`Uploading ${newGalleryFiles.length} gallery images...`);
-        await NewsApi.uploadGallery(newsId, newGalleryFiles);
-        console.log("Gallery images uploaded");
+        try {
+          console.log(`Compressing ${newGalleryFiles.length} gallery images...`);
+          const compressedGallery = await Promise.all(
+            newGalleryFiles.map((file) => compressImage(file, 1200, 800, 0.7, 0.2))
+          );
+          console.log(`Uploading ${compressedGallery.length} gallery images...`);
+          await NewsApi.uploadGallery(newsId, compressedGallery);
+          console.log("Gallery images uploaded");
+        } catch (error) {
+          console.error("Error uploading gallery:", error);
+          if (error?.message?.includes("413") || error?.status === 413) {
+            antdMessage.error("Размер изображений галереи слишком большой. Попробуйте загрузить изображения меньшего размера.");
+          } else if (error?.message?.includes("CORS") || error?.name === "TypeError") {
+            antdMessage.error("Ошибка загрузки галереи. Проверьте подключение к серверу.");
+          } else {
+            antdMessage.error(`Не удалось загрузить галерею: ${error?.message || "Неизвестная ошибка"}`);
+          }
+          throw error;
+        }
       }
 
       // Проверяем, что данные действительно сохранились и обновляем форму
@@ -708,15 +818,27 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         <div className="admin-card">
           <div className="admin-news-editor__section-title">Обложка</div>
           <Upload
-            accept={undefined}
+            accept="image/*"
             maxCount={1}
             listType="picture-card"
-            beforeUpload={(file) => {
-              setCoverImage({
-                ...file,
-                uid: file.uid,
-                originFileObj: file,
-              });
+            beforeUpload={async (file) => {
+              // Сжимаем изображение сразу при выборе
+              try {
+                const compressed = await compressImage(file, 1200, 800, 0.7, 0.3);
+                setCoverImage({
+                  ...compressed,
+                  uid: file.uid,
+                  originFileObj: compressed,
+                  name: file.name,
+                });
+              } catch (error) {
+                console.error("Error compressing cover:", error);
+                setCoverImage({
+                  ...file,
+                  uid: file.uid,
+                  originFileObj: file,
+                });
+              }
               return false;
             }}
             onRemove={async (file) => {
@@ -797,15 +919,27 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         <div className="admin-card">
           <div className="admin-news-editor__section-title">Галерея</div>
           <Upload
-            accept={undefined}
+            accept="image/*"
             multiple
             listType="picture-card"
-            beforeUpload={(file) => {
-              setImages((prev) => [...prev, {
-                ...file,
-                uid: file.uid,
-                originFileObj: file,
-              }]);
+            beforeUpload={async (file) => {
+              // Сжимаем изображение сразу при выборе
+              try {
+                const compressed = await compressImage(file, 1200, 800, 0.7, 0.2);
+                setImages((prev) => [...prev, {
+                  ...compressed,
+                  uid: file.uid,
+                  originFileObj: compressed,
+                  name: file.name,
+                }]);
+              } catch (error) {
+                console.error("Error compressing gallery image:", error);
+                setImages((prev) => [...prev, {
+                  ...file,
+                  uid: file.uid,
+                  originFileObj: file,
+                }]);
+              }
               return false;
             }}
             onRemove={async (file) => {
@@ -832,7 +966,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               }
             }}
             fileList={images}
-            itemRender={(originNode, file) => {
+            itemRender={(originNode, file, fileList, actions) => {
               const url = file.url || file.thumbUrl || (file.originFileObj ? URL.createObjectURL(file.originFileObj) : null);
               return url ? (
                 <div style={{ position: "relative", width: "100%", height: "100%" }}>
@@ -846,11 +980,29 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
                       borderRadius: "8px",
                     }}
                   />
+                  <Button
+                    type="primary"
+                    danger
+                    icon={<DeleteOutlined />}
+                    size="small"
+                    shape="circle"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      actions.remove();
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: 4,
+                      right: 4,
+                      zIndex: 10,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    }}
+                  />
                 </div>
               ) : originNode;
             }}
           >
-            {images.length < 10 && <div><div className="ant-upload-text">Загрузить</div></div>}
+            <div><div className="ant-upload-text">Загрузить</div></div>
           </Upload>
           <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Button
