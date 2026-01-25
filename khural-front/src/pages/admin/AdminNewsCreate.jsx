@@ -6,9 +6,15 @@ import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
-// Функция для сжатия изображения
-function compressImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) {
+// Функция для сжатия изображения (более агрессивное сжатие)
+function compressImage(file, maxWidth = 1200, maxHeight = 800, quality = 0.7, maxSizeMB = 0.5) {
   return new Promise((resolve) => {
+    // Если файл уже маленький, не сжимаем
+    if (file.size < maxSizeMB * 1024 * 1024) {
+      resolve(file);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -20,31 +26,47 @@ function compressImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) {
         // Вычисляем новые размеры
         if (width > maxWidth || height > maxHeight) {
           const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width = width * ratio;
-          height = height * ratio;
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
         }
 
         canvas.width = width;
         canvas.height = height;
 
         const ctx = canvas.getContext("2d");
+        // Улучшаем качество рендеринга
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
         ctx.drawImage(img, 0, 0, width, height);
 
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const compressedFile = new File([blob], file.name, {
-                type: file.type,
-                lastModified: Date.now(),
-              });
-              resolve(compressedFile);
-            } else {
-              resolve(file);
-            }
-          },
-          file.type,
-          quality
-        );
+        // Пробуем разные уровни качества, пока не достигнем нужного размера
+        const tryCompress = (q) => {
+          canvas.toBlob(
+            (blob) => {
+              if (blob && blob.size <= maxSizeMB * 1024 * 1024) {
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg", // Всегда используем JPEG для лучшего сжатия
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else if (q > 0.3) {
+                // Пробуем с меньшим качеством
+                tryCompress(q - 0.1);
+              } else {
+                // Если даже с минимальным качеством не получилось, возвращаем то что есть
+                const compressedFile = new File([blob || new Blob()], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              }
+            },
+            "image/jpeg", // Всегда используем JPEG для лучшего сжатия
+            q
+          );
+        };
+
+        tryCompress(quality);
       };
       img.onerror = () => resolve(file);
       img.src = e.target.result;
@@ -54,11 +76,40 @@ function compressImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.8) {
   });
 }
 
-// Функция для удаления base64 изображений из HTML
+// Функция для удаления base64 изображений из HTML (более агрессивная)
 function removeBase64Images(html) {
   if (!html) return html;
+  let cleaned = String(html);
   // Удаляем data:image в src атрибутах
-  return String(html).replace(/src="data:image[^"]*"/gi, 'src=""');
+  cleaned = cleaned.replace(/src="data:image[^"]*"/gi, 'src=""');
+  // Удаляем data:image в style атрибутах (background-image)
+  cleaned = cleaned.replace(/background-image:\s*url\(['"]?data:image[^'"]*['"]?\)/gi, '');
+  // Удаляем встроенные base64 изображения в тегах img
+  cleaned = cleaned.replace(/<img[^>]*src=["']data:image[^"']*["'][^>]*>/gi, '');
+  return cleaned;
+}
+
+// Функция для генерации уникального slug из заголовка
+function generateUniqueSlug(title) {
+  if (!title) return null;
+  const baseSlug = String(title)
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Удаляем спецсимволы
+    .replace(/[\s_-]+/g, '-') // Заменяем пробелы и подчеркивания на дефисы
+    .replace(/^-+|-+$/g, '') // Удаляем дефисы в начале и конце
+    .substring(0, 80); // Ограничиваем длину
+  
+  if (!baseSlug || baseSlug === '-') {
+    // Если slug пустой или только дефис, генерируем случайный
+    const random = Math.random().toString(36).substring(2, 8);
+    return `news-${Date.now()}-${random}`;
+  }
+  
+  // Добавляем timestamp и случайную строку для уникальности
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 6);
+  return `${baseSlug}-${timestamp}-${random}`;
 }
 
 // Проверка, что метод существует при загрузке модуля
@@ -266,18 +317,24 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         });
       }
       
-      // Сжимаем изображения перед отправкой
+      // Сжимаем изображения перед отправкой (более агрессивное сжатие)
       antdMessage.loading({ content: "Сжатие изображений...", key: "compressing", duration: 0 });
       let compressedCover = null;
       if (coverImage) {
-        compressedCover = await compressImage(coverImage);
+        compressedCover = await compressImage(coverImage, 1200, 800, 0.7, 0.3); // Макс 0.3MB для обложки
         console.log(`[AdminNewsCreate] Обложка: ${(coverImage.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedCover.size / 1024 / 1024).toFixed(2)}MB`);
       }
       
       const compressedImages = [];
       if (images && images.length > 0) {
-        for (const file of images) {
-          const compressed = await compressImage(file);
+        // Ограничиваем количество изображений до 5
+        const imagesToProcess = images.slice(0, 5);
+        if (images.length > 5) {
+          antdMessage.warning(`Будет загружено только первые 5 изображений из ${images.length}`);
+        }
+        
+        for (const file of imagesToProcess) {
+          const compressed = await compressImage(file, 1000, 700, 0.6, 0.2); // Макс 0.2MB для каждого изображения
           compressedImages.push(compressed);
           console.log(`[AdminNewsCreate] Изображение ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressed.size / 1024 / 1024).toFixed(2)}MB`);
         }
@@ -290,9 +347,6 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       
       // Добавляем JSON поля
       formData.append("categoryId", String(values.categoryId));
-      if (values.slug) {
-        formData.append("slug", values.slug);
-      }
       if (values.publishedAt) {
         const timestamp = values.publishedAt && typeof values.publishedAt.valueOf === 'function' 
           ? values.publishedAt.valueOf() 
@@ -301,6 +355,16 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       }
       formData.append("isPublished", String(values.isPublished ?? false));
       formData.append("content", JSON.stringify(contentArray));
+      
+      // Генерируем уникальный slug на основе заголовка, чтобы избежать конфликтов
+      const titleRu = String(values.titleRu || "").trim();
+      if (titleRu) {
+        const uniqueSlug = generateUniqueSlug(titleRu);
+        if (uniqueSlug) {
+          formData.append("slug", uniqueSlug);
+          console.log(`[AdminNewsCreate] Сгенерирован slug: ${uniqueSlug}`);
+        }
+      }
       
       // Добавляем сжатые файлы
       if (compressedCover) {
@@ -322,12 +386,23 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       const totalSizeMB = totalSize / 1024 / 1024;
       console.log(`[AdminNewsCreate] Общий размер данных: ${totalSizeMB.toFixed(2)}MB`);
       
-      if (totalSizeMB > 10) {
-        antdMessage.warning(`Размер данных очень большой (${totalSizeMB.toFixed(2)}MB). Это может вызвать ошибку. Попробуйте уменьшить размер изображений.`);
+      // Предупреждаем, если размер больше 2MB
+      if (totalSizeMB > 2) {
+        antdMessage.warning(`Размер данных большой (${totalSizeMB.toFixed(2)}MB). Если возникнет ошибка, попробуйте уменьшить количество или размер изображений.`);
+      }
+      
+      // Блокируем отправку, если размер больше 5MB
+      if (totalSizeMB > 5) {
+        antdMessage.error(`Размер данных слишком большой (${totalSizeMB.toFixed(2)}MB). Максимальный размер: 5MB. Пожалуйста, уменьшите количество или размер изображений.`);
+        return;
       }
       
       await onCreate(formData);
-      navigate("/admin/news");
+      antdMessage.success("Новость успешно создана");
+      // Перенаправляем на публичную страницу новостей
+      setTimeout(() => {
+        window.location.href = "/news";
+      }, 1000);
     } catch (error) {
       if (error?.errorFields) return;
       
@@ -340,9 +415,42 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         return;
       }
       
+      // Обработка ошибки 409 (Conflict - slug уже существует)
+      if (error?.status === 409 || error?.message?.includes("409") || error?.message?.includes("already exists") || error?.message?.includes("slug")) {
+        antdMessage.error({
+          content: "Новость с таким URL-адресом уже существует. Попробуйте изменить заголовок или подождите несколько секунд и попробуйте снова.",
+          duration: 8,
+        });
+        console.error("Slug conflict:", error);
+        return;
+      }
+      
       // Обработка ошибки 413 (Request Entity Too Large)
       if (error?.status === 413 || error?.message?.includes("413") || error?.message?.includes("Entity Too Large")) {
-        antdMessage.error("Размер данных слишком большой. Пожалуйста, уменьшите размер изображений или сократите текст.");
+        antdMessage.error({
+          content: "Размер данных слишком большой (413). Пожалуйста, уменьшите количество или размер изображений. Максимальный размер: 2-3MB.",
+          duration: 8,
+        });
+        return;
+      }
+      
+      // Обработка CORS ошибки
+      if (error?.message?.includes("CORS") || error?.message?.includes("Access-Control-Allow-Origin")) {
+        antdMessage.error({
+          content: "Ошибка CORS. Проверьте настройки сервера или попробуйте позже.",
+          duration: 5,
+        });
+        console.error("CORS error:", error);
+        return;
+      }
+      
+      // Обработка сетевых ошибок
+      if (error?.message?.includes("Failed to fetch") || error?.status === 0) {
+        antdMessage.error({
+          content: "Ошибка сети. Проверьте подключение к интернету или попробуйте позже.",
+          duration: 5,
+        });
+        console.error("Network error:", error);
         return;
       }
       
@@ -371,6 +479,126 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       </div>
 
       <Form layout="vertical" form={form} initialValues={{ isPublished: true }}>
+        {/* 1 ряд: Заголовки */}
+        <div className="admin-news-editor__lang-grid">
+          <div className="admin-card">
+            <div className="admin-news-editor__section-title">Заголовок (TY)</div>
+            <Form.Item
+              name="titleTy"
+              rules={[{ required: false, message: "Укажите заголовок" }]}
+              style={{ marginBottom: 0 }}
+            >
+              <Input placeholder="Заголовок на тувинском языке" />
+            </Form.Item>
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-news-editor__section-title">Заголовок (RU) *</div>
+            <Form.Item
+              name="titleRu"
+              rules={[{ required: true, message: "Укажите заголовок" }]}
+              style={{ marginBottom: 0 }}
+            >
+              <Input placeholder="Заголовок на русском языке" />
+            </Form.Item>
+          </div>
+        </div>
+
+        {/* 2 ряд: Краткие описания */}
+        <div className="admin-news-editor__lang-grid">
+          <div className="admin-card">
+            <div className="admin-news-editor__section-title">Краткое описание (TY)</div>
+            <Form.Item
+              name="shortDescriptionTy"
+              tooltip="Краткое описание новости на тувинском языке"
+              getValueFromEvent={(value) => value}
+              style={{ marginBottom: 0 }}
+            >
+              <TinyMCEEditor
+                height={300}
+                placeholder="Краткое описание"
+                disabled={busy || !canWrite}
+              />
+            </Form.Item>
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-news-editor__section-title">Краткое описание (RU)</div>
+            <Form.Item
+              name="shortDescriptionRu"
+              tooltip="Краткое описание новости на русском языке"
+              getValueFromEvent={(value) => value}
+              style={{ marginBottom: 0 }}
+            >
+              <TinyMCEEditor
+                height={300}
+                placeholder="Краткое описание"
+                disabled={busy || !canWrite}
+              />
+            </Form.Item>
+          </div>
+        </div>
+
+        {/* 3 ряд: Контент */}
+        <div className="admin-news-editor__lang-grid">
+          <div className="admin-card">
+            <div className="admin-news-editor__lang-head">
+              <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>
+                Контент (TY)
+              </div>
+              <Button
+                type="default"
+                onClick={() => handleTranslate("ru", "tyv")}
+                loading={translating}
+                disabled={!canWrite || translating}
+              >
+                Получить автоматический перевод
+              </Button>
+            </div>
+            <Form.Item
+              name="contentTy"
+              rules={[{ required: false, message: "Укажите контент" }]}
+              getValueFromEvent={(value) => value}
+              style={{ marginBottom: 0 }}
+            >
+              <TinyMCEEditor
+                height={400}
+                placeholder="Контент на тувинском языке"
+                disabled={busy || !canWrite}
+              />
+            </Form.Item>
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-news-editor__lang-head">
+              <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>
+                Контент (RU) *
+              </div>
+              <Button
+                type="default"
+                onClick={() => handleTranslate("tyv", "ru")}
+                loading={translating}
+                disabled={!canWrite || translating}
+              >
+                Получить автоматический перевод
+              </Button>
+            </div>
+            <Form.Item
+              name="contentRu"
+              rules={[{ required: true, message: "Укажите контент" }]}
+              getValueFromEvent={(value) => value}
+              style={{ marginBottom: 0 }}
+            >
+              <TinyMCEEditor
+                height={400}
+                placeholder="Контент на русском языке"
+                disabled={busy || !canWrite}
+              />
+            </Form.Item>
+          </div>
+        </div>
+
+        {/* Остальное: Основное и Публикация */}
         <div className="admin-news-editor__grid">
           <div className="admin-card">
             <div className="admin-news-editor__section-title">Основное</div>
@@ -418,13 +646,6 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
                 }))}
               />
             </Form.Item>
-            <Form.Item
-              label="Slug (URL-адрес)"
-              name="slug"
-              tooltip="URL-совместимый адрес. Если не указан, будет сгенерирован автоматически"
-            >
-              <Input placeholder="sessiya-iyul-2025" />
-            </Form.Item>
           </div>
 
           <div className="admin-card">
@@ -439,103 +660,6 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
             </Form.Item>
             <Form.Item label="Опубликовано" name="isPublished" valuePropName="checked">
               <Switch />
-            </Form.Item>
-            <Form.Item
-              label="Краткое описание (RU)"
-              name="shortDescriptionRu"
-              tooltip="Краткое описание новости на русском языке"
-              getValueFromEvent={(value) => value}
-            >
-              <TinyMCEEditor
-                height={300}
-                placeholder="Краткое описание"
-                disabled={busy || !canWrite}
-              />
-            </Form.Item>
-          </div>
-        </div>
-
-        {/* Языковые секции */}
-        <div className="admin-news-editor__lang-grid">
-          <div className="admin-card">
-            <div className="admin-news-editor__lang-head">
-              <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>
-                Тувинский язык
-              </div>
-              <Button
-                type="default"
-                onClick={() => handleTranslate("ru", "tyv")}
-                loading={translating}
-                disabled={!canWrite || translating}
-              >
-                Получить автоматический перевод
-              </Button>
-            </div>
-            <Form.Item
-              label="Заголовок (TY)"
-              name="titleTy"
-              rules={[{ required: false, message: "Укажите заголовок" }]}
-            >
-              <Input placeholder="Заголовок на тувинском языке" />
-            </Form.Item>
-            <Form.Item
-              label="Краткое описание (TY)"
-              name="shortDescriptionTy"
-              tooltip="Краткое описание новости на тувинском языке"
-              getValueFromEvent={(value) => value}
-            >
-              <TinyMCEEditor
-                height={300}
-                placeholder="Краткое описание"
-                disabled={busy || !canWrite}
-              />
-            </Form.Item>
-            <Form.Item
-              label="Контент (TY)"
-              name="contentTy"
-              rules={[{ required: false, message: "Укажите контент" }]}
-              getValueFromEvent={(value) => value}
-            >
-              <TinyMCEEditor
-                height={400}
-                placeholder="Контент на тувинском языке"
-                disabled={busy || !canWrite}
-              />
-            </Form.Item>
-          </div>
-
-          <div className="admin-card">
-            <div className="admin-news-editor__lang-head">
-              <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>
-                Русский язык
-              </div>
-              <Button
-                type="default"
-                onClick={() => handleTranslate("tyv", "ru")}
-                loading={translating}
-                disabled={!canWrite || translating}
-              >
-                Получить автоматический перевод
-              </Button>
-            </div>
-            <Form.Item
-              label="Заголовок (RU) *"
-              name="titleRu"
-              rules={[{ required: true, message: "Укажите заголовок" }]}
-            >
-              <Input placeholder="Заголовок на русском языке" />
-            </Form.Item>
-            <Form.Item
-              label="Контент (RU) *"
-              name="contentRu"
-              rules={[{ required: true, message: "Укажите контент" }]}
-              getValueFromEvent={(value) => value}
-            >
-              <TinyMCEEditor
-                height={400}
-                placeholder="Контент на русском языке"
-                disabled={busy || !canWrite}
-              />
             </Form.Item>
           </div>
         </div>
