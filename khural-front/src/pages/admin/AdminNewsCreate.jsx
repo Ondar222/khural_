@@ -4,6 +4,7 @@ import { App, Button, Input, Form, Upload, Select, DatePicker, Switch } from "an
 import { useHashRoute } from "../../Router.jsx";
 import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
+import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 // Проверка, что метод существует при загрузке модуля
 if (typeof NewsApi.createCategory !== 'function') {
@@ -350,11 +351,12 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
               label="Краткое описание (RU)"
               name="shortDescriptionRu"
               tooltip="Краткое описание новости на русском языке"
+              getValueFromEvent={(value) => value}
             >
-              <Input.TextArea
-                placeholder="<p>Краткое описание</p>"
-                autoSize={{ minRows: 6, maxRows: 12 }}
-                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+              <TinyMCEEditor
+                height={300}
+                placeholder="Краткое описание"
+                disabled={busy || !canWrite}
               />
             </Form.Item>
           </div>
@@ -387,22 +389,24 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
               label="Краткое описание (TY)"
               name="shortDescriptionTy"
               tooltip="Краткое описание новости на тувинском языке"
+              getValueFromEvent={(value) => value}
             >
-              <Input.TextArea
-                placeholder="<p>Краткое описание</p>"
-                autoSize={{ minRows: 6, maxRows: 12 }}
-                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+              <TinyMCEEditor
+                height={300}
+                placeholder="Краткое описание"
+                disabled={busy || !canWrite}
               />
             </Form.Item>
             <Form.Item
               label="Контент (TY)"
               name="contentTy"
               rules={[{ required: false, message: "Укажите контент" }]}
+              getValueFromEvent={(value) => value}
             >
-              <Input.TextArea
-                placeholder="<p>Контент (TY)</p>"
-                autoSize={{ minRows: 12, maxRows: 24 }}
-                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+              <TinyMCEEditor
+                height={400}
+                placeholder="Контент на тувинском языке"
+                disabled={busy || !canWrite}
               />
             </Form.Item>
           </div>
@@ -432,11 +436,12 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
               label="Контент (RU) *"
               name="contentRu"
               rules={[{ required: true, message: "Укажите контент" }]}
+              getValueFromEvent={(value) => value}
             >
-              <Input.TextArea
-                placeholder="<p>Контент (RU)</p>"
-                autoSize={{ minRows: 12, maxRows: 24 }}
-                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}
+              <TinyMCEEditor
+                height={400}
+                placeholder="Контент на русском языке"
+                disabled={busy || !canWrite}
               />
             </Form.Item>
           </div>
