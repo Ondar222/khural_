@@ -245,15 +245,107 @@ function mapDocType(type) {
   return type || "other";
 }
 
+function normalizeCommitteeName(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function mergeCommitteesPreferApi(apiList, fallbackList) {
+  const api = Array.isArray(apiList) ? apiList : [];
+  const fallback = Array.isArray(fallbackList) ? fallbackList : [];
+  const out = api.map((c) => ({ ...c }));
+  const byId = new Map();
+  const byName = new Map();
+
+  for (const c of out) {
+    const id = String(c?.id ?? "");
+    if (id) byId.set(id, c);
+    const nameKey = normalizeCommitteeName(c?.name || c?.title || c?.label || c?.description);
+    if (nameKey) byName.set(nameKey, c);
+  }
+
+  for (const c of fallback) {
+    const id = String(c?.id ?? "");
+    const nameKey = normalizeCommitteeName(c?.name || c?.title || c?.label || c?.description);
+    const target = (id && byId.get(id)) || (nameKey && byName.get(nameKey)) || null;
+    if (target) {
+      if (!target.name && c?.name) target.name = c.name;
+      if (!target.title && c?.title) target.title = c.title;
+      if (!target.description && c?.description) target.description = c.description;
+      if (!target.convocation && c?.convocation) target.convocation = c.convocation;
+      if (!target.convocationId && c?.convocationId) target.convocationId = c.convocationId;
+      if (!Array.isArray(target.members) && Array.isArray(c?.members)) target.members = c.members;
+      continue;
+    }
+    out.push(c);
+  }
+
+  return out;
+}
+
+function normalizeConvocationKey(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function mergeConvocationsPreferApi(apiList, fallbackList) {
+  const api = Array.isArray(apiList) ? apiList : [];
+  const fallback = Array.isArray(fallbackList) ? fallbackList : [];
+  const out = api.map((c) => ({ ...c }));
+  const byId = new Map();
+  const byName = new Map();
+
+  for (const c of out) {
+    if (c == null) continue;
+    if (typeof c === "string") {
+      const key = normalizeConvocationKey(c);
+      if (key) byName.set(key, { id: c, name: c });
+      continue;
+    }
+    const id = String(c?.id ?? "");
+    if (id) byId.set(id, c);
+    const nameKey = normalizeConvocationKey(c?.name || c?.number || c?.title);
+    if (nameKey) byName.set(nameKey, c);
+  }
+
+  for (const c of fallback) {
+    if (c == null) continue;
+    if (typeof c === "string") {
+      const key = normalizeConvocationKey(c);
+      if (!key) continue;
+      if (byName.has(key)) continue;
+      out.push({ id: c, name: c });
+      byName.set(key, { id: c, name: c });
+      continue;
+    }
+    const id = String(c?.id ?? "");
+    const nameKey = normalizeConvocationKey(c?.name || c?.number || c?.title);
+    const target = (id && byId.get(id)) || (nameKey && byName.get(nameKey)) || null;
+    if (target) {
+      if (!target.name && c?.name) target.name = c.name;
+      if (!target.number && c?.number) target.number = c.number;
+      if (!target.title && c?.title) target.title = c.title;
+      if (target.isActive === undefined && c?.isActive !== undefined) target.isActive = c.isActive;
+      continue;
+    }
+    out.push(c);
+  }
+
+  return out;
+}
+
 function mergeCommitteesWithOverrides(base, overrides) {
   const created = Array.isArray(overrides?.created) ? overrides.created : [];
   const updatedById =
     overrides?.updatedById && typeof overrides.updatedById === "object"
       ? overrides.updatedById
       : {};
-  const deleted = new Set(
-    (Array.isArray(overrides?.deletedIds) ? overrides.deletedIds : []).map(String)
-  );
+  // Удаление комитетов отключено — игнорируем deletedIds, чтобы список не исчезал.
+  const deleted = new Set();
 
   const list = Array.isArray(base) ? base.slice() : [];
   const mergedBase = list
@@ -323,17 +415,37 @@ export function useAdminData() {
         title.length <= 255
           ? title
           : (title.split(",")[0] || title).trim().slice(0, 252).trimEnd() + "…";
+      const convRaw = c?.convocation?.id ?? c?.convocationId ?? c?.convocation;
+      let conv = null;
+      if (convRaw && Array.isArray(convocations)) {
+        conv = (() => {
+          for (const it of convocations) {
+            if (it == null) continue;
+            if (typeof it === "string") {
+              if (String(it) === String(convRaw)) return { id: it, name: it };
+              continue;
+            }
+            const id = it?.id ?? it?.value;
+            const name = it?.name ?? it?.number ?? it?.title;
+            if (id != null && String(id) === String(convRaw)) return { id, name: name || id };
+            if (name != null && String(name) === String(convRaw)) return { id: id ?? name, name };
+          }
+          return null;
+        })();
+      }
       return {
         id: `local-static-${String(c?.id || idx)}`,
         name: short || title || `Комитет ${idx + 1}`,
         description: title && short && title !== short ? title : "",
+        convocation: conv,
+        convocationId: conv?.id ?? null,
         isActive: true,
         order: idx,
         // keep original payload for potential future sync
         __source: c,
       };
     });
-  }, []);
+  }, [convocations]);
 
   React.useEffect(() => {
     document.body.classList.add("admin-mode");
@@ -380,9 +492,12 @@ export function useAdminData() {
     const apiAppeals = normalizeServerList(apiAppealsResponse);
     setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
     const baseConv = Array.isArray(apiConvocations) ? apiConvocations : [];
-    setConvocations(mergeConvocationsWithOverrides(baseConv, readConvocationsOverrides()));
-    committeesApiOkRef.current = Array.isArray(apiCommittees);
-    const baseCommittees = committeesApiOkRef.current ? apiCommittees : publicCommitteesFallback();
+    const fallbackConv = Array.isArray(fb.convocations) ? fb.convocations : [];
+    const mergedConv = mergeConvocationsPreferApi(baseConv, fallbackConv);
+    setConvocations(mergeConvocationsWithOverrides(mergedConv, readConvocationsOverrides()));
+    const apiCommitteesList = Array.isArray(apiCommittees) ? apiCommittees : [];
+    committeesApiOkRef.current = apiCommitteesList.length > 0;
+    const baseCommittees = mergeCommitteesPreferApi(apiCommitteesList, publicCommitteesFallback());
     setCommittees(mergeCommitteesWithOverrides(baseCommittees, readCommitteesOverrides()));
     const pagesList = normalizeServerList(apiPages);
     setPages(Array.isArray(pagesList) ? pagesList : []);
@@ -397,12 +512,23 @@ export function useAdminData() {
     const out = [];
     const seen = new Set();
     for (const it of Array.isArray(base) ? base : []) {
-      const idStr = String(it?.id ?? "");
+    if (it == null) continue;
+    if (typeof it === "string") {
+      const idStr = String(it);
       if (!idStr) continue;
       if (deletedIds.has(idStr)) continue;
       const override = updatedById[idStr];
-      out.push(override ? { ...it, ...override } : it);
+      const baseRow = { id: idStr, name: idStr };
+      out.push(override ? { ...baseRow, ...override } : baseRow);
       seen.add(idStr);
+      continue;
+    }
+    const idStr = String(it?.id ?? "");
+    if (!idStr) continue;
+    if (deletedIds.has(idStr)) continue;
+    const override = updatedById[idStr];
+    out.push(override ? { ...it, ...override } : it);
+    seen.add(idStr);
     }
     for (const it of created) {
       const idStr = String(it?.id ?? "");
@@ -1235,39 +1361,9 @@ export function useAdminData() {
   }, [message, reload, committees]);
 
   const deleteCommittee = React.useCallback(async (id) => {
-    setBusy(true);
-    try {
-      const sid = String(id);
-      if (sid.startsWith("local-") || sid.startsWith("local-static-")) {
-        const ov = readCommitteesOverrides();
-        const deletedIds = Array.isArray(ov.deletedIds) ? ov.deletedIds : [];
-        writeCommitteesOverrides({
-          ...ov,
-          deletedIds: [...new Set([...deletedIds, sid])],
-        });
-        setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
-        message.success("Комитет удалён (локально)");
-        return;
-      }
-
-      try {
-        await CommitteesApi.remove(id);
-        message.success("Комитет удалён");
-        await reload();
-      } catch {
-        const ov = readCommitteesOverrides();
-        const deletedIds = Array.isArray(ov.deletedIds) ? ov.deletedIds : [];
-        writeCommitteesOverrides({
-          ...ov,
-          deletedIds: [...new Set([...deletedIds, sid])],
-        });
-        setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
-        message.warning("Сервер недоступен. Удаление сохранено локально.");
-      }
-    } finally {
-      setBusy(false);
-    }
-  }, [message, reload]);
+    message.warning("Удаление комитетов отключено. Используйте «Отключить».");
+    await updateCommittee(id, { isActive: false });
+  }, [message, updateCommittee]);
 
   const stats = React.useMemo(
     () => ({

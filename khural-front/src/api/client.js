@@ -1190,23 +1190,21 @@ export const SettingsApi = {
 export const ConvocationsApi = {
   async list({ activeOnly = false } = {}) {
     try {
-      // Сначала пробуем прямой GET запрос (основной эндпоинт согласно Swagger)
-      console.log("ConvocationsApi.list: trying GET /persons/convocations");
+      // Сначала пробуем /all (устойчивее для бэкенда)
+      console.log("ConvocationsApi.list: trying GET /persons/convocations/all");
       let all;
       try {
-        const qs = new URLSearchParams();
-        if (activeOnly) qs.set("activeOnly", "true");
-        const suffix = qs.toString() ? `?${qs.toString()}` : "";
-        all = await apiFetch(`/persons/convocations${suffix}`, { method: "GET", auth: false });
-        console.log("ConvocationsApi.list: received from direct GET:", all);
+        all = await PersonsApi.listConvocationsAll();
+        console.log("ConvocationsApi.list: received from /all:", all);
+        console.log("ConvocationsApi.list: all is array?", Array.isArray(all));
       } catch (e1) {
-        console.warn("ConvocationsApi.list: direct GET failed, trying /all:", e1);
-        // Fallback: пробуем /persons/convocations/all
+        console.warn("ConvocationsApi.list: /all failed, trying /persons/convocations:", e1);
         try {
-          console.log("🔄 ConvocationsApi.list: calling PersonsApi.listConvocationsAll()...");
-          all = await PersonsApi.listConvocationsAll();
-          console.log("✅ ConvocationsApi.list: received from /all:", all);
-          console.log("✅ ConvocationsApi.list: all is array?", Array.isArray(all));
+          const qs = new URLSearchParams();
+          if (activeOnly) qs.set("activeOnly", "true");
+          const suffix = qs.toString() ? `?${qs.toString()}` : "";
+          all = await apiFetch(`/persons/convocations${suffix}`, { method: "GET", auth: false });
+          console.log("ConvocationsApi.list: received from direct GET:", all);
         } catch (e2) {
           console.error("ConvocationsApi.list: both endpoints failed:", e2);
           return [];

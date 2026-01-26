@@ -7,6 +7,13 @@ import { useAdminData } from "../../hooks/useAdminData.js";
 export default function AdminCommitteesPage() {
   const adminData = useAdminData();
   const [selectedConvocationId, setSelectedConvocationId] = React.useState("all");
+  const handleToggleActive = React.useCallback(
+    (row, nextActive) => {
+      if (!row || !adminData.updateCommittee) return;
+      adminData.updateCommittee(row.id, { isActive: nextActive });
+    },
+    [adminData]
+  );
 
   const loginCard = !adminData.isAuthenticated ? (
     <div className="admin-card" style={{ marginBottom: 16 }}>
@@ -48,7 +55,8 @@ export default function AdminCommitteesPage() {
         convocations={adminData.convocations}
         selectedConvocationId={selectedConvocationId}
         onConvocationChange={setSelectedConvocationId}
-        onDelete={adminData.deleteCommittee}
+        onToggleActive={handleToggleActive}
+        onReload={adminData.reload}
         busy={adminData.busy}
         canWrite={adminData.canWrite}
       />

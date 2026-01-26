@@ -474,6 +474,46 @@ function normalizePersonName(s) {
     .toLowerCase();
 }
 
+function normalizeCommitteeTitle(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function mergeCommitteesPreferApi(apiList, staticList) {
+  const api = Array.isArray(apiList) ? apiList : [];
+  const fallback = Array.isArray(staticList) ? staticList : [];
+  const out = api.map((c) => ({ ...c }));
+  const byId = new Map();
+  const byName = new Map();
+
+  for (const c of out) {
+    const id = String(c?.id ?? "");
+    if (id) byId.set(id, c);
+    const nameKey = normalizeCommitteeTitle(c?.title || c?.name || c?.label || c?.description);
+    if (nameKey) byName.set(nameKey, c);
+  }
+
+  for (const c of fallback) {
+    const id = String(c?.id ?? "");
+    const nameKey = normalizeCommitteeTitle(c?.title || c?.name || c?.label || c?.description);
+    const target = (id && byId.get(id)) || (nameKey && byName.get(nameKey)) || null;
+    if (target) {
+      if (!target.title && c?.title) target.title = c.title;
+      if (!target.name && c?.name) target.name = c.name;
+      if (!target.description && c?.description) target.description = c.description;
+      if (!Array.isArray(target.members) && Array.isArray(c?.members)) target.members = c.members;
+      if (!Array.isArray(target.staff) && Array.isArray(c?.staff)) target.staff = c.staff;
+      if (!target.convocation && c?.convocation) target.convocation = c.convocation;
+      continue;
+    }
+    out.push(c);
+  }
+
+  return out;
+}
+
 const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
 
 /** Преобразует путь фото в полный URL через khural.rtyva.ru */
@@ -1604,25 +1644,24 @@ export default function DataProvider({ children }) {
       try {
         // Пробуем загрузить из API
         const apiCommittees = await CommitteesApi.list({ all: true }).catch(() => null);
-        if (Array.isArray(apiCommittees) && apiCommittees.length > 0) {
-          console.log("[DataContext] Загружено комитетов из API:", apiCommittees.length);
-          setCommittees(apiCommittees);
-          markLoading("committees", false);
-          return;
-        }
-        // Если API не вернул данные или вернул пустой массив, пробуем статический файл
-        console.log("[DataContext] API не вернул комитеты, загружаем из статического файла");
         const staticCommittees = await fetchJson("/data/committees.json").catch(() => null);
-        if (Array.isArray(staticCommittees)) {
-          // Объединяем данные из API и статического файла
-          const merged = Array.isArray(apiCommittees) && apiCommittees.length > 0
-            ? [...apiCommittees, ...staticCommittees.filter(s => !apiCommittees.find(a => String(a.id) === String(s.id)))]
-            : staticCommittees;
-          console.log("[DataContext] Загружено комитетов из статического файла:", staticCommittees.length, "Итого:", merged.length);
+        const merged = mergeCommitteesPreferApi(apiCommittees, staticCommittees);
+        if (Array.isArray(merged) && merged.length > 0) {
+          const apiCount = Array.isArray(apiCommittees) ? apiCommittees.length : 0;
+          const staticCount = Array.isArray(staticCommittees) ? staticCommittees.length : 0;
+          console.log(
+            "[DataContext] Загружено комитетов (API + структура):",
+            merged.length,
+            "API:",
+            apiCount,
+            "Статические:",
+            staticCount
+          );
           setCommittees(merged);
         } else if (Array.isArray(apiCommittees)) {
-          // Если есть данные из API, используем их
           setCommittees(apiCommittees);
+        } else if (Array.isArray(staticCommittees)) {
+          setCommittees(staticCommittees);
         }
       } catch (e) {
         console.error("[DataContext] Ошибка загрузки комитетов:", e);

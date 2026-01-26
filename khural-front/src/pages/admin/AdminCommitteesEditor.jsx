@@ -40,7 +40,17 @@ export default function AdminCommitteesEditor({
   const selectedConvocation = React.useMemo(() => {
     const list = Array.isArray(convocations) ? convocations : [];
     if (!convocationIdValue) return null;
-    return list.find((c) => String(c?.id) === String(convocationIdValue)) || null;
+    const raw = String(convocationIdValue);
+    for (const c of list) {
+      if (c == null) continue;
+      if (typeof c === "string") {
+        if (String(c) === raw) return { id: c, name: c };
+        continue;
+      }
+      if (String(c?.id) === raw) return c;
+      if (String(c?.name || c?.number || "") === raw) return c;
+    }
+    return null;
   }, [convocations, convocationIdValue]);
 
   // Prefill convocationId when coming from convocation page
@@ -108,15 +118,30 @@ export default function AdminCommitteesEditor({
       
       let convocationId = null;
       if (values.convocationId) {
-        convocationId = Number(values.convocationId);
-        if (isNaN(convocationId) || convocationId <= 0) {
-          console.warn("[AdminCommitteesEditor] Неверный ID созыва:", values.convocationId);
+        const raw = String(values.convocationId).trim();
+        if (!raw) {
           convocationId = null;
-          message.error("Неверный созыв. Выберите созыв из списка.");
-          return;
+        } else if (/^\d+$/.test(raw)) {
+          const num = Number(raw);
+          if (!Number.isFinite(num) || num <= 0) {
+            console.warn("[AdminCommitteesEditor] Неверный ID созыва:", values.convocationId);
+            message.error("Неверный созыв. Выберите созыв из списка.");
+            return;
+          }
+          convocationId = num;
         } else {
-          // Проверяем, существует ли созыв в списке
-          const convocationExists = (convocations || []).some(c => Number(c.id) === convocationId);
+          convocationId = raw;
+        }
+
+        if (convocationId != null) {
+          const convocationExists = (convocations || []).some((c) => {
+            if (c == null) return false;
+            if (typeof c === "string") return String(c) === String(convocationId);
+            return (
+              String(c.id) === String(convocationId) ||
+              String(c.name || c.number || "") === String(convocationId)
+            );
+          });
           if (!convocationExists) {
             console.warn("[AdminCommitteesEditor] Созыв не найден в списке:", convocationId, convocations);
           }
@@ -150,7 +175,7 @@ export default function AdminCommitteesEditor({
         payload.head = values.head.trim();
       }
       
-      if (convocationId) {
+      if (convocationId != null && convocationId !== "") {
         payload.convocationId = convocationId;
       }
 
@@ -343,18 +368,29 @@ export default function AdminCommitteesEditor({
                   (option?.children ?? "").toLowerCase().includes(input.toLowerCase())
                 }
               >
-                {(convocations || []).map((c) => (
-                  <Select.Option key={c.id} value={c.id}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <span>{formatConvocationLabel(c)}</span>
-                      {c?.isActive !== false ? (
-                        <Tag color="green" style={{ margin: 0 }}>Активный</Tag>
-                      ) : (
-                        <Tag color="default" style={{ margin: 0 }}>Архив</Tag>
-                      )}
-                    </span>
-                  </Select.Option>
-                ))}
+                {(convocations || []).map((c, idx) => {
+                  if (typeof c === "string") {
+                    return (
+                      <Select.Option key={`conv-${c}-${idx}`} value={c}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                          <span>{String(c)}</span>
+                        </span>
+                      </Select.Option>
+                    );
+                  }
+                  return (
+                    <Select.Option key={c.id ?? idx} value={c.id ?? c?.name ?? c?.number ?? String(idx)}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <span>{formatConvocationLabel(c)}</span>
+                        {c?.isActive !== false ? (
+                          <Tag color="green" style={{ margin: 0 }}>Активный</Tag>
+                        ) : (
+                          <Tag color="default" style={{ margin: 0 }}>Архив</Tag>
+                        )}
+                      </span>
+                    </Select.Option>
+                  );
+                })}
               </Select>
             </Form.Item>
 

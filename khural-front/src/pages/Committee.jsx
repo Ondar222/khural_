@@ -46,6 +46,63 @@ function mergeCommitteesWithOverrides(base, overrides) {
   return out.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
 }
 
+function normalizeCommitteeTitle(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function mergeCommitteesPreferApi(apiList, fallbackList) {
+  const api = Array.isArray(apiList) ? apiList : [];
+  const fallback = Array.isArray(fallbackList) ? fallbackList : [];
+  const out = api.map((c) => ({ ...c }));
+  const byId = new Map();
+  const byName = new Map();
+
+  for (const c of out) {
+    const id = String(c?.id ?? "");
+    if (id) byId.set(id, c);
+    const nameKey = normalizeCommitteeTitle(c?.title || c?.name || c?.label || c?.description);
+    if (nameKey) byName.set(nameKey, c);
+  }
+
+  for (const c of fallback) {
+    const id = String(c?.id ?? "");
+    const nameKey = normalizeCommitteeTitle(c?.title || c?.name || c?.label || c?.description);
+    const target = (id && byId.get(id)) || (nameKey && byName.get(nameKey)) || null;
+    if (target) {
+      if (!target.title && c?.title) target.title = c.title;
+      if (!target.name && c?.name) target.name = c.name;
+      if (!target.description && c?.description) target.description = c.description;
+      if (!Array.isArray(target.members) && Array.isArray(c?.members)) target.members = c.members;
+      if (!Array.isArray(target.staff) && Array.isArray(c?.staff)) target.staff = c.staff;
+      if (!target.convocation && c?.convocation) target.convocation = c.convocation;
+      continue;
+    }
+    out.push(c);
+  }
+
+  return out;
+}
+
+function resolveConvocationName(list, convId) {
+  if (!convId) return "";
+  const items = Array.isArray(list) ? list : [];
+  for (const it of items) {
+    if (it == null) continue;
+    if (typeof it === "string") {
+      if (String(it) === String(convId)) return it;
+      continue;
+    }
+    const id = it?.id ?? it?.value;
+    const name = it?.name ?? it?.number ?? it?.title;
+    if (id != null && String(id) === String(convId)) return String(name || id);
+    if (name != null && String(name) === String(convId)) return String(name);
+  }
+  return "";
+}
+
 export default function Committee() {
   const { committees: committeesFromContext, deputies, convocations, loading, errors, reload } = useData();
   const [committee, setCommittee] = React.useState(null);
@@ -100,7 +157,7 @@ export default function Committee() {
   }, []);
 
   const committees = React.useMemo(() => {
-    const base = Array.isArray(apiCommittees) ? apiCommittees : committeesFromContext;
+    const base = mergeCommitteesPreferApi(apiCommittees, committeesFromContext);
     const merged = mergeCommitteesWithOverrides(base, readCommitteesOverrides());
     console.log("[Committee] Итоговый список комитетов:", {
       apiCommittees: apiCommittees?.length || 0,
@@ -477,19 +534,12 @@ export default function Committee() {
                           let convName = null;
                           
                           if (convId && Array.isArray(convocations)) {
-                            const conv = convocations.find(conv => String(conv.id) === String(convId) || String(conv.name) === String(convId) || String(conv.number) === String(convId));
-                            if (conv) {
-                              convName = conv.name || conv.number || `Созыв ${conv.id}`;
-                            }
+                            convName = resolveConvocationName(convocations, convId) || null;
                           }
                           if (!convName && c?.convocation?.name) {
                             convName = c.convocation.name;
                           } else if (!convName && c?.convocation?.number) {
                             convName = c.convocation.number;
-                          } else if (!convName && typeof convId === "string" && convId.toLowerCase().includes("созыв")) {
-                            convName = convId;
-                          } else if (!convName && convId) {
-                            convName = `Созыв ${convId}`;
                           }
                           
                           return convName ? (
@@ -542,20 +592,13 @@ export default function Committee() {
               if (convId) {
                 // Пробуем найти созыв в списке созывов
                 if (Array.isArray(convocations)) {
-                  const conv = convocations.find(c => String(c.id) === String(convId) || String(c.name) === String(convId) || String(c.number) === String(convId));
-                  if (conv) {
-                    convName = conv.name || conv.number || `Созыв ${conv.id}`;
-                  }
+                  convName = resolveConvocationName(convocations, convId) || null;
                 }
                 // Если не нашли в списке, используем значение из комитета
                 if (!convName && committee?.convocation?.name) {
                   convName = committee.convocation.name;
                 } else if (!convName && committee?.convocation?.number) {
                   convName = committee.convocation.number;
-                } else if (!convName && typeof convId === "string" && convId.toLowerCase().includes("созыв")) {
-                  convName = convId;
-                } else if (!convName) {
-                  convName = `Созыв ${convId}`;
                 }
               }
               

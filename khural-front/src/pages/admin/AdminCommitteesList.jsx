@@ -1,19 +1,52 @@
 import React from "react";
-import { Button, Input, Space, Table, Tag, Select, Empty } from "antd";
+import { App, Button, Input, Space, Table, Tag, Select, Empty, Modal } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
+import { CommitteesApi } from "../../api/client.js";
+
+function normalizeCommitteeName(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function getCommitteeTitle(row) {
+  return String(row?.name || row?.title || row?.label || row?.description || "").trim();
+}
+
+function resolveConvocationLabel(list, row) {
+  const convId = row?.convocation?.id || row?.convocationId || row?.convocation;
+  if (!convId) return "";
+  const items = Array.isArray(list) ? list : [];
+  for (const it of items) {
+    if (it == null) continue;
+    if (typeof it === "string") {
+      if (String(it) === String(convId)) return it;
+      continue;
+    }
+    const id = it?.id ?? it?.value;
+    const name = it?.name ?? it?.number ?? it?.title;
+    if (id != null && String(id) === String(convId)) return String(name || id);
+    if (name != null && String(name) === String(convId)) return String(name);
+  }
+  return "";
+}
 
 export default function AdminCommitteesList({
   items,
   convocations,
   selectedConvocationId,
   onConvocationChange,
-  onDelete,
+  onToggleActive,
+  onReload,
   busy,
   canWrite,
 }) {
   const { navigate } = useHashRoute();
+  const { message } = App.useApp();
   const [q, setQ] = React.useState("");
+  const [busyLocal, setBusyLocal] = React.useState(false);
   const [windowWidth, setWindowWidth] = React.useState(
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
@@ -40,11 +73,13 @@ export default function AdminCommitteesList({
     // Поиск по названию
     const qq = q.trim().toLowerCase();
     if (qq) {
-      filteredItems = filteredItems.filter(
-        (c) =>
-          String(c.name || "").toLowerCase().includes(qq) ||
+      filteredItems = filteredItems.filter((c) => {
+        const title = getCommitteeTitle(c);
+        return (
+          String(title || "").toLowerCase().includes(qq) ||
           String(c.description || "").toLowerCase().includes(qq)
-      );
+        );
+      });
     }
     
     return filteredItems;
@@ -54,6 +89,88 @@ export default function AdminCommitteesList({
   const isLocal = (row) =>
     !isLocalStatic(row) && String(row?.id || "").startsWith("local-");
   const isCommitteeActive = (row) => normalizeBool(row?.isActive, true) !== false;
+
+  const importCommitteesFromJson = React.useCallback(() => {
+    if (!canWrite) return;
+    Modal.confirm({
+      title: "Импортировать комитеты из кода?",
+      content:
+        "Загрузим комитеты из /public/data/committees.json и создадим отсутствующие в базе. " +
+        "Удаление не выполняется, только создание новых.",
+      okText: "Импортировать",
+      cancelText: "Отмена",
+      onOk: async () => {
+        setBusyLocal(true);
+        try {
+          const [staticCommittees, apiCommittees] = await Promise.all([
+            fetch("/data/committees.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+            CommitteesApi.list({ all: true }).catch(() => []),
+          ]);
+          const apiList = Array.isArray(apiCommittees) ? apiCommittees : [];
+          const existingByName = new Set(
+            apiList.map((c) => normalizeCommitteeName(c?.name || c?.title || c?.label || c?.description))
+          );
+
+          let createdCount = 0;
+          let skippedCount = 0;
+          let failedCount = 0;
+          const srcList = Array.isArray(staticCommittees) ? staticCommittees : [];
+
+          for (const [idx, c] of srcList.entries()) {
+            const title = String(c?.title || c?.name || "").trim();
+            const key = normalizeCommitteeName(title);
+            if (!key) {
+              skippedCount += 1;
+              continue;
+            }
+            if (existingByName.has(key)) {
+              skippedCount += 1;
+              continue;
+            }
+
+            const payload = {
+              name: title || `Комитет ${idx + 1}`,
+              isActive: true,
+            };
+            if (c?.description) payload.description = String(c.description).trim();
+
+            const convRaw = c?.convocation?.id ?? c?.convocationId ?? c?.convocation;
+            const convId = Number(convRaw);
+            if (Number.isFinite(convId) && convId > 0) payload.convocationId = convId;
+
+            const rawMembers = Array.isArray(c?.members) ? c.members : [];
+            const members = rawMembers
+              .map((m, order) => {
+                const name = String(m?.name || "").trim();
+                if (!name) return null;
+                const role = String(m?.role || "Член комитета").trim();
+                return { name, role, order };
+              })
+              .filter(Boolean);
+            if (members.length) payload.members = members;
+
+            try {
+              await CommitteesApi.create(payload);
+              createdCount += 1;
+              existingByName.add(key);
+            } catch (e) {
+              failedCount += 1;
+              console.warn("Import committee failed", e);
+            }
+          }
+
+          message.success(
+            `Готово: создано ${createdCount}, пропущено ${skippedCount}, ошибок ${failedCount}`
+          );
+          onReload?.();
+        } catch (e) {
+          message.error(`Ошибка импорта: ${e?.message || "неизвестно"}`);
+        } finally {
+          setBusyLocal(false);
+        }
+      },
+    });
+  }, [canWrite, message, onReload]);
 
   // Функция для обрезки текста с удалением HTML тегов
   const stripHtml = React.useCallback((html) => {
@@ -100,7 +217,7 @@ export default function AdminCommitteesList({
               textOverflow: "ellipsis",
               whiteSpace: "nowrap"
             }}>
-              {truncateText(row.name, 60)}
+              {truncateText(getCommitteeTitle(row), 60)}
             </span>
             {(isLocalStatic(row) || isLocal(row)) && (
               <Tag color="blue" style={{ fontSize: 10, margin: 0, flexShrink: 0 }}>Локально</Tag>
@@ -130,17 +247,11 @@ export default function AdminCommitteesList({
       width: 120,
       align: "center",
       render: (convocation, row) => {
-        const c =
-          convocation ||
-          (row?.convocationId
-            ? (Array.isArray(convocations) ? convocations : []).find(
-                (x) => String(x?.id) === String(row.convocationId)
-              )
-            : null);
+        const label = resolveConvocationLabel(convocations, row);
         return (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-            {c ? (
-              <Tag style={{ fontSize: 11, margin: 0 }}>{c.name || c.number || ""}</Tag>
+            {label ? (
+              <Tag style={{ fontSize: 11, margin: 0 }}>{label}</Tag>
             ) : (
               <Tag color="default" style={{ fontSize: 11, margin: 0 }}>—</Tag>
             )}
@@ -184,12 +295,11 @@ export default function AdminCommitteesList({
             </Button>
             <Button
               size="small"
-              danger
-              disabled={!canWrite || isLocalStatic(row)}
-              onClick={() => onDelete?.(row.id)}
+              disabled={!canWrite}
+              onClick={() => onToggleActive?.(row, !isCommitteeActive(row))}
               style={{ fontSize: 12 }}
             >
-              Удалить
+              {isCommitteeActive(row) ? "Отключить" : "Включить"}
             </Button>
           </Space>
         </div>
@@ -249,6 +359,14 @@ export default function AdminCommitteesList({
           >
             + Добавить комитет
           </Button>
+          {/* <Button
+            onClick={importCommitteesFromJson}
+            disabled={!canWrite}
+            loading={busyLocal}
+            block={isMobile}
+          >
+            Импортировать комитеты
+          </Button> */}
        
         </div>
       </div>
@@ -310,8 +428,12 @@ export default function AdminCommitteesList({
                       >
                         Редактировать
                       </Button>
-                      <Button danger block disabled={disabled} onClick={() => onDelete?.(row.id)}>
-                        Удалить
+                      <Button
+                        block
+                        disabled={!canWrite}
+                        onClick={() => onToggleActive?.(row, !isCommitteeActive(row))}
+                      >
+                        {isCommitteeActive(row) ? "Отключить" : "Включить"}
                       </Button>
                     </div>
                   </div>
