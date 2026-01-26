@@ -1501,27 +1501,36 @@ export default function DataProvider({ children }) {
         const deletedDocs = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
         const apiDocsList = apiDocs
           .filter((d) => !deletedDocs.has(String(d?.id ?? "")))
-          .map((d) => ({
-            id: d.id,
-            title: d.title,
-            desc: d.content || d.description || "",
-            date: d.publishedAt || d.createdAt || "",
-            number: d.number || "",
-            category:
-              d?.category?.name || typeLabels[d.type] || d.type || "Документы",
-            type: typeMapping[d.type] || d.type || "other",
-            url: (() => {
-              const raw =
-                d.metadata?.url ||
-                firstFileLink(d.pdfFile) ||
-                (d.metadata?.pdfFileTyLink ? String(d.metadata.pdfFileTyLink) : "") ||
-                "";
-              if (!raw) return "";
-              return /\/upload\//i.test(raw) || String(raw).includes("khural.rtyva.ru")
+          .map((d) => {
+            const raw =
+              d.metadata?.url ||
+              firstFileLink(d.pdfFile) ||
+              (d.metadata?.pdfFileTyLink ? String(d.metadata.pdfFileTyLink) : "") ||
+              "";
+            const url = raw
+              ? /\/upload\//i.test(raw) || String(raw).includes("khural.rtyva.ru")
                 ? normalizeFilesUrl(raw)
-                : raw;
-            })(),
-          }));
+                : raw
+              : "";
+            if (!url) {
+              console.warn("[Documents] Missing file URL (API)", {
+                id: d?.id,
+                title: d?.title,
+                rawUrl: raw,
+              });
+            }
+            return {
+              id: d.id,
+              title: d.title,
+              desc: d.content || d.description || "",
+              date: d.publishedAt || d.createdAt || "",
+              number: d.number || "",
+              category:
+                d?.category?.name || typeLabels[d.type] || d.type || "Документы",
+              type: typeMapping[d.type] || d.type || "other",
+              url,
+            };
+          });
         
         // Загружаем документы из JSON файлов в persons_doc
         const [zakonyData, zakony2Data, postamovleniyaData] = await Promise.all([
@@ -1534,12 +1543,26 @@ export default function DataProvider({ children }) {
         const parseZakonyDoc = (row) => {
           if (!row || !row.IE_NAME) return null;
           const fileUrl = String(row.IP_PROP28 || "").trim();
-          if (!fileUrl) return null;
+          if (!fileUrl) {
+            console.warn("[Documents] Missing file URL (zakony)", {
+              id: row?.IE_ID || row?.IE_XML_ID,
+              title: row?.IE_NAME,
+            });
+            return null;
+          }
           
           // Нормализуем URL файла (включая кодирование пробелов/кириллицы)
           const normalizedUrl = normalizeFilesUrl(
             fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
           );
+          if (!normalizedUrl) {
+            console.warn("[Documents] Failed to normalize URL (zakony)", {
+              id: row?.IE_ID || row?.IE_XML_ID,
+              title: row?.IE_NAME,
+              rawUrl: fileUrl,
+            });
+            return null;
+          }
           
           return {
             id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
@@ -1557,12 +1580,26 @@ export default function DataProvider({ children }) {
         const parsePostamovleniyaDoc = (row) => {
           if (!row || !row.IE_NAME) return null;
           const fileUrl = String(row.IP_PROP59 || "").trim();
-          if (!fileUrl) return null;
+          if (!fileUrl) {
+            console.warn("[Documents] Missing file URL (postamovleniya)", {
+              id: row?.IE_ID || row?.IE_XML_ID,
+              title: row?.IE_NAME,
+            });
+            return null;
+          }
           
           // Нормализуем URL файла (включая кодирование пробелов/кириллицы)
           const normalizedUrl = normalizeFilesUrl(
             fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
           );
+          if (!normalizedUrl) {
+            console.warn("[Documents] Failed to normalize URL (postamovleniya)", {
+              id: row?.IE_ID || row?.IE_XML_ID,
+              title: row?.IE_NAME,
+              rawUrl: fileUrl,
+            });
+            return null;
+          }
           
           return {
             id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
