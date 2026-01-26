@@ -258,12 +258,20 @@ function mergeByIdPreferApi(baseDeputies, apiDeputies) {
   const apiById = new Map(api.map((d) => [String(d.id), d]));
   const out = [];
   const seen = new Set();
+  const hasValue = (v) => {
+    if (v === undefined || v === null) return false;
+    const s = String(v).trim();
+    return s !== "" && s !== "undefined" && s !== "null";
+  };
 
   for (const d of base) {
     const id = String(d?.id ?? "");
     if (!id) continue;
     const apiD = apiById.get(id);
     const merged = apiD ? { ...d, ...apiD } : d;
+    if (apiD && !hasValue(apiD.photo) && hasValue(d.photo)) {
+      merged.photo = d.photo;
+    }
     // Ensure status fields are preserved as booleans (prefer API values)
     merged.mandateEnded = Boolean(merged.mandateEnded ?? merged.mandate_ended);
     merged.isDeceased = Boolean(merged.isDeceased ?? merged.is_deceased);
