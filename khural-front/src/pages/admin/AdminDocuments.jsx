@@ -3,6 +3,7 @@ import { App, Button, Input, Modal, Space, Table, Tag } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
+import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 
 const TYPE_OPTIONS = [
   { value: "laws", label: "Законы" },
@@ -181,11 +182,9 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
             const fileUrl = String(row.IP_PROP28 || "").trim();
             if (!fileUrl) return null;
             
-            const normalizedUrl = fileUrl.startsWith("/upload/") 
-              ? `https://khural.rtyva.ru${fileUrl}` 
-              : fileUrl.startsWith("http") 
-                ? fileUrl 
-                : `https://khural.rtyva.ru/${fileUrl}`;
+            const normalizedUrl = normalizeFilesUrl(
+              fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
+            );
             
             return {
               title: String(row.IE_NAME || "").trim(),
@@ -203,11 +202,9 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
             const fileUrl = String(row.IP_PROP59 || "").trim();
             if (!fileUrl) return null;
             
-            const normalizedUrl = fileUrl.startsWith("/upload/") 
-              ? `https://khural.rtyva.ru${fileUrl}` 
-              : fileUrl.startsWith("http") 
-                ? fileUrl 
-                : `https://khural.rtyva.ru/${fileUrl}`;
+            const normalizedUrl = normalizeFilesUrl(
+              fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
+            );
             
             return {
               title: String(row.IE_NAME || "").trim(),

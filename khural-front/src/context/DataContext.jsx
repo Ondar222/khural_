@@ -20,6 +20,7 @@ import {
   DOCUMENTS_OVERRIDES_EVENT_NAME,
   DOCUMENTS_OVERRIDES_STORAGE_KEY,
 } from "../utils/documentsOverrides.js";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 const DataContext = React.createContext({
   slides: [],
@@ -1525,12 +1526,10 @@ export default function DataProvider({ children }) {
           const fileUrl = String(row.IP_PROP28 || "").trim();
           if (!fileUrl) return null;
           
-          // Нормализуем URL файла
-          const normalizedUrl = fileUrl.startsWith("/upload/") 
-            ? `https://khural.rtyva.ru${fileUrl}` 
-            : fileUrl.startsWith("http") 
-              ? fileUrl 
-              : `https://khural.rtyva.ru/${fileUrl}`;
+          // Нормализуем URL файла (включая кодирование пробелов/кириллицы)
+          const normalizedUrl = normalizeFilesUrl(
+            fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
+          );
           
           return {
             id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
@@ -1550,12 +1549,10 @@ export default function DataProvider({ children }) {
           const fileUrl = String(row.IP_PROP59 || "").trim();
           if (!fileUrl) return null;
           
-          // Нормализуем URL файла
-          const normalizedUrl = fileUrl.startsWith("/upload/") 
-            ? `https://khural.rtyva.ru${fileUrl}` 
-            : fileUrl.startsWith("http") 
-              ? fileUrl 
-              : `https://khural.rtyva.ru/${fileUrl}`;
+          // Нормализуем URL файла (включая кодирование пробелов/кириллицы)
+          const normalizedUrl = normalizeFilesUrl(
+            fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
+          );
           
           return {
             id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,

@@ -1,5 +1,16 @@
 const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
 
+const encodeUrlSafe = (value) => {
+  try {
+    const raw = String(value || "");
+    // Collapse a single layer of percent-encoding (e.g. %2520 -> %20)
+    const deDoubled = raw.replace(/%25([0-9A-Fa-f]{2})/g, "%$1");
+    return encodeURI(deDoubled);
+  } catch {
+    return String(value || "");
+  }
+};
+
 export function normalizeFilesUrl(src) {
   const s = String(src || "").trim();
   if (!s || s === "undefined" || s === "null") return "";
@@ -11,17 +22,17 @@ export function normalizeFilesUrl(src) {
       try {
         const url = new URL(s);
         if (url.pathname.startsWith("/upload/")) {
-          return `${KHURAL_UPLOAD_BASE}${url.pathname}${url.search}${url.hash}`;
+          return encodeUrlSafe(`${KHURAL_UPLOAD_BASE}${url.pathname}${url.search}${url.hash}`);
         }
       } catch {
         // Если не удалось распарсить, извлекаем путь вручную
         const uploadMatch = s.match(/(\/upload\/[^\s"']*)/i);
         if (uploadMatch) {
-          return `${KHURAL_UPLOAD_BASE}${uploadMatch[1]}`;
+          return encodeUrlSafe(`${KHURAL_UPLOAD_BASE}${uploadMatch[1]}`);
         }
       }
     }
-    return s;
+    return encodeUrlSafe(s);
   }
   
   if (/^(data|blob):/i.test(s)) return s;
@@ -29,13 +40,13 @@ export function normalizeFilesUrl(src) {
   // /upload/iblock/... — фото с khural.rtyva.ru (депутаты и т.д.)
   if (s.startsWith("/upload/") || s.startsWith("upload/")) {
     const path = s.startsWith("/") ? s : `/${s}`;
-    return `${KHURAL_UPLOAD_BASE}${path}`;
+    return encodeUrlSafe(`${KHURAL_UPLOAD_BASE}${path}`);
   }
   
   // Если путь содержит /upload/iblock/ где-то внутри, извлекаем его
   const uploadMatch = s.match(/(\/upload\/iblock\/[^\s"']*)/i);
   if (uploadMatch) {
-    return `${KHURAL_UPLOAD_BASE}${uploadMatch[1]}`;
+    return encodeUrlSafe(`${KHURAL_UPLOAD_BASE}${uploadMatch[1]}`);
   }
 
   const filesBase = String(import.meta?.env?.VITE_FILES_BASE_URL || "https://someshit.yurta.site")
@@ -51,10 +62,10 @@ export function normalizeFilesUrl(src) {
     s.startsWith("media/");
 
   if (isFileLike) {
-    return s.startsWith("/") ? `${filesBase}${s}` : `${filesBase}/${s}`;
+    return encodeUrlSafe(s.startsWith("/") ? `${filesBase}${s}` : `${filesBase}/${s}`);
   }
 
-  return s;
+  return encodeUrlSafe(s);
 }
 
 

@@ -728,9 +728,7 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
               try {
                 await PersonsApi.remove(id);
                 message.success("Депутат удалён");
-              } catch {
-                message.warning("Удалено локально (сервер недоступен или нет прав)");
-              } finally {
+              }  finally {
                 deleteLocal(id);
                 reloadPublicData();
                 setBusyLocal(false);

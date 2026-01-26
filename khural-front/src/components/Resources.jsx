@@ -132,7 +132,7 @@ export default function Resources() {
             ))}
             </div>
           </div>
-          <div className="grid" style={{ gap: 24 }}>
+          <div className="grid" style={{ gap: 24, alignSelf: "start" }}>
             <GosWidget id="gos-widget-3" src="/js/gos_pos_cit.js" variant={3} />
           </div>
         </div>

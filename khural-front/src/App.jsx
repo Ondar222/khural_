@@ -13,7 +13,7 @@ import { Feedback, Press, Docs } from "./pages/TopbarStubs.jsx";
 import Contacts from "./pages/Contacts.jsx";
 import ActivityPage from "./pages/Activity.jsx";
 import Footer from "./components/Footer.jsx";
-import DataProvider from "./context/DataContext.jsx";
+import DataProvider, { useData } from "./context/DataContext.jsx";
 import AuthProvider from "./context/AuthContext.jsx";
 import I18nProvider from "./context/I18nContext.jsx";
 import A11yProvider from "./context/A11yContext.jsx";
@@ -30,7 +30,6 @@ import PageBySlug from "./pages/PageBySlug.jsx";
 import Appeals from "./pages/Appeals.jsx";
 import MapPage from "./pages/Map.jsx";
 import { App as AntApp, ConfigProvider, theme } from "antd";
-import CookieBanner from "./components/CookieBanner.jsx";
 import Apparatus from "./pages/Apparatus.jsx";
 import SectionPage from "./pages/Section.jsx";
 import Commission from "./pages/Commission.jsx";
@@ -110,6 +109,32 @@ export default function App() {
     return ProtectedComponent;
   }, []);
 
+  const DataGate = ({ children }) => {
+    const { loading } = useData();
+    const isBootLoading =
+      !isAdmin &&
+      loading &&
+      Object.values(loading).some(Boolean);
+    if (isBootLoading) {
+      return (
+        <div
+          style={{
+            minHeight: "60vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#1e3a8a",
+            fontWeight: 700,
+            fontSize: 16,
+          }}
+        >
+          Загрузка...
+        </div>
+      );
+    }
+    return children;
+  };
+
   return (
     <I18nProvider>
       <ConfigProvider
@@ -129,13 +154,14 @@ export default function App() {
           <AuthProvider>
             <A11yProvider>
               <DataProvider>
-                <div className="layout">
-                  {!isAdmin ? <Header /> : null}
-                  <main className="main-content">
-                    {!isAdmin ? <Breadcrumbs /> : null}
-                    <AppErrorBoundary>
-                      <Router
-                        routes={{
+                <DataGate>
+                  <div className="layout">
+                    {!isAdmin ? <Header /> : null}
+                    <main className="main-content">
+                      {!isAdmin ? <Breadcrumbs /> : null}
+                      <AppErrorBoundary>
+                        <Router
+                          routes={{
                           "/": Home,
                           "/region": Region,
                           "/about": About,
@@ -222,12 +248,12 @@ export default function App() {
                           "/sitemap": Sitemap,
                           "*": NotFound,
                         }}
-                      />
-                    </AppErrorBoundary>
-                  </main>
-                  {!isAdmin ? <Footer /> : null}
-                  {!isAdmin ? <CookieBanner /> : null}
-                </div>
+                        />
+                      </AppErrorBoundary>
+                    </main>
+                    {!isAdmin ? <Footer /> : null}
+                  </div>
+                </DataGate>
               </DataProvider>
             </A11yProvider>
           </AuthProvider>
