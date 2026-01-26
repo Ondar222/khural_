@@ -1510,7 +1510,17 @@ export default function DataProvider({ children }) {
             category:
               d?.category?.name || typeLabels[d.type] || d.type || "Документы",
             type: typeMapping[d.type] || d.type || "other",
-            url: d.metadata?.url || firstFileLink(d.pdfFile) || (d.metadata?.pdfFileTyLink ? String(d.metadata.pdfFileTyLink) : "") || "",
+            url: (() => {
+              const raw =
+                d.metadata?.url ||
+                firstFileLink(d.pdfFile) ||
+                (d.metadata?.pdfFileTyLink ? String(d.metadata.pdfFileTyLink) : "") ||
+                "";
+              if (!raw) return "";
+              return /\/upload\//i.test(raw) || String(raw).includes("khural.rtyva.ru")
+                ? normalizeFilesUrl(raw)
+                : raw;
+            })(),
           }));
         
         // Загружаем документы из JSON файлов в persons_doc

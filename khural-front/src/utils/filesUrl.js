@@ -1,11 +1,60 @@
 const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
 
+const encodeSegment = (segment) => {
+  const raw = String(segment || "");
+  try {
+    return encodeURIComponent(decodeURIComponent(raw));
+  } catch {
+    return encodeURIComponent(raw);
+  }
+};
+
+const encodePathname = (pathname) =>
+  String(pathname || "")
+    .split("/")
+    .map((seg) => (seg === "" ? "" : encodeSegment(seg)))
+    .join("/");
+
+const decodeMultiEncoded = (raw) => {
+  let current = String(raw || "");
+  for (let i = 0; i < 5; i += 1) {
+    const next = current.replace(/%25([0-9A-Fa-f]{2})/g, "%$1");
+    if (next === current) break;
+    current = next;
+  }
+  return current;
+};
+
 const encodeUrlSafe = (value) => {
   try {
     const raw = String(value || "");
-    // Collapse a single layer of percent-encoding (e.g. %2520 -> %20)
-    const deDoubled = raw.replace(/%25([0-9A-Fa-f]{2})/g, "%$1");
-    return encodeURI(deDoubled);
+    // Collapse repeated percent-encoding layers (e.g. %252520 -> %20)
+    const deDoubled = decodeMultiEncoded(raw);
+    if (/^(data|blob):/i.test(deDoubled)) return deDoubled;
+
+    try {
+      const url = new URL(deDoubled);
+      const encodedPath = encodePathname(url.pathname);
+      return `${url.origin}${encodedPath}${url.search}${url.hash}`;
+    } catch {
+      // not a full URL, continue below
+    }
+
+    let base = deDoubled;
+    let hash = "";
+    let search = "";
+    const hashIndex = base.indexOf("#");
+    if (hashIndex >= 0) {
+      hash = base.slice(hashIndex);
+      base = base.slice(0, hashIndex);
+    }
+    const searchIndex = base.indexOf("?");
+    if (searchIndex >= 0) {
+      search = base.slice(searchIndex);
+      base = base.slice(0, searchIndex);
+    }
+
+    return `${encodePathname(base)}${search}${hash}`;
   } catch {
     return String(value || "");
   }

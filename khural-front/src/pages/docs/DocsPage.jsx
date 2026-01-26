@@ -10,6 +10,11 @@ function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
 }
 
+function looksLikePdf(url) {
+  const u = String(url || "").toLowerCase();
+  return u.includes(".pdf");
+}
+
 const CATEGORIES = [
   {
     slug: "laws",
@@ -163,8 +168,10 @@ export default function DocsPage() {
               />
             </div>
             <div className="law-list">
-              {visibleDocs.map((d) => (
-                <div key={d.id || d.url} className="law-item card">
+              {visibleDocs.map((d) => {
+                const isPdf = looksLikePdf(d.url);
+                return (
+                  <div key={d.id || d.url} className="law-item card">
                   <div className="law-left">
                     <div className="law-ico">📄</div>
                     <div>
@@ -183,18 +190,28 @@ export default function DocsPage() {
                       {d.number && <div className="law-status">№ {d.number}</div>}
                     </div>
                   </div>
-                  <a
-                    className="btn btn--primary"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPreview({ url: d.url, title: d.title });
-                    }}
-                  >
-                    Открыть
-                  </a>
+                  {isPdf ? (
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      onClick={() => setPreview({ url: d.url, title: d.title })}
+                    >
+                      Открыть
+                    </button>
+                  ) : (
+                    <a
+                      className="btn btn--primary"
+                      href={d.url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={d.url ? true : undefined}
+                    >
+                      Открыть
+                    </a>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           <SideNav

@@ -37,7 +37,7 @@ export default defineConfig({
       "/pdf-proxy": {
         target: "https://khural.rtyva.ru",
         changeOrigin: true,
-        secure: true,
+        secure: false,
         rewrite: (path) => path.replace(/^\/pdf-proxy/, ""),
         configure: (proxy, _options) => {
           proxy.on("proxyRes", (proxyRes, req, res) => {
@@ -56,7 +56,7 @@ export default defineConfig({
       "/img-proxy": {
         target: "https://khural.rtyva.ru",
         changeOrigin: true,
-        secure: true,
+        secure: false,
         rewrite: (path) => path.replace(/^\/img-proxy/, ""),
         configure: (proxy, _options) => {
           proxy.on("proxyRes", (proxyRes, req, res) => {
