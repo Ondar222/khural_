@@ -181,14 +181,39 @@ function isCommitteeActive(c) {
   return normalizeBool(c?.isActive, true) !== false;
 }
 
+function getDeputyConvocationTokens(d) {
+  const out = [];
+  const pushToken = (raw) => {
+    const token = normalizeConvocationToken(raw);
+    if (token) out.push(token);
+  };
+  if (Array.isArray(d?.convocations)) {
+    d.convocations.forEach((c) => {
+      if (typeof c === "string") pushToken(c);
+      else if (c && typeof c === "object") pushToken(c?.name || c?.title || c?.label || c?.id || "");
+    });
+  }
+  if (d?.convocation) pushToken(d.convocation);
+  if (d?.convocationNumber) pushToken(d.convocationNumber);
+  if (d?.convocation_number) pushToken(d.convocation_number);
+  return Array.from(new Set(out));
+}
+
 export default function Convocations() {
-  const { loading: ctxLoading, errors: ctxErrors, reload, committees: committeesFromContext } = useData();
+  const {
+    loading: ctxLoading,
+    errors: ctxErrors,
+    reload,
+    committees: committeesFromContext,
+    deputies,
+  } = useData();
   const [tab, setTab] = React.useState("active"); // active | archive
   const [apiConvocations, setApiConvocations] = React.useState(null);
   const [apiCommittees, setApiCommittees] = React.useState(null);
   const [busy, setBusy] = React.useState(false);
   const [overridesSeq, setOverridesSeq] = React.useState(0);
   const [convOverridesSeq, setConvOverridesSeq] = React.useState(0);
+  const [expandedByKey, setExpandedByKey] = React.useState({});
 
   React.useEffect(() => {
     let alive = true;
@@ -343,6 +368,21 @@ export default function Convocations() {
     return map;
   }, [committees]);
 
+  const deputiesByConvocationKey = React.useMemo(() => {
+    const map = new Map();
+    const list = Array.isArray(deputies) ? deputies : [];
+    for (const d of list) {
+      const tokens = getDeputyConvocationTokens(d);
+      if (!tokens.length) continue;
+      for (const key of tokens) {
+        const arr = map.get(key) || [];
+        arr.push(d);
+        map.set(key, arr);
+      }
+    }
+    return map;
+  }, [deputies]);
+
   const shownConvocations = tab === "archive" ? archivedConvocations : activeConvocations;
 
   const pageLoading = busy || (Boolean(ctxLoading?.committees) && (!committees || committees.length === 0));
@@ -415,6 +455,24 @@ export default function Convocations() {
                   const committeesList = Array.from(uniq.values());
                   const token = normalizeConvocationToken(c?.name || c?.number || c?.id || "");
                   const deputiesHref = token ? `/deputies?convocation=${encodeURIComponent(token)}` : "/deputies";
+                  const deputyKeys = Array.from(new Set([token, ...keys].filter(Boolean)));
+                  const deputiesRaw = deputyKeys.flatMap((k) => deputiesByConvocationKey.get(k) || []);
+                  const deputyUniq = new Map();
+                  for (const d of deputiesRaw) {
+                    const did = String(d?.id ?? "").trim();
+                    const nameKey = String(d?.name || d?.fullName || "").trim();
+                    const key = did || nameKey;
+                    if (!key || deputyUniq.has(key)) continue;
+                    deputyUniq.set(key, d);
+                  }
+                  const deputiesList = Array.from(deputyUniq.values()).sort((a, b) =>
+                    String(a?.name || a?.fullName || "").localeCompare(
+                      String(b?.name || b?.fullName || ""),
+                      "ru"
+                    )
+                  );
+                  const expandKey = token || idStr || title;
+                  const isExpanded = Boolean(expandedByKey[expandKey]);
 
                   return (
                     <div
@@ -451,6 +509,52 @@ export default function Convocations() {
                           </div>
                         </div>
                       ) : null}
+
+                      <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ fontWeight: 700 }}>
+                          Депутаты созыва{deputiesList.length ? ` (${deputiesList.length})` : ""}
+                        </div>
+                        {deputiesList.length ? (
+                          <button
+                            type="button"
+                            className="btn"
+                            style={{ padding: "6px 10px", borderRadius: 10, fontSize: 12 }}
+                            onClick={() =>
+                              setExpandedByKey((prev) => ({ ...prev, [expandKey]: !prev[expandKey] }))
+                            }
+                          >
+                            {isExpanded ? "Скрыть список" : "Показать список"}
+                          </button>
+                        ) : null}
+                      </div>
+                      {deputiesList.length ? (
+                        isExpanded ? (
+                          <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+                            {deputiesList.map((d) => {
+                              const did = String(d?.id ?? "").trim();
+                              const name = String(d?.name || d?.fullName || "").trim() || "Депутат";
+                              const link = did ? `/government?type=dep&id=${encodeURIComponent(did)}` : null;
+                              return link ? (
+                                <a key={did || name} className="link" href={link} style={{ fontWeight: 600 }}>
+                                  {name}
+                                </a>
+                              ) : (
+                                <div key={name} style={{ fontWeight: 600 }}>
+                                  {name}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: 8, color: "var(--muted, #6b7280)" }}>
+                            Список скрыт.
+                          </div>
+                        )
+                      ) : (
+                        <div style={{ marginTop: 8, color: "var(--muted, #6b7280)" }}>
+                          Депутаты для этого созыва пока не указаны.
+                        </div>
+                      )}
 
                       <div style={{ marginTop: 12, fontWeight: 700 }}>Комитеты созыва</div>
                       {committeesList.length ? (

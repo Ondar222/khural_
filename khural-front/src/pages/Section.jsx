@@ -1794,7 +1794,7 @@ export default function SectionPage() {
 
     if (title === "Депутатские фракции") {
       const defaultFactions = ["Единая Россия", "КПРФ", "ЛДПР", "Новые люди"];
-      const factions = (Array.isArray(structureFactions) ? structureFactions : [])
+      const fromStructure = (Array.isArray(structureFactions) ? structureFactions : [])
         .map((item) => {
           if (typeof item === "string") return item;
           if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
@@ -1802,7 +1802,10 @@ export default function SectionPage() {
         })
         .map((s) => String(s || "").trim())
         .filter((s) => s && s !== "Все");
-      const mergedFactions = Array.from(new Set([...factions, ...defaultFactions]));
+      const fromDeputies = (Array.isArray(deputies) ? deputies : [])
+        .map((d) => String(d?.faction || "").trim())
+        .filter((s) => s && s !== "Все");
+      const mergedFactions = Array.from(new Set([...fromStructure, ...fromDeputies, ...defaultFactions]));
       return (
         <section className="section section-page">
           <div className="container">

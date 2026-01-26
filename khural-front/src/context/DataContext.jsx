@@ -1137,61 +1137,80 @@ export default function DataProvider({ children }) {
         // Merge rich profile fields from local JSON (bio/laws/schedule/etc)
         const localDeps = await fetchJson("/data/deputies.json");
         const localByExternalId = new Map((localDeps || []).map((d) => [String(d.id ?? ""), d]));
+        const localByName = new Map();
+        (Array.isArray(localDeps) ? localDeps : []).forEach((d) => {
+          const key = normalizePersonName(d?.name ?? "");
+          if (!key) return;
+          if (!localByName.has(key)) localByName.set(key, d);
+        });
 
         const mapped = apiPersons.map((p) => {
           const externalKey = p?.externalId ? String(p.externalId) : "";
+          const apiNameRaw = pick(p.fullName, p.full_name, p.name) || "";
           const local = externalKey ? localByExternalId.get(externalKey) : null;
+          const localByNameMatch =
+            !local && apiNameRaw ? localByName.get(normalizePersonName(apiNameRaw)) : null;
+          const localResolved = local || localByNameMatch || null;
 
           // IMPORTANT: keep id as STRING to match URLSearchParams id (Government.jsx uses ===)
           const id = String(p.id ?? p.personId ?? Math.random().toString(36).slice(2));
 
           return {
-            ...(local || {}),
+            ...(localResolved || {}),
             id,
-            externalId: externalKey || (local?.id ? String(local.id) : undefined),
-            name: pick(p.fullName, p.full_name, p.name) || local?.name || "",
+            externalId: externalKey || (localResolved?.id ? String(localResolved.id) : undefined),
+            name: apiNameRaw || localResolved?.name || "",
             // PersonDetail expects "position" field for deputy
             position: (() => {
-              const val = local?.position || pick(p.description, p.role) || "";
+              const apiVal = pick(p.description, p.role) || "";
+              const val = apiVal || localResolved?.position || "";
               return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
             })(),
             // Биография - из API или локальных данных
-            bio: pick(p.biography, p.bio) || local?.bio || "",
-            biography: pick(p.biography, p.bio) || local?.biography || "",
+            bio: pick(p.biography, p.bio) || localResolved?.bio || "",
+            biography: pick(p.biography, p.bio) || localResolved?.biography || "",
             district: (() => {
-              const val = local?.district ||
+              const apiVal =
                 pick(p.electoralDistrict, p.electoral_district) ||
                 (Array.isArray(p.districts) && p.districts[0]?.name) ||
                 p.city ||
                 p.district ||
                 "";
+              const val = apiVal || localResolved?.district || "";
               const s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
               return String(s || "").trim();
             })(),
             faction: (() => {
-              const val = local?.faction ||
+              const apiVal =
                 pick(p.faction, p.committee) ||
                 (Array.isArray(p.factions) && p.factions[0]?.name) ||
                 "";
+              const val = apiVal || localResolved?.faction || "";
               const s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
               return String(s || "").trim();
             })(),
             convocation: (() => {
-              const val = local?.convocation ||
+              const apiVal =
                 pick(p.convocationNumber, p.convocation, p.convocation_number) ||
                 (Array.isArray(p.convocations) && p.convocations[0]?.name) ||
                 "";
+              const val = apiVal || localResolved?.convocation || "";
               const s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
               return String(s || "").trim();
             })(),
             convocationNumber: (() => {
-              const val = pick(p.convocationNumber, p.convocation, p.convocation_number) || local?.convocationNumber || "";
+              const val =
+                pick(p.convocationNumber, p.convocation, p.convocation_number) ||
+                localResolved?.convocationNumber ||
+                localResolved?.convocation ||
+                "";
               return typeof val === "string" ? val : String(val || "");
             })(),
-            reception: local?.reception || pick(p.receptionSchedule, p.reception_schedule) || "",
-            receptionSchedule: pick(p.receptionSchedule, p.reception_schedule) || local?.receptionSchedule || "",
+            reception: localResolved?.reception || pick(p.receptionSchedule, p.reception_schedule) || "",
+            receptionSchedule:
+              pick(p.receptionSchedule, p.reception_schedule) || localResolved?.receptionSchedule || "",
             address: (() => {
-              const val = pick(p.address) || local?.address || "";
+              const val = pick(p.address) || localResolved?.address || "";
               return typeof val === "string" ? val : String(val || "");
             })(),
             // Prefer stored image link, fallback to seeded photoUrl or old JSON photo
@@ -1199,7 +1218,7 @@ export default function DataProvider({ children }) {
             photo: (() => {
               const imgLink = firstFileLink(p.image);
               const photoUrl = pick(p.photoUrl, p.photo_url);
-              const localPhoto = local?.photo;
+              const localPhoto = localResolved?.photo;
               const pPhoto = p.photo;
               
               // Пробуем каждый источник по очереди и нормализуем сразу
@@ -1232,24 +1251,38 @@ export default function DataProvider({ children }) {
               return photo;
             })(),
             contacts: {
-              phone: pick(p.phoneNumber, p.phone_number, p.phone) || local?.contacts?.phone || "",
-              email: p.email || local?.contacts?.email || "",
+              phone:
+                pick(p.phoneNumber, p.phone_number, p.phone) || localResolved?.contacts?.phone || "",
+              email: p.email || localResolved?.contacts?.email || "",
             },
             // Законодательная деятельность - из API или локальных данных
-            laws: Array.isArray(p.legislativeActivity) ? p.legislativeActivity : (Array.isArray(local?.laws) ? local.laws : []),
-            legislativeActivity: Array.isArray(p.legislativeActivity) ? p.legislativeActivity : (Array.isArray(local?.legislativeActivity) ? local.legislativeActivity : []),
+            laws: Array.isArray(p.legislativeActivity)
+              ? p.legislativeActivity
+              : (Array.isArray(localResolved?.laws) ? localResolved.laws : []),
+            legislativeActivity: Array.isArray(p.legislativeActivity)
+              ? p.legislativeActivity
+              : (Array.isArray(localResolved?.legislativeActivity) ? localResolved.legislativeActivity : []),
             // Сведения о доходах - из API или локальных данных
-            incomeDocs: Array.isArray(p.incomeDeclarations) ? p.incomeDeclarations : (Array.isArray(local?.incomeDocs) ? local.incomeDocs : []),
-            incomeDeclarations: Array.isArray(p.incomeDeclarations) ? p.incomeDeclarations : (Array.isArray(local?.incomeDeclarations) ? local.incomeDeclarations : []),
+            incomeDocs: Array.isArray(p.incomeDeclarations)
+              ? p.incomeDeclarations
+              : (Array.isArray(localResolved?.incomeDocs) ? localResolved.incomeDocs : []),
+            incomeDeclarations: Array.isArray(p.incomeDeclarations)
+              ? p.incomeDeclarations
+              : (Array.isArray(localResolved?.incomeDeclarations) ? localResolved.incomeDeclarations : []),
             // График приема - из API или локальных данных
-            schedule: Array.isArray(p.receptionSchedule) ? p.receptionSchedule : (Array.isArray(local?.schedule) ? local.schedule : []),
+            schedule: Array.isArray(p.receptionSchedule)
+              ? p.receptionSchedule
+              : (Array.isArray(localResolved?.schedule) ? localResolved.schedule : []),
+            committeeIds: Array.isArray(p.committeeIds)
+              ? p.committeeIds
+              : (Array.isArray(localResolved?.committeeIds) ? localResolved.committeeIds : undefined),
             // Дополнительные поля
             structureType: (() => {
-              const val = pick(p.structureType, p.structure_type) || local?.structureType || "";
+              const val = pick(p.structureType, p.structure_type) || localResolved?.structureType || "";
               return typeof val === "string" ? val : String(val || "");
             })(),
             role: (() => {
-              const val = pick(p.role) || local?.role || "";
+              const val = pick(p.role) || localResolved?.role || "";
               return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
             })(),
             // Сохраняем imageId и другие ID для последующей обработки
