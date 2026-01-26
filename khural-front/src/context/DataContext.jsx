@@ -196,7 +196,16 @@ function firstFileLink(maybeFile) {
   const link =
     maybeFile?.link || maybeFile?.url || maybeFile?.file?.link || maybeFile?.file?.url || "";
   if (link) return joinApiBase(String(link));
-  const id = maybeFile?.id || maybeFile?.file?.id;
+  // Проверяем все возможные варианты ID (imageId, photoId, avatarId и т.д.)
+  const id =
+    maybeFile?.id ||
+    maybeFile?.file?.id ||
+    maybeFile?.imageId ||
+    maybeFile?.image_id ||
+    maybeFile?.photoId ||
+    maybeFile?.photo_id ||
+    maybeFile?.avatarId ||
+    maybeFile?.avatar_id;
   if (!id) return "";
   return joinApiBase(`/files/v2/${String(id)}`);
 }
@@ -413,16 +422,35 @@ function normalizeDeputyItem(d) {
   if (!d || typeof d !== "object") return d;
   
   // Проверяем все возможные источники фото
-  const photoSources = [
-    d.photo,
-    d.image?.link,
-    d.image?.url,
-    d.photoUrl,
-    d.photo_url,
-  ].filter(Boolean);
-  
+  const photoSources = [];
+  if (d.photo) photoSources.push(d.photo);
+  if (d.image?.link) photoSources.push(d.image.link);
+  if (d.image?.url) photoSources.push(d.image.url);
+  if (d.photoUrl) photoSources.push(d.photoUrl);
+  if (d.photo_url) photoSources.push(d.photo_url);
+
+  // Если прямых URL нет, пробуем собрать URL по идентификатору файла (как в Government.jsx / normalizeApiDeputyForDetail)
+  if (!photoSources.length) {
+    const mediaId =
+      d.imageId ||
+      d.image_id ||
+      d.photoId ||
+      d.photo_id ||
+      d.avatarId ||
+      d.avatar_id ||
+      d.image?.id ||
+      d.image?.imageId ||
+      d.image?.image_id;
+    if (mediaId) {
+      photoSources.push(`/files/v2/${String(mediaId).trim()}`);
+    }
+  }
+
   // Нормализуем фото, чтобы оно всегда было полным URL
-  const photoRaw = photoSources.length > 0 ? photoSources[0] : (d.photo || (d.image && d.image.link) || "");
+  const photoRaw =
+    photoSources.length > 0
+      ? photoSources[0]
+      : (d.photo || (d.image && d.image.link) || "");
   const photo = normalizePhotoUrl(photoRaw);
   
   return {
@@ -609,34 +637,50 @@ function enrichDeputyWithPersonInfo(dep, info) {
   // Гарантируем наличие contacts объекта
   if (!out.contacts) out.contacts = {};
   
-  // Проверяем все возможные источники фото в dep
-  const depPhotoSources = [
-    out.photo,
-    out.image?.link,
-    out.image?.url,
-    out.photoUrl,
-    out.photo_url,
-  ].filter(Boolean);
-  
-  // Проверяем, что фото действительно отсутствует (пустая строка или undefined/null)
-  const currentPhoto = depPhotoSources.length > 0 
-    ? String(depPhotoSources[0]).trim() 
-    : String(out.photo || "").trim();
-  const hasPhoto = currentPhoto !== "" && currentPhoto !== "undefined" && currentPhoto !== "null" && !currentPhoto.startsWith("http://localhost");
-  
-  // Проверяем фото из info
-  const infoPhoto = String(info.photo || "").trim();
-  const hasInfoPhoto = infoPhoto !== "" && infoPhoto !== "undefined" && infoPhoto !== "null";
-  
-  // Приоритет: если есть фото в dep, используем его, иначе берем из info
-  if (hasPhoto) {
-    out.photo = normalizePhotoUrl(currentPhoto); // Нормализуем существующее фото
-  } else if (hasInfoPhoto) {
-    out.photo = normalizePhotoUrl(infoPhoto); // Нормализуем фото при добавлении из info
-  } else {
-    // Если фото нет нигде, убеждаемся, что поле пустое
-    out.photo = "";
-  }
+          // Проверяем все возможные источники фото в dep (включая imageId)
+          const depPhotoSources = [];
+          if (out.photo) depPhotoSources.push(out.photo);
+          if (out.image?.link) depPhotoSources.push(out.image.link);
+          if (out.image?.url) depPhotoSources.push(out.image.url);
+          if (out.photoUrl) depPhotoSources.push(out.photoUrl);
+          if (out.photo_url) depPhotoSources.push(out.photo_url);
+          
+          // Если прямых URL нет, проверяем imageId из API
+          if (!depPhotoSources.length) {
+            const mediaId =
+              out.imageId ||
+              out.image_id ||
+              out.photoId ||
+              out.photo_id ||
+              out.avatarId ||
+              out.avatar_id ||
+              out.image?.id ||
+              out.image?.imageId ||
+              out.image?.image_id;
+            if (mediaId) {
+              depPhotoSources.push(`/files/v2/${String(mediaId).trim()}`);
+            }
+          }
+          
+          // Проверяем, что фото действительно отсутствует (пустая строка или undefined/null)
+          const currentPhoto = depPhotoSources.length > 0 
+            ? String(depPhotoSources[0]).trim() 
+            : String(out.photo || "").trim();
+          const hasPhoto = currentPhoto !== "" && currentPhoto !== "undefined" && currentPhoto !== "null" && !currentPhoto.startsWith("http://localhost");
+          
+          // Проверяем фото из info
+          const infoPhoto = String(info.photo || "").trim();
+          const hasInfoPhoto = infoPhoto !== "" && infoPhoto !== "undefined" && infoPhoto !== "null";
+          
+          // Приоритет: если есть фото в dep (из API), используем его, иначе берем из info (из JSON)
+          if (hasPhoto) {
+            out.photo = normalizePhotoUrl(currentPhoto); // Нормализуем существующее фото
+          } else if (hasInfoPhoto) {
+            out.photo = normalizePhotoUrl(infoPhoto); // Нормализуем фото при добавлении из info
+          } else {
+            // Если фото нет нигде, убеждаемся, что поле пустое
+            out.photo = "";
+          }
   
   // Биография только из IE_DETAIL_TEXT, не из reception
   if (!out.bio && !out.biography && info.bio) {
@@ -1168,6 +1212,21 @@ export default function DataProvider({ children }) {
                 photo = normalizePhotoUrl(localPhoto);
               } else if (pPhoto && String(pPhoto).trim() !== "" && String(pPhoto).trim() !== "undefined" && String(pPhoto).trim() !== "null") {
                 photo = normalizePhotoUrl(pPhoto);
+              } else {
+                // Если прямых URL нет, пробуем собрать URL по идентификатору файла из API
+                const mediaId =
+                  p.imageId ||
+                  p.image_id ||
+                  p.photoId ||
+                  p.photo_id ||
+                  p.avatarId ||
+                  p.avatar_id ||
+                  p.image?.id ||
+                  p.image?.imageId ||
+                  p.image?.image_id;
+                if (mediaId) {
+                  photo = normalizePhotoUrl(`/files/v2/${String(mediaId).trim()}`);
+                }
               }
               
               return photo;
@@ -1193,19 +1252,49 @@ export default function DataProvider({ children }) {
               const val = pick(p.role) || local?.role || "";
               return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
             })(),
+            // Сохраняем imageId и другие ID для последующей обработки
+            imageId: p.imageId || p.image_id || p.image?.id || p.image?.imageId || p.image?.image_id || undefined,
+            image_id: p.image_id || p.imageId || undefined,
+            photoId: p.photoId || p.photo_id || undefined,
+            photo_id: p.photo_id || p.photoId || undefined,
+            avatarId: p.avatarId || p.avatar_id || undefined,
+            avatar_id: p.avatar_id || p.avatarId || undefined,
+            // Сохраняем объект image для доступа к вложенным полям
+            image: p.image || undefined,
           };
         });
         const enriched = mapped.map((d) => {
           const info = personInfoMap.byName.get(normalizePersonName(d.name));
           const enrichedDep = enrichDeputyWithPersonInfo(d, info);
           // Гарантируем нормализацию фото после обогащения
-          // Проверяем все возможные источники фото
-          const photoSources = [
-            enrichedDep.photo,
-            enrichedDep.image?.link,
-            enrichedDep.photoUrl,
-            enrichedDep.photo_url,
-          ].filter(Boolean);
+          // Проверяем все возможные источники фото (включая imageId из API)
+          const photoSources = [];
+          if (enrichedDep.photo) photoSources.push(enrichedDep.photo);
+          if (enrichedDep.image?.link) photoSources.push(enrichedDep.image.link);
+          if (enrichedDep.image?.url) photoSources.push(enrichedDep.image.url);
+          if (enrichedDep.photoUrl) photoSources.push(enrichedDep.photoUrl);
+          if (enrichedDep.photo_url) photoSources.push(enrichedDep.photo_url);
+          
+          // Если прямых URL нет, пробуем собрать URL по идентификатору файла (как в normalizeDeputyItem)
+          if (!photoSources.length) {
+            const mediaId =
+              enrichedDep.imageId ||
+              enrichedDep.image_id ||
+              enrichedDep.photoId ||
+              enrichedDep.photo_id ||
+              enrichedDep.avatarId ||
+              enrichedDep.avatar_id ||
+              enrichedDep.image?.id ||
+              enrichedDep.image?.imageId ||
+              enrichedDep.image?.image_id ||
+              d.imageId ||
+              d.image_id ||
+              d.photoId ||
+              d.photo_id;
+            if (mediaId) {
+              photoSources.push(`/files/v2/${String(mediaId).trim()}`);
+            }
+          }
           
           if (photoSources.length > 0) {
             // Берем первое доступное фото и нормализуем
@@ -1217,6 +1306,22 @@ export default function DataProvider({ children }) {
             }
           } else {
             enrichedDep.photo = "";
+          }
+          // Сохраняем imageId и другие ID для последующей обработки в normalizeDeputyItem
+          if (!enrichedDep.imageId && !enrichedDep.image_id) {
+            const mediaId =
+              d.imageId ||
+              d.image_id ||
+              d.photoId ||
+              d.photo_id ||
+              d.avatarId ||
+              d.avatar_id ||
+              d.image?.id ||
+              d.image?.imageId ||
+              d.image?.image_id;
+            if (mediaId) {
+              enrichedDep.imageId = mediaId;
+            }
           }
           return enrichedDep;
         });
