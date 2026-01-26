@@ -551,6 +551,37 @@ function extractEmailFromText(text) {
   return match ? match[0] : "";
 }
 
+function normalizeConvocationText(raw) {
+  const s = String(raw || "").replace(/\u00A0/g, " ").trim();
+  if (!s) return "";
+  const cleaned = s
+    .replace(/\(.*?\)/g, " ")
+    .replace(/архив/gi, " ")
+    .replace(/созыв(а|ы)?/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return "";
+  const roman = cleaned.match(/\b([IVX]{1,8})\b/i);
+  if (roman) return roman[1].toUpperCase();
+  const num = cleaned.match(/\b(\d{1,2})\b/);
+  if (num) return num[1];
+  const ordMap = {
+    первый: "I",
+    второй: "II",
+    третий: "III",
+    четвертый: "IV",
+    пятый: "V",
+    шестой: "VI",
+    седьмой: "VII",
+    восьмой: "VIII",
+    девятый: "IX",
+    десятый: "X",
+  };
+  const ordKey = cleaned.toLowerCase().replace(/ё/g, "е");
+  if (ordMap[ordKey]) return ordMap[ordKey];
+  return cleaned;
+}
+
 /** Извлекает поля из одной записи (deputaty.json или deputaty_vseh_sozyvov.json) */
 function parsePersonInfoRow(row) {
   const id = row?.IE_ID ?? row?.IE_XML_ID;
@@ -568,7 +599,9 @@ function parsePersonInfoRow(row) {
   const emailFromProp = String(row?.IP_PROP9 ?? "").trim();
   const emailFromText = extractEmailFromText(preview);
   const email = emailFromProp || emailFromText || "";
-  const conv = String(row?.IP_PROP15 ?? "").trim();
+  const convPrimary = normalizeConvocationText(row?.IP_PROP15);
+  const convGroup = normalizeConvocationText(row?.IC_GROUP0 || row?.IC_GROUP1 || row?.IC_GROUP2);
+  const conv = convPrimary || convGroup;
   const pos = String(row?.IP_PROP22 ?? "").trim();
   const pos128 = String(row?.IP_PROP128 ?? "").trim();
   const pos132 = String(row?.IP_PROP132 ?? "").trim();
