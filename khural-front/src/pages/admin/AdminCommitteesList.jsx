@@ -359,14 +359,14 @@ export default function AdminCommitteesList({
           >
             + Добавить комитет
           </Button>
-          <Button
+          {/* <Button
             onClick={importCommitteesFromJson}
             disabled={!canWrite}
             loading={busyLocal}
             block={isMobile}
           >
             Импортировать комитеты
-          </Button>
+          </Button> */}
        
         </div>
       </div>
