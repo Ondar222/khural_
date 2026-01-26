@@ -737,6 +737,7 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
           >
             Удалить
           </Button>
+          {/* fdfddff */}
         </Space>
       ),
     },
