@@ -3,7 +3,18 @@ const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
 const encodeSegment = (segment) => {
   const raw = String(segment || "");
   try {
-    return encodeURIComponent(decodeURIComponent(raw));
+    // Декодируем несколько раз на случай множественного кодирования
+    let decoded = raw;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const next = decodeURIComponent(decoded);
+        if (next === decoded) break;
+        decoded = next;
+      } catch {
+        break;
+      }
+    }
+    return encodeURIComponent(decoded);
   } catch {
     return encodeURIComponent(raw);
   }

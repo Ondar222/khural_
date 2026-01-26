@@ -148,6 +148,20 @@ export default function CommitteeStaffDetail() {
                   src={normalizeFilesUrl(staff.photo)}
                   alt=""
                   loading="lazy"
+                  onError={(e) => {
+                    const img = e.target;
+                    const currentSrc = img.src;
+                    
+                    if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                      img.dataset.proxyTried = "true";
+                      img.src = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                    } else {
+                      img.style.display = "";
+                      img.removeAttribute("src");
+                      img.classList.remove("person-card__photo");
+                      img.classList.add("person-card__photo-placeholder");
+                    }
+                  }}
                 />
               ) : (
                 <div className="person-card__photo" aria-hidden="true" />

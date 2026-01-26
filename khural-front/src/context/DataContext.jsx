@@ -517,6 +517,35 @@ function mergeCommitteesPreferApi(apiList, staticList) {
 
 const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
 
+/** Вспомогательная функция для кодирования сегмента пути */
+function encodePathSegment(segment) {
+  const raw = String(segment || "");
+  try {
+    // Декодируем несколько раз на случай множественного кодирования
+    let decoded = raw;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const next = decodeURIComponent(decoded);
+        if (next === decoded) break;
+        decoded = next;
+      } catch {
+        break;
+      }
+    }
+    return encodeURIComponent(decoded);
+  } catch {
+    return encodeURIComponent(raw);
+  }
+}
+
+/** Кодирует pathname URL, правильно обрабатывая каждый сегмент */
+function encodeUrlPathname(pathname) {
+  return String(pathname || "")
+    .split("/")
+    .map((seg) => (seg === "" ? "" : encodePathSegment(seg)))
+    .join("/");
+}
+
 /** Преобразует путь фото в полный URL через khural.rtyva.ru */
 function normalizePhotoUrl(pic) {
   if (!pic) return "";
@@ -525,19 +554,31 @@ function normalizePhotoUrl(pic) {
   
   // Если уже полный URL, проверяем, не является ли он путем через другой домен для /upload/
   if (/^https?:\/\//i.test(s) || s.startsWith("//")) {
-    // Если это URL содержит /upload/iblock/ или /upload/, преобразуем в khural.rtyva.ru
+    // Если это URL содержит /upload/iblock/ или /upload/, преобразуем в khural.rtyva.ru и кодируем
     if (s.includes("/upload/iblock/") || s.includes("/upload/")) {
       try {
         const url = new URL(s);
         if (url.pathname.startsWith("/upload/")) {
-          return `${KHURAL_UPLOAD_BASE}${url.pathname}${url.search}${url.hash}`;
+          const encodedPath = encodeUrlPathname(url.pathname);
+          return `${KHURAL_UPLOAD_BASE}${encodedPath}${url.search}${url.hash}`;
         }
       } catch {
         // Если не удалось распарсить, извлекаем путь вручную
         const uploadMatch = s.match(/(\/upload\/iblock\/[^\s"']*)/i) || s.match(/(\/upload\/[^\s"']*)/i);
         if (uploadMatch) {
-          return `${KHURAL_UPLOAD_BASE}${uploadMatch[1]}`;
+          const encodedPath = encodeUrlPathname(uploadMatch[1]);
+          return `${KHURAL_UPLOAD_BASE}${encodedPath}`;
         }
+      }
+    }
+    // Если это URL с khural.rtyva.ru, кодируем pathname
+    if (s.includes("khural.rtyva.ru")) {
+      try {
+        const url = new URL(s);
+        const encodedPath = encodeUrlPathname(url.pathname);
+        return `${url.origin}${encodedPath}${url.search}${url.hash}`;
+      } catch {
+        return s;
       }
     }
     return s;
@@ -546,13 +587,15 @@ function normalizePhotoUrl(pic) {
   // Если путь начинается с /upload/ или upload/, преобразуем в полный URL
   if (s.startsWith("/upload/") || s.startsWith("upload/")) {
     const path = s.startsWith("/") ? s : `/${s}`;
-    return `${KHURAL_UPLOAD_BASE}${path}`;
+    const encodedPath = encodeUrlPathname(path);
+    return `${KHURAL_UPLOAD_BASE}${encodedPath}`;
   }
   
   // Если путь содержит /upload/iblock/ где-то внутри, извлекаем его
   const uploadMatch = s.match(/(\/upload\/iblock\/[^\s"']*)/i) || s.match(/(\/upload\/[^\s"']*)/i);
   if (uploadMatch) {
-    return `${KHURAL_UPLOAD_BASE}${uploadMatch[1]}`;
+    const encodedPath = encodeUrlPathname(uploadMatch[1]);
+    return `${KHURAL_UPLOAD_BASE}${encodedPath}`;
   }
   
   // Для других путей добавляем / если нужно

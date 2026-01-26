@@ -345,7 +345,7 @@ export default function Deputies() {
                               loading="lazy"
                               decoding="async"
                               onError={(e) => {
-                                // Если фото не загрузилось из-за CORS, пробуем загрузить через прокси
+                                // Если фото не загрузилось, заменяем на placeholder
                                 const img = e.target;
                                 const currentSrc = img.src || photo;
                                 
@@ -356,13 +356,12 @@ export default function Deputies() {
                                   // Пробуем загрузить через прокси
                                   img.src = proxyUrl;
                                 } else {
-                                  // Если прокси не помог или это не khural.rtyva.ru, скрываем изображение
-                                  img.style.display = "none";
+                                  // Если прокси не помог, заменяем картинку на плейсхолдер, а не скрываем
+                                  img.style.display = "";
+                                  img.removeAttribute("src");
+                                  img.classList.remove("gov-card__avatar");
+                                  img.classList.add("gov-card__avatar-placeholder");
                                 }
-                              }}
-                              onLoad={(e) => {
-                                // Если изображение загрузилось успешно, показываем его
-                                e.target.style.display = "";
                               }}
                             />
                           ) : (

@@ -684,7 +684,26 @@ export default function Committee() {
                   <div className="orgv2__line" />
                   <div className="person-card person-card--committee">
                     {leader.photo ? (
-                      <img className="person-card__photo" src={leader.photo} alt="" loading="lazy" />
+                      <img 
+                        className="person-card__photo" 
+                        src={leader.photo} 
+                        alt="" 
+                        loading="lazy"
+                        onError={(e) => {
+                          const img = e.target;
+                          const currentSrc = img.src;
+                          
+                          if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                            img.dataset.proxyTried = "true";
+                            img.src = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                          } else {
+                            img.style.display = "";
+                            img.removeAttribute("src");
+                            img.classList.remove("person-card__photo");
+                            img.classList.add("person-card__photo-placeholder");
+                          }
+                        }}
+                      />
                     ) : (
                       <div className="person-card__photo" aria-hidden="true" />
                     )}
@@ -719,7 +738,26 @@ export default function Committee() {
                     <div key={m.id || idx} className="gov-card">
                       <div className="gov-card__top">
                         {m.photo ? (
-                          <img className="gov-card__avatar" src={m.photo} alt="" loading="lazy" />
+                          <img 
+                            className="gov-card__avatar" 
+                            src={m.photo} 
+                            alt="" 
+                            loading="lazy"
+                            onError={(e) => {
+                              const img = e.target;
+                              const currentSrc = img.src;
+                              
+                              if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                                img.dataset.proxyTried = "true";
+                                img.src = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                              } else {
+                                img.style.display = "";
+                                img.removeAttribute("src");
+                                img.classList.remove("gov-card__avatar");
+                                img.classList.add("gov-card__avatar-placeholder");
+                              }
+                            }}
+                          />
                         ) : (
                           <div className="gov-card__avatar" aria-hidden="true" />
                         )}

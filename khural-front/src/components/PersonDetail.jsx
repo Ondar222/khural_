@@ -138,7 +138,26 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
 
         <div className="card person-hero">
           {avatarSrc ? (
-            <img className="person-portrait" src={avatarSrc} alt={title} loading="lazy" />
+            <img 
+              className="person-portrait" 
+              src={avatarSrc} 
+              alt={title} 
+              loading="lazy"
+              onError={(e) => {
+                const img = e.target;
+                const currentSrc = img.src;
+                
+                if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                  img.dataset.proxyTried = "true";
+                  img.src = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                } else {
+                  img.style.display = "";
+                  img.removeAttribute("src");
+                  img.classList.remove("person-portrait");
+                  img.classList.add("person-portrait-placeholder");
+                }
+              }}
+            />
           ) : (
             <div className="person-portrait" aria-hidden="true" />
           )}

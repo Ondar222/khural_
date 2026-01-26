@@ -729,7 +729,31 @@ export default function DeputiesV2() {
                       <div key={d.id} className="gov-card">
                         <div className="gov-card__top">
                           {photo ? (
-                            <img className="gov-card__avatar" src={photo} alt="" loading="lazy" decoding="async" />
+                            <img 
+                              className="gov-card__avatar" 
+                              src={photo} 
+                              alt="" 
+                              loading="lazy" 
+                              decoding="async"
+                              onError={(e) => {
+                                // Если фото не загрузилось, заменяем на placeholder
+                                const img = e.target;
+                                const currentSrc = img.src || photo;
+                                
+                                // Если это URL с khural.rtyva.ru и мы еще не пробовали прокси
+                                if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                                  img.dataset.proxyTried = "true";
+                                  const proxyUrl = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                                  img.src = proxyUrl;
+                                } else {
+                                  // Если прокси не помог, заменяем на placeholder
+                                  img.style.display = "";
+                                  img.removeAttribute("src");
+                                  img.classList.remove("gov-card__avatar");
+                                  img.classList.add("gov-card__avatar-placeholder");
+                                }
+                              }}
+                            />
                           ) : (
                             <div className="gov-card__avatar" aria-hidden="true" />
                           )}

@@ -1964,6 +1964,13 @@ a {
   border-radius: 16px;
   background: #eef2f7;
 }
+.person-portrait-placeholder {
+  width: 280px;
+  height: 360px;
+  border-radius: 16px;
+  background: #eef2f7;
+  display: block;
+}
 .person-hero__body {
   display: flex;
   flex-direction: column;
@@ -2362,6 +2369,13 @@ a {
     padding: 16px;
   }
   .person-portrait {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    aspect-ratio: 3 / 4;
+    margin: 0 auto;
+  }
+  .person-portrait-placeholder {
     width: 100%;
     max-width: 320px;
     height: auto;
@@ -4359,6 +4373,13 @@ body.hc-yb .ant-btn {
   border-radius: 14px;
   background: #eef2f7;
 }
+.person-card__photo-placeholder {
+  width: 180px;
+  height: 220px;
+  border-radius: 14px;
+  background: #eef2f7;
+  display: block;
+}
 /* Larger round avatar variant for Apparatus and Representative */
 .person-card--round-xl .person-card__photo {
   width: 140px;
@@ -4482,6 +4503,10 @@ body.hc-yb .ant-btn {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+  .person-card__photo-placeholder {
+    width: 100%;
+    height: 100%;
   }
   .person-card__photo--xl {
     height: auto;
@@ -4767,6 +4792,15 @@ body.hc-yb .ant-btn {
   box-shadow: 0 0 0 3px #ffffff, 0 1px 2px rgba(0, 0, 0, 0.08);
   border: 2px solid #cfe3ff;
 }
+.gov-card__avatar-placeholder {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: #eef2f7;
+  box-shadow: 0 0 0 3px #ffffff, 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 2px solid #cfe3ff;
+  display: block;
+}
 .gov-card__body {
   padding: 16px;
   display: flex;
@@ -4830,6 +4864,10 @@ body.hc-yb .ant-btn {
     width: 88px;
     height: 88px;
     border-width: 5px;
+  }
+  .gov-card__avatar-placeholder {
+    width: 88px;
+    height: 88px;
   }
 }
 

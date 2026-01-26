@@ -685,6 +685,20 @@ export default function Government() {
                             alt=""
                             loading="lazy"
                             decoding="async"
+                            onError={(e) => {
+                              const img = e.target;
+                              const currentSrc = img.src;
+                              
+                              if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                                img.dataset.proxyTried = "true";
+                                img.src = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                              } else {
+                                img.style.display = "";
+                                img.removeAttribute("src");
+                                img.classList.remove("gov-card__avatar");
+                                img.classList.add("gov-card__avatar-placeholder");
+                              }
+                            }}
                           />
                         ) : (
                           <div className="gov-card__avatar" aria-hidden="true" />
