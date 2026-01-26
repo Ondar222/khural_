@@ -219,9 +219,7 @@ export default function AdminCommitteesList({
             }}>
               {truncateText(getCommitteeTitle(row), 60)}
             </span>
-            {(isLocalStatic(row) || isLocal(row)) && (
-              <Tag color="blue" style={{ fontSize: 10, margin: 0, flexShrink: 0 }}>Локально</Tag>
-            )}
+            {null}
           </div>
           {row.description ? (
             <div style={{ 
@@ -285,7 +283,7 @@ export default function AdminCommitteesList({
           <Space size="small" wrap>
             <Button
               size="small"
-              disabled={!canWrite || isLocalStatic(row)}
+              disabled={!canWrite}
               onClick={() =>
                 navigate(`/admin/committees/edit/${encodeURIComponent(String(row.id))}`)
               }
@@ -382,17 +380,13 @@ export default function AdminCommitteesList({
                 const email = row?.email ? String(row.email).trim() : "";
                 const address = row?.address ? String(row.address).trim() : "";
                 const website = row?.website ? String(row.website).trim() : "";
-                const disabled = !canWrite || isLocalStatic(row);
+                const disabled = !canWrite;
                 return (
                   <div key={String(row?.id ?? "")} className="admin-committee-card">
                     <div className="admin-committee-card__header">
                       <div className="admin-committee-card__title">{row?.name || "Комитет"}</div>
                       <div className="admin-committee-card__tags">
-                        {isLocalStatic(row) ? (
-                          <Tag color="blue">Локально (файл)</Tag>
-                        ) : isLocal(row) ? (
-                          <Tag color="blue">Локально</Tag>
-                        ) : null}
+                        {null}
                         {row?.isActive ? (
                           <Tag color="green">Активный</Tag>
                         ) : (
