@@ -7,12 +7,49 @@ import { toPersonsApiBody } from "../../api/personsPayload.js";
 import { readDeputiesOverrides, writeDeputiesOverrides } from "./deputiesOverrides.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
+import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import {
   COMMITTEES_OVERRIDES_EVENT_NAME,
   COMMITTEES_OVERRIDES_STORAGE_KEY,
   readCommitteesOverrides,
   writeCommitteesOverrides,
 } from "../../utils/committeesOverrides.js";
+
+function pickFirstLink(v) {
+  if (!v) return "";
+  if (typeof v === "string") return v.trim();
+  if (Array.isArray(v)) {
+    for (const item of v) {
+      const got = pickFirstLink(item);
+      if (got) return got;
+    }
+    return "";
+  }
+  if (typeof v === "object") {
+    const direct =
+      v.link ||
+      v.url ||
+      v.src ||
+      v.path ||
+      v.file?.link ||
+      v.file?.url ||
+      v.image?.link ||
+      v.image?.url ||
+      "";
+    if (direct) return String(direct).trim();
+    const id =
+      v.id ||
+      v.file?.id ||
+      v.imageId ||
+      v.image_id ||
+      v.photoId ||
+      v.photo_id ||
+      v.avatarId ||
+      v.avatar_id;
+    if (id) return `/files/v2/${String(id).trim()}`;
+  }
+  return "";
+}
 
 const STRUCTURE_TYPE_OPTIONS = [
   { value: "committee", label: "Комитет" },
@@ -127,6 +164,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const [loading, setLoading] = React.useState(mode === "edit");
   const [saving, setSaving] = React.useState(false);
   const [photoFile, setPhotoFile] = React.useState(null);
+  const [currentPhotoUrl, setCurrentPhotoUrl] = React.useState("");
   const structureType = Form.useWatch("structureType", form);
   const isDeceased = Form.useWatch("isDeceased", form);
   const fullNameValue = Form.useWatch("fullName", form);
@@ -470,6 +508,20 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           isDeceased: Boolean(normalized?.isDeceased),
           isActive: normalized?.isActive !== undefined ? Boolean(normalized?.isActive) : true,
         };
+        // Извлекаем текущее фото для отображения (та же логика, что в Government.jsx)
+        const currentPhoto = normalizeFilesUrl(
+          pickFirstLink(src?.image) ||
+            pickFirstLink(src?.photo) ||
+            pickFirstLink(src?.avatar) ||
+            pickFirstLink(src?.media) ||
+            pickFirstLink(src?.files) ||
+            pickFirstLink(src?.attachments) ||
+            String(src?.photoUrl || src?.photo_url || "").trim() ||
+            (src?.imageId || src?.image_id || src?.photoId || src?.photo_id
+              ? `/files/v2/${String(src?.imageId || src?.image_id || src?.photoId || src?.photo_id).trim()}`
+              : "")
+        );
+        setCurrentPhotoUrl(currentPhoto);
       } finally {
         if (alive) setLoading(false);
       }
@@ -567,7 +619,24 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         const payload = toPersonsApiBody(body);
         console.log("[AdminDeputyEditor] Sending PATCH payload:", { mandateEnded: payload.mandateEnded, isDeceased: payload.isDeceased, ...payload });
         await PersonsApi.patch(id, payload);
-        if (photoFile) await PersonsApi.uploadMedia(id, photoFile);
+        if (photoFile) {
+          await PersonsApi.uploadMedia(id, photoFile);
+          // После загрузки фото обновляем URL текущего фото
+          // Перезагружаем данные депутата, чтобы получить новый imageId
+          const updated = await PersonsApi.getById(id).catch(() => null);
+          if (updated) {
+            const newPhoto = normalizeFilesUrl(
+              pickFirstLink(updated?.image) ||
+                pickFirstLink(updated?.photo) ||
+                pickFirstLink(updated?.avatar) ||
+                String(updated?.photoUrl || updated?.photo_url || "").trim() ||
+                (updated?.imageId || updated?.image_id
+                  ? `/files/v2/${String(updated?.imageId || updated?.image_id).trim()}`
+                  : "")
+            );
+            setCurrentPhotoUrl(newPhoto);
+          }
+        }
         // Persist status locally when it changes (backend may not store these fields).
         const statusPatch = {
           mandateEnded: Boolean(body?.mandateEnded),
@@ -904,16 +973,65 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             label="Фото"
             tooltip="Фото загружается через API /persons/{id}/media (после сохранения)"
           >
+            {currentPhotoUrl && !photoFile ? (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 13, marginBottom: 8, opacity: 0.7 }}>Текущее фото:</div>
+                <img
+                  src={currentPhotoUrl}
+                  alt="Текущее фото депутата"
+                  style={{
+                    maxWidth: 200,
+                    maxHeight: 200,
+                    borderRadius: 8,
+                    border: "1px solid rgba(0,0,0,0.1)",
+                    objectFit: "cover",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              </div>
+            ) : null}
             <Upload
               accept="image/*"
               maxCount={1}
               beforeUpload={(file) => {
                 setPhotoFile(file);
+                setCurrentPhotoUrl(URL.createObjectURL(file));
                 return false;
               }}
               showUploadList={true}
+              onRemove={() => {
+                setPhotoFile(null);
+                // Очищаем превью нового файла, но сохраняем оригинальное фото
+                if (mode === "edit" && deputyId) {
+                  // Перезагружаем данные, чтобы восстановить оригинальное фото
+                  const id = String(deputyId || "");
+                  if (id) {
+                    PersonsApi.getById(id)
+                      .then((data) => {
+                        const originalPhoto = normalizeFilesUrl(
+                          pickFirstLink(data?.image) ||
+                            pickFirstLink(data?.photo) ||
+                            String(data?.photoUrl || data?.photo_url || "").trim() ||
+                            (data?.imageId || data?.image_id
+                              ? `/files/v2/${String(data?.imageId || data?.image_id).trim()}`
+                              : "")
+                        );
+                        setCurrentPhotoUrl(originalPhoto);
+                      })
+                      .catch(() => {
+                        setCurrentPhotoUrl("");
+                      });
+                  }
+                } else {
+                  setCurrentPhotoUrl("");
+                }
+              }}
             >
-              <Button disabled={loading || saving}>Выбрать фото</Button>
+              <Button disabled={loading || saving}>
+                {photoFile ? "Изменить фото" : "Выбрать фото"}
+              </Button>
             </Upload>
             <div className="admin-hint">
               Для режима “создать” фото загрузится сразу после создания записи на сервере. Если запись создана локально —
