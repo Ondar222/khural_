@@ -140,6 +140,9 @@ function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
   const [historyFiles, setHistoryFiles] = React.useState([]);
   const [loadingHistory, setLoadingHistory] = React.useState(false);
   const [currentAppeal, setCurrentAppeal] = React.useState(appeal);
+  
+  // Extract stable appealId to prevent infinite loops
+  const appealId = appeal?.id;
 
   React.useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
@@ -235,7 +238,7 @@ function AppealDetailModal({ open, onClose, appeal, t, onDelete }) {
       .finally(() => {
         setLoadingHistory(false);
       });
-  }, [open, appeal?.id]);
+  }, [open, appealId]); // Use extracted appealId to prevent reruns when appeal object changes
 
   if (!open || !appeal) return null;
 

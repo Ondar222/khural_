@@ -222,6 +222,12 @@ function ReportsAllConvocationsPage() {
   const [committees, setCommittees] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
+  // Стабилизируем committeesFromContext через useRef для предотвращения бесконечных циклов
+  const committeesRef = React.useRef(committeesFromContext);
+  React.useEffect(() => {
+    committeesRef.current = committeesFromContext;
+  }, [committeesFromContext]);
+
   React.useEffect(() => {
     let alive = true;
     (async () => {
@@ -680,7 +686,7 @@ function ConvocationReportsPage({ convocationNumber }) {
           
           // Load committees
           const allCommittees = await CommitteesApi.list({ all: true }).catch(() => []);
-          const fromContext = Array.isArray(committeesFromContext) ? committeesFromContext : [];
+          const fromContext = Array.isArray(committeesRef.current) ? committeesRef.current : [];
           const all = [...allCommittees, ...fromContext];
           
           // Filter committees that match convocation OR have documents for this convocation
@@ -747,7 +753,7 @@ function ConvocationReportsPage({ convocationNumber }) {
     return () => {
       alive = false;
     };
-  }, [convocationNumber, committeesFromContext]);
+  }, [convocationNumber]); // Removed committeesFromContext from deps to prevent infinite loops
 
   // Group documents by committee, category, and year
   const documentsByCommittee = React.useMemo(() => {

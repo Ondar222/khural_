@@ -143,6 +143,12 @@ export default function Government() {
 
   // When user opens a deputy detail page, fetch fresh data by id to avoid stale DataContext cache
   // (important after uploading a new photo in admin).
+  // Stabilize deputies through ref to prevent infinite loops
+  const deputiesRef = React.useRef(deputies);
+  React.useEffect(() => {
+    deputiesRef.current = deputies;
+  }, [deputies]);
+  
   React.useEffect(() => {
     let alive = true;
     (async () => {
@@ -166,7 +172,7 @@ export default function Government() {
         console.error("Failed to fetch deputy:", error);
         // Fallback: try to find in local deputies array
         if (alive) {
-          const localDeputy = (deputies || []).find((d) => String(d?.id) === selectedId);
+          const localDeputy = (deputiesRef.current || []).find((d) => String(d?.id) === selectedId);
           if (localDeputy) {
             // Локальные данные уже обогащены из JSON в DataContext, но обогатим еще раз на всякий случай
             let normalized = normalizeApiDeputyForDetail(localDeputy);
@@ -181,7 +187,7 @@ export default function Government() {
     return () => {
       alive = false;
     };
-  }, [selected, section, deputies]);
+  }, [selected, section]); // Removed deputies from deps to prevent infinite loops
   React.useEffect(() => {
     const onNav = () => {
       const sp = new URLSearchParams(window.location.search || "");

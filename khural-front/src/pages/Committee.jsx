@@ -292,15 +292,16 @@ export default function Committee() {
   }, []);
   
   // Прокручиваем вверх при загрузке страницы комитета
+  const committeeIdForScroll = committee?.id;
   React.useEffect(() => {
-    if (committee) {
+    if (committeeIdForScroll) {
       // Небольшая задержка, чтобы убедиться, что контент загружен
       const timer = setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "instant" });
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [committee?.id]);
+  }, [committeeIdForScroll]);
 
   // Resolve members only if committee exists (moved before conditional return)
   const resolveMember = React.useCallback((m) => {
@@ -361,8 +362,9 @@ export default function Committee() {
   // Load documents from convocations for this committee
   const [convocationDocuments, setConvocationDocuments] = React.useState([]);
   
+  const committeeIdForDocs = committee?.id;
   React.useEffect(() => {
-    if (!committee?.id) {
+    if (!committeeIdForDocs) {
       setConvocationDocuments([]);
       return;
     }
@@ -375,7 +377,7 @@ export default function Committee() {
         if (!alive) return;
         
         // Extract documents for this committee from all convocations
-        const committeeId = String(committee.id);
+        const committeeId = String(committeeIdForDocs);
         const allDocs = [];
         
         (Array.isArray(convocations) ? convocations : []).forEach((conv) => {
@@ -395,7 +397,7 @@ export default function Committee() {
     })();
     
     return () => { alive = false; };
-  }, [committee?.id]);
+  }, [committeeIdForDocs]);
 
   // Get reports, plans, activities, staff (only if committee exists)
   // Combine committee's own reports/agendas with documents from convocations

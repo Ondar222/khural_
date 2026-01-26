@@ -92,6 +92,8 @@ export default function CommitteeStaffDetail() {
   const [staff, setStaff] = React.useState(null);
   const [committee, setCommittee] = React.useState(null);
 
+  // Stabilize committees length to prevent infinite loops
+  const committeesLength = Array.isArray(committees) ? committees.length : 0;
   React.useEffect(() => {
     if (!committeeId || !committees) return;
     const c = (committees || []).find((x) => String(x?.id ?? "") === String(committeeId));
@@ -103,7 +105,7 @@ export default function CommitteeStaffDetail() {
         setStaff(s);
       }
     }
-  }, [committeeId, staffId, committees]);
+  }, [committeeId, staffId, committeesLength, committees]);
 
   if (loading?.committees) {
     return (

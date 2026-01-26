@@ -495,8 +495,12 @@ export default function DeputiesV2() {
   }, [apiConvocations, structureConvocations, deputies, getDeputyConvocations]);
 
   // Ensure selected convocation exists in data; otherwise fallback gracefully.
+  // Стабилизируем зависимости через длину массивов для предотвращения бесконечных циклов
+  const deputiesLength = Array.isArray(deputies) ? deputies.length : 0;
+  const convocationsLength = Array.isArray(convocations) ? convocations.length : 0;
+  
   React.useEffect(() => {
-    if (!Array.isArray(deputies) || deputies.length === 0) return;
+    if (deputiesLength === 0) return;
     if (convocation === "Все") return;
     const hasAny = deputies.some((d) => getDeputyConvocations(d).includes(convocation));
     if (hasAny) return;
@@ -504,7 +508,7 @@ export default function DeputiesV2() {
     const available = (Array.isArray(convocations) ? convocations : []).filter((c) => c && c !== "Все");
     const fallback = available.includes("VIII") ? "VIII" : available[0] || "Все";
     setConvocation(fallback);
-  }, [convocation, deputies, getDeputyConvocations, convocations]);
+  }, [convocation, deputiesLength, convocationsLength, getDeputyConvocations, deputies, convocations]);
 
   const factions = React.useMemo(() => {
     // Prefer API data, fallback to structure data
