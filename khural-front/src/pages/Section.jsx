@@ -1656,6 +1656,11 @@ function ApparatusSectionDetail({ title, backHref }) {
   );
 }
 
+function getCommitteeTitle(c) {
+  if (!c || typeof c !== "object") return "";
+  return String(c.title || c.name || c.label || c.description || "").trim();
+}
+
 export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
@@ -1708,14 +1713,16 @@ export default function SectionPage() {
                   Выберите комитет, чтобы посмотреть состав и информацию.
                 </p>
                 <div className="grid cols-2" style={{ marginTop: 12 }}>
-                  {(committees || []).map((c) => (
-                    <a
-                      key={c.id}
-                      className="tile link"
-                      href={`/committee?id=${encodeURIComponent(c.id)}`}
-                    >
-                      <span style={{ display: "grid", gap: 6 }}>
-                        <span style={{ fontWeight: 900, color: "#0a1f44" }}>{c.title}</span>
+                  {(committees || []).map((c) => {
+                    const title = getCommitteeTitle(c);
+                    return (
+                      <a
+                        key={c.id}
+                        className="tile link"
+                        href={`/committee?id=${encodeURIComponent(c.id)}`}
+                      >
+                        <span style={{ display: "grid", gap: 6 }}>
+                          <span style={{ fontWeight: 900, color: "#0a1f44" }}>{title}</span>
                         <span style={{ color: "#6b7280", fontSize: 13 }}>
                           {(Array.isArray(c.members) ? c.members.length : 0)
                             ? `Состав: ${c.members.length}`
@@ -1724,7 +1731,8 @@ export default function SectionPage() {
                       </span>
                       <span aria-hidden="true">›</span>
                     </a>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
               <SideNav title="Разделы" />
@@ -2226,15 +2234,18 @@ export default function SectionPage() {
                   >
                     Комитеты Верховного Хурала (парламента) Республики Тыва
                   </a>
-                  {(committees || []).map((c) => (
-                    <a
-                      key={c.id}
-                      className="org__item org__item--green"
-                      href={`/committee?id=${encodeURIComponent(c.id)}`}
-                    >
-                      {c.title}
-                    </a>
-                  ))}
+                  {(committees || []).map((c) => {
+                    const title = getCommitteeTitle(c);
+                    return (
+                      <a
+                        key={c.id}
+                        className="org__item org__item--green"
+                        href={`/committee?id=${encodeURIComponent(c.id)}`}
+                      >
+                        {title}
+                      </a>
+                    );
+                  })}
                 </div>
                 <div className="org__col">
                   <a
