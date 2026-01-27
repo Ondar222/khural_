@@ -174,7 +174,7 @@ export default function NewsSliderDetail() {
                         ></path>
                       </svg>
                     </a>
-
+{/* 
                     <a
                       className="share-sbtn share-sbtn--ok"
                       href="https://ok.ru"
@@ -188,7 +188,7 @@ export default function NewsSliderDetail() {
                         alt="odnoklassniki-circled"
                         style={{ width: "100%", height: "100%" }}
                       />
-                    </a>
+                    </a> */}
 
                     <a
                       className="share-sbtn share-sbtn--tg"

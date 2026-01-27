@@ -90,11 +90,8 @@ export default function Footer() {
                 <a href="https://vk.com/public114457376" target="_blank" rel="noreferrer">
                   {t("vk")}
                 </a>
-                <a href="https://ok.ru" target="_blank" rel="noreferrer">
-                  {t("ok")}
-                </a>
-                <a href="https://rutube.ru" target="_blank" rel="noreferrer">
-                  {t("rutube")}
+                <a href="https://t.me/s/tuva_parlament" target="_blank" rel="noreferrer">
+                  {t("telegram")}
                 </a>
               </nav>
             </div>
