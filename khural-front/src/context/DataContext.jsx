@@ -1868,6 +1868,12 @@ export default function DataProvider({ children }) {
       .slice(0, 5);
   }, [slides, slidesOverrides]);
 
+  // Используем ref для loading и errors, чтобы они были доступны без ререндера
+  const loadingRef = React.useRef(loading);
+  const errorsRef = React.useRef(errors);
+  loadingRef.current = loading;
+  errorsRef.current = errors;
+  
   const value = React.useMemo(
     () => ({
       slides: slidesWithOverrides,
@@ -1885,8 +1891,8 @@ export default function DataProvider({ children }) {
       committees,
       aboutPages,
       aboutStructure,
-      loading,
-      errors,
+      get loading() { return loadingRef.current; },
+      get errors() { return errorsRef.current; },
       reload,
       // Setters (for Admin)
       setSlides,
@@ -1921,25 +1927,10 @@ export default function DataProvider({ children }) {
       committees,
       aboutPages,
       aboutStructure,
-      loading,
-      errors,
-      reload,
-      setSlides,
-      setNews,
-      setEvents,
-      setDeputiesBase,
-      setFactions,
-      setDistricts,
-      setConvocations,
-      setCommissions,
-      setCouncils,
-      setGovernment,
-      setAuthorities,
-      setDocuments,
-      setCommittees,
-      setAboutPages,
-      setAboutStructure,
-    ]
+      // loading и errors намеренно НЕ в зависимостях - они обновляются через ref в value
+      // reload НЕ меняется (useCallback с [])
+      // Сеттеры НЕ нужны в зависимостях - они стабильны от React.useState
+    ] // eslint-disable-line react-hooks/exhaustive-deps
   );
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

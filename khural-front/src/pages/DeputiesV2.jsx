@@ -417,7 +417,7 @@ export default function DeputiesV2() {
       window.removeEventListener("khural:deputies-updated", onCustom);
       window.removeEventListener("storage", onStorage);
     };
-  }, [reload]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const deputies = React.useMemo(() => {
     const withApi = mergeByIdPreferApi(baseDeputies, apiDeputies);

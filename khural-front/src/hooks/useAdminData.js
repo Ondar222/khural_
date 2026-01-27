@@ -545,7 +545,7 @@ export function useAdminData() {
   React.useEffect(() => {
     // Load once on mount to avoid spamming the API (429).
     loadAll();
-  }, [loadAll]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // If API is down and DataContext committees load later, refresh local fallback once.
   React.useEffect(() => {
@@ -606,7 +606,7 @@ export function useAdminData() {
     };
     window.addEventListener("khural:admin:reload", onReload);
     return () => window.removeEventListener("khural:admin:reload", onReload);
-  }, [reload]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createNews = React.useCallback(async (formData) => {
     setBusy(true);
