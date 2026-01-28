@@ -365,9 +365,9 @@ export default function Header() {
               <Link to="/appeals">{t("appeals")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("appeals")}>
                 <a href="/appeals">Обращения граждан</a>
-                <a href="/appeals?type=письменное">Письменное обращение</a>
-                <a href="/appeals?type=электронная">Электронная приемная</a>
-                {/* <a href="/appeals/status">Проверить статус обращения</a> */}
+                <a href="/appeals/letter">Письменное обращение</a>
+                <a href="/appeals/online">Электронная приемная</a>
+                <a href="/appeals/status">Проверить статус обращения</a>
                 <a href="/appeals/review">Порядок рассмотрения обращений</a>
                 <a href="/appeals/complaints">Порядок обжалования</a>
                 <a href="/appeals/overview">Обзор обращений граждан</a>
@@ -1079,13 +1079,13 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <a className="tile link" href="/appeals?type=письменное" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/appeals/letter" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 Письменное обращение
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <a className="tile link" href="/appeals?type=электронная" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/appeals/online" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 Электронная приемная
                 <RightOutlined aria-hidden="true" />

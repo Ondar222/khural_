@@ -32,6 +32,12 @@ import AppealsOnline from "./pages/AppealsOnline.jsx";
 import AppealsLetter from "./pages/AppealsLetter.jsx";
 import AppealsReview from "./pages/AppealsReview.jsx";
 import AppealsComplaints from "./pages/AppealsComplaints.jsx";
+import AppealsOverview from "./pages/AppealsOverview.jsx";
+import AppealsPublicInterests from "./pages/AppealsPublicInterests.jsx";
+import AppealsLegal from "./pages/AppealsLegal.jsx";
+import AppealsSchedule from "./pages/AppealsSchedule.jsx";
+import AppealsStatus from "./pages/AppealsStatus.jsx";
+import AppealsMinyust from "./pages/AppealsMinyust.jsx";
 import MapPage from "./pages/Map.jsx";
 import { App as AntApp, ConfigProvider, theme } from "antd";
 import Apparatus from "./pages/Apparatus.jsx";
@@ -203,6 +209,12 @@ export default function App() {
                           "/appeals/letter": AppealsLetter,
                           "/appeals/review": AppealsReview,
                           "/appeals/complaints": AppealsComplaints,
+                          "/appeals/overview": AppealsOverview,
+                          "/appeals/public-interests": AppealsPublicInterests,
+                          "/appeals/legal": AppealsLegal,
+                          "/appeals/schedule": AppealsSchedule,
+                          "/appeals/status": AppealsStatus,
+                          "/appeals/minyust": AppealsMinyust,
                           "/government": Government,
                           "/authorities": Authorities,
                           "/wifi": Wifi,

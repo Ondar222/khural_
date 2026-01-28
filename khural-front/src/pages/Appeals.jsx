@@ -7,46 +7,30 @@ export default function Appeals() {
   const [showGosuslugiModal, setShowGosuslugiModal] = React.useState(false);
 
   return (
-    <section className="section">
-      <div className="container">
-        <h1 className="h1-compact">{t("Обращения граждан и юридических лиц")}</h1>
+    <section className="section appeals-page">
+      <div className="container appeals-page__container">
+        <h1 className="h1-compact appeals-page__title">{t("Обращения граждан и юридических лиц")}</h1>
 
-        <div className="tile" style={{ marginBottom: 24 }}>
-          <p style={{ fontSize: 16, lineHeight: 1.6, marginBottom: 16 }}>
+        <div className="tile appeals-page__tile">
+          <p className="appeals-page__intro">
             Обращения граждан в адрес Верховного Хурала (парламента) Республики Тыва могут быть:
           </p>
 
-          <ul style={{ fontSize: 15, lineHeight: 1.8, marginLeft: 24, marginBottom: 16 }}>
+          <ul className="appeals-page__methods-list">
+            <li><strong>переданы лично</strong></li>
             <li>
-            <a 
-                href="/appeals/" 
-                className="link"
-                style={{ fontWeight: 600 }}
-              >
-               переданы лично
-              </a>
-            </li>
-            <li>
-              <a 
-                href="/appeals/letter" 
-                className="link"
-                style={{ fontWeight: 600 }}
-              >
+              <a href="/appeals/letter" className="link appeals-page__link">
                 отправлены по почте
               </a>
             </li>
             <li>
-              <a 
-                href="/appeals/online" 
-                className="link"
-                style={{ fontWeight: 600 }}
-              >
+              <a href="/appeals/online" className="link appeals-page__link">
                 отправлены в электронном виде через официальный сайт
               </a>
             </li>
           </ul>
 
-          <p style={{ fontSize: 15, lineHeight: 1.6, marginBottom: 16 }}>
+          <p className="appeals-page__before-text">
             Прежде чем отправить обращение, внимательно ознакомьтесь с{" "}
             <a href="/appeals/review" className="link">
               порядком рассмотрения обращений
@@ -54,10 +38,8 @@ export default function Appeals() {
             и следующей информацией:
           </p>
 
-          <ul style={{ fontSize: 14, lineHeight: 1.7, marginLeft: 24, marginBottom: 16, color: "#374151" }}>
-            <li>
-              Обращения граждан рассматриваются в течение 30 дней со дня их регистрации.
-            </li>
+          <ul className="appeals-page__info-list">
+            <li>Обращения граждан рассматриваются в течение 30 дней со дня их регистрации.</li>
             <li>
               По просьбе обратившегося, если обращение передано лично в письменной форме, ему выдается расписка с
               указанием даты приема обращения, количества принятых листов и сообщается телефон для справок. Никаких
@@ -66,10 +48,7 @@ export default function Appeals() {
             <li>
               К регистрации принимаются анонимные обращения и обращения, оформленные с нарушением требований,
               описанных в{" "}
-              <a href="/appeals/review" className="link">
-                порядке рассмотрения обращений
-              </a>
-              .
+              <a href="/appeals/review" className="link">порядке рассмотрения обращений</a>.
             </li>
             <li>
               Обращения, в которых содержатся нецензурные либо оскорбительные выражения, угрозы жизни, здоровью и
@@ -78,96 +57,50 @@ export default function Appeals() {
             </li>
             <li>
               Обращения в электронном виде, направляемые минуя предлагаемую{" "}
-              <a href="/appeals/online" className="link">
-                форму ввода
-              </a>
-              , либо на иные электронные адреса к рассмотрению не принимаются.
+              <a href="/appeals/online" className="link">форму ввода</a>, либо на иные электронные адреса к
+              рассмотрению не принимаются.
             </li>
           </ul>
         </div>
 
-        <div className="tile" style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>
-            Способы подачи обращения
-          </h2>
-
-          <div style={{ display: "grid", gap: 16 }}>
-            {/* Электронная приемная */}
-            <div className="card" style={{ padding: 20, borderLeft: "4px solid #0d4b8f" }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginTop: 0, marginBottom: 12, color: "#0d4b8f" }}>
-                📧 Электронная приемная
-              </h3>
-              <p style={{ marginBottom: 12, lineHeight: 1.6 }}>
+        <div className="tile appeals-page__tile appeals-page__ways">
+          <h2 className="appeals-page__heading">Способы подачи обращения</h2>
+          <div className="appeals-page__cards">
+            <div className="appeals-page__card appeals-page__card--online">
+              <h3 className="appeals-page__card-title">📧 Электронная приемная</h3>
+              <p className="appeals-page__card-desc">
                 Отправьте обращение через официальный сайт в электронном виде
               </p>
-              <a href="/appeals/online" className="btn btn--primary">
+              <a href="/appeals/online" className="btn btn--primary appeals-page__btn">
                 Подать обращение онлайн
               </a>
             </div>
-
-            {/* Через Госуслуги */}
-            {/* <div className="card" style={{ padding: 20, borderLeft: "4px solid #0033a0" }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginTop: 0, marginBottom: 12, color: "#0033a0" }}>
-                🏛 Через Госуслуги
-              </h3>
-              <p style={{ marginBottom: 12, lineHeight: 1.6 }}>
-                Отправьте обращение через портал Государственных услуг
-              </p>
-              <button 
-                className="btn btn--primary" 
-                onClick={() => setShowGosuslugiModal(true)}
-                style={{ backgroundColor: "#0033a0" }}
-              >
-                Отправить через Госуслуги
-              </button>
-            </div> */}
-
-            {/* Письменное обращение */}
-            <div className="card" style={{ padding: 20, borderLeft: "4px solid #059669" }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginTop: 0, marginBottom: 12, color: "#059669" }}>
-                ✉️ Письменное обращение
-              </h3>
-              <p style={{ marginBottom: 12, lineHeight: 1.6 }}>
+            <div className="appeals-page__card appeals-page__card--letter">
+              <h3 className="appeals-page__card-title">✉️ Письменное обращение</h3>
+              <p className="appeals-page__card-desc">
                 Информация о подаче письменного обращения по почте или лично
               </p>
-              <a href="/appeals/letter" className="btn" style={{ borderColor: "#059669", color: "#059669" }}>
+              <a href="/appeals/letter" className="btn appeals-page__btn appeals-page__btn--letter">
                 Подробнее
               </a>
             </div>
           </div>
         </div>
 
-        {/* Полезные ссылки */}
-        <div className="tile">
-          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>
-            Полезная информация
-          </h2>
-          <div style={{ display: "grid", gap: 12 }}>
-            <a href="/appeals/status" className="link" style={{ fontSize: 15 }}>
-              → Проверить статус обращения
-            </a>
-            <a href="/appeals/review" className="link" style={{ fontSize: 15 }}>
-              → Порядок рассмотрения обращений
-            </a>
-            <a href="/appeals/complaints" className="link" style={{ fontSize: 15 }}>
-              → Порядок обжалования
-            </a>
-            <a href="/appeals/overview" className="link" style={{ fontSize: 15 }}>
-              → Обзор обращений граждан
-            </a>
-            <a href="/appeals/public-interests" className="link" style={{ fontSize: 15 }}>
+        <div className="tile appeals-page__tile appeals-page__links-block">
+          <h2 className="appeals-page__heading">Полезная информация</h2>
+          <nav className="appeals-page__links" aria-label="Полезные ссылки по обращениям">
+            <a href="/appeals/status" className="appeals-page__nav-link">→ Проверить статус обращения</a>
+            <a href="/appeals/review" className="appeals-page__nav-link">→ Порядок рассмотрения обращений</a>
+            <a href="/appeals/complaints" className="appeals-page__nav-link">→ Порядок обжалования</a>
+            <a href="/appeals/overview" className="appeals-page__nav-link">→ Обзор обращений граждан</a>
+            <a href="/appeals/public-interests" className="appeals-page__nav-link">
               → Ответы на обращения, затрагивающие интересы неопределенного круга лиц
             </a>
-            <a href="/appeals/legal" className="link" style={{ fontSize: 15 }}>
-              → Правовое регулирование
-            </a>
-            <a href="/appeals/schedule" className="link" style={{ fontSize: 15 }}>
-              → График приема граждан
-            </a>
-            <a href="/appeals/minyust" className="link" style={{ fontSize: 15 }}>
-              → Минюст России
-            </a>
-          </div>
+            <a href="/appeals/legal" className="appeals-page__nav-link">→ Правовое регулирование</a>
+            <a href="/appeals/schedule" className="appeals-page__nav-link">→ График приема граждан</a>
+            <a href="/appeals/minyust" className="appeals-page__nav-link">→ Минюст России</a>
+          </nav>
         </div>
       </div>
 
