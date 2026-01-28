@@ -175,20 +175,7 @@ export default function NewsSliderDetail() {
                       </svg>
                     </a>
 {/* 
-                    <a
-                      className="share-sbtn share-sbtn--ok"
-                      href="https://ok.ru"
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="Одноклассники"
-                      title="Одноклассники"
-                    >
-                      <img
-                        src="data:image/png;base64,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"
-                        alt="odnoklassniki-circled"
-                        style={{ width: "100%", height: "100%" }}
-                      />
-                    </a> */}
+                  */}
 
                     <a
                       className="share-sbtn share-sbtn--tg"

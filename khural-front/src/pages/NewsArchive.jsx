@@ -1,5 +1,5 @@
 import React from "react";
-import { Input, Select } from "antd";
+import { Input, Select, DatePicker } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
@@ -7,6 +7,7 @@ import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import NewsImageCarousel from "../components/NewsImageCarousel.jsx";
 import { formatNewsDateTime } from "../utils/dateFormat.js";
+import dayjs from "dayjs";
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
@@ -434,11 +435,10 @@ export default function NewsArchive() {
                 </div>
                 <div className="filters__field">
                   <label className="filters__label">Дата</label>
-                    <Input
-                      type="date"
-                      value={date || ""}
-                      onChange={(e) => {
-                        const newDate = e.target.value || "";
+                    <DatePicker
+                      value={date ? dayjs(date) : null}
+                      onChange={(dateObj) => {
+                        const newDate = dateObj ? dateObj.format("YYYY-MM-DD") : "";
                         setDate(newDate);
                         const h = window.location.pathname;
                         const params = new URLSearchParams(window.location.search || "");
@@ -455,9 +455,11 @@ export default function NewsArchive() {
                         window.history.pushState({}, "", next);
                         window.dispatchEvent(new Event("app:navigate"));
                       }}
-                      style={{ width: "100%" }}
+                      style={{ width: "100%", height: "54px" }}
                       placeholder="Выберите дату"
-                      aria-label="Фильтр новостей по дате"
+                      format="DD.MM.YYYY"
+                      allowClear
+                      size="large"
                     />
                 </div>
               </div>
