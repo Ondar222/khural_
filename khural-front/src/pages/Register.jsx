@@ -10,6 +10,9 @@ export default function Register() {
   const [error, setError] = React.useState("");
 
   const onFinish = async (values) => {
+    // Предотвращаем повторную отправку, если уже идет загрузка
+    if (loading) return;
+    
     setError("");
     setLoading(true);
     try {
@@ -61,8 +64,22 @@ export default function Register() {
             label="Телефон" 
             name="phone"
             rules={[
-              { required: false },
-              { pattern: /^[\d\s\+\-\(\)]+$/, message: "Введите корректный номер телефона" }
+              { required: true, message: "Введите номер телефона" },
+              { 
+                pattern: /^[\d\s\+\-\(\)]+$/, 
+                message: "Номер телефона может содержать только цифры, пробелы и символы + - ( )" 
+              },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  // Проверяем, что есть хотя бы 10 цифр (минимум для российского номера)
+                  const digits = value.replace(/\D/g, '');
+                  if (digits.length < 10) {
+                    return Promise.reject(new Error('Номер телефона должен содержать минимум 10 цифр'));
+                  }
+                  return Promise.resolve();
+                }
+              }
             ]}
           >
             <Input placeholder="+7 (999) 123-45-67" />
@@ -72,7 +89,21 @@ export default function Register() {
             name="email"
             rules={[
               { required: true, message: "Введите email" },
-              { type: "email", message: "Введите корректный email" }
+              { 
+                type: "email", 
+                message: "Введите корректный email (например: user@example.com)" 
+              },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  // Дополнительная проверка на полный домен
+                  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (!emailRegex.test(value)) {
+                    return Promise.reject(new Error('Email должен содержать полное доменное имя (например: user@mail.ru)'));
+                  }
+                  return Promise.resolve();
+                }
+              }
             ]}
           >
             <Input type="email" placeholder="you@example.org" />
@@ -82,8 +113,44 @@ export default function Register() {
             name="password"
             rules={[
               { required: true, message: "Введите пароль" },
-              { min: 6, message: "Пароль должен быть не менее 6 символов" }
+              { min: 8, message: "Пароль должен быть не менее 8 символов" },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  
+                  const errors = [];
+                  
+                  // Проверка на наличие заглавной буквы
+                  if (!/[A-ZА-ЯЁ]/.test(value)) {
+                    errors.push('минимум 1 заглавную букву');
+                  }
+                  
+                  // Проверка на наличие строчной буквы
+                  if (!/[a-zа-яё]/.test(value)) {
+                    errors.push('минимум 1 строчную букву');
+                  }
+                  
+                  // Проверка на наличие цифры
+                  if (!/\d/.test(value)) {
+                    errors.push('минимум 1 цифру');
+                  }
+                  
+                  // Проверка на наличие спецсимвола
+                  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)) {
+                    errors.push('минимум 1 спецсимвол (!@#$%^&* и т.д.)');
+                  }
+                  
+                  if (errors.length > 0) {
+                    return Promise.reject(
+                      new Error(`Пароль должен содержать: ${errors.join(', ')}`)
+                    );
+                  }
+                  
+                  return Promise.resolve();
+                }
+              }
             ]}
+            help="Минимум 8 символов: заглавная буква, строчная буква, цифра и спецсимвол"
           >
             <Input.Password placeholder="••••••••" />
           </Form.Item>

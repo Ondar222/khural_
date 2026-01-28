@@ -51,27 +51,28 @@ export default function Login() {
   }, [isAuthenticated, navigate, targetAfterLogin]);
 
   const onFinish = async (values) => {
+    // Предотвращаем повторную отправку, если уже идет загрузка
+    if (loading) return;
+    
     setError("");
     setLoading(true);
     try {
       const res = await login(values);
       if (res?.user) setLoginUser(res.user);
       // Navigation will happen automatically via useEffect when isAuthenticated becomes true
-      // But we can also navigate here as a fallback
-      if (targetAfterLogin) {
-        hasNavigatedRef.current = true;
-        navigate(targetAfterLogin);
-      }
+      // Убираем дублирующий navigate здесь - пусть срабатывает только через useEffect
     } catch (e) {
       let errorMessage = e?.message || "Ошибка входа";
       
       // Более понятные сообщения для пользователя
-      if (e?.status === 405) {
+      if (e?.status === 403) {
+        errorMessage = "Неверный email или пароль. Проверьте правильность введенных данных.";
+      } else if (e?.status === 401) {
+        errorMessage = "Неверный email или пароль. Проверьте правильность введенных данных.";
+      } else if (e?.status === 405) {
         errorMessage = "Ошибка подключения к серверу. Пожалуйста, обратитесь к администратору.";
       } else if (e?.status === 0 || e?.networkError) {
         errorMessage = "Не удалось подключиться к серверу. Проверьте подключение к интернету.";
-      } else if (e?.status === 401) {
-        errorMessage = "Неверный email или пароль.";
       } else if (errorMessage.includes("VITE_API_BASE_URL") || errorMessage.includes("API base URL")) {
         errorMessage = "Ошибка конфигурации сервера. Пожалуйста, обратитесь к администратору.";
       }
@@ -99,7 +100,21 @@ export default function Login() {
             name="email"
             rules={[
               { required: true, message: "Введите email" },
-              { type: "email", message: "Введите корректный email" }
+              { 
+                type: "email", 
+                message: "Введите корректный email (например: user@example.com)" 
+              },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  // Дополнительная проверка на полный домен
+                  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (!emailRegex.test(value)) {
+                    return Promise.reject(new Error('Email должен содержать полное доменное имя (например: user@mail.ru)'));
+                  }
+                  return Promise.resolve();
+                }
+              }
             ]}
           >
             <Input type="email" placeholder="you@example.org" />
