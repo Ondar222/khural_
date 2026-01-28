@@ -28,6 +28,10 @@ import Convocations from "./pages/Convocations.jsx";
 import PagesIndex from "./pages/PagesIndex.jsx";
 import PageBySlug from "./pages/PageBySlug.jsx";
 import Appeals from "./pages/Appeals.jsx";
+import AppealsOnline from "./pages/AppealsOnline.jsx";
+import AppealsLetter from "./pages/AppealsLetter.jsx";
+import AppealsReview from "./pages/AppealsReview.jsx";
+import AppealsComplaints from "./pages/AppealsComplaints.jsx";
 import MapPage from "./pages/Map.jsx";
 import { App as AntApp, ConfigProvider, theme } from "antd";
 import Apparatus from "./pages/Apparatus.jsx";
@@ -195,6 +199,10 @@ export default function App() {
                           "/pages": PagesIndex,
                           "/p/:slug": PageBySlug,
                           "/appeals": Appeals,
+                          "/appeals/online": AppealsOnline,
+                          "/appeals/letter": AppealsLetter,
+                          "/appeals/review": AppealsReview,
+                          "/appeals/complaints": AppealsComplaints,
                           "/government": Government,
                           "/authorities": Authorities,
                           "/wifi": Wifi,

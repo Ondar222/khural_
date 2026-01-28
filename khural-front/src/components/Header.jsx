@@ -357,8 +357,25 @@ export default function Header() {
                 )}
               </div>
             </div>
-            <div>
-              <Link to="/appeals">{t("appeals")}</Link>
+            <div
+              className={`dropdown ${openMenu === "appeals" ? "open" : ""}`}
+              onMouseEnter={() => setOpenMenu("appeals")}
+              onMouseLeave={() => setOpenMenu(null)}
+            >
+              <Link to="/appeals">{t("appeals")} ▾</Link>
+              <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("appeals")}>
+                <a href="/appeals">Обращения граждан</a>
+                <a href="/appeals?type=письменное">Письменное обращение</a>
+                <a href="/appeals?type=электронная">Электронная приемная</a>
+                {/* <a href="/appeals/status">Проверить статус обращения</a> */}
+                <a href="/appeals/review">Порядок рассмотрения обращений</a>
+                <a href="/appeals/complaints">Порядок обжалования</a>
+                <a href="/appeals/overview">Обзор обращений граждан</a>
+                <a href="/appeals/public-interests">Ответы на обращения, затрагивающие интересы неопределенного круга лиц</a>
+                <a href="/appeals/legal">Правовое регулирование</a>
+                <a href="/appeals/schedule">График приема граждан</a>
+                <a href="/appeals/minyust">Минюст России</a>
+              </div>
             </div>
             <div
               className={`dropdown ${openMenu === "pages" ? "open" : ""}`}
@@ -725,12 +742,12 @@ export default function Header() {
                   <RightOutlined aria-hidden="true" />
                 </span>
               </Link>
-              <Link to="/appeals" onClick={() => setMobileOpen(false)} className="tile link">
+              <button className="tile link" onClick={() => setMobileSection("appeals")}>
                 <span className="mobile-menu-link-content">
                   {t("appeals")}
                   <RightOutlined aria-hidden="true" />
                 </span>
-              </Link>
+              </button>
               <button className="tile link" onClick={() => setMobileSection("docs")}>
                 <span className="mobile-menu-link-content">
                   {t("docs")}
@@ -1045,6 +1062,80 @@ export default function Header() {
             <a className="tile link" href="/docs/bills" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("docsBills")}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+          </>
+        )}
+        {mobileSection === "appeals" && (
+          <>
+            <button className="btn" onClick={() => setMobileSection(null)}>
+              {t("back")}
+            </button>
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("appeals")}</div>
+            <a className="tile link" href="/appeals" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Обращения граждан
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals?type=письменное" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Письменное обращение
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals?type=электронная" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Электронная приемная
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals/status" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Проверить статус обращения
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals/review" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Порядок рассмотрения обращений
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals/complaints" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Порядок обжалования
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals/overview" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Обзор обращений граждан
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals/public-interests" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Ответы на обращения, затрагивающие интересы неопределенного круга лиц
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals/legal" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Правовое регулирование
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals/schedule" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                График приема граждан
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/appeals/minyust" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Минюст России
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
