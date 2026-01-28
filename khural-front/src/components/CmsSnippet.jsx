@@ -14,10 +14,16 @@ export default function CmsSnippet({ slug, className = "card", style }) {
 
   React.useEffect(() => {
     if (!slug) return;
+    const slugStr = String(slug);
+    // Не запрашивать "home", если на бэкенде нет такой страницы — избегаем 404 в Network
+    if (slugStr === "home") {
+      setHtml("");
+      return;
+    }
     let alive = true;
     (async () => {
       try {
-        const page = await AboutApi.getPageBySlug(String(slug), { locale }).catch(() => null);
+        const page = await AboutApi.getPageBySlug(slugStr, { locale }).catch(() => null);
         if (!alive) return;
         setHtml(extractPageHtml(page, locale));
       } catch {

@@ -616,15 +616,21 @@ export const AboutApi = {
         method: "GET",
         auth: false,
       });
-    } catch {
-      // Fallback на старый endpoint
-    const qs = new URLSearchParams();
-    if (locale) qs.set("locale", locale);
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return apiFetch(`/about/pages/${encodeURIComponent(slug)}${suffix}`, {
-      method: "GET",
-      auth: false,
-      });
+    } catch (e) {
+      // При 404 не делать второй запрос — страницы с таким slug нет
+      if (e?.status === 404) return null;
+      // Fallback на старый endpoint при других ошибках
+      try {
+        const qs = new URLSearchParams();
+        if (locale) qs.set("locale", locale);
+        const suffix = qs.toString() ? `?${qs.toString()}` : "";
+        return await apiFetch(`/about/pages/${encodeURIComponent(slug)}${suffix}`, {
+          method: "GET",
+          auth: false,
+        });
+      } catch {
+        return null;
+      }
     }
   },
   async createPage(dto = {}) {
