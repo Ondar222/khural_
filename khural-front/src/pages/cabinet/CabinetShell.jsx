@@ -45,9 +45,12 @@ export default function CabinetShell({ active = "home", title = "Личный к
             <a href="/cabinet" style={linkStyle}>
               <Button type={active === "home" ? "primary" : "default"}>Главная</Button>
             </a>
-            <a href="/cabinet/appeals" style={linkStyle}>
-              <Button type={active === "appeals" ? "primary" : "default"}>Обращения</Button>
-            </a>
+            {/* Кнопка «Обращения» временно скрыта */}
+            {false && (
+              <a href="/cabinet/appeals" style={linkStyle}>
+                <Button type={active === "appeals" ? "primary" : "default"}>Обращения</Button>
+              </a>
+            )}
             <a href="/cabinet/account" style={linkStyle}>
               <Button type={active === "account" ? "primary" : "default"}>Личный аккаунт</Button>
             </a>

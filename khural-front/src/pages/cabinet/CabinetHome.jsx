@@ -39,19 +39,22 @@ export default function CabinetHome() {
   return (
     <CabinetShell active="home">
       <Row gutter={[16, 16]}>
-        <Col xs={24} md={12}>
-          <a href="/cabinet/appeals" style={{ textDecoration: "none" }}>
-            <Card hoverable>
-              <Statistic
-                title="Обращения"
-                value={appealsCount === null ? "—" : appealsCount}
-              />
-              <div style={{ marginTop: 8, color: "#6b7280" }}>
-                Подать обращение и посмотреть историю.
-              </div>
-            </Card>
-          </a>
-        </Col>
+        {/* Карточка «Обращения» временно скрыта */}
+        {false && (
+          <Col xs={24} md={12}>
+            <a href="/cabinet/appeals" style={{ textDecoration: "none" }}>
+              <Card hoverable>
+                <Statistic
+                  title="Обращения"
+                  value={appealsCount === null ? "—" : appealsCount}
+                />
+                <div style={{ marginTop: 8, color: "#6b7280" }}>
+                  Подать обращение и посмотреть историю.
+                </div>
+              </Card>
+            </a>
+          </Col>
+        )}
         <Col xs={24} md={12}>
           <a href="/cabinet/account" style={{ textDecoration: "none" }}>
             <Card hoverable>

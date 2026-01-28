@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Descriptions, Form, Input, Button, Slider, Select, Space, App, Switch } from "antd";
+import { Card, Descriptions, Form, Input, Button, Slider, Select, App, Switch } from "antd";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useA11y } from "../../context/A11yContext.jsx";
 import CabinetShell from "./CabinetShell.jsx";
@@ -173,9 +173,9 @@ export default function CabinetAccount() {
             <Switch disabled={saving} />
           </Form.Item>
 
-          <Form.Item>
-            <Space>
-              <Button type="primary" onClick={handleSave} loading={saving}>
+          <Form.Item className="cabinet-account__actions">
+            <div className="cabinet-account__actions-btns">
+              <Button type="primary" onClick={handleSave} loading={saving} className="cabinet-account__btn">
                 Сохранить настройки
               </Button>
               <Button onClick={async () => {
@@ -198,10 +198,10 @@ export default function CabinetAccount() {
                 } catch (error) {
                   message.error("Не удалось сбросить настройки");
                 }
-              }}>
+              }} className="cabinet-account__btn">
                 Сбросить
               </Button>
-            </Space>
+            </div>
           </Form.Item>
         </Form>
       </Card>

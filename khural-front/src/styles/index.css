@@ -2113,6 +2113,23 @@ a {
   }
 }
 
+/* Личный кабинет — кнопки «Сохранить настройки» и «Сбросить» одной ширины на узких экранах */
+.cabinet-account__actions-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (max-width: 720px) {
+  .cabinet-account__actions-btns {
+    flex-direction: column;
+    width: 100%;
+  }
+  .cabinet-account__actions-btns .cabinet-account__btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 /* Small avatar inside card titles */
 .card-title {
   display: flex;

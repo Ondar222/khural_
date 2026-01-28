@@ -92,6 +92,17 @@ import CabinetHome from "./pages/cabinet/CabinetHome.jsx";
 import CabinetAppeals from "./pages/cabinet/CabinetAppeals.jsx";
 import CabinetAccount from "./pages/cabinet/CabinetAccount.jsx";
 
+/** Редирект на панель управления (страница «Обращения» временно скрыта). */
+function AdminRedirectToDashboard() {
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", "/admin");
+      window.dispatchEvent(new Event("app:navigate"));
+    }
+  }, []);
+  return null;
+}
+
 export default function App() {
   const { route } = useHashRoute();
   const base = (route || "/").split("?")[0];
@@ -249,7 +260,7 @@ export default function App() {
                           "/admin/slider": AdminProtected(AdminSliderPage),
                           "/admin/slider/create": AdminProtected(AdminSliderCreatePage),
                           "/admin/slider/edit/:id": AdminProtected(AdminSliderEditPage),
-                          "/admin/appeals": AdminProtected(AdminAppealsPage),
+                          "/admin/appeals": AdminProtected(AdminRedirectToDashboard),
                           "/admin/settings": AdminProtected(AdminSettingsPage),
                           "/admin/env": AdminProtected(AdminEnvDocsPage),
                           "/admin/broadcast": AdminProtected(AdminBroadcastPage),
