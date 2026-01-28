@@ -17,6 +17,16 @@ export default defineConfig({
       },
     },
   ],
+  build: {
+    // Удаляем console.* в production для оптимизации
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+  },
   server: {
     port: 5173,
     open: false,

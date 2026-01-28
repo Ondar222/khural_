@@ -35,8 +35,8 @@ function resolveApiBaseUrl() {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
-// Логируем базовый URL для отладки
-if (typeof window !== "undefined") {
+// Логируем базовый URL для отладки (только в DEV)
+if (typeof window !== "undefined" && import.meta.env.DEV) {
   console.log("API_BASE_URL resolved to:", API_BASE_URL);
   console.log("VITE_API_BASE_URL from env:", import.meta.env.VITE_API_BASE_URL);
 }
@@ -165,18 +165,13 @@ export async function apiFetch(
   if (typeof window !== "undefined" && API_BASE_URL === window.location.origin) {
     const hostname = window.location.hostname;
     // Если это не localhost, вероятно используется fallback, что может быть проблемой
-    if (hostname !== "localhost" && hostname !== "127.0.0.1" && !hostname.includes("localhost")) {
+    if (import.meta.env.DEV && hostname !== "localhost" && hostname !== "127.0.0.1" && !hostname.includes("localhost")) {
       console.warn("⚠️ API base URL использует текущий домен как fallback.");
       console.warn("Если API находится на другом домене, установите переменную окружения VITE_API_BASE_URL на Vercel.");
     }
   }
   
   const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
-  
-  // Логируем полный URL для отладки (только для запросов к convocations и committees)
-  if (path.includes("convocations") || path.includes("committees")) {
-    console.log(`[API] ${method} ${url} (API_BASE_URL: ${API_BASE_URL}, path: ${path})`);
-  }
   
   const finalHeaders = {
     Accept: "application/json",
@@ -186,25 +181,6 @@ export async function apiFetch(
   if (auth) {
     const token = getAuthToken();
     if (token) finalHeaders.Authorization = `Bearer ${token}`;
-  }
-  
-  // Логирование для отладки (только для POST/PATCH/DELETE)
-  if (method !== "GET" && body) {
-    console.log(`[API] ${method} ${url}`, { 
-      body, 
-      headers: { ...finalHeaders, Authorization: finalHeaders.Authorization ? "Bearer ***" : undefined } 
-    });
-  }
-  
-  // Дополнительное логирование для запросов к новостям
-  if (path.includes("/news") && (method === "PATCH" || method === "POST")) {
-    console.log(`[API News] ${method} ${url}`, {
-      path,
-      method,
-      hasBody: !!body,
-      bodySize: body ? JSON.stringify(body).length : 0,
-      auth: !!finalHeaders.Authorization,
-    });
   }
   
   let res;
@@ -240,11 +216,6 @@ export async function apiFetch(
   const isJson = (res.headers.get("content-type") || "").includes("application/json");
   const data = isJson ? await res.json().catch(() => null) : null;
   
-  // Логирование ответа для отладки (только для POST/PATCH/DELETE)
-  if (method !== "GET") {
-    console.log(`[API] ${method} ${url} → ${res.status}`, { data, ok: res.ok });
-  }
-  
   if (!res.ok) {
     if (res.status === 401 && auth && retry) {
       const refreshed = await refreshAccessToken().catch(() => null);
@@ -271,10 +242,12 @@ export async function apiFetch(
     } else if (res.status === 401) {
       errorMessage = data?.message || data?.error || "Токен авторизации истек. Пожалуйста, войдите заново.";
     } else if (res.status === 400) {
-      // Детальная обработка ошибок валидации
-      console.error(`[API] 400 Bad Request для ${method} ${url}`);
-      console.error(`[API] Request body:`, body ? JSON.stringify(body, null, 2) : "нет тела");
-      console.error(`[API] Response data:`, data);
+      // Детальная обработка ошибок валидации (только в DEV)
+      if (import.meta.env.DEV) {
+        console.error(`[API] 400 Bad Request для ${method} ${url}`);
+        console.error(`[API] Request body:`, body ? JSON.stringify(body, null, 2) : "нет тела");
+        console.error(`[API] Response data:`, data);
+      }
       
       if (data?.message) {
         errorMessage = `Ошибка валидации: ${data.message}`;
@@ -329,8 +302,8 @@ export async function tryApiFetch(path, options) {
   try {
     return await apiFetch(path, options);
   } catch (error) {
-    // Логируем только для отладки, не показываем пользователю
-    if (error?.status === 404) {
+    // Логируем только для отладки в DEV, не показываем пользователю
+    if (import.meta.env.DEV && error?.status === 404) {
       console.warn(`API endpoint не найден (404): ${path}. Используется fallback.`);
     }
     return null;
@@ -829,15 +802,15 @@ export const PersonsApi = {
   },
   async listConvocationsAll() {
     try {
-      console.log("PersonsApi.listConvocationsAll: calling /persons/convocations/all");
       const result = await apiFetch("/persons/convocations/all", {
         method: "GET",
         auth: false,
       });
-      console.log("PersonsApi.listConvocationsAll: received:", result);
       return result;
     } catch (e) {
-      console.error("PersonsApi.listConvocationsAll: error:", e);
+      if (import.meta.env.DEV) {
+        console.error("PersonsApi.listConvocationsAll: error:", e);
+      }
       throw e;
     }
   },
@@ -1191,28 +1164,30 @@ export const ConvocationsApi = {
   async list({ activeOnly = false } = {}) {
     try {
       // Сначала пробуем /all (устойчивее для бэкенда)
-      console.log("ConvocationsApi.list: trying GET /persons/convocations/all");
       let all;
       try {
         all = await PersonsApi.listConvocationsAll();
-        console.log("ConvocationsApi.list: received from /all:", all);
-        console.log("ConvocationsApi.list: all is array?", Array.isArray(all));
       } catch (e1) {
-        console.warn("ConvocationsApi.list: /all failed, trying /persons/convocations:", e1);
+        if (import.meta.env.DEV) {
+          console.warn("ConvocationsApi.list: /all failed, trying /persons/convocations:", e1);
+        }
         try {
           const qs = new URLSearchParams();
           if (activeOnly) qs.set("activeOnly", "true");
           const suffix = qs.toString() ? `?${qs.toString()}` : "";
           all = await apiFetch(`/persons/convocations${suffix}`, { method: "GET", auth: false });
-          console.log("ConvocationsApi.list: received from direct GET:", all);
         } catch (e2) {
-          console.error("ConvocationsApi.list: both endpoints failed:", e2);
+          if (import.meta.env.DEV) {
+            console.error("ConvocationsApi.list: both endpoints failed:", e2);
+          }
           return [];
         }
       }
       
       if (!Array.isArray(all)) {
-        console.warn("ConvocationsApi.list: API returned non-array:", all);
+        if (import.meta.env.DEV) {
+          console.warn("ConvocationsApi.list: API returned non-array:", all);
+        }
         // Попробуем нормализовать
         // Попробуем извлечь данные из объекта
         if (all && typeof all === 'object') {
@@ -1243,7 +1218,9 @@ export const ConvocationsApi = {
       }
       return all;
     } catch (e) {
-      console.error("ConvocationsApi.list: unexpected error:", e);
+      if (import.meta.env.DEV) {
+        console.error("ConvocationsApi.list: unexpected error:", e);
+      }
       return [];
     }
   },
@@ -1272,15 +1249,12 @@ export const CommitteesApi = {
     if (convocationId) qs.set("convocationId", String(convocationId));
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     const result = await apiFetch(`/committees${suffix}`, { method: "GET", auth: false });
-    console.log("[CommitteesApi.list] Результат:", result, "Тип:", typeof result, "Массив:", Array.isArray(result));
     // Если результат обернут в объект, извлекаем массив
     if (result && typeof result === "object" && !Array.isArray(result)) {
       if (Array.isArray(result.data)) {
-        console.log("[CommitteesApi.list] Извлечен массив из result.data");
         return result.data;
       }
       if (Array.isArray(result.committees)) {
-        console.log("[CommitteesApi.list] Извлечен массив из result.committees");
         return result.committees;
       }
     }

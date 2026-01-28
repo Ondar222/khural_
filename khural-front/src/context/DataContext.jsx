@@ -273,7 +273,9 @@ async function fetchJson(path) {
     if (!res.ok) throw new Error("Failed " + path);
     return await res.json();
   } catch (e) {
-    console.warn("Data load error", path, e);
+    if (import.meta.env.DEV) {
+      console.warn("Data load error", path, e);
+    }
     return [];
   }
 }
@@ -855,7 +857,9 @@ export async function enrichDeputyFromPersonInfo(dep) {
     const info = personInfoMap.byName.get(normalizePersonName(dep.name));
     return enrichDeputyWithPersonInfo(dep, info);
   } catch (e) {
-    console.warn("Failed to enrich deputy from person info:", e);
+    if (import.meta.env.DEV) {
+      console.warn("Failed to enrich deputy from person info:", e);
+    }
     return dep;
   }
 }
@@ -1067,17 +1071,10 @@ export default function DataProvider({ children }) {
       markError("news", null);
       // Добавляем timestamp для обхода кэша при перезагрузке
       const cacheBuster = reloadSeq > 0 ? `?t=${Date.now()}` : "";
-      console.log(`[DataContext] Loading news data (reloadSeq: ${reloadSeq})...`);
       const [apiNewsRaw, localNewsRaw] = await Promise.all([
         tryApiFetch(`/news${cacheBuster}`, { auth: false }),
         fetchJson("/data/news.json"),
       ]);
-      
-      console.log(`[DataContext] News API response:`, {
-        isArray: Array.isArray(apiNewsRaw),
-        length: Array.isArray(apiNewsRaw) ? apiNewsRaw.length : 0,
-        firstItem: Array.isArray(apiNewsRaw) && apiNewsRaw.length > 0 ? apiNewsRaw[0] : null,
-      });
 
       const apiNewsArr = Array.isArray(apiNewsRaw)
         ? apiNewsRaw
@@ -1191,7 +1188,6 @@ export default function DataProvider({ children }) {
         if (Array.isArray(apiEvents)) {
           // Если массив пустой, все равно используем его (не fallback на JSON)
           if (apiEvents.length === 0) {
-            console.log("Calendar API вернул пустой массив событий");
             setEvents(mergeEventsWithOverrides([], readEventsOverrides()));
             markLoading("events", false);
             return;
@@ -1227,8 +1223,10 @@ export default function DataProvider({ children }) {
           return;
         }
       } catch (e) {
-        // API недоступен, используем fallback
-        console.warn("Calendar API недоступен, используем локальные данные", e);
+        // API недоступен, используем fallback (логируем только в DEV)
+        if (import.meta.env.DEV) {
+          console.warn("Calendar API недоступен, используем локальные данные", e);
+        }
       }
       // Fallback to local JSON
       fetchJson("/data/events.json")
@@ -1498,8 +1496,10 @@ export default function DataProvider({ children }) {
           markLoading("deputies", false);
         }
       } catch (e) {
-        // API недоступен - используем локальные данные
-        console.warn("Persons API недоступен, используем локальные данные", e);
+        // API недоступен - используем локальные данные (логируем только в DEV)
+        if (import.meta.env.DEV) {
+          console.warn("Persons API недоступен, используем локальные данные", e);
+        }
         const localDeps = await fetchJson("/data/deputies.json").catch(() => []);
         const base = Array.isArray(localDeps) ? localDeps : [];
         // Нормализуем фото и контакты из локальных данных перед обогащением
@@ -1555,7 +1555,7 @@ export default function DataProvider({ children }) {
                 ? normalizeFilesUrl(raw)
                 : raw
               : "";
-            if (!url) {
+            if (import.meta.env.DEV && !url) {
               console.warn("[Documents] Missing file URL (API)", {
                 id: d?.id,
                 title: d?.title,
@@ -1587,10 +1587,12 @@ export default function DataProvider({ children }) {
           if (!row || !row.IE_NAME) return null;
           const fileUrl = String(row.IP_PROP28 || "").trim();
           if (!fileUrl) {
-            console.warn("[Documents] Missing file URL (zakony)", {
-              id: row?.IE_ID || row?.IE_XML_ID,
-              title: row?.IE_NAME,
-            });
+            if (import.meta.env.DEV) {
+              console.warn("[Documents] Missing file URL (zakony)", {
+                id: row?.IE_ID || row?.IE_XML_ID,
+                title: row?.IE_NAME,
+              });
+            }
             return null;
           }
           
@@ -1599,11 +1601,13 @@ export default function DataProvider({ children }) {
             fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
           );
           if (!normalizedUrl) {
-            console.warn("[Documents] Failed to normalize URL (zakony)", {
-              id: row?.IE_ID || row?.IE_XML_ID,
-              title: row?.IE_NAME,
-              rawUrl: fileUrl,
-            });
+            if (import.meta.env.DEV) {
+              console.warn("[Documents] Failed to normalize URL (zakony)", {
+                id: row?.IE_ID || row?.IE_XML_ID,
+                title: row?.IE_NAME,
+                rawUrl: fileUrl,
+              });
+            }
             return null;
           }
           
@@ -1624,10 +1628,12 @@ export default function DataProvider({ children }) {
           if (!row || !row.IE_NAME) return null;
           const fileUrl = String(row.IP_PROP59 || "").trim();
           if (!fileUrl) {
-            console.warn("[Documents] Missing file URL (postamovleniya)", {
-              id: row?.IE_ID || row?.IE_XML_ID,
-              title: row?.IE_NAME,
-            });
+            if (import.meta.env.DEV) {
+              console.warn("[Documents] Missing file URL (postamovleniya)", {
+                id: row?.IE_ID || row?.IE_XML_ID,
+                title: row?.IE_NAME,
+              });
+            }
             return null;
           }
           
@@ -1636,11 +1642,13 @@ export default function DataProvider({ children }) {
             fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
           );
           if (!normalizedUrl) {
-            console.warn("[Documents] Failed to normalize URL (postamovleniya)", {
-              id: row?.IE_ID || row?.IE_XML_ID,
-              title: row?.IE_NAME,
-              rawUrl: fileUrl,
-            });
+            if (import.meta.env.DEV) {
+              console.warn("[Documents] Failed to normalize URL (postamovleniya)", {
+                id: row?.IE_ID || row?.IE_XML_ID,
+                title: row?.IE_NAME,
+                rawUrl: fileUrl,
+              });
+            }
             return null;
           }
           
@@ -1734,16 +1742,18 @@ export default function DataProvider({ children }) {
         const staticCommittees = await fetchJson("/data/committees.json").catch(() => null);
         const merged = mergeCommitteesPreferApi(apiCommittees, staticCommittees);
         if (Array.isArray(merged) && merged.length > 0) {
-          const apiCount = Array.isArray(apiCommittees) ? apiCommittees.length : 0;
-          const staticCount = Array.isArray(staticCommittees) ? staticCommittees.length : 0;
-          console.log(
-            "[DataContext] Загружено комитетов (API + структура):",
-            merged.length,
-            "API:",
-            apiCount,
-            "Статические:",
-            staticCount
-          );
+          if (import.meta.env.DEV) {
+            const apiCount = Array.isArray(apiCommittees) ? apiCommittees.length : 0;
+            const staticCount = Array.isArray(staticCommittees) ? staticCommittees.length : 0;
+            console.log(
+              "[DataContext] Загружено комитетов (API + структура):",
+              merged.length,
+              "API:",
+              apiCount,
+              "Статические:",
+              staticCount
+            );
+          }
           setCommittees(merged);
         } else if (Array.isArray(apiCommittees)) {
           setCommittees(apiCommittees);
@@ -1751,7 +1761,9 @@ export default function DataProvider({ children }) {
           setCommittees(staticCommittees);
         }
       } catch (e) {
-        console.error("[DataContext] Ошибка загрузки комитетов:", e);
+        if (import.meta.env.DEV) {
+          console.error("[DataContext] Ошибка загрузки комитетов:", e);
+        }
         markError("committees", e);
         setCommittees([]);
       } finally {
