@@ -470,17 +470,17 @@ export default function NewsArchive() {
                 empty={filtered.length === 0}
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
-                <div className="grid cols-3">
+                <div className="grid cols-3 news-archive__list">
                   {filtered.map((n) => (
                     <a
                       key={n.id}
-                      className="tile"
+                      className="tile news-archive__card"
                       href={`/news?id=${n.id}`}
                       style={{ overflow: "hidden", padding: 0 }}
                     >
                       {/* Images must come from backend/admin only */}
                       {n?.image ? (
-                        <div style={{ height: 180, overflow: "hidden" }}>
+                        <div className="news-archive__card-img-wrap">
                           <img
                             src={normalizeFilesUrl(n.image)}
                             alt=""
@@ -495,26 +495,10 @@ export default function NewsArchive() {
                         </div>
                       ) : null}
 
-                      <div style={{ padding: 16 }}>
-                        <div
-                          style={{
-                            display: "inline-block",
-                            background: "#eef2ff",
-                            color: "#3730a3",
-                            borderRadius: 8,
-                            padding: "4px 10px",
-                            fontSize: 12,
-                            fontWeight: 700,
-                          }}
-                        >
-                          {n.category}
-                        </div>
-                        <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>
-                          {n.title}
-                        </div>
-                        <div style={{ color: "#6b7280", marginTop: 6 }}>
-                          {formatNewsDateTime(n.date)}
-                        </div>
+                      <div className="news-archive__card-body">
+                        <span className="news-archive__card-cat">{n.category}</span>
+                        <div className="news-archive__card-title">{n.title}</div>
+                        <div className="news-archive__card-date">{formatNewsDateTime(n.date)}</div>
                       </div>
                     </a>
                   ))}
