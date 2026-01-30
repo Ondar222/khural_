@@ -766,8 +766,8 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
           </Button>
           <Button onClick={importDeputiesFromJson} disabled={!canWrite} loading={Boolean(busyLocal)}>
             Синхронизировать депутатов
-          </Button> */}
-          {/* <Button onClick={syncFromCodeToApi} disabled={!canWrite} loading={Boolean(busyLocal)}>
+          </Button>
+          <Button onClick={syncFromCodeToApi} disabled={!canWrite} loading={Boolean(busyLocal)}>
             Синхронизировать из кода в API
           </Button> */}
         </Space>
