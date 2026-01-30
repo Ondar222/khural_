@@ -1,6 +1,4 @@
 import React from "react";
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
-import { Button } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "./DataState.jsx";
@@ -14,14 +12,6 @@ export default function NewsBlock() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 6; // Показываем 6 новостей на странице
 
-  const listRef = React.useRef(null);
-  const scrollListBy = React.useCallback((dir) => {
-    const el = listRef.current;
-    if (!el) return;
-    const step = Math.max(260, Math.round(el.clientWidth * 0.85));
-    el.scrollBy({ left: dir * step, behavior: "smooth" });
-  }, []);
-  
   const normalizeCategoryKey = React.useCallback((v) => {
     return String(v ?? "")
       .replace(/\u00A0/g, " ") // NBSP
@@ -74,9 +64,9 @@ export default function NewsBlock() {
   }, [currentPage]);
 
   return (
-    <section className="section">
+    <section className="section news-block">
       <div className="container">
-        <div className="section-head">
+        <div className="section-head news-block__head">
           <h2>
             <a className="link" href="/news" style={{ textDecoration: "none" }}>
               {t("news")}
@@ -93,7 +83,7 @@ export default function NewsBlock() {
           empty={!loading?.news && (!news || news.length === 0)}
           emptyDescription="Новостей пока нет"
         >
-          {/* Desktop: pills. Mobile: single select */}
+          {/* Десктоп: табы-пилюли. Адаптив: те же табы, компактно */}
           <div className="news-cats news-cats--select">
             <label className="news-filter">
               <span className="news-filter__label">Категория</span>
@@ -112,48 +102,29 @@ export default function NewsBlock() {
             </label>
           </div>
 
-          <div className="news-cats news-cats--pills">
+          <div className="news-cats news-cats--pills news-block__pills">
             {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
-                className="btn"
+                className="btn news-block__pill"
                 style={{ background: c === category ? "#eef2ff" : "#fff" }}
               >
                 {c}
               </button>
             ))}
           </div>
-          <div className="home-news__scroller">
-            <Button
-              type="default"
-              shape="circle"
-              className="home-news__arrow home-news__arrow--left"
-              onClick={() => scrollListBy(-1)}
-              aria-label="Прокрутить новости влево"
-              title="Влево"
-              icon={<LeftOutlined />}
-            />
-            <Button
-              type="default"
-              shape="circle"
-              className="home-news__arrow home-news__arrow--right"
-              onClick={() => scrollListBy(1)}
-              aria-label="Прокрутить новости вправо"
-              title="Вправо"
-              icon={<RightOutlined />}
-            />
-
-            <div ref={listRef} className="grid cols-3 home-news__list">
+          <div className="home-news__scroller news-block__scroller">
+            <div className="grid cols-3 home-news__list news-block__list">
               {filtered.map((n, i) => (
                 <a
                   key={`${String(n?.id ?? "news")}-${String(n?.date ?? "")}-${i}`}
-                  className="tile"
+                  className="tile news-block__card"
                   href={`/news?id=${n.id}`}
                   style={{ overflow: "hidden", padding: 0 }}
                 >
                   {n?.image ? (
-                    <div style={{ height: 180, overflow: "hidden" }}>
+                    <div className="news-block__card-img-wrap">
                       <img
                         src={normalizeFilesUrl(n.image)}
                         alt=""
@@ -163,24 +134,10 @@ export default function NewsBlock() {
                       />
                     </div>
                   ) : null}
-                  <div style={{ padding: 16 }}>
-                    <div
-                      style={{
-                        display: "inline-block",
-                        background: "#eef2ff",
-                        color: "#3730a3",
-                        borderRadius: 8,
-                        padding: "4px 10px",
-                        fontSize: 12,
-                        fontWeight: 700,
-                      }}
-                    >
-                      {n.category}
-                    </div>
-                    <div style={{ marginTop: 10, fontSize: 18, fontWeight: 700 }}>{n.title}</div>
-                    <div style={{ color: "#6b7280", marginTop: 6 }}>
-                      {formatNewsDateTime(n.date)}
-                    </div>
+                  <div className="news-block__card-body">
+                    <span className="news-block__card-cat">{n.category}</span>
+                    <div className="news-block__card-title">{n.title}</div>
+                    <div className="news-block__card-date">{formatNewsDateTime(n.date)}</div>
                   </div>
                 </a>
               ))}
@@ -189,7 +146,7 @@ export default function NewsBlock() {
           
           {/* Пагинация */}
           {totalPages > 1 && (
-            <div style={{ 
+            <div className="news-block__pagination" style={{ 
               marginTop: 24, 
               display: "flex", 
               justifyContent: "flex-end", 
@@ -257,6 +214,8 @@ export default function NewsBlock() {
                   return (
                     <button
                       key={pageNum}
+                      type="button"
+                      className="news-block__page-num"
                       onClick={() => setCurrentPage(pageNum)}
                       style={{
                         display: "flex",
