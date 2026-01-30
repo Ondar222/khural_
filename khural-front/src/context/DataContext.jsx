@@ -1,5 +1,5 @@
 import React from "react";
-import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi, EventsApi, CommitteesApi } from "../api/client.js";
+import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi, EventsApi, CommitteesApi, ConvocationsApi } from "../api/client.js";
 import {
   readNewsOverrides,
   NEWS_OVERRIDES_EVENT_NAME,
@@ -1223,6 +1223,25 @@ export default function DataProvider({ children }) {
       const mapDep = buildPersonInfoMap(personInfoDeputaty);
       const personInfoMap = mergePersonInfoMaps(mapDep, mapVseh);
 
+      // Список созывов для подстановки названия по convocationId (фильтр по созывам должен находить всех депутатов)
+      const convocationsList = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
+      const resolveConvocationFromId = (p, list) => {
+        const cid =
+          p?.convocationId ??
+          p?.convocation_id ??
+          p?.convocation?.id ??
+          (Array.isArray(p?.convocationIds) && p.convocationIds[0]) ??
+          (Array.isArray(p?.convocation_ids) && p.convocation_ids?.[0]);
+        if (cid == null || cid === "") return "";
+        const idStr = String(cid);
+        const found = (list || []).find(
+          (c) => String(c?.id) === idStr || String(c?.number) === idStr
+        );
+        if (!found) return "";
+        const name = found?.name ?? found?.number ?? "";
+        return normalizeConvocationText(name) || String(name).trim();
+      };
+
       try {
         const apiPersons = await tryApiFetch("/persons", { auth: false });
         if (Array.isArray(apiPersons) && apiPersons.length) {
@@ -1288,8 +1307,11 @@ export default function DataProvider({ children }) {
                 (Array.isArray(p.convocations) && p.convocations[0]?.name) ||
                 "";
               const val = apiVal || localResolved?.convocation || "";
-              const s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
-              return String(s || "").trim();
+              let s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
+              s = String(s || "").trim();
+              if (!s) s = resolveConvocationFromId(p, convocationsList);
+              // Нормализуем к одному виду (I, II, IV...) чтобы фильтр по созывам находил всех депутатов
+              return normalizeConvocationText(s) || s;
             })(),
             convocationNumber: (() => {
               const val =
@@ -1297,7 +1319,9 @@ export default function DataProvider({ children }) {
                 localResolved?.convocationNumber ||
                 localResolved?.convocation ||
                 "";
-              return typeof val === "string" ? val : String(val || "");
+              let str = typeof val === "string" ? val : String(val || "");
+              if (!str) str = resolveConvocationFromId(p, convocationsList);
+              return str;
             })(),
             reception: (() => {
               const raw =

@@ -26,14 +26,16 @@ export default function Deputies() {
   const [faction, setFaction] = React.useState("Все");
   const [district, setDistrict] = React.useState("Все");
 
-  // If URL/structure links set a convocation that doesn't exist in data yet,
-  // don't show an empty page — fallback to "Все".
+  // Если выбранный созыв не встречается среди депутатов (данные ещё не загружены или нет таких) — сброс в «Все»
   React.useEffect(() => {
     if (convocation === "Все") return;
     if (!Array.isArray(deputies) || deputies.length === 0) return;
     const hasAny = deputies.some((d) => d?.convocation === convocation);
-    if (!hasAny) setConvocation("Все");
-  }, [convocation, deputies]);
+    if (!hasAny) {
+      setConvocation("Все");
+      updateFiltersUrl({ convocation: "Все" });
+    }
+  }, [convocation, deputies, updateFiltersUrl]);
 
   const districts = React.useMemo(() => {
     const items = Array.isArray(structureDistricts) ? structureDistricts : [];
@@ -51,31 +53,19 @@ export default function Deputies() {
     return ["Все", ...stringItems];
   }, [structureDistricts]);
   
-  const convocations = React.useMemo(() => {
-    const items = Array.isArray(structureConvocations) ? structureConvocations : [];
-    const stringItems = items
-      .map((item) => {
-        if (typeof item === "string") return item;
-        if (item && typeof item === "object") {
-          return item.name || item.title || item.label || String(item);
-        }
-        return String(item || "");
-      })
-      .filter((item) => item && item.trim() !== "");
-    return ["Все", ...stringItems];
-  }, [structureConvocations]);
-
+  // Опции созывов — из реальных данных депутатов, чтобы value совпадал с d.convocation и фильтр работал
   const convocationOptions = React.useMemo(() => {
-    const av = Array.from(new Set(convocations))
-      .map((c) => String(c || "").trim())
-      .filter(Boolean);
+    const fromDeputies = Array.from(
+      new Set((deputies || []).map((d) => d.convocation).filter((c) => c != null && String(c).trim() !== ""))
+    ).map((c) => String(c).trim());
+    const av = ["Все", ...fromDeputies];
     const ordered = CONVOCATION_ORDER.filter((x) => av.includes(x));
-    const rest = av.filter((c) => !ordered.includes(c));
+    const rest = fromDeputies.filter((c) => !ordered.includes(c));
     return [...ordered, ...rest].map((c) => ({
       value: c,
       label: c === "Все" ? "Все созывы" : `${c} созыв`,
     }));
-  }, [convocations]);
+  }, [deputies]);
   
   const factions = React.useMemo(() => {
     const items = Array.isArray(structureFactions) ? structureFactions : [];
@@ -122,7 +112,33 @@ export default function Deputies() {
     });
   }, [deputies, convocation, faction, district, committeeMatcher]);
 
-  // Accept initial filters from URL, keep in sync on hash changes
+  // Обновить URL при смене фильтров, чтобы при popstate/navigate не перезаписывать выбор
+  const updateFiltersUrl = React.useCallback((updates) => {
+    const sp = new URLSearchParams(window.location.search || "");
+    if (updates.convocation !== undefined) {
+      if (updates.convocation === "Все" || !updates.convocation) sp.delete("convocation");
+      else sp.set("convocation", updates.convocation);
+    }
+    if (updates.faction !== undefined) {
+      if (updates.faction === "Все" || !updates.faction) sp.delete("faction");
+      else sp.set("faction", updates.faction);
+    }
+    if (updates.district !== undefined) {
+      if (updates.district === "Все" || !updates.district) sp.delete("district");
+      else sp.set("district", updates.district);
+    }
+    if (updates.committeeId !== undefined) {
+      if (updates.committeeId === "Все" || !updates.committeeId) sp.delete("committee");
+      else sp.set("committee", updates.committeeId);
+    }
+    const qs = sp.toString();
+    const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+    if (window.location.href !== newUrl) {
+      window.history.replaceState(null, "", newUrl);
+    }
+  }, []);
+
+  // Принять начальные фильтры из URL, синхронизировать при popstate/navigate
   React.useEffect(() => {
     const applyFromHash = () => {
       const sp = new URLSearchParams(window.location.search || "");
@@ -130,10 +146,10 @@ export default function Deputies() {
       const d = sp.get("district");
       const cv = sp.get("convocation");
       const cm = sp.get("committee");
-      if (f) setFaction(decodeURIComponent(f));
-      if (d) setDistrict(decodeURIComponent(d));
-      if (cv) setConvocation(decodeURIComponent(cv));
-      if (cm) setCommitteeId(decodeURIComponent(cm));
+      if (f != null) setFaction(decodeURIComponent(f));
+      if (d != null) setDistrict(decodeURIComponent(d));
+      if (cv != null) setConvocation(decodeURIComponent(cv));
+      if (cm != null) setCommitteeId(decodeURIComponent(cm));
     };
     applyFromHash();
     window.addEventListener("popstate", applyFromHash);
@@ -161,13 +177,19 @@ export default function Deputies() {
               <div className="filters filters--deputies">
                 <Select
                   value={convocation}
-                  onChange={setConvocation}
+                  onChange={(value) => {
+                    setConvocation(value);
+                    updateFiltersUrl({ convocation: value });
+                  }}
                   popupMatchSelectWidth={false}
                   options={convocationOptions}
                 />
                 <Select
                   value={committeeId}
-                  onChange={setCommitteeId}
+                  onChange={(value) => {
+                    setCommitteeId(value);
+                    updateFiltersUrl({ committeeId: value });
+                  }}
                   popupMatchSelectWidth={false}
                   options={committeeOptions.map((id) =>
                     id === "Все"
@@ -182,7 +204,10 @@ export default function Deputies() {
                 />
                 <Select
                   value={faction}
-                  onChange={setFaction}
+                  onChange={(value) => {
+                    setFaction(value);
+                    updateFiltersUrl({ faction: value });
+                  }}
                   popupMatchSelectWidth={false}
                   options={factions.map((x) => {
                     const strValue = typeof x === "string" ? x : String(x || "");
@@ -195,7 +220,10 @@ export default function Deputies() {
                 />
                 <Select
                   value={district}
-                  onChange={setDistrict}
+                  onChange={(value) => {
+                    setDistrict(value);
+                    updateFiltersUrl({ district: value });
+                  }}
                   popupMatchSelectWidth={false}
                   options={districts.map((x) => {
                     const strValue = typeof x === "string" ? x : String(x || "");

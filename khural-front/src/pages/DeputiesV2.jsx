@@ -4,7 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { Select } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
-import { PersonsApi, CommitteesApi } from "../api/client.js";
+import { PersonsApi, CommitteesApi, ConvocationsApi } from "../api/client.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
@@ -248,6 +248,14 @@ function mergeByIdPreferApi(baseDeputies, apiDeputies) {
     if (apiD && !hasValue(apiD.photo) && hasValue(d.photo)) {
       merged.photo = d.photo;
     }
+    // Не затирать созыв из DataContext, если API вернул пустое (только convocationId)
+    if (apiD && !hasValue(merged.convocation) && hasValue(d.convocation)) {
+      merged.convocation = d.convocation;
+      merged.convocationNumber = d.convocationNumber ?? d.convocation;
+    }
+    if (apiD && (!Array.isArray(merged.convocations) || merged.convocations.length === 0) && Array.isArray(d.convocations) && d.convocations.length > 0) {
+      merged.convocations = d.convocations;
+    }
     // Ensure status fields are preserved as booleans (prefer API values)
     merged.mandateEnded = Boolean(merged.mandateEnded ?? merged.mandate_ended);
     merged.isDeceased = Boolean(merged.isDeceased ?? merged.is_deceased);
@@ -363,9 +371,37 @@ export default function DeputiesV2() {
     const loadApi = async () => {
       setApiBusy(true);
       try {
-        const res = await PersonsApi.list().catch(() => null);
+        const [res, convocationsList] = await Promise.all([
+          PersonsApi.list().catch(() => null),
+          ConvocationsApi.list({ activeOnly: false }).catch(() => []),
+        ]);
         const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
-        const mapped = arr.map(normalizeApiDeputy).filter(Boolean);
+        const list = Array.isArray(convocationsList) ? convocationsList : [];
+        const resolveConvocation = (p) => {
+          const cid = p?.convocationId ?? p?.convocation_id ?? p?.convocation?.id ?? (Array.isArray(p?.convocationIds) && p.convocationIds?.[0]) ?? (Array.isArray(p?.convocation_ids) && p.convocation_ids?.[0]);
+          if (cid == null || cid === "") return "";
+          const idStr = String(cid);
+          const found = list.find((c) => String(c?.id) === idStr || String(c?.number) === idStr);
+          if (!found) return "";
+          const name = found?.name ?? found?.number ?? "";
+          return normalizeConvocationToken(name) || String(name).trim();
+        };
+        const mapped = arr
+          .map((p) => {
+            const normalized = normalizeApiDeputy(p);
+            if (!normalized.convocation && (p?.convocationId ?? p?.convocation_id ?? p?.convocation?.id ?? (Array.isArray(p?.convocationIds) && p.convocationIds?.[0]))) {
+              const resolved = resolveConvocation(p);
+              if (resolved) {
+                normalized.convocation = resolved;
+                normalized.convocationNumber = resolved;
+                if (!Array.isArray(normalized.convocations) || normalized.convocations.length === 0) {
+                  normalized.convocations = [resolved];
+                }
+              }
+            }
+            return normalized;
+          })
+          .filter(Boolean);
         if (alive) setApiDeputies(mapped);
       } finally {
         if (alive) setApiBusy(false);
@@ -470,21 +506,17 @@ export default function DeputiesV2() {
     return ["Все", ...preferred, ...rest];
   }, [apiConvocations, structureConvocations, deputies, getDeputyConvocations]);
 
-  // Ensure selected convocation exists in data; otherwise fallback gracefully.
-  // Стабилизируем зависимости через длину массивов для предотвращения бесконечных циклов
+  // Если выбранный созыв не встречается среди депутатов (данные ещё грузятся) — сброс в «Все», без переключения на IV/VIII
   const deputiesLength = Array.isArray(deputies) ? deputies.length : 0;
   const convocationsLength = Array.isArray(convocations) ? convocations.length : 0;
-  
+
   React.useEffect(() => {
     if (deputiesLength === 0) return;
     if (convocation === "Все") return;
     const hasAny = deputies.some((d) => getDeputyConvocations(d).includes(convocation));
     if (hasAny) return;
-
-    const available = (Array.isArray(convocations) ? convocations : []).filter((c) => c && c !== "Все");
-    const fallback = available.includes("VIII") ? "VIII" : available[0] || "Все";
-    setConvocation(fallback);
-  }, [convocation, deputiesLength, convocationsLength, getDeputyConvocations, deputies, convocations]);
+    setConvocation("Все");
+  }, [convocation, deputiesLength, convocationsLength, getDeputyConvocations, deputies]);
 
   const factions = React.useMemo(() => {
     // Prefer API data, fallback to structure data
