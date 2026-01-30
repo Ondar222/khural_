@@ -402,22 +402,13 @@ export default function Government() {
                   ) : null}
 
                   {section !== "Структура" && section !== "Депутаты" ? (
-                    <>
-                      <Select
-                        value={agency}
-                        onChange={setAgency}
-                        dropdownMatchSelectWidth={false}
-                        options={agencies.map((x) => ({ value: x, label: t(x) }))}
-                        style={{ minWidth: 240 }}
-                      />
-                      <Select
-                        value={role}
-                        onChange={setRole}
-                        dropdownMatchSelectWidth={false}
-                        options={roles.map((x) => ({ value: x, label: t(x) }))}
-                        style={{ minWidth: 240 }}
-                      />
-                    </>
+                    <Select
+                      value={role}
+                      onChange={setRole}
+                      dropdownMatchSelectWidth={false}
+                      options={roles.map((x) => ({ value: x, label: t(x) }))}
+                      style={{ minWidth: 240 }}
+                    />
                   ) : null}
                 </div>
               ) : null}

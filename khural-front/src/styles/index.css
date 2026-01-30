@@ -4902,14 +4902,13 @@ body.hc-yb .ant-btn {
   }
 }
 
-/* Government page toolbar (title + selects in one row) */
+/* Government page toolbar (title on top, filters below) */
 .gov-toolbar {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 14px;
   margin: 12px 0 20px;
-  flex-wrap: wrap;
 }
 .gov-toolbar__title {
   margin: 0;
