@@ -15,6 +15,19 @@ const STATUS_OPTIONS = [
   { value: "all", label: "Все" },
 ];
 
+const DIGIT_TO_ROMAN = {
+  1: "I",
+  2: "II",
+  3: "III",
+  4: "IV",
+  5: "V",
+  6: "VI",
+  7: "VII",
+  8: "VIII",
+  9: "IX",
+  10: "X",
+};
+
 function normalizeConvocationToken(raw) {
   const s = String(raw || "").replace(/\u00A0/g, " ").trim();
   if (!s) return "";
@@ -28,8 +41,11 @@ function normalizeConvocationToken(raw) {
     .trim();
   const roman = cleaned.match(/\b([IVX]{1,8})\b/i);
   if (roman) return roman[1].toUpperCase();
-  const num = cleaned.match(/\b(\d{1,2})\b/);
-  if (num) return num[1];
+  const numMatch = cleaned.match(/\b(\d{1,2})\b/);
+  if (numMatch) {
+    const n = parseInt(numMatch[1], 10);
+    return DIGIT_TO_ROMAN[n] != null ? DIGIT_TO_ROMAN[n] : numMatch[1];
+  }
   return cleaned;
 }
 
@@ -567,6 +583,18 @@ export default function DeputiesV2() {
     });
   }, [filtered, convocation, getDeputyConvocations]);
 
+  // URL списка депутатов с текущими фильтрами — для ссылки «Назад» со страницы депутата
+  const deputiesListUrlWithFilters = React.useMemo(() => {
+    const sp = new URLSearchParams();
+    if (convocation && convocation !== "Все") sp.set("convocation", convocation);
+    if (status && status !== "active") sp.set("status", status);
+    if (committeeId && committeeId !== "Все") sp.set("committee", committeeId);
+    if (faction && faction !== "Все") sp.set("faction", faction);
+    if (district && district !== "Все") sp.set("district", district);
+    const q = sp.toString();
+    return `/deputies${q ? `?${q}` : ""}`;
+  }, [convocation, status, committeeId, faction, district]);
+
   React.useEffect(() => {
     const applyFromHash = () => {
       const sp = new URLSearchParams(window.location.search || "");
@@ -592,6 +620,22 @@ export default function DeputiesV2() {
       window.removeEventListener("app:navigate", applyFromHash);
     };
   }, []);
+
+  // Синхронизируем фильтры с URL при их изменении — тогда «Назад» в браузере вернёт на отфильтрованный список
+  React.useEffect(() => {
+    const sp = new URLSearchParams();
+    if (convocation && convocation !== "Все") sp.set("convocation", convocation);
+    if (status && status !== "active") sp.set("status", status);
+    if (committeeId && committeeId !== "Все") sp.set("committee", committeeId);
+    if (faction && faction !== "Все") sp.set("faction", faction);
+    if (district && district !== "Все") sp.set("district", district);
+    const q = sp.toString();
+    const path = `/deputies${q ? `?${q}` : ""}`;
+    const current = window.location.pathname + (window.location.search || "");
+    if (current !== path) {
+      window.history.replaceState({}, "", path);
+    }
+  }, [convocation, status, committeeId, faction, district]);
 
   return (
     <section className="section">
@@ -741,7 +785,10 @@ export default function DeputiesV2() {
                           </ul>
                         </div>
                         <div className="gov-card__actions">
-                          <a className="gov-card__btn" href={`/government?type=dep&id=${d.id}`}>
+                          <a
+                            className="gov-card__btn"
+                            href={`/government?type=dep&id=${encodeURIComponent(d.id)}&back=${encodeURIComponent(deputiesListUrlWithFilters)}`}
+                          >
                             Подробнее
                           </a>
                         </div>
