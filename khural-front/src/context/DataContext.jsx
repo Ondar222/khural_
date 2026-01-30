@@ -637,6 +637,33 @@ function extractEmailFromText(text) {
   return match ? match[0] : "";
 }
 
+/** Проверяет, что текст reception — биография (не график приёма). В карточках показываем только адрес/время. */
+function isReceptionBiography(raw) {
+  const text =
+    typeof raw === "string"
+      ? raw
+      : raw && typeof raw === "object" && typeof raw.notes === "string"
+        ? raw.notes
+        : "";
+  const plain = String(text || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  return (
+    plain.length > 150 ||
+    /родился|родилась|окончил|окончила|работал|работала|награды|награжден|избран|назначен/i.test(plain)
+  );
+}
+
+/** Для карточек: должность только если короткая, иначе пусто (покажем «Депутат»). Не подставлять биографию/образование. */
+function positionForCard(val) {
+  const s = typeof val === "string" ? val : (val && (val?.name || val?.title || val?.label) ? String(val.name || val.title || val.label) : "");
+  const plain = String(s || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  if (!plain || plain.length > 80) return "";
+  if (
+    /родился|родилась|окончил|окончила|работал|работала|награды|награжден|избран|назначен|образование/i.test(plain)
+  )
+    return "";
+  return plain;
+}
+
 function normalizeConvocationText(raw) {
   const s = String(raw || "").replace(/\u00A0/g, " ").trim();
   if (!s) return "";
@@ -1275,11 +1302,12 @@ export default function DataProvider({ children }) {
             id,
             externalId: externalKey || (localResolved?.id ? String(localResolved.id) : undefined),
             name: apiNameRaw || localResolved?.name || "",
-            // PersonDetail expects "position" field for deputy
+            // PersonDetail expects "position" field for deputy; в карточках не показываем длинный текст/биографию
             position: (() => {
               const apiVal = pick(p.description, p.role) || "";
               const val = apiVal || localResolved?.position || "";
-              return typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
+              const str = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
+              return positionForCard(str) || (str.length <= 80 ? str : "");
             })(),
             // Биография - из API или локальных данных
             bio: pick(p.biography, p.bio) || localResolved?.bio || "",
@@ -1321,9 +1349,16 @@ export default function DataProvider({ children }) {
                 "";
               return typeof val === "string" ? val : String(val || "");
             })(),
-            reception: localResolved?.reception || pick(p.receptionSchedule, p.reception_schedule) || "",
-            receptionSchedule:
-              pick(p.receptionSchedule, p.reception_schedule) || localResolved?.receptionSchedule || "",
+            reception: (() => {
+              const raw =
+                localResolved?.reception || pick(p.receptionSchedule, p.reception_schedule) || "";
+              return isReceptionBiography(raw) ? "" : raw;
+            })(),
+            receptionSchedule: (() => {
+              const raw =
+                pick(p.receptionSchedule, p.reception_schedule) || localResolved?.receptionSchedule || "";
+              return isReceptionBiography(raw) ? "" : raw;
+            })(),
             address: (() => {
               const val = pick(p.address) || localResolved?.address || "";
               return typeof val === "string" ? val : String(val || "");

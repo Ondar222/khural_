@@ -1517,27 +1517,13 @@ function DeputyGrid({ deputies, structureType, backHref }) {
           </div>
           <div className="gov-card__body">
             <div className="gov-card__name">{d.name}</div>
-            <div className="gov-card__role">{getDeputyTitle(d, structureType)}</div>
+            <div className="gov-card__role">
+              {(() => {
+                const title = getDeputyTitle(d, structureType);
+                return title && String(title).length <= 80 ? title : "Депутат";
+              })()}
+            </div>
             <ul className="gov-meta">
-              {(() => {
-                const receptionInfo = extractReceptionInfo(d.reception);
-                const address = d.address || receptionInfo.address;
-                return address || receptionInfo.office ? (
-                  <li>
-                    <span>📍</span>
-                    <span>{address}{receptionInfo.office ? (address ? `, ${receptionInfo.office}` : receptionInfo.office) : ""}</span>
-                  </li>
-                ) : null;
-              })()}
-              {(() => {
-                const receptionInfo = extractReceptionInfo(d.reception);
-                return receptionInfo.workTime ? (
-                  <li>
-                    <span>⏰</span>
-                    <span>Время работы: {receptionInfo.workTime}</span>
-                  </li>
-                ) : null;
-              })()}
               {d.contacts?.phone && (
                 <li>
                   <span>📞</span>

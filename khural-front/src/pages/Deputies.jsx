@@ -370,68 +370,12 @@ export default function Deputies() {
                         </div>
                       <div className="gov-card__body">
                         <div className="gov-card__name">{d.name}</div>
-                        {d.position ? (
+                        {d.position && String(d.position).length <= 80 ? (
                           <div className="gov-card__role">{d.position}</div>
                         ) : (
                           <div className="gov-card__role">Депутат</div>
                         )}
-                        {/* Краткая биография - первые несколько слов */}
-                        {(() => {
-                          // Проверяем все возможные источники биографии
-                          const bioText = String(
-                            d.biography || 
-                            d.bio || 
-                            d.description || 
-                            ""
-                          ).trim();
-                          if (!bioText) return null;
-                          // Убираем HTML теги и декодируем HTML entities
-                          let bioPlain = bioText
-                            .replace(/<[^>]*>/g, "")
-                            .replace(/&nbsp;/g, " ")
-                            .replace(/&lt;/g, "<")
-                            .replace(/&gt;/g, ">")
-                            .replace(/&quot;/g, '"')
-                            .replace(/&#39;/g, "'")
-                            .replace(/&amp;/g, "&")
-                            .replace(/&[a-z]+;/gi, " ")
-                            .trim();
-                          if (!bioPlain || bioPlain.length < 10) return null;
-                          // Берем первые 60 символов или до конца первого предложения
-                          let shortBio = bioPlain.length > 60 ? bioPlain.substring(0, 60) : bioPlain;
-                          // Пытаемся обрезать по точке, если она есть в первых 60 символах
-                          const lastDot = shortBio.lastIndexOf(".");
-                          if (lastDot > 20) {
-                            shortBio = shortBio.substring(0, lastDot + 1);
-                          } else {
-                            // Иначе обрезаем по пробелу, чтобы не резать слова
-                            const lastSpace = shortBio.lastIndexOf(" ");
-                            if (lastSpace > 30) {
-                              shortBio = shortBio.substring(0, lastSpace);
-                            }
-                            if (bioPlain.length > shortBio.length) {
-                              shortBio += "...";
-                            }
-                          }
-                          return (
-                            <div className="gov-card__bio" style={{ fontSize: "0.9em", color: "#666", marginTop: "8px", marginBottom: "8px", lineHeight: "1.4" }}>
-                              {shortBio}
-                            </div>
-                          );
-                        })()}
                         <ul className="gov-meta">
-                          {address && (
-                            <li>
-                              <span>📍</span>
-                              <span>{address}{office ? `, ${office}` : ""}</span>
-                            </li>
-                          )}
-                          {workTime && (
-                            <li>
-                              <span>⏰</span>
-                              <span>Время работы: {workTime}</span>
-                            </li>
-                          )}
                           {(d.contacts?.phone || d.phoneNumber || d.phone) && (
                             <li>
                               <span>📞</span>
