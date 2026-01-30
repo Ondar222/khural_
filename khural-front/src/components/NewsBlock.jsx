@@ -9,8 +9,7 @@ export default function NewsBlock() {
   const { news, loading, errors, reload } = useData();
   const { t } = useI18n();
   const [category, setCategory] = React.useState("Все");
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 6; // Показываем 6 новостей на странице
+  const maxItems = 6; // На главной только последние 6, остальные — на странице /news
 
   const normalizeCategoryKey = React.useCallback((v) => {
     return String(v ?? "")
@@ -45,23 +44,10 @@ export default function NewsBlock() {
     [news, category, normalizeCategoryKey]
   );
   
-  const totalPages = Math.ceil((allFiltered?.length || 0) / itemsPerPage);
-  
-  const filtered = React.useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return (allFiltered || []).slice(start, end);
-  }, [allFiltered, currentPage, itemsPerPage]);
-  
-  // Сброс на первую страницу при смене категории
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [category]);
-
-  // Прокрутка вверх при смене страницы
-  React.useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [currentPage]);
+  const filtered = React.useMemo(
+    () => (allFiltered || []).slice(0, maxItems),
+    [allFiltered, maxItems]
+  );
 
   return (
     <section className="section news-block">
@@ -143,150 +129,6 @@ export default function NewsBlock() {
               ))}
             </div>
           </div>
-          
-          {/* Пагинация */}
-          {totalPages > 1 && (
-            <div className="news-block__pagination" style={{ 
-              marginTop: 24, 
-              display: "flex", 
-              justifyContent: "flex-end", 
-              alignItems: "center", 
-              gap: 6,
-              flexWrap: "wrap" 
-            }}>
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "6px 12px",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: currentPage === 1 ? "#9ca3af" : "#374151",
-                  background: currentPage === 1 ? "#f3f4f6" : "#ffffff",
-                  border: `1px solid ${currentPage === 1 ? "#e5e7eb" : "#d1d5db"}`,
-                  borderRadius: 6,
-                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                  transition: "all 0.2s ease",
-                  minHeight: 32,
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.background = "#f9fafb";
-                    e.target.style.borderColor = "#9ca3af";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== 1) {
-                    e.target.style.background = "#ffffff";
-                    e.target.style.borderColor = "#d1d5db";
-                  }
-                }}
-                aria-label="Предыдущая страница"
-              >
-                ← Назад
-              </button>
-              
-              <div style={{ 
-                display: "flex", 
-                gap: 3, 
-                alignItems: "center",
-                background: "#f9fafb",
-                padding: 3,
-                borderRadius: 6,
-              }}>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-                  
-                  const isActive = currentPage === pageNum;
-                  
-                  return (
-                    <button
-                      key={pageNum}
-                      type="button"
-                      className="news-block__page-num"
-                      onClick={() => setCurrentPage(pageNum)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        minWidth: 32,
-                        height: 32,
-                        fontSize: 13,
-                        fontWeight: isActive ? 600 : 500,
-                        color: isActive ? "#ffffff" : "#374151",
-                        background: isActive ? "#003366" : "transparent",
-                        border: "none",
-                        borderRadius: 5,
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isActive) {
-                          e.target.style.background = "#e5e7eb";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isActive) {
-                          e.target.style.background = "transparent";
-                        }
-                      }}
-                      aria-label={`Страница ${pageNum}`}
-                      aria-current={isActive ? "page" : undefined}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
-              
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "6px 12px",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: currentPage === totalPages ? "#9ca3af" : "#374151",
-                  background: currentPage === totalPages ? "#f3f4f6" : "#ffffff",
-                  border: `1px solid ${currentPage === totalPages ? "#e5e7eb" : "#d1d5db"}`,
-                  borderRadius: 6,
-                  cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-                  transition: "all 0.2s ease",
-                  minHeight: 32,
-                }}
-                onMouseEnter={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.background = "#f9fafb";
-                    e.target.style.borderColor = "#9ca3af";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.target.style.background = "#ffffff";
-                    e.target.style.borderColor = "#d1d5db";
-                  }
-                }}
-                aria-label="Следующая страница"
-              >
-                Вперёд →
-              </button>
-            </div>
-          )}
         </DataState>
       </div>
     </section>
