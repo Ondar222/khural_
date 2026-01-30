@@ -1457,13 +1457,23 @@ a {
   }
 }
 
-/* News block (Home): base card styles */
+/* News block (Home): base card styles, даты на одном уровне */
+.news-block__card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 .news-block__card-img-wrap {
   height: 180px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 .news-block__card-body {
   padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 .news-block__card-cat {
   display: inline-block;
@@ -1473,17 +1483,22 @@ a {
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 700;
+  flex-shrink: 0;
 }
 .news-block__card-title {
   margin-top: 10px;
   font-size: 18px;
   font-weight: 700;
   line-height: 1.3;
+  flex: 1;
+  min-height: 0;
 }
 .news-block__card-date {
   color: #6b7280;
-  margin-top: 6px;
+  margin-top: auto;
+  padding-top: 8px;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
 /* Home page: news section — адаптив как на десктопе, но компактно */
@@ -1557,9 +1572,12 @@ a {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    flex: 1;
+    min-height: 0;
   }
   .news-block .news-block__card-date {
-    margin-top: 2px;
+    margin-top: auto;
+    padding-top: 4px;
     font-size: 10px;
   }
   .news-block .news-block__pagination {
@@ -1593,6 +1611,8 @@ a {
   }
   .news-block .news-block__card-date {
     font-size: 9px;
+    margin-top: auto;
+    padding-top: 4px;
   }
 }
 
