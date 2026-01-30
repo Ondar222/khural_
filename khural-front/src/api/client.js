@@ -718,6 +718,13 @@ export const AboutApi = {
   },
 };
 
+export const SitesApi = {
+  async list() {
+    const res = await apiFetch("/sites", { method: "GET", auth: false });
+    return Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+  },
+};
+
 export const CommentsApi = {
   async list({ entityType, entityId, onlyApproved = true, includeReplies = true } = {}) {
     const qs = new URLSearchParams();

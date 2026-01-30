@@ -2320,6 +2320,13 @@ a {
   margin-top: 12px;
   scroll-margin-top: 84px; /* offset for sticky header when navigating via anchors */
 }
+/* No distinct background on text blocks — inherit page background */
+.person-detail .person-block,
+.person-detail .prose,
+.person-detail .person-block .prose,
+.person-detail .person-block .prose > div {
+  background: transparent !important;
+}
 .person-detail .person-block {
   margin-top: 28px;
 }

@@ -8,6 +8,10 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { PersonsApi } from "../api/client.js";
 import { useHashRoute } from "../Router.jsx";
 
+function nonBlank(x) {
+  return x != null && String(x).trim() !== "";
+}
+
 function pickFirstLink(v) {
   if (!v) return "";
   if (typeof v === "string") return v.trim();
@@ -249,17 +253,17 @@ export default function Government() {
     [government, agency, role]
   );
 
-  // Deputies filters
+  // Deputies filters (exclude empty/blank values so dropdowns have no unnamed options)
   const districts = React.useMemo(
-    () => ["Все", ...Array.from(new Set(deputies.map((d) => d.district)))],
+    () => ["Все", ...Array.from(new Set(deputies.map((d) => d.district).filter(nonBlank)))],
     [deputies]
   );
   const convocations = React.useMemo(
-    () => ["Все", ...Array.from(new Set(deputies.map((d) => d.convocation)))],
+    () => ["Все", ...Array.from(new Set(deputies.map((d) => d.convocation).filter(nonBlank)))],
     [deputies]
   );
   const factions = React.useMemo(
-    () => ["Все", ...Array.from(new Set(deputies.map((d) => d.faction)))],
+    () => ["Все", ...Array.from(new Set(deputies.map((d) => d.faction).filter(nonBlank)))],
     [deputies]
   );
   const filteredDeps = React.useMemo(

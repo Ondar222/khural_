@@ -4,6 +4,7 @@ import Resources from "../components/Resources.jsx";
 import NewsBlock from "../components/NewsBlock.jsx";
 import CalendarWidget from "../components/CalendarWidget.jsx";
 import CmsSnippet from "../components/CmsSnippet.jsx";
+import SitesBlock from "../components/SitesBlock.jsx";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
           <CmsSnippet slug="home" className="card" style={{ padding: 18, marginBottom: 16 }} />
         </div>
       </section>
+      <SitesBlock />
       <NewsBlock />
       <CalendarWidget />
       <Resources />
