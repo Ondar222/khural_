@@ -767,27 +767,9 @@ export default function Committee() {
                       <div className="gov-card__body">
                         <div className="gov-card__name">{m.name}</div>
                         <div className="gov-card__role">
-                          {m.role || "Член комитета"}
+                            {m.role && String(m.role).length <= 80 ? m.role : "Член комитета"}
                         </div>
                         <ul className="gov-meta">
-                          {m.convocation && (
-                            <li>
-                              <span>🎖️</span>
-                              <span>Созыв: {m.convocation}</span>
-                            </li>
-                          )}
-                          {m.district && (
-                            <li>
-                              <span>🏛️</span>
-                              <span>{m.district}</span>
-                            </li>
-                          )}
-                          {m.faction && (
-                            <li>
-                              <span>👥</span>
-                              <span>{m.faction}</span>
-                            </li>
-                          )}
                           {m.phone && (
                             <li>
                               <span>📞</span>

@@ -724,11 +724,7 @@ export default function DeputiesV2() {
                         </div>
                         <div className="gov-card__body">
                           <div className="gov-card__name">{toDisplay(d.name)}</div>
-                          {d.position && String(d.position).length <= 80 ? (
-                            <div className="gov-card__role">{toDisplay(d.position)}</div>
-                          ) : (
-                            <div className="gov-card__role">Депутат</div>
-                          )}
+                          <div className="gov-card__role">Депутат</div>
                           <ul className="gov-meta">
                             {d.contacts?.phone && (
                               <li>

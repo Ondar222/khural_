@@ -1517,12 +1517,7 @@ function DeputyGrid({ deputies, structureType, backHref }) {
           </div>
           <div className="gov-card__body">
             <div className="gov-card__name">{d.name}</div>
-            <div className="gov-card__role">
-              {(() => {
-                const title = getDeputyTitle(d, structureType);
-                return title && String(title).length <= 80 ? title : "Депутат";
-              })()}
-            </div>
+            <div className="gov-card__role">Депутат</div>
             <ul className="gov-meta">
               {d.contacts?.phone && (
                 <li>

@@ -679,11 +679,7 @@ export default function Government() {
                       </div>
                       <div className="gov-card__body">
                         <div className="gov-card__name">{d.name}</div>
-                        {d.position && String(d.position).length <= 80 ? (
-                          <div className="gov-card__role">{d.position}</div>
-                        ) : (
-                          <div className="gov-card__role">{t("Депутат")}</div>
-                        )}
+                        <div className="gov-card__role">{t("Депутат")}</div>
                         <ul className="gov-meta">
                           {d.contacts?.phone && (
                             <li>
