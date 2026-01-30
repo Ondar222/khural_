@@ -63,6 +63,7 @@ const DataContext = React.createContext({
     about: null,
   },
   reload: () => {},
+  reloadEvents: () => {},
   // Setters for Admin (optional to use)
   setSlides: () => {},
   setNews: () => {},
@@ -1033,6 +1034,7 @@ export default function DataProvider({ children }) {
     about: null,
   });
   const [reloadSeq, setReloadSeq] = React.useState(0);
+  const [eventsReloadSeq, setEventsReloadSeq] = React.useState(0);
   const [deputiesOverrides, setDeputiesOverrides] = React.useState(() => readDeputiesOverrides());
   const [eventsOverrides, setEventsOverrides] = React.useState(() => readEventsOverrides());
   const [slidesOverrides, setSlidesOverrides] = React.useState(() => readSliderOverrides());
@@ -1046,6 +1048,10 @@ export default function DataProvider({ children }) {
 
   const reload = React.useCallback(() => {
     setReloadSeq((x) => x + 1);
+  }, []);
+  /** Обновить только события календаря (без полной перезагрузки данных). Вызывать при открытии страницы календаря. */
+  const reloadEvents = React.useCallback(() => {
+    setEventsReloadSeq((x) => x + 1);
   }, []);
 
   React.useEffect(() => {
@@ -1204,62 +1210,6 @@ export default function DataProvider({ children }) {
       const filtered = merged.filter((n) => !deleted.has(String(n?.id ?? "")));
       setNews(ensureUniqueIds(filtered));
       markLoading("news", false);
-    })();
-    // Try API for events first, fallback to local JSON
-    (async () => {
-      markLoading("events", true);
-      markError("events", null);
-      try {
-        // Используем EventsApi.list() для получения событий с поддержкой фильтрации
-        const apiEvents = await EventsApi.list();
-        if (Array.isArray(apiEvents)) {
-          // Если массив пустой, все равно используем его (не fallback на JSON)
-          if (apiEvents.length === 0) {
-            setEvents(mergeEventsWithOverrides([], readEventsOverrides()));
-            markLoading("events", false);
-            return;
-          }
-          const mapped = apiEvents.map((e) => ({
-              id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
-              date: (() => {
-                const d = pick(e.date, e.date_of_event);
-                if (d) return String(d);
-                const start = pick(e.startDate, e.start_date);
-                if (!start) return "";
-                const dt = new Date(Number(start));
-                return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
-              })(),
-              title: String(pick(e.title, e.event_title) || ""),
-              time: (() => {
-                const t = pick(e.time, e.event_time);
-                if (t) return String(t);
-                const start = pick(e.startDate, e.start_date);
-                if (!start) return "";
-                const dt = new Date(Number(start));
-                if (isNaN(dt.getTime())) return "";
-                return dt.toISOString().slice(11, 16);
-              })(),
-              place: String(pick(e.place, e.event_place, e.location) || ""),
-              desc: String(pick(e.desc, e.description) || ""),
-              isImportant: Boolean(
-                pick(e.isImportant, e.is_important, e.important, e.featured, e.pinned, e.is_featured)
-              ),
-            }));
-          setEvents(mergeEventsWithOverrides(mapped, readEventsOverrides()));
-          markLoading("events", false);
-          return;
-        }
-      } catch (e) {
-        // API недоступен, используем fallback (логируем только в DEV)
-        if (import.meta.env.DEV) {
-          console.warn("Calendar API недоступен, используем локальные данные", e);
-        }
-      }
-      // Fallback to local JSON
-      fetchJson("/data/events.json")
-        .then((arr) => setEvents(mergeEventsWithOverrides(arr, readEventsOverrides())))
-        .catch((e) => markError("events", e))
-        .finally(() => markLoading("events", false));
     })();
     // Try API for persons first, fallback to local JSON
     (async () => {
@@ -1820,6 +1770,68 @@ export default function DataProvider({ children }) {
     })();
   }, [reloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Загрузка событий календаря: при первой загрузке и при вызове reload() или reloadEvents()
+  React.useEffect(() => {
+    let cancelled = false;
+    markLoading("events", true);
+    markError("events", null);
+    (async () => {
+      try {
+        const apiEvents = await EventsApi.list();
+        if (cancelled) return;
+        const arr = Array.isArray(apiEvents) ? apiEvents : (apiEvents?.items && Array.isArray(apiEvents.items) ? apiEvents.items : null);
+        if (arr !== null) {
+          if (arr.length === 0) {
+            setEvents(mergeEventsWithOverrides([], readEventsOverrides()));
+            markLoading("events", false);
+            return;
+          }
+          const mapped = arr.map((e) => ({
+            id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
+            date: (() => {
+              const d = pick(e.date, e.date_of_event);
+              if (d) return String(d);
+              const start = pick(e.startDate, e.start_date);
+              if (!start) return "";
+              const dt = new Date(Number(start));
+              return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
+            })(),
+            title: String(pick(e.title, e.event_title) || ""),
+            time: (() => {
+              const t = pick(e.time, e.event_time);
+              if (t) return String(t);
+              const start = pick(e.startDate, e.start_date);
+              if (!start) return "";
+              const dt = new Date(Number(start));
+              if (isNaN(dt.getTime())) return "";
+              return dt.toISOString().slice(11, 16);
+            })(),
+            place: String(pick(e.place, e.event_place, e.location) || ""),
+            desc: String(pick(e.desc, e.description) || ""),
+            isImportant: Boolean(
+              pick(e.isImportant, e.is_important, e.important, e.featured, e.pinned, e.is_featured)
+            ),
+          }));
+          setEvents(mergeEventsWithOverrides(mapped, readEventsOverrides()));
+          markLoading("events", false);
+          return;
+        }
+      } catch (e) {
+        if (!cancelled && import.meta.env.DEV) {
+          console.warn("Calendar API недоступен, используем локальные данные", e);
+        }
+      }
+      if (cancelled) return;
+      fetchJson("/data/events.json")
+        .then((arr) => {
+          if (!cancelled) setEvents(mergeEventsWithOverrides(Array.isArray(arr) ? arr : [], readEventsOverrides()));
+        })
+        .catch((e) => { if (!cancelled) markError("events", e); })
+        .finally(() => { if (!cancelled) markLoading("events", false); });
+    })();
+    return () => { cancelled = true; };
+  }, [reloadSeq, eventsReloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Keep slider overrides in sync (admin writes them to localStorage and dispatches this event)
   React.useEffect(() => {
     const onLocal = () => setSlidesOverrides(readSliderOverrides());
@@ -1941,6 +1953,7 @@ export default function DataProvider({ children }) {
       get loading() { return loadingRef.current; },
       get errors() { return errorsRef.current; },
       reload,
+      reloadEvents,
       // Setters (for Admin)
       setSlides,
       setNews,

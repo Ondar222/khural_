@@ -32,7 +32,10 @@ function getLocalDateKey(d) {
 }
 
 export default function CalendarPage() {
-  const { events } = useData();
+  const { events, reloadEvents } = useData();
+  React.useEffect(() => {
+    reloadEvents();
+  }, [reloadEvents]);
   const dateParam = React.useMemo(() => {
     if (typeof window === "undefined") return "";
     const q = new URLSearchParams(window.location.search || "");
