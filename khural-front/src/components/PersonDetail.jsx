@@ -4,6 +4,7 @@ import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/ic
 import PdfPreviewModal from "./PdfPreviewModal.jsx";
 import { decodeHtmlEntities } from "../utils/html.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { formatConvocationLabelWithYears } from "../utils/convocationLabels.js";
 
 function stripTags(v) {
   return String(v ?? "").replace(/<[^>]*>/g, "").trim();
@@ -171,12 +172,13 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
                     <div>{stripTags(item.position || item.role)}</div>
                   ) : null}
                   {(() => {
-                    // Обрабатываем множественные созывы
+                    // Обрабатываем множественные созывы (с годами по справочнику)
                     const convocations = Array.isArray(item.convocations) && item.convocations.length
                       ? item.convocations.map((c) => (typeof c === "string" ? c : c?.name || c?.title || String(c || "")))
                       : ((item.convocationNumber || item.convocation) ? [String(item.convocationNumber || item.convocation)] : []);
-                    return convocations.length > 0 ? (
-                      <div>Созывы: {convocations.join(", ")}</div>
+                    const labels = convocations.map((c) => formatConvocationLabelWithYears(c.trim()));
+                    return labels.length > 0 ? (
+                      <div>Созывы: {labels.join(", ")}</div>
                     ) : null;
                   })()}
                   {item.district && (

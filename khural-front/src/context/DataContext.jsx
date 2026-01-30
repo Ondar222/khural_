@@ -21,6 +21,7 @@ import {
   DOCUMENTS_OVERRIDES_STORAGE_KEY,
 } from "../utils/documentsOverrides.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { normalizeConvocationToCanonical } from "../utils/convocationLabels.js";
 
 const DataContext = React.createContext({
   slides: [],
@@ -1310,8 +1311,9 @@ export default function DataProvider({ children }) {
               let s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
               s = String(s || "").trim();
               if (!s) s = resolveConvocationFromId(p, convocationsList);
-              // Нормализуем к одному виду (I, II, IV...) чтобы фильтр по созывам находил всех депутатов
-              return normalizeConvocationText(s) || s;
+              // Нормализуем к каноническому виду (I, II, III, IV); «11», «2014 год», «2020» → II/III
+              const normalized = normalizeConvocationText(s) || s;
+              return normalizeConvocationToCanonical(normalized) || normalized;
             })(),
             convocationNumber: (() => {
               const val =
@@ -1321,6 +1323,7 @@ export default function DataProvider({ children }) {
                 "";
               let str = typeof val === "string" ? val : String(val || "");
               if (!str) str = resolveConvocationFromId(p, convocationsList);
+              str = normalizeConvocationToCanonical(normalizeConvocationText(str) || str) || str;
               return str;
             })(),
             reception: (() => {

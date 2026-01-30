@@ -5,6 +5,7 @@ import PersonDetail from "../components/PersonDetail.jsx";
 import SideNav from "../components/SideNav.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { formatConvocationLabelWithYears } from "../utils/convocationLabels.js";
 import { PersonsApi } from "../api/client.js";
 import { useHashRoute } from "../Router.jsx";
 
@@ -392,7 +393,7 @@ export default function Government() {
                         value={convocation}
                         onChange={setConvocation}
                         dropdownMatchSelectWidth={false}
-                        options={convocations.map((x) => ({ value: x, label: t(x) }))}
+                        options={convocations.map((x) => ({ value: x, label: formatConvocationLabelWithYears(x) }))}
                         style={{ minWidth: 220 }}
                       />
                       <Select

@@ -5,6 +5,7 @@ import { Select } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { formatConvocationLabelWithYears, CANONICAL_CONVOCATIONS } from "../utils/convocationLabels.js";
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
 
@@ -53,19 +54,14 @@ export default function Deputies() {
     return ["Все", ...stringItems];
   }, [structureDistricts]);
   
-  // Опции созывов — из реальных данных депутатов, чтобы value совпадал с d.convocation и фильтр работал
+  // Опции созывов — только канонические (I, II, III, IV); «11», «2014 год», «2020» не показываем
   const convocationOptions = React.useMemo(() => {
-    const fromDeputies = Array.from(
-      new Set((deputies || []).map((d) => d.convocation).filter((c) => c != null && String(c).trim() !== ""))
-    ).map((c) => String(c).trim());
-    const av = ["Все", ...fromDeputies];
-    const ordered = CONVOCATION_ORDER.filter((x) => av.includes(x));
-    const rest = fromDeputies.filter((c) => !ordered.includes(c));
-    return [...ordered, ...rest].map((c) => ({
-      value: c,
-      label: c === "Все" ? "Все созывы" : `${c} созыв`,
-    }));
-  }, [deputies]);
+    const ordered = CONVOCATION_ORDER.filter((x) => x !== "Все" && CANONICAL_CONVOCATIONS.includes(x));
+    return [
+      { value: "Все", label: formatConvocationLabelWithYears("Все") },
+      ...ordered.map((c) => ({ value: c, label: formatConvocationLabelWithYears(c) })),
+    ];
+  }, []);
   
   const factions = React.useMemo(() => {
     const items = Array.isArray(structureFactions) ? structureFactions : [];

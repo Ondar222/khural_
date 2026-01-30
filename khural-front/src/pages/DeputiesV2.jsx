@@ -6,6 +6,7 @@ import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { PersonsApi, CommitteesApi, ConvocationsApi } from "../api/client.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { formatConvocationLabelWithYears, normalizeConvocationToCanonical, CANONICAL_CONVOCATIONS } from "../utils/convocationLabels.js";
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
 const STORAGE_KEY = "khural_deputies_overrides_v1";
@@ -37,22 +38,24 @@ function normalizeConvocationToken(raw) {
     .replace(/\(.*?\)/g, " ")
     .replace(/архив/gi, " ")
     .replace(/созыв(а|ы)?/gi, " ")
+    .replace(/\s*г\.?о?д\.?$/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
   const roman = cleaned.match(/\b([IVX]{1,8})\b/i);
-  if (roman) return roman[1].toUpperCase();
-  const numMatch = cleaned.match(/\b(\d{1,2})\b/);
+  if (roman) return normalizeConvocationToCanonical(roman[1].toUpperCase());
+  const numMatch = cleaned.match(/\b(\d{1,4})\b/);
   if (numMatch) {
     const n = parseInt(numMatch[1], 10);
-    return DIGIT_TO_ROMAN[n] != null ? DIGIT_TO_ROMAN[n] : numMatch[1];
+    if (n >= 2010 && n <= 2030) return normalizeConvocationToCanonical(String(n));
+    if (n >= 1 && n <= 10) return normalizeConvocationToCanonical(DIGIT_TO_ROMAN[n] || numMatch[1]);
+    if (n === 11) return "II";
+    return normalizeConvocationToCanonical(numMatch[1]);
   }
-  return cleaned;
+  return normalizeConvocationToCanonical(cleaned) || cleaned;
 }
 
 function formatConvocationLabel(token) {
-  if (token === "Все") return "Все созывы";
-  if (!token) return "Без созыва";
-  return `${token} созыв`;
+  return formatConvocationLabelWithYears(token);
 }
 
 function safeParse(json) {
@@ -474,37 +477,11 @@ export default function DeputiesV2() {
     return ["Все", ...stringItems];
   }, [apiDistricts, structureDistricts]);
 
+  // В фильтре только канонические созывы (I, II, III, IV); «11», «2014 год», «2020» не показываем — депутаты из них уже в II/III
   const convocations = React.useMemo(() => {
-    // Prefer API data, fallback to structure data and deputies
-    const apiItems = Array.isArray(apiConvocations) && apiConvocations.length > 0 ? apiConvocations : [];
-    const structureItems = Array.isArray(structureConvocations) ? structureConvocations : [];
-    
-    const fromApi = apiItems.length > 0 ? apiItems : [];
-    
-    const fromStructure = structureItems
-      .map((item) => {
-        if (typeof item === "string") return item;
-        if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
-        return String(item || "");
-      })
-      .map((x) => normalizeConvocationToken(x))
-      .filter((x) => x && x !== "Все");
-
-    const fromDeputies = [];
-    const list = Array.isArray(deputies) ? deputies : [];
-    for (const d of list) {
-      const ds = getDeputyConvocations(d);
-      ds.forEach((c) => {
-        const tok = normalizeConvocationToken(c);
-        if (tok && tok !== "Все") fromDeputies.push(tok);
-      });
-    }
-
-    const set = new Set([...fromApi, ...fromStructure, ...fromDeputies]);
-    const preferred = CONVOCATION_ORDER.filter((c) => c !== "Все" && set.has(c));
-    const rest = Array.from(set).filter((c) => !preferred.includes(c)).sort();
-    return ["Все", ...preferred, ...rest];
-  }, [apiConvocations, structureConvocations, deputies, getDeputyConvocations]);
+    const ordered = CONVOCATION_ORDER.filter((c) => c !== "Все" && CANONICAL_CONVOCATIONS.includes(c));
+    return ["Все", ...ordered];
+  }, []);
 
   // Если выбранный созыв не встречается среди депутатов (данные ещё грузятся) — сброс в «Все», без переключения на IV/VIII
   const deputiesLength = Array.isArray(deputies) ? deputies.length : 0;
