@@ -1666,7 +1666,7 @@ function getCommitteeTitle(c) {
 export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
-  const { committees, factions: structureFactions, government, deputies } = useData();
+  const { committees, factions: structureFactions, government, deputies, convocations } = useData();
   const focus = q.get("focus");
 
   // Scroll to a requested block from URL (e.g., /section?focus=committees)
@@ -1919,7 +1919,7 @@ export default function SectionPage() {
                   <PersonDetail 
                     item={senator} 
                     type={senator.type || "dep"}
-                    backHref={`/section?title=${encodeURIComponent("Представительство в Совете Федерации")}`}
+                    backHref="/deputies"
                   />
                 </div>
                 <SideNav title="Разделы" />
@@ -1929,7 +1929,41 @@ export default function SectionPage() {
         );
       }
       
-      // Если сенатор не найден, показываем заглушку с инструкцией
+      // Если сенатор не найден — показываем одного депутата (как на макете): приоритетно Ондар Онер Хулерович, иначе первый из списка
+      const FEDERATION_COUNCIL_FALLBACK_NAME = "Ондар Онер Хулерович";
+      const deputiesList = Array.isArray(deputies) ? deputies : [];
+      const fallbackDeputy = deputiesList.find(
+        (d) => d && String(d.name || "").trim() === FEDERATION_COUNCIL_FALLBACK_NAME
+      ) || deputiesList[0];
+
+      if (fallbackDeputy) {
+        const representative = {
+          ...fallbackDeputy,
+          role:
+            getDeputyTitle(fallbackDeputy, "federation_council") ||
+            "Член Совета Федерации от Республики Тыва",
+          type: "dep",
+        };
+        return (
+          <section className="section section-page">
+            <div className="container">
+              <div className="page-grid">
+                <div className="page-grid__main">
+                  <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
+                  <PersonDetail
+                    item={representative}
+                    type="dep"
+                    backHref="/deputies"
+                  />
+                </div>
+                <SideNav title="Разделы" />
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      // Нет ни сенатора, ни депутатов — короткая заглушка
       return (
         <section className="section section-page">
           <div className="container">
@@ -1937,21 +1971,10 @@ export default function SectionPage() {
               <div>
                 <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
                 <div className="tile" style={{ padding: 24, marginTop: 20 }}>
-                  <p style={{ marginTop: 0 }}>
-                    Для отображения информации о представителе в Совете Федерации необходимо добавить депутата 
-                    с позицией, содержащей слово "сенатор" или "Совет Федерации" в данные депутатов.
+                  <p style={{ margin: 0 }}>
+                    Добавьте депутата с типом структуры «Представительство в Совете Федерации» в админке или
+                    с позицией, содержащей «сенатор» или «Совет Федерации».
                   </p>
-                <p>
-                    Или добавьте запись в файл government.json с ролью, содержащей "сенатор" или "Совет Федерации".
-                </p>
-                </div>
-                <div className="tabs" style={{ marginTop: 20 }}>
-                  <a className="btn" href="/contacts">
-                    Контакты →
-                  </a>
-                  <a className="btn" href="/appeals">
-                    Прием обращений →
-                  </a>
                 </div>
               </div>
               <SideNav title="Разделы" />

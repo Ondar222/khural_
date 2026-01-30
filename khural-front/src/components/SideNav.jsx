@@ -1,5 +1,29 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useHashRoute } from "../Router.jsx";
+
+// Нормализует pathname + search для сравнения (одинаковый порядок и кодировка параметров)
+function normalizeRoute(pathname, search) {
+  const path = (pathname || "/").replace(/\/+$/, "") || "/";
+  if (!search || search === "?") return path;
+  const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : path;
+}
+
+// Проверяет, совпадает ли текущий маршрут с href ссылки
+function isRouteActive(currentPathname, currentSearch, href) {
+  if (!href || typeof href !== "string") return false;
+  const current = normalizeRoute(currentPathname, currentSearch);
+  try {
+    const base = typeof window !== "undefined" ? window.location.origin : "http://localhost";
+    const u = new URL(href, base + "/");
+    const link = normalizeRoute(u.pathname, u.search);
+    return current === link;
+  } catch {
+    return current === href;
+  }
+}
 
 // Reusable right-side navigation with links to key subpages
 export default function SideNav({
@@ -8,6 +32,14 @@ export default function SideNav({
   className = "sidenav--card",
 }) {
   const { t } = useI18n();
+  const { route } = useHashRoute();
+  const [pathname, search] = React.useMemo(() => {
+    const r = route || "/";
+    const q = r.indexOf("?");
+    if (q === -1) return [r || "/", ""];
+    return [r.slice(0, q) || "/", "?" + r.slice(q + 1)];
+  }, [route]);
+
   const defaultLinks = [
     { label: "Общие сведения", href: "/about" },
     { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
@@ -52,7 +84,10 @@ export default function SideNav({
       <h3 style={{ marginTop: 0 }}>{titleText}</h3>
       <div className="sidenav__list">
         {links.map((l, i) => {
-          const isActive = l.isActive || false;
+          const isActive =
+            l.isActive !== undefined && l.isActive !== null
+              ? Boolean(l.isActive)
+              : isRouteActive(pathname, search, l.href);
           return (
             <a
               key={i}
