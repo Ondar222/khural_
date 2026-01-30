@@ -3,6 +3,7 @@ import { App, Button, Input, Space, Table, Tag, Select, Empty, Modal } from "ant
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
 import { CommitteesApi } from "../../api/client.js";
+import { SYSTEM_COMMITTEE_IDS } from "../../utils/committeesOverrides.js";
 
 function normalizeCommitteeName(value) {
   return String(value ?? "")
@@ -89,6 +90,8 @@ export default function AdminCommitteesList({
   const isLocal = (row) =>
     !isLocalStatic(row) && String(row?.id || "").startsWith("local-");
   const isCommitteeActive = (row) => normalizeBool(row?.isActive, true) !== false;
+  const isSystemCommittee = (row) =>
+    SYSTEM_COMMITTEE_IDS.includes(String(row?.id ?? ""));
 
   const importCommitteesFromJson = React.useCallback(() => {
     if (!canWrite) return;
@@ -293,7 +296,8 @@ export default function AdminCommitteesList({
             </Button>
             <Button
               size="small"
-              disabled={!canWrite}
+              disabled={!canWrite || (isSystemCommittee(row) && isCommitteeActive(row))}
+              title={isSystemCommittee(row) ? "Комитеты структуры нельзя отключить" : undefined}
               onClick={() => onToggleActive?.(row, !isCommitteeActive(row))}
               style={{ fontSize: 12 }}
             >
@@ -424,7 +428,8 @@ export default function AdminCommitteesList({
                       </Button>
                       <Button
                         block
-                        disabled={!canWrite}
+                        disabled={!canWrite || (isSystemCommittee(row) && isCommitteeActive(row))}
+                        title={isSystemCommittee(row) ? "Комитеты структуры нельзя отключить" : undefined}
                         onClick={() => onToggleActive?.(row, !isCommitteeActive(row))}
                       >
                         {isCommitteeActive(row) ? "Отключить" : "Включить"}

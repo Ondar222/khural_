@@ -9,6 +9,7 @@ import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../u
 import { APPARATUS_NAV_LINKS } from "../utils/apparatusLinks.js";
 import { APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
 import { normalizeBool } from "../utils/bool.js";
+import { DEFAULT_STRUCTURE_COMMITTEES } from "../utils/committeesOverrides.js";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 
 const SECTION_TITLE_TO_SLUG = {
@@ -2235,18 +2236,39 @@ export default function SectionPage() {
                   >
                     Комитеты Верховного Хурала (парламента) Республики Тыва
                   </a>
-                  {(committees || []).map((c) => {
-                    const title = getCommitteeTitle(c);
-                    return (
-                      <a
-                        key={c.id}
-                        className="org__item org__item--green"
-                        href={`/committee?id=${encodeURIComponent(c.id)}`}
-                      >
-                        {title}
-                      </a>
-                    );
-                  })}
+                  {(() => {
+                    const fromContext = committees || [];
+                    const byId = new Map(fromContext.map((c) => [String(c?.id ?? ""), c]));
+                    const seen = new Set();
+                    const result = [];
+                    for (const def of DEFAULT_STRUCTURE_COMMITTEES) {
+                      const c = byId.get(def.id) || def;
+                      const id = String(c?.id ?? "");
+                      if (id && !seen.has(id)) {
+                        seen.add(id);
+                        result.push(c);
+                      }
+                    }
+                    for (const c of fromContext) {
+                      const id = String(c?.id ?? "");
+                      if (id && !seen.has(id)) {
+                        seen.add(id);
+                        result.push(c);
+                      }
+                    }
+                    return result.map((c) => {
+                      const title = getCommitteeTitle(c);
+                      return (
+                        <a
+                          key={c.id}
+                          className="org__item org__item--green"
+                          href={`/committee?id=${encodeURIComponent(c.id)}`}
+                        >
+                          {title}
+                        </a>
+                      );
+                    });
+                  })()}
                 </div>
                 <div className="org__col">
                   <a

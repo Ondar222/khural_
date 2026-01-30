@@ -25,6 +25,7 @@ import {
   COMMITTEES_OVERRIDES_EVENT_NAME,
   readCommitteesOverrides,
   writeCommitteesOverrides,
+  SYSTEM_COMMITTEE_IDS,
 } from "../utils/committeesOverrides.js";
 import { normalizeBool } from "../utils/bool.js";
 import {
@@ -1313,10 +1314,13 @@ export function useAdminData() {
   }, [message, reload]);
 
   const updateCommittee = React.useCallback(async (id, payload) => {
+    const sid = String(id);
+    if (SYSTEM_COMMITTEE_IDS.includes(sid) && payload?.isActive === false) {
+      message.warning("Комитеты структуры нельзя отключить или удалить.");
+      return;
+    }
     setBusy(true);
     try {
-      const sid = String(id);
-
       // Build a full snapshot for overrides so public pages can render even if API is unavailable.
       const baseList = Array.isArray(committees) ? committees : [];
       const found = baseList.find((c) => c && String(c.id) === sid) || null;
@@ -1361,6 +1365,11 @@ export function useAdminData() {
   }, [message, reload, committees]);
 
   const deleteCommittee = React.useCallback(async (id) => {
+    const sid = String(id);
+    if (SYSTEM_COMMITTEE_IDS.includes(sid)) {
+      message.warning("Комитеты структуры нельзя удалить.");
+      return;
+    }
     message.warning("Удаление комитетов отключено. Используйте «Отключить».");
     await updateCommittee(id, { isActive: false });
   }, [message, updateCommittee]);

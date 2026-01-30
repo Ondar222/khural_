@@ -2,6 +2,7 @@ import React from "react";
 import SideNav from "../components/SideNav.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { DEFAULT_STRUCTURE_COMMITTEES } from "../utils/committeesOverrides.js";
 
 export default function About() {
   const { committees, government } = useData();
@@ -245,15 +246,36 @@ export default function About() {
                     >
                       {t("Комитеты Верховного Хурала (парламента) Республики Тыва")}
                     </a>
-                    {(committees || []).map((c) => (
-                      <a
-                        key={c.id}
-                        className="org__item org__item--green"
-                        href={`/committee?id=${encodeURIComponent(c.id)}`}
-                      >
-                        {c.title}
-                      </a>
-                    ))}
+                    {(() => {
+                      const fromContext = committees || [];
+                      const byId = new Map(fromContext.map((c) => [String(c?.id ?? ""), c]));
+                      const seen = new Set();
+                      const result = [];
+                      for (const def of DEFAULT_STRUCTURE_COMMITTEES) {
+                        const c = byId.get(def.id) || def;
+                        const id = String(c?.id ?? "");
+                        if (id && !seen.has(id)) {
+                          seen.add(id);
+                          result.push(c);
+                        }
+                      }
+                      for (const c of fromContext) {
+                        const id = String(c?.id ?? "");
+                        if (id && !seen.has(id)) {
+                          seen.add(id);
+                          result.push(c);
+                        }
+                      }
+                      return result.map((c) => (
+                        <a
+                          key={c.id}
+                          className="org__item org__item--green"
+                          href={`/committee?id=${encodeURIComponent(c.id)}`}
+                        >
+                          {c.title || c.name || ""}
+                        </a>
+                      ));
+                    })()}
                   </div>
                   <div className="org__col">
                     <a
