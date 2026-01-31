@@ -1238,9 +1238,18 @@ export const ConvocationsApi = {
     }
   },
   async getById(id) {
-    // Получаем все и находим нужный
+    if (id == null || id === "") return null;
+    const idStr = String(id);
+    try {
+      const res = await apiFetch(`/persons/convocations/${encodeURIComponent(idStr)}`, { method: "GET", auth: false });
+      if (res && typeof res === "object") return res;
+    } catch (e) {
+      if (import.meta.env.DEV && e?.status !== 404) {
+        console.warn("ConvocationsApi.getById: fetch by id failed, falling back to list:", e);
+      }
+    }
     const all = await this.list({ activeOnly: false });
-    return Array.isArray(all) ? all.find(c => String(c.id) === String(id)) : null;
+    return Array.isArray(all) ? all.find(c => String(c?.id ?? "") === idStr) : null;
   },
   async create(body) {
     return apiFetch("/persons/convocations", { method: "POST", body, auth: true });

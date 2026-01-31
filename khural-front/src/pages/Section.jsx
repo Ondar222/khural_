@@ -592,66 +592,59 @@ function ReportsAllConvocationsPage() {
   );
 }
 
+const ROMAN_TO_NUM = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9, X: 10 };
+
 function ConvocationReportsPage({ convocationNumber }) {
   const { committees: committeesFromContext } = useData();
   const [convocation, setConvocation] = React.useState(null);
+  const [apiCommittees, setApiCommittees] = React.useState(null);
   const [committees, setCommittees] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [currentView, setCurrentView] = React.useState("committees"); // "committees" or "documents"
+  const [currentView, setCurrentView] = React.useState("committees");
   const [reportsCategory, setReportsCategory] = React.useState("reports");
   const [selectedCommittee, setSelectedCommittee] = React.useState(null);
   const [selectedYear, setSelectedYear] = React.useState(null);
-  const [selectedCategory, setSelectedCategory] = React.useState(null); // For documents view
-  const [selectedYearForCategory, setSelectedYearForCategory] = React.useState(null); // For documents view
+  const [selectedCategory, setSelectedCategory] = React.useState(null);
+  const [selectedYearForCategory, setSelectedYearForCategory] = React.useState(null);
 
-  // Extract year from date string
   const extractYear = React.useCallback((dateStr) => {
     if (!dateStr) return null;
     const match = String(dateStr).match(/(\d{4})/);
     return match ? match[1] : null;
   }, []);
 
+  // 1) Load convocation only
   React.useEffect(() => {
     let alive = true;
     (async () => {
       try {
         setLoading(true);
-        
-        // Load all convocations and find by number/name (not just ID)
         const list = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
         if (!alive) return;
-        
+
         const token = normalizeConvocationToken(convocationNumber);
         let convocationData = null;
-        
-        // Try to find by ID first (if convocationNumber is numeric)
+
         if (!isNaN(parseInt(convocationNumber, 10))) {
           const byId = await ConvocationsApi.getById(convocationNumber).catch(() => null);
-          if (byId) {
-            convocationData = byId;
-          }
+          if (byId) convocationData = byId;
         }
-        
-        // If not found by ID, search in list by token/name/number
+
         if (!convocationData && Array.isArray(list)) {
           convocationData = list.find((c) => {
-            const cToken = normalizeConvocationToken(c.name || c.number || "");
-            const cId = String(c.id || "");
-            return cToken === token || 
-                   cId === String(convocationNumber) ||
-                   (c.name && String(c.name).toLowerCase().includes(String(convocationNumber).toLowerCase())) ||
-                   (c.number && String(c.number) === String(convocationNumber));
+            const cToken = typeof c === "string" ? normalizeConvocationToken(c) : normalizeConvocationToken(c?.name ?? c?.number ?? c?.id ?? "");
+            const cId = typeof c === "object" && c !== null ? String(c?.id ?? "") : "";
+            return cToken === token || cId === String(convocationNumber) ||
+              (c?.name && String(c.name).toLowerCase().includes(String(convocationNumber).toLowerCase())) ||
+              (c?.number && String(c.number) === String(convocationNumber));
           });
         }
-        
-        // If still not found, try to get full data by ID if we have it
+
         if (!convocationData && token) {
-          // Try to find by matching token in any field
           for (const c of Array.isArray(list) ? list : []) {
-            const cToken = normalizeConvocationToken(c.name || c.number || c.id || "");
+            const cToken = typeof c === "string" ? normalizeConvocationToken(c) : normalizeConvocationToken(c?.name ?? c?.number ?? c?.id ?? "");
             if (cToken === token) {
-              // Try to get full data by ID
-              if (c.id) {
+              if (typeof c === "object" && c !== null && c.id != null) {
                 const full = await ConvocationsApi.getById(c.id).catch(() => null);
                 if (full) {
                   convocationData = full;
@@ -663,99 +656,116 @@ function ConvocationReportsPage({ convocationNumber }) {
             }
           }
         }
-        
+
+        if (!convocationData && token && (ROMAN_TO_NUM[token] != null || /^\d+$/.test(token))) {
+          convocationData = { id: token, name: `Созыв ${token}`, number: token, documents: [] };
+        }
+
         if (convocationData) {
-          // Ensure we have the latest data with documents
-          // If we found by list, try to get full data by ID
-          if (convocationData.id && (!convocationData.documents || convocationData.documents.length === 0)) {
-            const fullData = await ConvocationsApi.getById(convocationData.id).catch(() => null);
-            if (fullData && Array.isArray(fullData.documents) && fullData.documents.length > 0) {
-              convocationData = fullData;
+          if (typeof convocationData === "string") {
+            const t = normalizeConvocationToken(convocationData);
+            convocationData = { id: t, name: `Созыв ${t}`, number: t, documents: [] };
+          }
+          const idToTry = convocationData.id;
+          if (idToTry && (!Array.isArray(convocationData.documents) || convocationData.documents.length === 0)) {
+            const byId = await ConvocationsApi.getById(idToTry).catch(() => null);
+            if (byId && Array.isArray(byId.documents) && byId.documents.length > 0) {
+              convocationData = byId;
+            } else if (token) {
+              const numId = ROMAN_TO_NUM[token] ?? (token.match(/^\d+$/) ? parseInt(token, 10) : null);
+              if (numId != null) {
+                const byNum = await ConvocationsApi.getById(numId).catch(() => null);
+                if (byNum && Array.isArray(byNum.documents) && byNum.documents.length > 0) {
+                  convocationData = byNum;
+                }
+              }
             }
           }
-          
           setConvocation(convocationData);
-          
-          // Extract unique committee IDs from documents
-          const documents = Array.isArray(convocationData.documents) ? convocationData.documents : [];
-          const committeeIds = new Set();
-          const hasDocumentsWithoutCommittee = documents.some(doc => !doc.committeeId);
-          documents.forEach((doc) => {
-            if (doc.committeeId) {
-              committeeIds.add(String(doc.committeeId));
-            }
-          });
-          
-          // Load committees
-          const allCommittees = await CommitteesApi.list({ all: true }).catch(() => []);
-          const fromContext = Array.isArray(committeesRef.current) ? committeesRef.current : [];
-          const all = [...allCommittees, ...fromContext];
-          
-          // Filter committees that match convocation OR have documents for this convocation
-          const convKeys = new Set([convocationNumber, normalizeConvocationToken(convocationNumber)]);
-          const relevant = all.filter((c) => {
-            if (!c) return false;
-            // Always include if has documents for this convocation
-            if (committeeIds.has(String(c.id))) return true;
-            // Always include if matches convocation (by convocationId or convocation name/number)
-            const matchKeys = committeeConvocationMatchKeys(c);
-            if (matchKeys.some(key => convKeys.has(key))) return true;
-            // Also check if committee's convocation matches by ID
-            const committeeConvId = String(c?.convocation?.id ?? "");
-            const committeeConvToken = normalizeConvocationToken(c?.convocation?.name || c?.convocation?.number || "");
-            if (committeeConvId && convKeys.has(committeeConvId)) return true;
-            if (committeeConvToken && convKeys.has(committeeConvToken)) return true;
-            return false;
-          });
-          
-          // Deduplicate
-          const seen = new Set();
-          const unique = relevant.filter((c) => {
-            const id = String(c?.id ?? "");
-            if (!id || seen.has(id)) return false;
-            seen.add(id);
-            return true;
-          });
-          
-          // Add virtual committee for documents without committeeId
-          if (hasDocumentsWithoutCommittee) {
-            unique.push({
-              id: "general",
-              title: "Общие документы",
-              name: "Общие документы",
-            });
-          }
-          
-          // Also add committees that are referenced in documents but not found in list
-          committeeIds.forEach((cid) => {
-            if (!unique.find(c => String(c.id) === cid)) {
-              unique.push({
-                id: cid,
-                title: `Комитет (ID: ${cid})`,
-                name: `Комитет (ID: ${cid})`,
-              });
-            }
-          });
-          
-          setCommittees(unique);
         } else {
           setConvocation(null);
-          setCommittees([]);
         }
       } catch (error) {
         console.error("Failed to load convocation:", error);
-        if (alive) {
-          setConvocation(null);
-          setCommittees([]);
-        }
+        if (alive) setConvocation(null);
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    return () => {
-      alive = false;
-    };
-  }, [convocationNumber]); // Removed committeesFromContext from deps to prevent infinite loops
+    return () => { alive = false; };
+  }, [convocationNumber]);
+
+  // 2) Load committees list once (same source as "Отчеты всех Созывов")
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      const list = await CommitteesApi.list({ all: true }).catch(() => null);
+      if (alive) setApiCommittees(Array.isArray(list) ? list : []);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  // 3) Список комитетов — тот же источник, что на «Созывы» и «Отчеты всех Созывов» (API + контекст + overrides)
+  const committeesMerged = React.useMemo(() => {
+    const base = Array.isArray(apiCommittees) ? apiCommittees : committeesFromContext;
+    return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
+  }, [apiCommittees, committeesFromContext]);
+
+  // 4) Отфильтровать комитеты по созыву (те же ключи, что на странице Созывы)
+  React.useEffect(() => {
+    if (!convocation) {
+      setCommittees([]);
+      return;
+    }
+    const token = normalizeConvocationToken(convocation.number ?? convocation.name ?? convocation.id);
+    const documents = Array.isArray(convocation.documents) ? convocation.documents : [];
+    const committeeIds = new Set();
+    const hasDocumentsWithoutCommittee = documents.some((doc) => !doc.committeeId);
+    documents.forEach((doc) => {
+      if (doc.committeeId) committeeIds.add(String(doc.committeeId));
+    });
+
+    const all = Array.isArray(committeesMerged) ? committeesMerged : [];
+    const convIdStr = convocation?.id != null ? String(convocation.id) : "";
+    const numIdForToken = token ? (ROMAN_TO_NUM[token] ?? (token.match(/^\d+$/) ? parseInt(token, 10) : null)) : null;
+    const convKeys = new Set([
+      convocationNumber,
+      normalizeConvocationToken(convocationNumber),
+      convIdStr,
+      numIdForToken != null ? String(numIdForToken) : "",
+    ].filter(Boolean));
+
+    const relevant = all.filter((c) => {
+      if (!c) return false;
+      if (committeeIds.has(String(c.id))) return true;
+      const matchKeys = committeeConvocationMatchKeys(c);
+      if (matchKeys.some((key) => convKeys.has(key))) return true;
+      const committeeConvId = String(c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? "");
+      const committeeConvToken = normalizeConvocationToken(c?.convocation?.name || c?.convocation?.number || "");
+      if (committeeConvId && convKeys.has(committeeConvId)) return true;
+      if (committeeConvToken && convKeys.has(committeeConvToken)) return true;
+      return false;
+    });
+
+    const seen = new Set();
+    const unique = relevant.filter((c) => {
+      const id = String(c?.id ?? "");
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+
+    if (hasDocumentsWithoutCommittee) {
+      unique.push({ id: "general", title: "Общие документы", name: "Общие документы" });
+    }
+    committeeIds.forEach((cid) => {
+      if (!unique.find((c) => String(c.id) === cid)) {
+        unique.push({ id: cid, title: `Комитет (ID: ${cid})`, name: `Комитет (ID: ${cid})` });
+      }
+    });
+
+    setCommittees(unique);
+  }, [convocation, committeesMerged, convocationNumber]);
 
   // Group documents by committee, category, and year
   const documentsByCommittee = React.useMemo(() => {
@@ -866,19 +876,6 @@ function ConvocationReportsPage({ convocationNumber }) {
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
-
-  // Debug logging
-  React.useEffect(() => {
-    if (convocation) {
-      console.log("ConvocationReportsPage: convocation data:", {
-        id: convocation.id,
-        name: convocation.name,
-        number: convocation.number,
-        documentsCount: Array.isArray(convocation.documents) ? convocation.documents.length : 0,
-        documents: convocation.documents,
-      });
-    }
-  }, [convocation]);
 
   if (loading) {
     return (
