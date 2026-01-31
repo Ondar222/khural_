@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
 
 function StatCard({ label, value, href }) {
   const content = (
@@ -28,9 +29,34 @@ function QuickAction({ title, description, href }) {
   );
 }
 
-export default function AdminDashboard({ stats }) {
+export default function AdminDashboard({ stats, onReload }) {
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const handleRefresh = React.useCallback(async () => {
+    if (!onReload) return;
+    setRefreshing(true);
+    try {
+      await onReload();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [onReload]);
+
   return (
     <div className="admin-grid admin-dashboard">
+      {onReload && (
+        <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+          <Button
+            type="default"
+            icon={<ReloadOutlined />}
+            onClick={handleRefresh}
+            loading={refreshing}
+            size="middle"
+          >
+            Обновить цифры
+          </Button>
+        </div>
+      )}
       <div className="admin-cards admin-cards--stats">
         <StatCard label="Созывы" value={stats.convocations ?? 0} href="/admin/convocations" />
         <StatCard label="Комитеты" value={stats.committees ?? 0} href="/admin/committees" />

@@ -15,7 +15,7 @@ import {
   getAuthToken,
   apiFetch,
 } from "../api/client.js";
-import { addDeletedNewsId } from "../utils/newsOverrides.js";
+import { addDeletedNewsId, readNewsOverrides } from "../utils/newsOverrides.js";
 import { addDeletedDocumentId, readDocumentsOverrides } from "../utils/documentsOverrides.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 import { toPersonsApiBody } from "../api/personsPayload.js";
@@ -26,6 +26,7 @@ import {
   readCommitteesOverrides,
   writeCommitteesOverrides,
   SYSTEM_COMMITTEE_IDS,
+  COMMITTEE_DEFAULT_CONVOCATION,
 } from "../utils/committeesOverrides.js";
 import { normalizeBool } from "../utils/bool.js";
 import {
@@ -368,6 +369,29 @@ function mergeCommitteesWithOverrides(base, overrides) {
   return Array.from(byId.values()).sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
 }
 
+/** Количество комитетов после дедупликации по названию (как в списке и на /committee) */
+function countDeduplicatedCommittees(list) {
+  const arr = Array.isArray(list) ? list : [];
+  const getTitle = (c) => String(c?.title || c?.name || c?.label || c?.description || "").trim();
+  const normalizeKey = (v) => String(v ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const richness = (c) => {
+    let s = 0;
+    if (String(c?.description ?? "").trim().length > 0) s += 2;
+    const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+    if (convId != null && convId !== "") s += 2;
+    const members = Array.isArray(c?.members) ? c.members : [];
+    return s + members.length;
+  };
+  const byName = new Map();
+  for (const c of arr) {
+    const key = normalizeKey(getTitle(c));
+    if (!key) continue;
+    const existing = byName.get(key);
+    if (!existing || richness(c) > richness(existing)) byName.set(key, c);
+  }
+  return byName.size;
+}
+
 export function useAdminData() {
   const { message } = App.useApp();
   const data = useData();
@@ -468,7 +492,9 @@ export function useAdminData() {
       CommitteesApi.list({ all: true }).catch(() => null),
       apiFetch("/pages", { method: "GET", auth: false }).catch(() => null),
     ]);
-    setNews(Array.isArray(apiNews) ? apiNews : toNewsFallback(fb.news));
+    const deletedNewsIds = new Set((readNewsOverrides()?.deletedIds || []).map(String));
+    const newsList = Array.isArray(apiNews) ? apiNews : toNewsFallback(fb.news);
+    setNews((newsList || []).filter((n) => !deletedNewsIds.has(String(n?.id ?? n?._id ?? ""))));
     setPersons(
       Array.isArray(apiPersons) && apiPersons.length
         ? apiPersons
@@ -502,7 +528,11 @@ export function useAdminData() {
     let baseCommittees = mergeCommitteesPreferApi(apiCommitteesList, publicCommitteesFallback());
     // Обогатить комитеты объектом созыва по convocationId/convocation_id для фильтра и колонки «Созыв»
     baseCommittees = baseCommittees.map((c) => {
-      const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+      let convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+      if (convId == null || convId === "") {
+        const defaultNum = c?.id != null ? COMMITTEE_DEFAULT_CONVOCATION[String(c.id)] : undefined;
+        if (defaultNum != null && defaultNum !== "") convId = defaultNum;
+      }
       if (convId == null || convId === "") return c;
       const conv = Array.isArray(convocationsList)
         ? convocationsList.find(
@@ -511,8 +541,9 @@ export function useAdminData() {
               (String(it?.id ?? it?.value) === String(convId) || String(it?.name ?? it?.number ?? "") === String(convId))
           )
         : null;
-      if (!conv) return c;
-      const convObj = typeof conv === "string" ? { id: conv, name: conv } : { id: conv?.id ?? convId, name: conv?.name ?? conv?.number ?? String(convId) };
+      const convObj = conv
+        ? (typeof conv === "string" ? { id: conv, name: conv } : { id: conv?.id ?? convId, name: conv?.name ?? conv?.number ?? String(convId) })
+        : { id: convId, name: String(convId) };
       return { ...c, convocationId: c.convocationId ?? convId, convocation: c.convocation && (c.convocation?.name ?? c.convocation?.id) ? c.convocation : convObj };
     });
     setCommittees(mergeCommitteesWithOverrides(baseCommittees, readCommitteesOverrides()));
@@ -1390,20 +1421,21 @@ export function useAdminData() {
     await updateCommittee(id, { isActive: false });
   }, [message, updateCommittee]);
 
-  const stats = React.useMemo(
-    () => ({
+  const stats = React.useMemo(() => {
+    const deletedNewsIds = new Set((readNewsOverrides()?.deletedIds || []).map(String));
+    const visibleNews = (news || []).filter((n) => !deletedNewsIds.has(String(n?.id ?? n?._id ?? "")));
+    return {
       deputies: Array.isArray(persons) ? persons.length : 0,
       pages: Array.isArray(pages) ? pages.length : 0,
       documents: Array.isArray(documents) ? documents.length : 0,
-      news: Array.isArray(news) ? news.length : 0,
+      news: visibleNews.length,
       events: Array.isArray(events) ? events.length : 0,
       slides: Array.isArray(slider) ? slider.length : 0,
       appeals: Array.isArray(appeals) ? appeals.length : 0,
       convocations: Array.isArray(convocations) ? convocations.length : 0,
-      committees: Array.isArray(committees) ? committees.length : 0,
-    }),
-    [persons, pages, documents, news, events, slider, appeals, convocations, committees]
-  );
+      committees: countDeduplicatedCommittees(committees),
+    };
+  }, [persons, pages, documents, news, events, slider, appeals, convocations, committees]);
 
   const handleLogin = React.useCallback(async () => {
     setLoginBusy(true);

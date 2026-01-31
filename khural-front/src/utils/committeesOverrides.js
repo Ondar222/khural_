@@ -15,6 +15,23 @@ export const SYSTEM_COMMITTEE_IDS = [
   "mezhregionalnye-svyazi",
 ];
 
+/**
+ * Номер созыва по умолчанию для комитетов структуры (из /data/committees.json).
+ * Используется в админке, когда API не возвращает convocationId.
+ */
+export const COMMITTEE_DEFAULT_CONVOCATION = {
+  agro: "VII",
+  infra: "VII",
+  youth: "VII",
+  security: "VII",
+  health: "VII",
+  const: "VII",
+  econ: "VII",
+  edu: "VII",
+  "smi-obshestvo": "VII",
+  "mezhregionalnye-svyazi": "VII",
+};
+
 /** Список комитетов по умолчанию для блока «Комитеты Верховного Хурала» — не исчезают при пустом API. */
 export const DEFAULT_STRUCTURE_COMMITTEES = [
   { id: "agro", title: "Комитет по аграрной политике, земельным отношениям, природопользованию, экологии и делам коренных малочисленных народов" },

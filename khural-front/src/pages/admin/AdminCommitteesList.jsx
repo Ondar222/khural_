@@ -3,7 +3,7 @@ import { App, Button, Input, Space, Table, Tag, Select, Empty, Modal } from "ant
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
 import { CommitteesApi } from "../../api/client.js";
-import { SYSTEM_COMMITTEE_IDS } from "../../utils/committeesOverrides.js";
+import { SYSTEM_COMMITTEE_IDS, COMMITTEE_DEFAULT_CONVOCATION } from "../../utils/committeesOverrides.js";
 
 function normalizeCommitteeName(value) {
   return String(value ?? "")
@@ -48,7 +48,11 @@ function resolveConvocationLabel(list, row) {
     if (name != null && String(name) === String(convId)) return String(name);
   }
   // Есть ID созыва, но нет в списке — показываем хотя бы ID вместо «—»
-  return String(convId);
+  if (convId != null && convId !== "") return String(convId);
+  // Подстановка из кода для комитетов структуры (из /data/committees.json)
+  const defaultNum = row?.id != null ? COMMITTEE_DEFAULT_CONVOCATION[String(row.id)] : undefined;
+  if (defaultNum != null && defaultNum !== "") return String(defaultNum);
+  return "";
 }
 
 /** Пустой комитет: нет описания, созыва и депутатов (не считаем системные комитеты структуры) */

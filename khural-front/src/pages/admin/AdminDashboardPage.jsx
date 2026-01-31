@@ -43,7 +43,10 @@ export default function AdminDashboardPage() {
       onLogout={adminData.handleLogout}
     >
       {loginCard}
-      <AdminDashboard stats={adminData.stats} />
+      <AdminDashboard
+        stats={adminData.stats}
+        onReload={adminData.reload}
+      />
     </AdminShell>
   );
 }
