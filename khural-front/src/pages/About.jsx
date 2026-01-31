@@ -4,6 +4,28 @@ import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { DEFAULT_STRUCTURE_COMMITTEES } from "../utils/committeesOverrides.js";
 
+function getCommitteeTitle(c) {
+  if (!c || typeof c !== "object") return "";
+  return String(c.title || c.name || c.label || c.description || "").trim();
+}
+
+function normalizeCommitteeTitleKey(value) {
+  return String(value ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function committeeRichness(c) {
+  let score = 0;
+  if (String(c?.description ?? "").trim().length > 0) score += 2;
+  const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+  if (convId != null && convId !== "") score += 2;
+  const members = Array.isArray(c?.members) ? c.members : [];
+  score += members.length;
+  if (c?.head && String(c.head).trim()) score += 1;
+  const hasChairman = members.some((m) => m?.role && String(m.role).toLowerCase().includes("председатель"));
+  if (hasChairman) score += 1;
+  return score;
+}
+
 export default function About() {
   const { committees, government } = useData();
   // NOTE: government is used to link Chairman in the structure diagram.
@@ -266,7 +288,18 @@ export default function About() {
                           result.push(c);
                         }
                       }
-                      return result.map((c) => (
+                      // В первой колонке убираем дубли по названию (как на /section)
+                      const byTitleKey = new Map();
+                      for (const c of result) {
+                        const key = normalizeCommitteeTitleKey(getCommitteeTitle(c));
+                        if (!key) continue;
+                        const existing = byTitleKey.get(key);
+                        if (!existing || committeeRichness(c) > committeeRichness(existing)) {
+                          byTitleKey.set(key, c);
+                        }
+                      }
+                      const dedupedResult = Array.from(byTitleKey.values());
+                      return dedupedResult.map((c) => (
                         <a
                           key={c.id}
                           className="org__item org__item--green"
