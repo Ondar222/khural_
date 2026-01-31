@@ -1663,11 +1663,47 @@ function getCommitteeTitle(c) {
   return String(c.title || c.name || c.label || c.description || "").trim();
 }
 
+function normalizeCommitteeTitleKey(value) {
+  return String(value ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function committeeRichness(c) {
+  let score = 0;
+  if (String(c?.description ?? "").trim().length > 0) score += 2;
+  const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+  if (convId != null && convId !== "") score += 2;
+  const members = Array.isArray(c?.members) ? c.members : [];
+  score += members.length;
+  if (c?.head && String(c.head).trim()) score += 1;
+  const hasChairman = members.some((m) => m?.role && String(m.role).toLowerCase().includes("председатель"));
+  if (hasChairman) score += 1;
+  return score;
+}
+
+function deduplicateCommitteesByRichness(list) {
+  const arr = Array.isArray(list) ? list : [];
+  const byName = new Map();
+  for (const c of arr) {
+    const key = normalizeCommitteeTitleKey(getCommitteeTitle(c));
+    if (!key) continue;
+    const existing = byName.get(key);
+    if (!existing || committeeRichness(c) > committeeRichness(existing)) {
+      byName.set(key, c);
+    }
+  }
+  return Array.from(byName.values());
+}
+
 export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
   const { committees, factions: structureFactions, government, deputies, convocations } = useData();
   const focus = q.get("focus");
+
+  const committeesDeduped = React.useMemo(
+    () => deduplicateCommitteesByRichness(committees || []),
+    [committees]
+  );
 
   // Scroll to a requested block from URL (e.g., /section?focus=committees)
   React.useEffect(() => {
@@ -1715,7 +1751,7 @@ export default function SectionPage() {
                   Выберите комитет, чтобы посмотреть состав и информацию.
                 </p>
                 <div className="grid cols-2" style={{ marginTop: 12 }}>
-                  {(committees || []).map((c) => {
+                  {committeesDeduped.map((c) => {
                     const title = getCommitteeTitle(c);
                     return (
                       <a
@@ -2250,7 +2286,7 @@ export default function SectionPage() {
                   </a>
                 ))}
               </div>
-              {/* Three column zone: committees on the left, commissions/councils on right */}
+              {/* Три зоны: комитеты слева, два комитета по центру, комиссии справа */}
               <div className="org__row org__row--cols4">
                 <div className="org__col" id="focus-committees">
                   <a
@@ -2260,7 +2296,7 @@ export default function SectionPage() {
                     Комитеты Верховного Хурала (парламента) Республики Тыва
                   </a>
                   {(() => {
-                    const fromContext = committees || [];
+                    const fromContext = committeesDeduped;
                     const byId = new Map(fromContext.map((c) => [String(c?.id ?? ""), c]));
                     const seen = new Set();
                     const result = [];
@@ -2279,7 +2315,18 @@ export default function SectionPage() {
                         result.push(c);
                       }
                     }
-                    return result.map((c) => {
+                    // В первой колонке убираем дубли по названию (одно имя — одна карточка)
+                    const byTitleKey = new Map();
+                    for (const c of result) {
+                      const key = normalizeCommitteeTitleKey(getCommitteeTitle(c));
+                      if (!key) continue;
+                      const existing = byTitleKey.get(key);
+                      if (!existing || committeeRichness(c) > committeeRichness(existing)) {
+                        byTitleKey.set(key, c);
+                      }
+                    }
+                    const dedupedResult = Array.from(byTitleKey.values());
+                    return dedupedResult.map((c) => {
                       const title = getCommitteeTitle(c);
                       return (
                         <a

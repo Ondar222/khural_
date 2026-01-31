@@ -16,9 +16,25 @@ function getCommitteeTitle(row) {
   return String(row?.name || row?.title || row?.label || row?.description || "").trim();
 }
 
+/** ID созыва комитета (API может вернуть convocationId, convocation_id или вложенный convocation) */
+function getCommitteeConvocationId(row) {
+  return (
+    row?.convocation?.id ??
+    row?.convocationId ??
+    row?.convocation_id ??
+    row?.convocation
+  );
+}
+
 function resolveConvocationLabel(list, row) {
-  const convId = row?.convocation?.id || row?.convocationId || row?.convocation;
-  if (!convId) return "";
+  // Если у комитета уже есть объект созыва с названием — показываем его (API или обогащение)
+  const conv = row?.convocation;
+  if (conv && typeof conv === "object") {
+    const name = conv?.name ?? conv?.number ?? conv?.title;
+    if (name != null && String(name).trim() !== "") return String(name).trim();
+  }
+  const convId = getCommitteeConvocationId(row);
+  if (convId == null || convId === "") return "";
   const items = Array.isArray(list) ? list : [];
   for (const it of items) {
     if (it == null) continue;
@@ -31,7 +47,28 @@ function resolveConvocationLabel(list, row) {
     if (id != null && String(id) === String(convId)) return String(name || id);
     if (name != null && String(name) === String(convId)) return String(name);
   }
-  return "";
+  // Есть ID созыва, но нет в списке — показываем хотя бы ID вместо «—»
+  return String(convId);
+}
+
+/** Пустой комитет: нет описания, созыва и депутатов (не считаем системные комитеты структуры) */
+function isCommitteeEmpty(row, isSystem) {
+  if (isSystem) return false;
+  const hasDesc = String(row?.description ?? "").trim().length > 0;
+  const hasConv = getCommitteeConvocationId(row) != null && getCommitteeConvocationId(row) !== "";
+  const members = Array.isArray(row?.members) ? row.members : [];
+  const hasMembers = members.length > 0;
+  return !hasDesc && !hasConv && !hasMembers;
+}
+
+/** Очки «полноты» комитета: больше = оставляем при дедупликации */
+function committeeRichness(row) {
+  let score = 0;
+  if (String(row?.description ?? "").trim().length > 0) score += 2;
+  if (getCommitteeConvocationId(row) != null && getCommitteeConvocationId(row) !== "") score += 2;
+  const members = Array.isArray(row?.members) ? row.members : [];
+  if (members.length > 0) score += members.length;
+  return score;
 }
 
 export default function AdminCommitteesList({
@@ -61,20 +98,47 @@ export default function AdminCommitteesList({
 
   const isMobile = windowWidth <= 820;
 
+  const isSystemCommittee = (row) =>
+    SYSTEM_COMMITTEE_IDS.includes(String(row?.id ?? ""));
+
   const filtered = React.useMemo(() => {
-    let filteredItems = items || [];
-    
-    // Фильтр по созыву
+    let list = Array.isArray(items) ? items.slice() : [];
+
+    // 1) Нормализация: подставить convocationId из convocation_id для отображения и фильтра
+    list = list.map((c) => {
+      const convId = getCommitteeConvocationId(c);
+      if (convId != null && (c.convocationId === undefined && c.convocation?.id === undefined)) {
+        return { ...c, convocationId: convId };
+      }
+      return c;
+    });
+
+    // 2) Убрать пустые комитеты (нет описания, созыва и депутатов), кроме системных
+    list = list.filter((c) => !isCommitteeEmpty(c, isSystemCommittee(c)));
+
+    // 3) Дедупликация по нормализованному названию: оставить один с большей «полнотой»
+    const byName = new Map();
+    for (const c of list) {
+      const key = normalizeCommitteeName(getCommitteeTitle(c));
+      if (!key) continue;
+      const existing = byName.get(key);
+      if (!existing || committeeRichness(c) > committeeRichness(existing)) {
+        byName.set(key, c);
+      }
+    }
+    list = Array.from(byName.values());
+
+    // 4) Фильтр по созыву
     if (selectedConvocationId && selectedConvocationId !== "all") {
-      filteredItems = filteredItems.filter(
-        (c) => String(c?.convocation?.id || c?.convocationId) === String(selectedConvocationId)
+      list = list.filter(
+        (c) => String(getCommitteeConvocationId(c)) === String(selectedConvocationId)
       );
     }
-    
-    // Поиск по названию
+
+    // 5) Поиск по названию/описанию
     const qq = q.trim().toLowerCase();
     if (qq) {
-      filteredItems = filteredItems.filter((c) => {
+      list = list.filter((c) => {
         const title = getCommitteeTitle(c);
         return (
           String(title || "").toLowerCase().includes(qq) ||
@@ -82,16 +146,14 @@ export default function AdminCommitteesList({
         );
       });
     }
-    
-    return filteredItems;
+
+    return list;
   }, [items, selectedConvocationId, q]);
 
   const isLocalStatic = (row) => String(row?.id || "").startsWith("local-static-");
   const isLocal = (row) =>
     !isLocalStatic(row) && String(row?.id || "").startsWith("local-");
   const isCommitteeActive = (row) => normalizeBool(row?.isActive, true) !== false;
-  const isSystemCommittee = (row) =>
-    SYSTEM_COMMITTEE_IDS.includes(String(row?.id ?? ""));
 
   const importCommitteesFromJson = React.useCallback(() => {
     if (!canWrite) return;

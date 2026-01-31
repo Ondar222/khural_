@@ -4652,11 +4652,17 @@ body.hc-yb .ant-btn {
 .org__row--cols4 {
   grid-template-columns: 1fr 1fr 1fr 1fr;
 }
+.org__row--cols2 {
+  grid-template-columns: 1fr 1.5fr;
+}
 .org__col--span2 {
   grid-column: 3 / 5;
 }
 @media (max-width: 959px) {
   .org__row--cols4 {
+    grid-template-columns: 1fr;
+  }
+  .org__row--cols2 {
     grid-template-columns: 1fr;
   }
   .org__col--span2 {

@@ -495,10 +495,26 @@ export function useAdminData() {
     const baseConv = Array.isArray(apiConvocations) ? apiConvocations : [];
     const fallbackConv = Array.isArray(fb.convocations) ? fb.convocations : [];
     const mergedConv = mergeConvocationsPreferApi(baseConv, fallbackConv);
-    setConvocations(mergeConvocationsWithOverrides(mergedConv, readConvocationsOverrides()));
+    const convocationsList = mergeConvocationsWithOverrides(mergedConv, readConvocationsOverrides());
+    setConvocations(convocationsList);
     const apiCommitteesList = Array.isArray(apiCommittees) ? apiCommittees : [];
     committeesApiOkRef.current = apiCommitteesList.length > 0;
-    const baseCommittees = mergeCommitteesPreferApi(apiCommitteesList, publicCommitteesFallback());
+    let baseCommittees = mergeCommitteesPreferApi(apiCommitteesList, publicCommitteesFallback());
+    // Обогатить комитеты объектом созыва по convocationId/convocation_id для фильтра и колонки «Созыв»
+    baseCommittees = baseCommittees.map((c) => {
+      const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+      if (convId == null || convId === "") return c;
+      const conv = Array.isArray(convocationsList)
+        ? convocationsList.find(
+            (it) =>
+              it != null &&
+              (String(it?.id ?? it?.value) === String(convId) || String(it?.name ?? it?.number ?? "") === String(convId))
+          )
+        : null;
+      if (!conv) return c;
+      const convObj = typeof conv === "string" ? { id: conv, name: conv } : { id: conv?.id ?? convId, name: conv?.name ?? conv?.number ?? String(convId) };
+      return { ...c, convocationId: c.convocationId ?? convId, convocation: c.convocation && (c.convocation?.name ?? c.convocation?.id) ? c.convocation : convObj };
+    });
     setCommittees(mergeCommitteesWithOverrides(baseCommittees, readCommitteesOverrides()));
     const pagesList = normalizeServerList(apiPages);
     setPages(Array.isArray(pagesList) ? pagesList : []);

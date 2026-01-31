@@ -103,6 +103,35 @@ function resolveConvocationName(list, convId) {
   return "";
 }
 
+/** Очки «полноты» комитета: больше = оставляем при дедупликации */
+function committeeRichness(c) {
+  let score = 0;
+  if (String(c?.description ?? "").trim().length > 0) score += 2;
+  const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+  if (convId != null && convId !== "") score += 2;
+  const members = Array.isArray(c?.members) ? c.members : [];
+  score += members.length;
+  if (c?.head && String(c.head).trim()) score += 1;
+  const hasChairman = members.some((m) => m?.role && String(m.role).toLowerCase().includes("председатель"));
+  if (hasChairman) score += 1;
+  return score;
+}
+
+/** Один комитет на нормализованное название — оставляем запись с наибольшей полнотой */
+function deduplicateCommitteesByRichness(list) {
+  const arr = Array.isArray(list) ? list : [];
+  const byName = new Map();
+  for (const c of arr) {
+    const key = normalizeCommitteeTitle(c?.title || c?.name || c?.label || c?.description);
+    if (!key) continue;
+    const existing = byName.get(key);
+    if (!existing || committeeRichness(c) > committeeRichness(existing)) {
+      byName.set(key, c);
+    }
+  }
+  return Array.from(byName.values());
+}
+
 export default function Committee() {
   const { committees: committeesFromContext, deputies, convocations, loading, errors, reload } = useData();
   const [committee, setCommittee] = React.useState(null);
@@ -159,13 +188,15 @@ export default function Committee() {
   const committees = React.useMemo(() => {
     const base = mergeCommitteesPreferApi(apiCommittees, committeesFromContext);
     const merged = mergeCommitteesWithOverrides(base, readCommitteesOverrides());
+    const deduped = deduplicateCommitteesByRichness(merged);
+    const sorted = deduped.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
     console.log("[Committee] Итоговый список комитетов:", {
       apiCommittees: apiCommittees?.length || 0,
       committeesFromContext: committeesFromContext?.length || 0,
       merged: merged?.length || 0,
-      base: Array.isArray(base) ? base.length : "не массив",
+      deduped: deduped?.length || 0,
     });
-    return merged;
+    return sorted;
   }, [apiCommittees, committeesFromContext, overridesSeq]);
   
   // Get current section from URL hash or default to "about"
