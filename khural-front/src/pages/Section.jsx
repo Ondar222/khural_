@@ -921,22 +921,15 @@ function ConvocationReportsPage({ convocationNumber }) {
         <div className="container">
           <div className="page-grid">
             <div>
-              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12 }}>
                 <button
                   type="button"
+                  className="section-tab-btn section-tab-btn--back"
                   onClick={() => {
                     setCurrentView("committees");
                     setSelectedCategory(null);
                     setSelectedYearForCategory(null);
                     window.location.hash = "";
-                  }}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: 6,
-                    border: "1px solid rgba(0, 51, 102, 0.2)",
-                    background: "#fff",
-                    cursor: "pointer",
-                    fontSize: 14,
                   }}
                 >
                   ← Комитеты
@@ -953,19 +946,11 @@ function ConvocationReportsPage({ convocationNumber }) {
                         {categories.includes("agenda") && (
                           <button
                             type="button"
+                            className={`section-tab-btn ${selectedCategory === "agenda" ? "section-tab-btn--active" : ""}`}
                             onClick={() => {
                               setSelectedCategory("agenda");
                               setSelectedYearForCategory(null);
                               window.location.hash = "#documents-agenda";
-                            }}
-                            style={{
-                              padding: "12px 24px",
-                              borderRadius: 8,
-                              border: "1px solid rgba(0, 51, 102, 0.2)",
-                              background: "#fff",
-                              cursor: "pointer",
-                              fontSize: 16,
-                              fontWeight: 700,
                             }}
                           >
                             Повестки ({documentsByCategoryAndYear.agenda?.years?.reduce((sum, y) => sum + (documentsByCategoryAndYear.agenda.documents[y]?.length || 0), 0) || 0})
@@ -974,19 +959,11 @@ function ConvocationReportsPage({ convocationNumber }) {
                         {categories.includes("report") && (
                           <button
                             type="button"
+                            className={`section-tab-btn ${selectedCategory === "report" ? "section-tab-btn--active" : ""}`}
                             onClick={() => {
                               setSelectedCategory("report");
                               setSelectedYearForCategory(null);
                               window.location.hash = "#documents-report";
-                            }}
-                            style={{
-                              padding: "12px 24px",
-                              borderRadius: 8,
-                              border: "1px solid rgba(0, 51, 102, 0.2)",
-                              background: "#fff",
-                              cursor: "pointer",
-                              fontSize: 16,
-                              fontWeight: 700,
                             }}
                           >
                             Отчеты ({documentsByCategoryAndYear.report?.years?.reduce((sum, y) => sum + (documentsByCategoryAndYear.report.documents[y]?.length || 0), 0) || 0})
@@ -999,18 +976,11 @@ function ConvocationReportsPage({ convocationNumber }) {
                       <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
                         <button
                           type="button"
+                          className="section-tab-btn section-tab-btn--back"
                           onClick={() => {
                             setSelectedCategory(null);
                             setSelectedYearForCategory(null);
                             window.location.hash = "#documents";
-                          }}
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: 6,
-                            border: "1px solid rgba(0, 51, 102, 0.2)",
-                            background: "#fff",
-                            cursor: "pointer",
-                            fontSize: 14,
                           }}
                         >
                           ← Категории
@@ -1129,44 +1099,25 @@ function ConvocationReportsPage({ convocationNumber }) {
             <div>
               <h1>Отчеты о деятельности комитетов {convocationNumber} созыва</h1>
               
-              {/* Navigation buttons */}
               <div style={{ display: "flex", gap: 12, marginTop: 20, marginBottom: 20 }}>
                 <button
                   type="button"
+                  className={`section-tab-btn ${currentView === "committees" ? "section-tab-btn--active" : ""}`}
                   onClick={() => {
                     setCurrentView("committees");
                     window.location.hash = "";
-                  }}
-                  style={{
-                    padding: "10px 20px",
-                    borderRadius: 8,
-                    border: "1px solid rgba(0, 51, 102, 0.2)",
-                    background: currentView === "committees" ? "rgba(0, 51, 102, 0.1)" : "#fff",
-                    color: currentView === "committees" ? "#003366" : "#6b7280",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontSize: 15,
                   }}
                 >
                   Комитеты
                 </button>
                 <button
                   type="button"
+                  className={`section-tab-btn ${currentView === "documents" ? "section-tab-btn--active" : ""}`}
                   onClick={() => {
                     setCurrentView("documents");
                     setSelectedCategory(null);
                     setSelectedYearForCategory(null);
                     window.location.hash = "#documents";
-                  }}
-                  style={{
-                    padding: "10px 20px",
-                    borderRadius: 8,
-                    border: "1px solid rgba(0, 51, 102, 0.2)",
-                    background: currentView === "documents" ? "rgba(0, 51, 102, 0.1)" : "#fff",
-                    color: currentView === "documents" ? "#003366" : "#6b7280",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontSize: 15,
                   }}
                 >
                   Документы
@@ -1231,21 +1182,14 @@ function ConvocationReportsPage({ convocationNumber }) {
       <div className="container">
         <div className="page-grid">
           <div>
-            <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 12 }}>
               <button
                 type="button"
+                className="section-tab-btn section-tab-btn--back"
                 onClick={() => {
                   setSelectedCommittee(null);
                   setSelectedYear(null);
                   window.location.hash = "";
-                }}
-                style={{
-                  padding: "6px 12px",
-                  borderRadius: 6,
-                  border: "1px solid rgba(0, 51, 102, 0.2)",
-                  background: "#fff",
-                  cursor: "pointer",
-                  fontSize: 14,
                 }}
               >
                 ← Назад к списку комитетов
@@ -1256,45 +1200,25 @@ function ConvocationReportsPage({ convocationNumber }) {
             </div>
 
             <h2 style={{ marginTop: 24 }}>Повестки и отчеты</h2>
-            
-            {/* Category selector */}
             <div style={{ display: "flex", gap: 12, marginTop: 20, marginBottom: 24 }}>
               <button
                 type="button"
+                className={`section-tab-btn ${reportsCategory === "agendas" ? "section-tab-btn--active" : ""}`}
                 onClick={() => {
                   setReportsCategory("agendas");
                   setSelectedYear(null);
                   window.location.hash = "#agendas";
-                }}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: 8,
-                  border: "1px solid rgba(0, 51, 102, 0.2)",
-                  background: reportsCategory === "agendas" ? "rgba(0, 51, 102, 0.1)" : "#fff",
-                  color: reportsCategory === "agendas" ? "#003366" : "#6b7280",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  fontSize: 15,
                 }}
               >
                 Повестки
               </button>
               <button
                 type="button"
+                className={`section-tab-btn ${reportsCategory === "reports" ? "section-tab-btn--active" : ""}`}
                 onClick={() => {
                   setReportsCategory("reports");
                   setSelectedYear(null);
                   window.location.hash = "#reports";
-                }}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: 8,
-                  border: "1px solid rgba(0, 51, 102, 0.2)",
-                  background: reportsCategory === "reports" ? "rgba(0, 51, 102, 0.1)" : "#fff",
-                  color: reportsCategory === "reports" ? "#003366" : "#6b7280",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  fontSize: 15,
                 }}
               >
                 Отчеты
@@ -1866,12 +1790,10 @@ export default function SectionPage() {
                         key={String(f)}
                         className="tile link"
                         href={`/deputies?faction=${encodeURIComponent(String(f))}`}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
                       >
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                          <span aria-hidden="true">‹</span>
-                          {f}
-                        </span>
-                        <span aria-hidden="true">›</span>
+                        <span>{f}</span>
+                        <span aria-hidden="true">→</span>
                       </a>
                     ))}
                   </div>

@@ -3235,6 +3235,56 @@ a {
   text-decoration: underline;
 }
 
+/* Кнопки-вкладки на странице «Отчеты о деятельности комитетов» — читаемый текст при любом состоянии */
+.section-tab-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 51, 102, 0.35);
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.section-tab-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.section-tab-btn:active,
+.section-tab-btn:focus,
+.section-tab-btn:focus-visible {
+  background: #e2e8f0;
+  color: #0f172a;
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.section-tab-btn--active {
+  background: #003366;
+  color: #fff;
+  border-color: #003366;
+}
+.section-tab-btn--active:hover,
+.section-tab-btn--active:active,
+.section-tab-btn--active:focus,
+.section-tab-btn--active:focus-visible {
+  background: #002244;
+  color: #fff;
+}
+
+.section-tab-btn--back {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.section-tab-btn--back:hover,
+.section-tab-btn--back:active,
+.section-tab-btn--back:focus-visible {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
 /* Committee detail title row (back + title) */
 .committee-detail__titlebar {
   display: flex;
