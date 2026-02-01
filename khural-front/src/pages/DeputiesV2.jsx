@@ -259,6 +259,16 @@ function mergeByIdPreferApi(baseDeputies, apiDeputies) {
     if (apiD && (!Array.isArray(merged.convocations) || merged.convocations.length === 0) && Array.isArray(d.convocations) && d.convocations.length > 0) {
       merged.convocations = d.convocations;
     }
+    // Не затирать контакты из DataContext/person info, если API не вернул телефон/почту
+    if (apiD && d?.contacts) {
+      merged.contacts = merged.contacts && typeof merged.contacts === "object" ? { ...merged.contacts } : {};
+      if (!hasValue(merged.contacts.phone) && hasValue(d.contacts?.phone)) {
+        merged.contacts.phone = d.contacts.phone;
+      }
+      if (!hasValue(merged.contacts.email) && hasValue(d.contacts?.email)) {
+        merged.contacts.email = d.contacts.email;
+      }
+    }
     // Ensure status fields are preserved as booleans (prefer API values)
     merged.mandateEnded = Boolean(merged.mandateEnded ?? merged.mandate_ended);
     merged.isDeceased = Boolean(merged.isDeceased ?? merged.is_deceased);
