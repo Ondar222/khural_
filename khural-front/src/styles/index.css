@@ -2578,6 +2578,23 @@ a {
   }
 }
 
+/* Person detail: кнопка «Обратиться к депутату» — при наведении остаётся видимой (тёмный фон, белый текст) */
+.person-detail .btn.btn--primary,
+.person-detail a.btn.btn--primary {
+  background: #0a3b72;
+  color: #ffffff;
+  border-color: #0a3b72;
+}
+.person-detail .btn.btn--primary:hover,
+.person-detail a.btn.btn--primary:hover,
+.person-detail .btn.btn--primary:focus-visible,
+.person-detail a.btn.btn--primary:focus-visible {
+  background: #003366;
+  color: #ffffff;
+  border-color: #003366;
+  filter: none;
+}
+
 /* Apparatus page layout polish */
 .apparatus-lead {
   margin: 8px 0 18px;
@@ -2902,9 +2919,11 @@ a {
   }
   .person-hero__body {
     justify-content: flex-start;
+    align-items: center;
+    text-align: center;
   }
   .person-name {
-    font-size: 24px;
+    font-size: 20px;
   }
   .person-meta {
     font-size: 15px;
@@ -2928,7 +2947,7 @@ a {
 }
 @media (max-width: 560px) {
   .person-name {
-    font-size: 22px;
+    font-size: 18px;
   }
   .doc-header {
     grid-template-columns: 24px 1fr;
