@@ -4419,10 +4419,19 @@ html[data-lang="tyv"] .topbar > a {
   margin: 0 auto;
   box-sizing: border-box;
 }
-.mega-sheet .sheet-title {
-  margin-right: auto;
+/* Логотип и название рядом, как в Header / Footer / мобильном меню */
+.mega-sheet .sheet-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
-  display: none; /* show only on mobile where main nav is hidden */
+}
+.mega-sheet .sheet-brand .logo {
+  flex-shrink: 0;
+}
+.mega-sheet .sheet-title {
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   gap: 2px;
 }
@@ -4497,6 +4506,13 @@ html[data-lang="tyv"] .topbar > a {
 }
 .sheet-col a:hover {
   color: var(--link);
+}
+/* При переключении на TY размеры в колонках мега-меню не меняются (только здесь) */
+html[data-lang="tyv"] .mega-sheet .sheet-col h3 {
+  font-size: 18px;
+}
+html[data-lang="tyv"] .mega-sheet .sheet-col a {
+  font-size: 15px;
 }
 .sheet-meta {
   color: #4b5563;

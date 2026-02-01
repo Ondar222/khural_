@@ -448,23 +448,21 @@ export default function Header() {
       ></div>
       <div className={`mega-sheet ${sheetOpen ? "open" : ""}`} role="dialog" aria-modal="true">
         <div className="sheet-header">
-          <a
-            href="/"
-            className="logo"
-            aria-label={t("goHome")}
-            onClick={() => setSheetOpen(false)}
-            style={{
-              marginRight: "auto",
-              textDecoration: "none",
-            }}
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
-              alt=""
-              width={44}
-              height={44}
-            />
-          </a>
+          <div className="sheet-brand" style={{ marginRight: "auto" }}>
+            <a
+              href="/"
+              className="logo"
+              aria-label={t("goHome")}
+              onClick={() => setSheetOpen(false)}
+              style={{ textDecoration: "none" }}
+            >
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
+                alt=""
+                width={44}
+                height={44}
+              />
+            </a>
             <a
               href="/"
               className="sheet-title"
@@ -491,6 +489,7 @@ export default function Header() {
                 </>
               )}
             </a>
+          </div>
           <img 
             id="specialButton" 
             onClick={handleAccessibilityToggle}

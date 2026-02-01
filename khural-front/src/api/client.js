@@ -416,6 +416,30 @@ export const PublicApi = {
       }
     }
   },
+
+  /**
+   * Перевод массива текстов одним запросом (меньше запросов → меньше 429).
+   * При 429 возвращает исходные тексты.
+   */
+  async translateBatch(texts, from, to) {
+    if (!Array.isArray(texts) || texts.length === 0) {
+      return { translated: [], rateLimited: false };
+    }
+    try {
+      const result = await apiFetch("/translation/translate-batch", {
+        method: "POST",
+        body: { texts, from, to },
+        auth: true,
+      });
+      const translated = Array.isArray(result?.translated) ? result.translated : texts;
+      return { translated, rateLimited: false };
+    } catch (e) {
+      if (e?.status === 429) {
+        return { translated: texts, rateLimited: true };
+      }
+      return { translated: texts, rateLimited: false };
+    }
+  },
 };
 
 export const SliderApi = {

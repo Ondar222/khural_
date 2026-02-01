@@ -1,5 +1,6 @@
 import React from "react";
 import { PublicApi } from "../api/client.js";
+import { useAuth } from "./AuthContext.jsx";
 
 // Переводы, выгруженные из таблиц (ключ — русский текст, значение — тувинский)
 const sheetTranslations = {
@@ -320,6 +321,7 @@ export function useI18n() {
 }
 
 export default function I18nProvider({ children }) {
+  const { isAuthenticated } = useAuth();
   const [lang, setLang] = React.useState(() => {
     try {
       const saved = localStorage.getItem("site_lang");
@@ -348,66 +350,59 @@ export default function I18nProvider({ children }) {
     }
   }, [lang]);
 
-  // Предзагрузка переводов через API при смене языка
+  // Предзагрузка переводов: статический словарь всегда; API — только для авторизованных (иначе 401)
   React.useEffect(() => {
     if (lang === "ty" && dict.ru) {
-      // Сначала используем статический словарь для мгновенного отображения
       const staticTranslations = {};
       Object.keys(dict.ru).forEach((key) => {
         staticTranslations[key] = dict.ty && dict.ty[key] ? dict.ty[key] : dict.ru[key];
       });
       setApiTranslations(staticTranslations);
 
-      // Затем загружаем переводы через API для обновления
+      if (!isAuthenticated) return;
+
       const loadTranslations = async () => {
         const newTranslations = { ...staticTranslations };
         const keys = Object.keys(dict.ru);
 
-        // Загружаем переводы батчами для производительности
-        const batchSize = 5;
-        for (let i = 0; i < keys.length; i += batchSize) {
-          const batch = keys.slice(i, i + batchSize);
-          await Promise.all(
-            batch.map(async (key) => {
-              const cacheKey = `ru-ty-${dict.ru[key]}`;
-              if (translationCache.current.has(cacheKey)) {
-                newTranslations[key] = translationCache.current.get(cacheKey);
-                return;
-              }
+        const keysToFetch = keys.filter((key) => {
+          const cacheKey = `ru-ty-${dict.ru[key]}`;
+          if (translationCache.current.has(cacheKey)) {
+            newTranslations[key] = translationCache.current.get(cacheKey);
+            return false;
+          }
+          if (dict.ty?.[key] && dict.ty[key] !== dict.ru[key]) return false;
+          return true;
+        });
 
-              try {
-                const result = await PublicApi.translate(dict.ru[key], "ru", "ty");
-                // Пробуем разные форматы ответа API
-                let translated = null;
+        const BATCH_SIZE = 15;
+        const DELAY_MS = 800;
 
-                if (typeof result === "string") {
-                  translated = result;
-                } else if (result) {
-                  translated =
-                    result?.translated ||
-                    result?.text ||
-                    result?.result ||
-                    result?.translation ||
-                    result?.target ||
-                    result?.data?.translated ||
-                    result?.data?.text ||
-                    result?.data?.result ||
-                    null;
-                }
+        for (let i = 0; i < keysToFetch.length; i += BATCH_SIZE) {
+          const batchKeys = keysToFetch.slice(i, i + BATCH_SIZE);
+          const texts = batchKeys.map((k) => dict.ru[k]);
 
-                if (translated && translated !== dict.ru[key] && translated.trim()) {
-                  translationCache.current.set(cacheKey, translated);
-                  newTranslations[key] = translated;
-                }
-              } catch {
-                // Оставляем статический перевод, не логируем ошибки для каждого ключа
-                // console.warn(`Translation error for key ${key}:`, error);
-              }
-            })
+          const { translated: translatedArr, rateLimited } = await PublicApi.translateBatch(
+            texts,
+            "ru",
+            "ty"
           );
 
-          // Обновляем состояние после каждого батча для постепенного обновления
+          if (rateLimited) break;
+
+          batchKeys.forEach((key, idx) => {
+            const translated = translatedArr[idx];
+            if (translated && translated !== dict.ru[key] && String(translated).trim()) {
+              const cacheKey = `ru-ty-${dict.ru[key]}`;
+              translationCache.current.set(cacheKey, translated);
+              newTranslations[key] = translated;
+            }
+          });
+
           setApiTranslations({ ...newTranslations });
+          if (i + BATCH_SIZE < keysToFetch.length) {
+            await new Promise((r) => setTimeout(r, DELAY_MS));
+          }
         }
       };
 
@@ -415,7 +410,7 @@ export default function I18nProvider({ children }) {
     } else {
       setApiTranslations({});
     }
-  }, [lang]);
+  }, [lang, isAuthenticated]);
 
   const t = React.useCallback(
     (key) => {
