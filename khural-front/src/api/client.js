@@ -35,9 +35,9 @@ function resolveApiBaseUrl() {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
-/** Базовый URL только для API календаря (события). Остальные запросы используют API_BASE_URL. */
+/** Базовый URL только для API календаря (события). Если VITE_CALENDAR_API_BASE_URL не задан — используем тот же бэкенд, что и для остального приложения (события будут видны на всех устройствах). */
 export const CALENDAR_API_BASE_URL =
-  normalizeBaseUrl(import.meta.env.VITE_CALENDAR_API_BASE_URL) || "https://someshit.yurta.site/api";
+  normalizeBaseUrl(import.meta.env.VITE_CALENDAR_API_BASE_URL) || API_BASE_URL;
 
 // Логируем базовый URL для отладки (только в DEV)
 if (typeof window !== "undefined" && import.meta.env.DEV) {
