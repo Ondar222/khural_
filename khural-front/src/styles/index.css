@@ -4655,6 +4655,7 @@ body.hc-yb .ant-btn {
   border-radius: 8px;
   text-align: left;
   padding: 6px;
+  overflow: visible;
 }
 .calendar__day._empty {
   background: #f8fafc;
@@ -4673,12 +4674,44 @@ body.hc-yb .ant-btn {
   left: 6px;
   display: flex;
   gap: 4px;
+  overflow: visible;
 }
 .calendar__dot {
   width: 6px;
   height: 6px;
   border-radius: 999px;
   background: var(--gold);
+  flex-shrink: 0;
+}
+/* Календарь: на мобильных и планшетах точки и подсветка событий всегда видны */
+@media (max-width: 959px) {
+  .calendar__day {
+    min-height: 64px;
+    overflow: visible;
+  }
+  .calendar__dots {
+    bottom: 5px;
+    left: 5px;
+    gap: 3px;
+  }
+  .calendar__dot {
+    width: 8px;
+    height: 8px;
+  }
+}
+@media (max-width: 479px) {
+  .calendar__day {
+    min-height: 56px;
+    padding: 4px;
+  }
+  .calendar__dots {
+    bottom: 4px;
+    left: 4px;
+  }
+  .calendar__dot {
+    width: 7px;
+    height: 7px;
+  }
 }
 /* Modal */
 .modal-overlay {

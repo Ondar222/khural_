@@ -52,12 +52,36 @@ function toText(v) {
   return String(v);
 }
 
+/** Приводит дату к YYYY-MM-DD для календаря (локально и на проде) */
+function toDateKey(v) {
+  if (v === undefined || v === null) return "";
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+    return s;
+  }
+  if (typeof v === "number") {
+    const d = new Date(v);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  if (typeof v === "object" && v instanceof Date && !isNaN(v.getTime())) {
+    const y = v.getFullYear(), m = String(v.getMonth() + 1).padStart(2, "0"), day = String(v.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  return "";
+}
+
 function normalizeEvent(event) {
   const id = String(event?.id ?? "").trim();
   if (!id) return null;
   return {
     id,
-    date: toText(event?.date),
+    date: toDateKey(event?.date) || toText(event?.date),
     title: toText(event?.title),
     time: toText(event?.time),
     place: toText(event?.place),

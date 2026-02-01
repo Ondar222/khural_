@@ -1853,7 +1853,12 @@ export default function DataProvider({ children }) {
         .then((arr) => {
           if (!cancelled) setEvents(mergeEventsWithOverrides(Array.isArray(arr) ? arr : [], readEventsOverrides()));
         })
-        .catch((e) => { if (!cancelled) markError("events", e); })
+        .catch((e) => {
+          if (!cancelled) {
+            markError("events", e);
+            setEvents(mergeEventsWithOverrides([], readEventsOverrides()));
+          }
+        })
         .finally(() => { if (!cancelled) markLoading("events", false); });
     })();
     return () => { cancelled = true; };

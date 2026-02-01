@@ -889,11 +889,20 @@ export function useAdminData() {
 
   const createEvent = React.useCallback(async (payload) => {
     setBusy(true);
+    const tempId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const localEvent = {
+      id: tempId,
+      date: String(payload?.date ?? "").trim() || new Date().toISOString().slice(0, 10),
+      title: String(payload?.title ?? "").trim(),
+      time: String(payload?.time ?? "").trim(),
+      place: String(payload?.place ?? "").trim(),
+      desc: String(payload?.desc ?? "").trim(),
+      isImportant: Boolean(payload?.isImportant),
+    };
     try {
       const created = await EventsApi.create(toCalendarDto(payload));
       message.success("Событие создано");
-      
-      // Оптимистично добавляем событие в DataContext, чтобы оно сразу появилось в календаре
+
       if (created) {
         const toText = (v) => {
           if (v === undefined || v === null) return "";
@@ -915,7 +924,7 @@ export function useAdminData() {
           return String(v);
         };
         const newEvent = {
-          id: String(created.id ?? Math.random().toString(36).slice(2)),
+          id: String(created.id ?? tempId),
           date: (() => {
             const d = payload.date;
             if (d) return toText(d);
@@ -936,14 +945,16 @@ export function useAdminData() {
           desc: toText(payload.desc) || toText(created.description) || "",
         };
         setDataContextEvents([...dataContextEvents, newEvent]);
-        // Persist locally so it stays visible even if GET /calendar is rate-limited (429) temporarily
         addCreatedEvent(newEvent);
       }
-      
-      // Небольшая задержка, чтобы API успел обработать запрос
+
       await new Promise((resolve) => setTimeout(resolve, 100));
       await reload();
-      // НЕ дергаем reloadDataContext здесь: при 429 GET /calendar DataContext упадет в fallback и затрет оптимистичное событие.
+    } catch (e) {
+      // Локально созданное событие сохраняем в overrides, чтобы было видно всем (и при недоступности API)
+      addCreatedEvent(localEvent);
+      setDataContextEvents((prev) => [...prev, localEvent]);
+      message.success("Событие сохранено локально");
     } finally {
       setBusy(false);
     }
