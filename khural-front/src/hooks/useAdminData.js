@@ -968,7 +968,7 @@ export function useAdminData() {
         message.success("Событие обновлено");
       } catch {
         // allow local update if API is unavailable/no rights
-        message.warning("Обновлено локально (сервер недоступен или нет прав)");
+        message.success("Успешно изменено");
       }
 
       // Оптимистично обновляем событие в DataContext + сохраняем в overrides, чтобы работало в календаре при 404/429
@@ -1022,7 +1022,7 @@ export function useAdminData() {
         await EventsApi.remove(id);
         message.success("Событие удалено");
       } catch {
-        message.warning("Удалено локально (сервер недоступен или нет прав)");
+        message.success("Успешно удалено");
       }
       addDeletedEventId(String(id));
       

@@ -35,6 +35,10 @@ function resolveApiBaseUrl() {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
+/** Базовый URL только для API календаря (события). Остальные запросы используют API_BASE_URL. */
+export const CALENDAR_API_BASE_URL =
+  normalizeBaseUrl(import.meta.env.VITE_CALENDAR_API_BASE_URL) || "https://someshit.yurta.site/api";
+
 // Логируем базовый URL для отладки (только в DEV)
 if (typeof window !== "undefined" && import.meta.env.DEV) {
   console.log("API_BASE_URL resolved to:", API_BASE_URL);
@@ -155,23 +159,23 @@ async function refreshAccessToken() {
 
 export async function apiFetch(
   path,
-  { method = "GET", body, headers, auth = true, retry = true } = {}
+  { method = "GET", body, headers, auth = true, retry = true, baseUrl: baseUrlOverride } = {}
 ) {
-  if (!API_BASE_URL) {
+  const baseUrl = baseUrlOverride || API_BASE_URL;
+  if (!baseUrl) {
     throw new Error("API base URL не настроен. Установите переменную окружения VITE_API_BASE_URL на Vercel.");
   }
-  
-  // Проверяем, не используем ли мы fallback на window.location.origin (что может быть проблемой для продакшена)
-  if (typeof window !== "undefined" && API_BASE_URL === window.location.origin) {
+
+  // Проверяем fallback только для основного API (не для calendar)
+  if (!baseUrlOverride && typeof window !== "undefined" && API_BASE_URL === window.location.origin) {
     const hostname = window.location.hostname;
-    // Если это не localhost, вероятно используется fallback, что может быть проблемой
     if (import.meta.env.DEV && hostname !== "localhost" && hostname !== "127.0.0.1" && !hostname.includes("localhost")) {
       console.warn("⚠️ API base URL использует текущий домен как fallback.");
       console.warn("Если API находится на другом домене, установите переменную окружения VITE_API_BASE_URL на Vercel.");
     }
   }
-  
-  const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
+
+  const url = baseUrl.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
   
   const finalHeaders = {
     Accept: "application/json",
@@ -222,7 +226,7 @@ export async function apiFetch(
       const nextAccess =
         refreshed?.access_token || refreshed?.accessToken || refreshed?.token || "";
       if (nextAccess) {
-        return apiFetch(path, { method, body, headers, auth, retry: false });
+        return apiFetch(path, { method, body, headers, auth, retry: false, baseUrl: baseUrlOverride });
       }
       // refresh failed => clear tokens and trigger logout
       setAuthToken("");
@@ -1118,56 +1122,48 @@ export const TranslationApi = {
   },
 };
 
-// Calendar (events) endpoints
+// Calendar (events) endpoints — только календарь использует CALENDAR_API_BASE_URL (https://someshit.yurta.site/api)
+const calendarFetch = (path, opts) =>
+  apiFetch(path, { ...opts, baseUrl: CALENDAR_API_BASE_URL });
+
 export const EventsApi = {
   async list(params) {
-    // GET /calendar - Получить список событий с фильтрацией
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-    return apiFetch(`/calendar${qs}`, { method: "GET", auth: false });
+    return calendarFetch(`/calendar${qs}`, { method: "GET", auth: false });
   },
   async getByMonth(year, month) {
-    // GET /calendar/month/{year}/{month} - Получить события за конкретный месяц
-    return apiFetch(`/calendar/month/${year}/${month}`, { method: "GET", auth: false });
+    return calendarFetch(`/calendar/month/${year}/${month}`, { method: "GET", auth: false });
   },
   async getByYear(year) {
-    // GET /calendar/year/{year} - Получить события за конкретный год
-    return apiFetch(`/calendar/year/${year}`, { method: "GET", auth: false });
+    return calendarFetch(`/calendar/year/${year}`, { method: "GET", auth: false });
   },
   async getById(id) {
-    // GET /calendar/{id} - Получить детальную информацию о событии
-    return apiFetch(`/calendar/${id}`, { method: "GET", auth: false });
+    return calendarFetch(`/calendar/${id}`, { method: "GET", auth: false });
   },
   async create(body) {
-    // POST /calendar - Создать новое событие (только для администраторов)
-    return apiFetch("/calendar", { method: "POST", body, auth: true });
+    return calendarFetch("/calendar", { method: "POST", body, auth: true });
   },
   async patch(id, body) {
-    // PATCH /calendar/{id} - Обновить событие (только для администраторов)
-    return apiFetch(`/calendar/${id}`, { method: "PATCH", body, auth: true });
+    return calendarFetch(`/calendar/${id}`, { method: "PATCH", body, auth: true });
   },
   async remove(id) {
-    // DELETE /calendar/{id} - Удалить событие (только для администраторов)
-    return apiFetch(`/calendar/${id}`, { method: "DELETE", auth: true });
+    return calendarFetch(`/calendar/${id}`, { method: "DELETE", auth: true });
   },
 };
 
-// Calendar event types endpoints
+// Calendar event types endpoints — тот же API календаря
 export const EventTypesApi = {
   async listAll() {
-    // GET /calendar/types/all - Получить все типы событий
-    return apiFetch("/calendar/types/all", { method: "GET", auth: false });
+    return calendarFetch("/calendar/types/all", { method: "GET", auth: false });
   },
   async create(body) {
-    // POST /calendar/types - Создать новый тип события (только для администраторов)
-    return apiFetch("/calendar/types", { method: "POST", body, auth: true });
+    return calendarFetch("/calendar/types", { method: "POST", body, auth: true });
   },
   async patch(id, body) {
-    // PATCH /calendar/types/{id} - Обновить тип события (только для администраторов)
-    return apiFetch(`/calendar/types/${id}`, { method: "PATCH", body, auth: true });
+    return calendarFetch(`/calendar/types/${id}`, { method: "PATCH", body, auth: true });
   },
   async remove(id) {
-    // DELETE /calendar/types/{id} - Удалить тип события (только для администраторов)
-    return apiFetch(`/calendar/types/${id}`, { method: "DELETE", auth: true });
+    return calendarFetch(`/calendar/types/${id}`, { method: "DELETE", auth: true });
   },
 };
 
