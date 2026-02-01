@@ -4055,6 +4055,26 @@ a {
   transform: translateX(0);
   opacity: 1;
 }
+/* Фон внизу адаптивного меню (здание/эмблема) */
+.mobile-drawer__bg {
+  margin-top: auto;
+  min-height: 140px;
+  background-image: url(/img/bg_menu.png);
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  flex-shrink: 0;
+}
+@media (max-width: 959px) {
+  .mobile-drawer__bg {
+    min-height: 120px;
+  }
+}
+@media (max-width: 420px) {
+  .mobile-drawer__bg {
+    min-height: 100px;
+  }
+}
 .mobile-drawer a {
   padding: 12px 0;
   border-bottom: 1px solid #eef2f7;

@@ -1178,6 +1178,7 @@ export default function Header() {
             ))}
           </>
         )}
+        <div className="mobile-drawer__bg" aria-hidden="true" />
       </nav>
     </>
   );
