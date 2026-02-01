@@ -1553,6 +1553,14 @@ a {
   flex-shrink: 0;
 }
 
+/* Планшеты: обложки новостей целиком (не обрезать половину) */
+@media (min-width: 720px) and (max-width: 959px) {
+  .news-archive__card-img-wrap {
+    height: 220px;
+    min-height: 200px;
+  }
+}
+
 /* Страница Новости: адаптив — одна колонка, компактные шрифты */
 @media (max-width: 719px) {
   .news-archive__list.grid.cols-3 {

@@ -424,7 +424,6 @@ export default function NewsArchive() {
                       }}
                       placeholder="Выберите категорию"
                       showSearch
-                      allowClear
                       popupMatchSelectWidth={false}
                       style={{ width: "100%" }}
                       filterOption={(input, option) =>
@@ -458,7 +457,6 @@ export default function NewsArchive() {
                       style={{ width: "100%", height: "54px" }}
                       placeholder="Выберите дату"
                       format="DD.MM.YYYY"
-                      allowClear
                       size="large"
                     />
                 </div>
