@@ -4,6 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { Select } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
+import ScrollToTop from "../components/ScrollToTop.jsx";
 import { PersonsApi, CommitteesApi, ConvocationsApi } from "../api/client.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { formatConvocationLabelWithYears, normalizeConvocationToCanonical, CANONICAL_CONVOCATIONS } from "../utils/convocationLabels.js";
@@ -821,6 +822,7 @@ export default function DeputiesV2() {
           <SideNav />
         </div>
       </div>
+      <ScrollToTop />
     </section>
   );
 }

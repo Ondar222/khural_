@@ -1,6 +1,7 @@
 import React from "react";
 import PdfPreviewModal from "../../components/PdfPreviewModal.jsx";
 import SideNav from "../../components/SideNav.jsx";
+import ScrollToTop from "../../components/ScrollToTop.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
@@ -236,6 +237,7 @@ export default function DocsPage() {
           />
         </div>
       </div>
+      <ScrollToTop />
       <PdfPreviewModal
         open={!!preview}
         onClose={() => setPreview(null)}

@@ -3122,6 +3122,44 @@ a {
   }
 }
 
+/* Кнопка «Вернуться вверх» на длинных страницах (Депутаты, Новости, Документы) */
+.scroll-to-top {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-primary, #1e40af);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+.scroll-to-top:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  color: #fff;
+}
+.scroll-to-top:active {
+  transform: translateY(0);
+}
+@media (max-width: 768px) {
+  .scroll-to-top {
+    left: 16px;
+    bottom: 16px;
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+}
+
 /* Compact actions inside cards on small screens */
 @media (max-width: 420px) {
   .card .ant-space {

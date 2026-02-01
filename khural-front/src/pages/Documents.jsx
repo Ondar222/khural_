@@ -3,6 +3,7 @@ import { useData } from "../context/DataContext.jsx";
 import { Input, Select, Space, Switch } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
+import ScrollToTop from "../components/ScrollToTop.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
@@ -312,6 +313,7 @@ export default function Documents() {
           />
         </div>
       </div>
+      <ScrollToTop />
       <PdfPreviewModal
         open={!!preview}
         onClose={() => setPreview(null)}

@@ -4,6 +4,7 @@ import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
+import ScrollToTop from "../components/ScrollToTop.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import NewsImageCarousel from "../components/NewsImageCarousel.jsx";
 import { formatNewsDateTime } from "../utils/dateFormat.js";
@@ -554,6 +555,7 @@ export default function NewsArchive() {
           />
         </div>
       </div>
+      <ScrollToTop />
     </section>
   );
 }
