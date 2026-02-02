@@ -1,5 +1,5 @@
 import React from "react";
-import { Input, Select, DatePicker } from "antd";
+import { Input, Select, DatePicker, message } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
@@ -312,23 +312,9 @@ export default function NewsArchive() {
                     onClick={async () => {
                       try {
                         await navigator.clipboard.writeText(shareUrl);
-                        // Показываем уведомление об успешном копировании
-                        const btn = event.currentTarget;
-                        const originalTitle = btn.title;
-                        btn.title = "✓ Ссылка скопирована!";
-                        btn.style.opacity = "0.7";
-                        setTimeout(() => {
-                          btn.title = originalTitle;
-                          btn.style.opacity = "1";
-                        }, 2000);
+                        message.success("Ссылка успешно скопирована");
                       } catch {
-                        // Показываем ошибку
-                        const btn = event.currentTarget;
-                        const originalTitle = btn.title;
-                        btn.title = "✗ Не удалось скопировать";
-                        setTimeout(() => {
-                          btn.title = originalTitle;
-                        }, 2000);
+                        message.error("Не удалось скопировать ссылку");
                       }
                     }}
                   >

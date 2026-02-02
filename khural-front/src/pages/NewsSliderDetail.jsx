@@ -1,4 +1,5 @@
 import React from "react";
+import { message } from "antd";
 import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
@@ -218,26 +219,12 @@ export default function NewsSliderDetail() {
                       className="share-sbtn share-sbtn--copy"
                       aria-label="Скопировать ссылку"
                       title="Скопировать ссылку"
-                      onClick={async (event) => {
+                      onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(shareUrl);
-                          // Показываем уведомление об успешном копировании
-                          const btn = event.currentTarget;
-                          const originalTitle = btn.title;
-                          btn.title = "✓ Ссылка скопирована!";
-                          btn.style.opacity = "0.7";
-                          setTimeout(() => {
-                            btn.title = originalTitle;
-                            btn.style.opacity = "1";
-                          }, 2000);
+                          message.success("Ссылка успешно скопирована");
                         } catch {
-                          // Показываем ошибку
-                          const btn = event.currentTarget;
-                          const originalTitle = btn.title;
-                          btn.title = "✗ Не удалось скопировать";
-                          setTimeout(() => {
-                            btn.title = originalTitle;
-                          }, 2000);
+                          message.error("Не удалось скопировать ссылку");
                         }
                       }}
                     >

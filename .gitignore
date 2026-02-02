@@ -4,6 +4,7 @@
 **/.turbo/
 **/.next/
 **/uploads/
+**/public/tinymce/
 .env
 .env.*
 .DS_Store
