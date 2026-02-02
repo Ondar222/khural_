@@ -1122,9 +1122,9 @@ export const TranslationApi = {
   },
 };
 
-// Calendar (events) endpoints — только календарь использует CALENDAR_API_BASE_URL (https://someshit.yurta.site/api)
+// Calendar (events) — тот же API, что и остальное приложение, чтобы события были видны на всех устройствах и продакшне
 const calendarFetch = (path, opts) =>
-  apiFetch(path, { ...opts, baseUrl: CALENDAR_API_BASE_URL });
+  apiFetch(path, { ...opts, baseUrl: API_BASE_URL });
 
 export const EventsApi = {
   async list(params) {

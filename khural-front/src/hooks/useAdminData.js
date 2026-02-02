@@ -397,6 +397,7 @@ export function useAdminData() {
   const data = useData();
   const {
     reload: reloadDataContext,
+    reloadEvents: reloadDataContextEvents,
     setEvents: setDataContextEvents,
     events: dataContextEvents,
   } = data;
@@ -962,6 +963,7 @@ export function useAdminData() {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
       await reload();
+      if (typeof reloadDataContextEvents === "function") reloadDataContextEvents();
     } catch (e) {
       // При недоступности API сохраняем только локально (видено только на этом устройстве)
       addCreatedEvent(localEvent);
@@ -972,7 +974,7 @@ export function useAdminData() {
     } finally {
       setBusy(false);
     }
-  }, [message, reload, setDataContextEvents, dataContextEvents]);
+  }, [message, reload, reloadDataContextEvents, setDataContextEvents, dataContextEvents]);
 
   const updateEvent = React.useCallback(async (id, payload) => {
     setBusy(true);
