@@ -1387,8 +1387,16 @@ function getDeputyTitle(d, structureType) {
 function DeputyGrid({ deputies, structureType, backHref }) {
   const filtered = React.useMemo(() => {
     const list = Array.isArray(deputies) ? deputies : [];
-    return list
-      .filter((d) => d && String(d.structureType || "").trim() === String(structureType || "").trim())
+    const matched = list
+      .filter((d) => d && String(d.structureType || "").trim() === String(structureType || "").trim());
+    // Один депутат — одна карточка: убираем дубликаты по id
+    const byId = new Map();
+    for (const d of matched) {
+      const id = d?.id != null ? String(d.id) : "";
+      if (id && !byId.has(id)) byId.set(id, d);
+      else if (!id) byId.set(`noid-${byId.size}`, d);
+    }
+    return Array.from(byId.values())
       .slice()
       .sort((a, b) => {
         const ra = roleRank(structureType, a?.role);

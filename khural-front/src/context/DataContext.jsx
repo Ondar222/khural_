@@ -1944,8 +1944,37 @@ export default function DataProvider({ children }) {
   }, []);
 
   const deputies = React.useMemo(() => {
-    return mergeDeputiesWithOverrides(deputiesBase, deputiesOverrides);
-  }, [deputiesBase, deputiesOverrides]);
+    const base = mergeDeputiesWithOverrides(deputiesBase, deputiesOverrides);
+    const govList = Array.isArray(government) ? government : [];
+    if (govList.length === 0) return base;
+    const byId = new Set(base.map((d) => String(d?.id ?? "")));
+    const byName = new Set(base.map((d) => normalizePersonName(d?.name ?? "")));
+    const fromGov = govList
+      .filter(
+        (g) =>
+          g?.id &&
+          g?.name &&
+          !byId.has(String(g.id)) &&
+          !byName.has(normalizePersonName(g.name))
+      )
+      .map((g) =>
+        normalizeDeputyItem({
+          id: g.id,
+          name: g.name,
+          position: g.role || "",
+          photo: g.photo || "",
+          contacts: { phone: g.phone || "", email: g.email || "" },
+          address: g.address || "",
+          district: "",
+          faction: "",
+          convocation: "",
+          reception: g.reception || "",
+          biography: g.bio || "",
+          bio: g.bio || "",
+        })
+      );
+    return base.length === 0 && fromGov.length === 0 ? base : [...base, ...fromGov];
+  }, [deputiesBase, deputiesOverrides, government]);
 
   const eventsWithOverrides = React.useMemo(() => {
     return mergeEventsWithOverrides(events, eventsOverrides);

@@ -336,14 +336,24 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       (x) => String(x?.id ?? "") === cid
     );
     if (!c) return;
-    const members = (Array.isArray(c.members) ? c.members : []).filter(
+    const currentMembers = Array.isArray(c.members) ? c.members : [];
+    const memberToRemove = currentMembers.find(
+      (m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum
+    );
+    const members = currentMembers.filter(
       (m) => Number(m?.personId) !== deputyIdNum && Number(m?.person?.id) !== deputyIdNum
     );
 
     const looksServerId = /^\d+$/.test(cid);
-    if (looksServerId) {
-      // If backend supports removing by memberId, we'd need memberId; fallback to patch via overrides.
-      // Keeping it local for now.
+    if (looksServerId && memberToRemove?.id != null) {
+      try {
+        await CommitteesApi.removeMember(cid, String(memberToRemove.id));
+        setCommitteesOverridesSeq((s) => s + 1);
+        message.success("Участие в комитете удалено.");
+        return;
+      } catch (err) {
+        message.warning("Не удалось удалить на сервере, сохраняю локально.");
+      }
     }
 
     const ov = readCommitteesOverrides();
@@ -353,7 +363,8 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       ...ov,
       updatedById: { ...updatedById, [cid]: { ...(updatedById[cid] || {}), members } },
     });
-    message.success("Участие удалено (локально)");
+    setCommitteesOverridesSeq((s) => s + 1);
+    message.success("Участие удалено (локально). Обновите страницу на сайте, чтобы изменения отобразились везде.");
   }, [canWrite, committeesMerged, deputyIdNum, message]);
 
   const refreshLookups = React.useCallback(async () => {

@@ -246,13 +246,19 @@ export default function Government() {
     [government]
   );
 
-  const filtered = React.useMemo(
-    () =>
-      government.filter(
-        (p) => (agency === "Все" || p.agency === agency) && (role === "Все" || p.role === role)
-      ),
-    [government, agency, role]
-  );
+  const filtered = React.useMemo(() => {
+    const list = government.filter(
+      (p) => (agency === "Все" || p.agency === agency) && (role === "Все" || p.role === role)
+    );
+    // Один человек — одна карточка: убираем дубликаты по id (Даваа и др. не повторяются)
+    const byId = new Map();
+    for (const p of list) {
+      const id = p?.id != null ? String(p.id) : "";
+      if (id && !byId.has(id)) byId.set(id, p);
+      else if (!id) byId.set(`noid-${byId.size}`, p);
+    }
+    return Array.from(byId.values());
+  }, [government, agency, role]);
 
   // Deputies filters (exclude empty/blank values so dropdowns have no unnamed options)
   const districts = React.useMemo(
@@ -267,16 +273,22 @@ export default function Government() {
     () => ["Все", ...Array.from(new Set(deputies.map((d) => d.faction).filter(nonBlank)))],
     [deputies]
   );
-  const filteredDeps = React.useMemo(
-    () =>
-      deputies.filter(
-        (d) =>
-          (district === "Все" || d.district === district) &&
-          (convocation === "Все" || d.convocation === convocation) &&
-          (faction === "Все" || d.faction === faction)
-      ),
-    [deputies, district, convocation, faction]
-  );
+  const filteredDeps = React.useMemo(() => {
+    const list = deputies.filter(
+      (d) =>
+        (district === "Все" || d.district === district) &&
+        (convocation === "Все" || d.convocation === convocation) &&
+        (faction === "Все" || d.faction === faction)
+    );
+    // Один депутат — одна карточка: убираем дубликаты по id
+    const byId = new Map();
+    for (const d of list) {
+      const id = d?.id != null ? String(d.id) : "";
+      if (id && !byId.has(id)) byId.set(id, d);
+      else if (!id) byId.set(`noid-${byId.size}`, d);
+    }
+    return Array.from(byId.values());
+  }, [deputies, district, convocation, faction]);
 
   // Committees expand/collapse (Структура)
   const [openCommittee, setOpenCommittee] = React.useState(null);

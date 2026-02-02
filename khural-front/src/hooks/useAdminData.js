@@ -495,11 +495,23 @@ export function useAdminData() {
     const deletedNewsIds = new Set((readNewsOverrides()?.deletedIds || []).map(String));
     const newsList = Array.isArray(apiNews) ? apiNews : toNewsFallback(fb.news);
     setNews((newsList || []).filter((n) => !deletedNewsIds.has(String(n?.id ?? n?._id ?? ""))));
-    setPersons(
+    const basePersons =
       Array.isArray(apiPersons) && apiPersons.length
         ? apiPersons
-        : toPersonsFallback(fb.deputies)
+        : toPersonsFallback(fb.deputies);
+    const govList = Array.isArray(fb.government) ? fb.government : [];
+    const existingIds = new Set(basePersons.map((p) => String(p?.id ?? "")));
+    const existingNames = new Set(
+      basePersons.map((p) => (p?.fullName || p?.name || "").toLowerCase().replace(/\s+/g, " ").trim())
     );
+    const fromGov = govList.filter(
+      (g) =>
+        g?.id &&
+        g?.name &&
+        !existingIds.has(String(g.id)) &&
+        !existingNames.has((g.name || "").toLowerCase().replace(/\s+/g, " ").trim())
+    );
+    setPersons(fromGov.length ? [...basePersons, ...toPersonsFallback(fromGov)] : basePersons);
     const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
     const deletedDocs = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
     const docsList = Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(fb.documents);
