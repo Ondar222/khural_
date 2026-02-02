@@ -133,7 +133,7 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
             href={backHref}
             style={{ marginBottom: 24, display: "inline-block" }}
           >
-            {t("back")}
+            {t("backToDeputiesList")}
           </a>
         )}
 

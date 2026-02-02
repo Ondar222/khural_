@@ -103,7 +103,7 @@ export default function NewsSliderDetail() {
           <div>
             <div style={{ marginBottom: 16 }}>
               <a className="btn btn-back" href="/news/week" style={{ marginBottom: 16, display: "inline-block" }}>
-                {t("back")}
+                {t("backToNewsList")}
               </a>
               <div>
                 <h1 style={{ marginBottom: 8, display: "block" }}>{item?.title || "Главные события недели"}</h1>

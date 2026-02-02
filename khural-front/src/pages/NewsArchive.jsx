@@ -1,5 +1,5 @@
 import React from "react";
-import { Input, Select, DatePicker, message } from "antd";
+import { Input, Select, DatePicker, message, Pagination } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
@@ -10,6 +10,8 @@ import NewsImageCarousel from "../components/NewsImageCarousel.jsx";
 import { formatNewsDateTime } from "../utils/dateFormat.js";
 import dayjs from "dayjs";
 
+const NEWS_PAGE_SIZE = 12;
+
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
 }
@@ -17,6 +19,13 @@ function looksLikeHtml(s) {
 export default function NewsArchive() {
   const { t } = useI18n();
   const { news, loading, errors, reload } = useData();
+
+  const getInitialPage = () => {
+    const pageParam = new URLSearchParams(window.location.search || "").get("page");
+    const p = parseInt(pageParam, 10);
+    return Number.isFinite(p) && p >= 1 ? p : 1;
+  };
+  const [currentPage, setCurrentPage] = React.useState(getInitialPage);
 
   const getInitialCategory = () => {
     const categoryParam = new URLSearchParams(window.location.search || "").get("category");
@@ -49,6 +58,7 @@ export default function NewsArchive() {
       const id = params.get("id");
       const categoryParam = params.get("category");
       const dateParam = params.get("date");
+      const pageParam = params.get("page");
       setSelected(id || null);
       if (categoryParam && !id) {
         setCategory(categoryParam);
@@ -57,6 +67,9 @@ export default function NewsArchive() {
       }
       if (dateParam && !id) setDate(dateParam);
       if (!dateParam && !id) setDate("");
+      const p = parseInt(pageParam, 10);
+      if (Number.isFinite(p) && p >= 1) setCurrentPage(p);
+      else if (!id) setCurrentPage(1);
     };
     window.addEventListener("popstate", onNav);
     window.addEventListener("app:navigate", onNav);
@@ -104,6 +117,30 @@ export default function NewsArchive() {
     [news, category, date, isSpeakerNews]
   );
 
+  const totalNews = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalNews / NEWS_PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedNews = React.useMemo(
+    () => filtered.slice((safePage - 1) * NEWS_PAGE_SIZE, safePage * NEWS_PAGE_SIZE),
+    [filtered, safePage]
+  );
+
+  const setPageAndUrl = React.useCallback((page) => {
+    const h = window.location.pathname;
+    const params = new URLSearchParams(window.location.search || "");
+    if (category && category !== "Все") {
+      if (category === "Председатель") params.set("speaker", "true");
+      else params.set("category", category);
+    }
+    if (date) params.set("date", date);
+    if (page > 1) params.set("page", String(page));
+    else params.delete("page");
+    const newUrl = params.toString() ? `${h}?${params.toString()}` : h;
+    window.history.pushState({}, "", newUrl);
+    setCurrentPage(page);
+    window.dispatchEvent(new Event("app:navigate"));
+  }, [category, date]);
+
   if (selected) {
     const idx = (news || []).findIndex((n) => String(n.id) === String(selected));
     const item = idx >= 0 ? (news || [])[idx] : null;
@@ -135,7 +172,7 @@ export default function NewsArchive() {
               href="/news"
               style={{ marginBottom: 16, display: "inline-block" }}
             >
-              {t("back")}
+              {t("backToNewsList")}
             </a>
             <DataState
               loading={Boolean(loading?.news) && (!news || news.length === 0)}
@@ -173,7 +210,7 @@ export default function NewsArchive() {
                 href="/news"
                 style={{ marginBottom: 16, display: "inline-block" }}
               >
-                {t("back")}
+                {t("backToNewsList")}
               </a>
               <div>
                 <h1 style={{ marginBottom: 8, display: "block" }}>{item.title}</h1>
@@ -392,8 +429,10 @@ export default function NewsArchive() {
                       value={category}
                       onChange={(newCategory) => {
                         setCategory(newCategory);
+                        setCurrentPage(1);
                         const h = window.location.pathname;
                         const params = new URLSearchParams(window.location.search || "");
+                        params.delete("page");
                         if (newCategory === "Все") {
                           params.delete("category");
                           params.delete("speaker");
@@ -426,8 +465,10 @@ export default function NewsArchive() {
                       onChange={(dateObj) => {
                         const newDate = dateObj ? dateObj.format("YYYY-MM-DD") : "";
                         setDate(newDate);
+                        setCurrentPage(1);
                         const h = window.location.pathname;
                         const params = new URLSearchParams(window.location.search || "");
+                        params.delete("page");
                         if (category && category !== "Все") {
                           if (category === "Председатель") {
                             params.set("speaker", "true");
@@ -456,7 +497,7 @@ export default function NewsArchive() {
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
                 <div className="grid cols-3 news-archive__list">
-                  {filtered.map((n) => (
+                  {paginatedNews.map((n) => (
                     <a
                       key={n.id}
                       className="tile news-archive__card"
@@ -488,6 +529,22 @@ export default function NewsArchive() {
                     </a>
                   ))}
                 </div>
+                {totalNews > NEWS_PAGE_SIZE && (
+                  <div className="news-archive__pagination" style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
+                    <Pagination
+                      current={safePage}
+                      total={totalNews}
+                      pageSize={NEWS_PAGE_SIZE}
+                      showSizeChanger={false}
+                      showTotal={(total, range) => `${range[0]}–${range[1]} из ${total}`}
+                      onChange={(page) => {
+                        setPageAndUrl(page);
+                        const listEl = document.querySelector(".news-archive__list");
+                        if (listEl) listEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                    />
+                  </div>
+                )}
               </DataState>
             </DataState>
           </div>
