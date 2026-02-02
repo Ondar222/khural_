@@ -1122,9 +1122,9 @@ export const TranslationApi = {
   },
 };
 
-// Calendar (events) — тот же API, что и остальное приложение, чтобы события были видны на всех устройствах и продакшне
+// Calendar (events) — API календаря (по умолчанию тот же бэкенд; для прода — задайте VITE_CALENDAR_API_BASE_URL, напр. https://someshit.yurta.site/api)
 const calendarFetch = (path, opts) =>
-  apiFetch(path, { ...opts, baseUrl: API_BASE_URL });
+  apiFetch(path, { ...opts, baseUrl: CALENDAR_API_BASE_URL });
 
 export const EventsApi = {
   async list(params) {
