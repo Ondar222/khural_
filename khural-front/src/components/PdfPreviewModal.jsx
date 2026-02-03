@@ -1,14 +1,17 @@
 import React from "react";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
+// Итоговая ссылка: https://khural.rtyva.ru/upload/iblock/.../имя файла.pdf (без %-кодирования в пути)
 function normalizeUrl(url) {
   if (!url) return "";
+  const normalized = normalizeFilesUrl(url);
+  if (!normalized) return "";
+  // Уже полный URL с базой khural — возвращаем как есть, чтобы открывалось в формате /upload/.../№ 2240 ПВХ-III от 28.11.2023.pdf
+  if (normalized.startsWith("http")) return normalized;
   try {
-    const normalized = normalizeFilesUrl(url);
-    const absolute = new URL(normalized, window.location.origin).toString();
-    return encodeURI(absolute);
+    return new URL(normalized, window.location.origin).toString();
   } catch {
-    return encodeURI(String(url));
+    return normalized;
   }
 }
 

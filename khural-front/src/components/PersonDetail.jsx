@@ -363,7 +363,8 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
                         className="btn btn--primary"
                         onClick={(e) => {
                           e.preventDefault();
-                          const docUrl = entry.document || entry.url;
+                          const raw = entry.document || entry.url;
+                          const docUrl = raw ? normalizeFilesUrl(raw) : "";
                           if (docUrl) {
                             setPreview({ url: docUrl, title: entry.title || entry.number || "Документ" });
                           }
@@ -406,7 +407,8 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
                           className="btn btn--gold"
                           onClick={(e) => {
                             e.preventDefault();
-                            const docUrl = doc.document || doc.url;
+                            const raw = doc.document || doc.url;
+                            const docUrl = raw ? normalizeFilesUrl(raw) : "";
                             if (docUrl) {
                               setPreview({ url: docUrl, title: doc.title || (doc.year ? `Декларация за ${doc.year} год` : "Документ") });
                             }

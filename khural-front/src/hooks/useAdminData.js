@@ -29,6 +29,7 @@ import {
   COMMITTEE_DEFAULT_CONVOCATION,
 } from "../utils/committeesOverrides.js";
 import { normalizeBool } from "../utils/bool.js";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import {
   CONVOCATIONS_OVERRIDES_EVENT_NAME,
   CONVOCATIONS_OVERRIDES_STORAGE_KEY,
@@ -484,7 +485,7 @@ export function useAdminData() {
 
   const loadAll = React.useCallback(async () => {
     const fb = fallbackRef.current || {};
-    const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations, apiCommittees, apiPages] = await Promise.all([
+    const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations, apiCommittees, apiPages, personsDocJson] = await Promise.all([
       NewsApi.list().catch(() => null),
       PersonsApi.list().catch(() => null),
       DocumentsApi.listAll().catch(() => null),
@@ -492,7 +493,13 @@ export function useAdminData() {
       ConvocationsApi.list().catch(() => null),
       CommitteesApi.list({ all: true }).catch(() => null),
       apiFetch("/pages", { method: "GET", auth: false }).catch(() => null),
+      Promise.all([
+        fetch("/persons_doc/zakony.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/persons_doc/zakony2.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        fetch("/persons_doc/postamovleniya_VH.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      ]),
     ]);
+    const [zakonyData, zakony2Data, postamovleniyaData] = Array.isArray(personsDocJson) ? personsDocJson : [[], [], []];
     const deletedNewsIds = new Set((readNewsOverrides()?.deletedIds || []).map(String));
     const newsList = Array.isArray(apiNews) ? apiNews : toNewsFallback(fb.news);
     setNews((newsList || []).filter((n) => !deletedNewsIds.has(String(n?.id ?? n?._id ?? ""))));
@@ -515,7 +522,45 @@ export function useAdminData() {
     setPersons(fromGov.length ? [...basePersons, ...toPersonsFallback(fromGov)] : basePersons);
     const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
     const deletedDocs = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
-    const docsList = Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(fb.documents);
+    let docsList;
+    if (Array.isArray(apiDocs) && apiDocs.length) {
+      docsList = apiDocs;
+    } else {
+      const parseZakony = (row) => {
+        if (!row?.IE_NAME) return null;
+        const fileUrl = String(row.IP_PROP28 || "").trim();
+        if (!fileUrl) return null;
+        const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
+        if (!url) return null;
+        return {
+          id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
+          title: String(row.IE_NAME || "").trim(),
+          description: "",
+          type: "laws",
+          file: { link: url },
+        };
+      };
+      const parsePostamovleniya = (row) => {
+        if (!row?.IE_NAME) return null;
+        const fileUrl = String(row.IP_PROP59 || "").trim();
+        if (!fileUrl) return null;
+        const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
+        if (!url) return null;
+        return {
+          id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
+          title: String(row.IE_NAME || "").trim(),
+          description: "",
+          type: "resolutions",
+          file: { link: url },
+        };
+      };
+      const fromJson = [
+        ...(Array.isArray(zakonyData) ? zakonyData : []).map(parseZakony).filter(Boolean),
+        ...(Array.isArray(zakony2Data) ? zakony2Data : []).map(parseZakony).filter(Boolean),
+        ...(Array.isArray(postamovleniyaData) ? postamovleniyaData : []).map(parsePostamovleniya).filter(Boolean),
+      ];
+      docsList = fromJson.length ? fromJson : toDocumentsFallback(fb.documents);
+    }
     setDocuments((Array.isArray(docsList) ? docsList : []).filter((d) => !deletedDocs.has(String(d?.id ?? ""))));
     if (Array.isArray(apiSlider) && apiSlider.length) {
       setSlider(apiSlider.map(toSliderRow));
@@ -656,8 +701,9 @@ export function useAdminData() {
   }, [themeMode]);
 
   const reload = React.useCallback(async () => {
+    if (typeof reloadDataContext === "function") reloadDataContext();
     await loadAll();
-  }, [loadAll]);
+  }, [loadAll, reloadDataContext]);
 
   // Allow child components (that don't have direct access to this hook) to request a refresh.
   React.useEffect(() => {

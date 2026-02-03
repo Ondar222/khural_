@@ -1530,166 +1530,55 @@ export default function DataProvider({ children }) {
         markLoading("deputies", false);
       }
 
-      // Documents from API (laws, resolutions, etc)
+      // Документы только из локальных persons_doc (CSV → zakony.json, postamovleniya_VH.json)
       markLoading("documents", true);
       markError("documents", null);
       try {
-        const apiDocsResponse = await tryApiFetch("/documents", { auth: false });
-        const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
-        
-        const typeLabels = {
-          law: "Законы",
-          resolution: "Постановления",
-          decision: "Законопроекты",
-          order: "Инициативы",
-          other: "Другое",
-        };
-        
-        const typeMapping = {
-          law: "laws",
-          resolution: "resolutions",
-          decision: "bills",
-          order: "initiatives",
-          other: "other",
-        };
-        
-        const deletedDocs = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
-        const apiDocsList = apiDocs
-          .filter((d) => !deletedDocs.has(String(d?.id ?? "")))
-          .map((d) => {
-            const raw =
-              d.metadata?.url ||
-              firstFileLink(d.pdfFile) ||
-              (d.metadata?.pdfFileTyLink ? String(d.metadata.pdfFileTyLink) : "") ||
-              "";
-            const url = raw
-              ? /\/upload\//i.test(raw) || String(raw).includes("khural.rtyva.ru")
-                ? normalizeFilesUrl(raw)
-                : raw
-              : "";
-            if (import.meta.env.DEV && !url) {
-              console.warn("[Documents] Missing file URL (API)", {
-                id: d?.id,
-                title: d?.title,
-                rawUrl: raw,
-              });
-            }
-            return {
-              id: d.id,
-              title: d.title,
-              desc: d.content || d.description || "",
-              date: d.publishedAt || d.createdAt || "",
-              number: d.number || "",
-              category:
-                d?.category?.name || typeLabels[d.type] || d.type || "Документы",
-              type: typeMapping[d.type] || d.type || "other",
-              url,
-            };
-          });
-        
-        // Загружаем документы из JSON файлов в persons_doc
         const [zakonyData, zakony2Data, postamovleniyaData] = await Promise.all([
           fetchJson("/persons_doc/zakony.json").catch(() => []),
           fetchJson("/persons_doc/zakony2.json").catch(() => []),
           fetchJson("/persons_doc/postamovleniya_VH.json").catch(() => []),
         ]);
-        
-        // Парсим документы из zakony.json и zakony2.json
         const parseZakonyDoc = (row) => {
           if (!row || !row.IE_NAME) return null;
           const fileUrl = String(row.IP_PROP28 || "").trim();
-          if (!fileUrl) {
-            if (import.meta.env.DEV) {
-              console.warn("[Documents] Missing file URL (zakony)", {
-                id: row?.IE_ID || row?.IE_XML_ID,
-                title: row?.IE_NAME,
-              });
-            }
-            return null;
-          }
-          
-          // Нормализуем URL файла (включая кодирование пробелов/кириллицы)
-          const normalizedUrl = normalizeFilesUrl(
-            fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
-          );
-          if (!normalizedUrl) {
-            if (import.meta.env.DEV) {
-              console.warn("[Documents] Failed to normalize URL (zakony)", {
-                id: row?.IE_ID || row?.IE_XML_ID,
-                title: row?.IE_NAME,
-                rawUrl: fileUrl,
-              });
-            }
-            return null;
-          }
-          
+          if (!fileUrl) return null;
+          const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
+          if (!url) return null;
           return {
             id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
             title: String(row.IE_NAME || "").trim(),
-            desc: "", // Описание не нужно по требованию пользователя
+            desc: "",
             date: String(row.IP_PROP27 || "").trim(),
             number: String(row.IP_PROP26 || "").trim(),
             category: "Законы Республики Тыва",
             type: "laws",
-            url: normalizedUrl,
+            url,
           };
         };
-        
-        // Парсим документы из postamovleniya_VH.json
         const parsePostamovleniyaDoc = (row) => {
           if (!row || !row.IE_NAME) return null;
           const fileUrl = String(row.IP_PROP59 || "").trim();
-          if (!fileUrl) {
-            if (import.meta.env.DEV) {
-              console.warn("[Documents] Missing file URL (postamovleniya)", {
-                id: row?.IE_ID || row?.IE_XML_ID,
-                title: row?.IE_NAME,
-              });
-            }
-            return null;
-          }
-          
-          // Нормализуем URL файла (включая кодирование пробелов/кириллицы)
-          const normalizedUrl = normalizeFilesUrl(
-            fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`
-          );
-          if (!normalizedUrl) {
-            if (import.meta.env.DEV) {
-              console.warn("[Documents] Failed to normalize URL (postamovleniya)", {
-                id: row?.IE_ID || row?.IE_XML_ID,
-                title: row?.IE_NAME,
-                rawUrl: fileUrl,
-              });
-            }
-            return null;
-          }
-          
+          if (!fileUrl) return null;
+          const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
+          if (!url) return null;
           return {
             id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
             title: String(row.IE_NAME || "").trim(),
-            desc: "", // Описание не нужно по требованию пользователя
+            desc: "",
             date: String(row.IP_PROP58 || "").trim(),
             number: String(row.IP_PROP57 || "").trim(),
             category: "Постановления ВХ РТ",
             type: "resolutions",
-            url: normalizedUrl,
+            url,
           };
         };
-        
-        const zakonyDocs = (Array.isArray(zakonyData) ? zakonyData : [])
-          .map(parseZakonyDoc)
-          .filter(Boolean);
-        
-        const zakony2Docs = (Array.isArray(zakony2Data) ? zakony2Data : [])
-          .map(parseZakonyDoc)
-          .filter(Boolean);
-        
-        const postamovleniyaDocs = (Array.isArray(postamovleniyaData) ? postamovleniyaData : [])
-          .map(parsePostamovleniyaDoc)
-          .filter(Boolean);
-        
-        // Объединяем все документы: сначала из API, затем из JSON файлов
-        setDocuments([...apiDocsList, ...zakonyDocs, ...zakony2Docs, ...postamovleniyaDocs]);
+        const docs = [
+          ...(Array.isArray(zakonyData) ? zakonyData : []).map(parseZakonyDoc).filter(Boolean),
+          ...(Array.isArray(zakony2Data) ? zakony2Data : []).map(parseZakonyDoc).filter(Boolean),
+          ...(Array.isArray(postamovleniyaData) ? postamovleniyaData : []).map(parsePostamovleniyaDoc).filter(Boolean),
+        ];
+        setDocuments(docs);
       } catch (e) {
         markError("documents", e);
         setDocuments([]);
