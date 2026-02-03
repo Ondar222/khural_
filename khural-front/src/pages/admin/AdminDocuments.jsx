@@ -49,7 +49,7 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
   }, []);
 
   const renderFilesTag = React.useCallback((row) => {
-    const hasRu = row?.pdfFile?.link || row?.pdfFile?.id;
+    const hasRu = row?.pdfFile?.link || row?.pdfFile?.id || row?.file?.link || row?.url;
     const hasTy = row?.metadata?.pdfFileTyId || row?.metadata?.pdfFileTyLink;
     if (hasRu && hasTy) return <Tag color="green">RU + TY</Tag>;
     if (hasRu) return <Tag color="blue">RU</Tag>;
@@ -106,14 +106,16 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
       title: "№ / Дата",
       key: "meta",
       width: 140,
-      render: (_, row) => (
-        <div style={{ fontSize: "13px", lineHeight: "1.4" }}>
-          <div>{row.number || "—"}</div>
-          <div style={{ opacity: 0.8, marginTop: "2px" }}>
-            {row.publishedAt ? new Date(row.publishedAt).toLocaleDateString("ru-RU") : "—"}
+      render: (_, row) => {
+        const dateStr = row.publishedAt || row.date;
+        const dateDisplay = dateStr ? (dateStr.match(/^\d{4}-\d{2}-\d{2}$/) ? new Date(dateStr).toLocaleDateString("ru-RU") : dateStr) : "—";
+        return (
+          <div style={{ fontSize: "13px", lineHeight: "1.4" }}>
+            <div>{row.number || "—"}</div>
+            <div style={{ opacity: 0.8, marginTop: "2px" }}>{dateDisplay}</div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: "Тип",
@@ -130,30 +132,43 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
     {
       title: "Действия",
       key: "actions",
-      width: 180,
-      render: (_, row) => (
-        <Space direction="vertical" size="small" style={{ width: "100%" }}>
-          <Button
-            size="small"
-            onClick={() => {
-              navigate(`/admin/documents/${row.id}`);
-            }}
-            disabled={!canWrite}
-            block
-          >
-            Редактировать
-          </Button>
-          <Button 
-            danger 
-            size="small"
-            onClick={() => confirmDelete(row)} 
-            disabled={!canWrite}
-            block
-          >
-            Удалить
-          </Button>
-        </Space>
-      ),
+      width: 200,
+      render: (_, row) => {
+        const isFromJson = String(row?.id ?? "").startsWith("zakony-") || String(row?.id ?? "").startsWith("postamovleniya-");
+        const fileUrl = row?.file?.link || row?.pdfFile?.link || row?.url;
+        return (
+          <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            {fileUrl ? (
+              <Button
+                size="small"
+                onClick={() => window.open(normalizeFilesUrl(fileUrl), "_blank")}
+                block
+              >
+                Открыть ↗
+              </Button>
+            ) : null}
+            <Button
+              size="small"
+              onClick={() => navigate(`/admin/documents/${row.id}`)}
+              disabled={!canWrite || isFromJson}
+              block
+              title={isFromJson ? "Документ из JSON — редактирование в API недоступно" : undefined}
+            >
+              Редактировать
+            </Button>
+            <Button
+              danger
+              size="small"
+              onClick={() => confirmDelete(row)}
+              disabled={!canWrite}
+              block
+              title={isFromJson ? "Документ из JSON — будет скрыт только в админке" : undefined}
+            >
+              Удалить
+            </Button>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -330,13 +345,13 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
         >
           + Создать документ
         </Button>
-        <Button 
+        {/* <Button 
           onClick={importDocumentsFromJson} 
           disabled={!canWrite} 
           loading={Boolean(busyLocal)}
         >
           Импортировать документы из JSON
-        </Button>
+        </Button> */}
       </Space>
     </div>
   );
@@ -350,7 +365,12 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
           rowKey={(r) => String(r.id)}
           columns={columns}
           dataSource={filtered}
-          pagination={{ pageSize: 10 }}
+          pagination={{
+            pageSize: 25,
+            showSizeChanger: true,
+            pageSizeOptions: ["25", "50", "100", "200"],
+            showTotal: (total) => `Всего: ${total}`,
+          }}
           scroll={windowWidth > 1024 ? { x: "max-content" } : undefined}
         />
       </div>

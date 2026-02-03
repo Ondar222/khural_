@@ -46,6 +46,7 @@ export default function AdminDashboardPage() {
       <AdminDashboard
         stats={adminData.stats}
         onReload={adminData.reload}
+        onReloadSuccess={() => message.success("Информация обновлена")}
       />
     </AdminShell>
   );

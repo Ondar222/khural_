@@ -522,45 +522,42 @@ export function useAdminData() {
     setPersons(fromGov.length ? [...basePersons, ...toPersonsFallback(fromGov)] : basePersons);
     const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
     const deletedDocs = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
-    let docsList;
-    if (Array.isArray(apiDocs) && apiDocs.length) {
-      docsList = apiDocs;
-    } else {
-      const parseZakony = (row) => {
-        if (!row?.IE_NAME) return null;
-        const fileUrl = String(row.IP_PROP28 || "").trim();
-        if (!fileUrl) return null;
-        const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
-        if (!url) return null;
-        return {
-          id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
-          title: String(row.IE_NAME || "").trim(),
-          description: "",
-          type: "laws",
-          file: { link: url },
-        };
+    const parseZakony = (row) => {
+      if (!row?.IE_NAME) return null;
+      const fileUrl = String(row.IP_PROP28 || "").trim();
+      const url = fileUrl ? normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`) : "";
+      return {
+        id: `zakony-${row.IE_ID ?? row.IE_XML_ID ?? Math.random()}`,
+        title: String(row.IE_NAME || "").trim(),
+        description: "",
+        type: "laws",
+        number: String(row.IP_PROP26 || "").trim(),
+        date: String(row.IP_PROP27 || "").trim(),
+        publishedAt: String(row.IP_PROP27 || "").trim() || undefined,
+        file: url ? { link: url } : {},
       };
-      const parsePostamovleniya = (row) => {
-        if (!row?.IE_NAME) return null;
-        const fileUrl = String(row.IP_PROP59 || "").trim();
-        if (!fileUrl) return null;
-        const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
-        if (!url) return null;
-        return {
-          id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
-          title: String(row.IE_NAME || "").trim(),
-          description: "",
-          type: "resolutions",
-          file: { link: url },
-        };
+    };
+    const parsePostamovleniya = (row) => {
+      if (!row?.IE_NAME) return null;
+      const fileUrl = String(row.IP_PROP59 || "").trim();
+      const url = fileUrl ? normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`) : "";
+      return {
+        id: `postamovleniya-${row.IE_ID ?? row.IE_XML_ID ?? Math.random()}`,
+        title: String(row.IE_NAME || "").trim(),
+        description: "",
+        type: "resolutions",
+        number: String(row.IP_PROP57 || "").trim(),
+        date: String(row.IP_PROP58 || "").trim(),
+        publishedAt: String(row.IP_PROP58 || "").trim() || undefined,
+        file: url ? { link: url } : {},
       };
-      const fromJson = [
-        ...(Array.isArray(zakonyData) ? zakonyData : []).map(parseZakony).filter(Boolean),
-        ...(Array.isArray(zakony2Data) ? zakony2Data : []).map(parseZakony).filter(Boolean),
-        ...(Array.isArray(postamovleniyaData) ? postamovleniyaData : []).map(parsePostamovleniya).filter(Boolean),
-      ];
-      docsList = fromJson.length ? fromJson : toDocumentsFallback(fb.documents);
-    }
+    };
+    const fromJson = [
+      ...(Array.isArray(zakonyData) ? zakonyData : []).map(parseZakony).filter(Boolean),
+      ...(Array.isArray(zakony2Data) ? zakony2Data : []).map(parseZakony).filter(Boolean),
+      ...(Array.isArray(postamovleniyaData) ? postamovleniyaData : []).map(parsePostamovleniya).filter(Boolean),
+    ];
+    const docsList = fromJson.length > 0 ? fromJson : (Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(fb.documents));
     setDocuments((Array.isArray(docsList) ? docsList : []).filter((d) => !deletedDocs.has(String(d?.id ?? ""))));
     if (Array.isArray(apiSlider) && apiSlider.length) {
       setSlider(apiSlider.map(toSliderRow));

@@ -19,7 +19,7 @@ const NAV = [
   { key: "news", label: "Новости", href: "/admin/news" },
   { key: "broadcast", label: "Трансляция", href: "/admin/broadcast" },
   // { key: "appeals", label: "Обращения", href: "/admin/appeals" }, // временно скрыто
-  { key: "env", label: "ENV доки", href: "/admin/env" },
+  // { key: "env", label: "ENV доки", href: "/admin/env" },
 ];
 
 function NavItem({ href, label, active, onClick }) {

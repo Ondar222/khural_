@@ -29,23 +29,31 @@ function QuickAction({ title, description, href }) {
   );
 }
 
-export default function AdminDashboard({ stats, onReload }) {
+export default function AdminDashboard({ stats, onReload, onReloadSuccess }) {
   const [refreshing, setRefreshing] = React.useState(false);
+  const [lastUpdated, setLastUpdated] = React.useState(null);
 
   const handleRefresh = React.useCallback(async () => {
     if (!onReload) return;
     setRefreshing(true);
     try {
       await onReload();
+      setLastUpdated(new Date());
+      onReloadSuccess?.();
     } finally {
       setRefreshing(false);
     }
-  }, [onReload]);
+  }, [onReload, onReloadSuccess]);
 
   return (
     <div className="admin-grid admin-dashboard">
       {onReload && (
-        <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+        <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+          {lastUpdated && (
+            <span style={{ fontSize: 13, color: "#6b7280" }}>
+              Обновлено: {lastUpdated.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </span>
+          )}
           <Button
             type="default"
             icon={<ReloadOutlined />}
@@ -62,13 +70,13 @@ export default function AdminDashboard({ stats, onReload }) {
         <StatCard label="Комитеты" value={stats.committees ?? 0} href="/admin/committees" />
         <StatCard label="Депутаты" value={stats.deputies ?? 0} href="/admin/deputies" />
         <StatCard label="Страницы" value={stats.pages ?? 0} href="/admin/pages" />
-        <StatCard label="Документы" value={stats.documents ?? 0} href="/admin/documents" />
+        {/* <StatCard label="Документы" value={stats.documents ?? 0} href="/admin/documents" /> */}
         <StatCard label="Слайдер" value={stats.slides ?? 0} href="/admin/slider" />
         <StatCard label="Новости" value={stats.news ?? 0} href="/admin/news" />
         <StatCard label="События" value={stats.events ?? 0} href="/admin/events" />
         {/* <StatCard label="Обращения" value={stats.appeals ?? 0} href="/admin/appeals" /> */}
         <StatCard label="Трансляция" value={"—"} href="/admin/broadcast" />
-        <StatCard label="ENV доки" value={"—"} href="/admin/env" />
+        {/* <StatCard label="ENV доки" value={"—"} href="/admin/env" /> */}
       </div>
 
       <div className="admin-cards admin-cards--actions">
@@ -87,11 +95,11 @@ export default function AdminDashboard({ stats, onReload }) {
           description="Создавайте и редактируйте контентные страницы"
           href="/admin/pages"
         />
-        <QuickAction
+        {/* <QuickAction
           title="Загрузить документ"
           description="Законы, постановления, инициативы и т.д."
           href="/admin/documents"
-        />
+        /> */}
         <QuickAction
           title="Добавить событие"
           description="Событие появится в календаре на сайте"
