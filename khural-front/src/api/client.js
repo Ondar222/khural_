@@ -409,8 +409,8 @@ export const PublicApi = {
   async listNews() {
     return apiFetch("/news", { method: "GET", auth: false });
   },
-  /** Таймаут для запросов перевода (2 мин): сервис перевода может отвечать долго. */
-  TRANSLATION_TIMEOUT_MS: 120000,
+  /** Таймаут для запросов перевода (5 мин): сервис перевода может отвечать долго при больших текстах. */
+  TRANSLATION_TIMEOUT_MS: 300000,
 
   async translate(text, from, to) {
     // In this backend, translation endpoints require admin auth.
