@@ -1126,8 +1126,12 @@ export default function DataProvider({ children }) {
                 n.content.find((c) => normalizeLocaleKey(c?.locale || c?.lang) === "ru")) ||
               (Array.isArray(n.content) ? n.content[0] : null) ||
               null;
+            const tyv =
+              (Array.isArray(n.content) &&
+                n.content.find((c) => normalizeLocaleKey(c?.locale || c?.lang) === "tyv")) ||
+              null;
 
-            // Извлекаем данные из локализованного контента
+            // Извлекаем данные из локализованного контента (RU и TY)
             const title = String(ru?.title || n.title || "").trim();
             const excerpt = String(
               ru?.shortDescription ||
@@ -1137,12 +1141,15 @@ export default function DataProvider({ children }) {
                 ""
             ).trim();
             const contentHtml = String(
-              ru?.content || 
-              n.contentHtml || 
-              n.contentText || 
+              ru?.content ||
+              n.contentHtml ||
+              n.contentText ||
               ""
             ).trim();
-            
+            const titleTy = String(tyv?.title || "").trim();
+            const excerptTy = String(tyv?.shortDescription || tyv?.description || "").trim();
+            const contentHtmlTy = String(tyv?.content || "").trim();
+
             // Логируем для отладки, если данные пустые
             if (!title && !excerpt && !contentHtml) {
               console.warn("News item with empty content:", {
@@ -1193,11 +1200,13 @@ export default function DataProvider({ children }) {
             return {
               id,
               title,
+              titleTy: titleTy || undefined,
+              excerpt,
+              excerptTy: excerptTy || undefined,
+              contentHtml: contentHtml || "",
+              contentHtmlTy: contentHtmlTy || undefined,
               category: pick(n?.category?.name, n.category, n.category_name) || "Новости",
               date: dateStr,
-              excerpt,
-              // Keep both: rich HTML and plain content array (for legacy JSON)
-              contentHtml: contentHtml || "",
               content: [],
               image: img, // Keep for backward compatibility
               images: allImages, // All images for carousel

@@ -159,7 +159,7 @@ async function refreshAccessToken() {
 
 export async function apiFetch(
   path,
-  { method = "GET", body, headers, auth = true, retry = true, baseUrl: baseUrlOverride } = {}
+  { method = "GET", body, headers, auth = true, retry = true, baseUrl: baseUrlOverride, timeout: timeoutMs } = {}
 ) {
   const baseUrl = baseUrlOverride || API_BASE_URL;
   if (!baseUrl) {
@@ -201,20 +201,33 @@ export async function apiFetch(
       throw err;
     }
   }
+
+  const controller = timeoutMs > 0 ? new AbortController() : null;
+  const timeoutId = controller && timeoutMs > 0
+    ? setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+
+  const fetchOptions = {
+    method,
+    headers: finalHeaders,
+    body: body ? jsonBody : undefined,
+    ...(controller ? { signal: controller.signal } : {}),
+  };
+
   try {
-    res = await fetch(url, {
-      method,
-      headers: finalHeaders,
-      body: body ? jsonBody : undefined,
-    });
+    res = await fetch(url, fetchOptions);
   } catch (networkError) {
-    // Сетевая ошибка (CORS, недоступен сервер и т.д.)
+    if (timeoutId != null) clearTimeout(timeoutId);
     const err = new Error(
-      `Не удалось подключиться к API: ${networkError.message}. Проверьте, что VITE_API_BASE_URL настроен правильно.`
+      networkError?.name === "AbortError"
+        ? `Превышено время ожидания ответа (${timeoutMs / 1000} с). Попробуйте снова.`
+        : `Не удалось подключиться к API: ${networkError.message}. Проверьте, что VITE_API_BASE_URL настроен правильно.`
     );
     err.status = 0;
     err.networkError = true;
     throw err;
+  } finally {
+    if (timeoutId != null) clearTimeout(timeoutId);
   }
   
   const isJson = (res.headers.get("content-type") || "").includes("application/json");
@@ -396,15 +409,15 @@ export const PublicApi = {
   async listNews() {
     return apiFetch("/news", { method: "GET", auth: false });
   },
+  /** Таймаут для запросов перевода (2 мин): сервис перевода может отвечать долго. */
+  TRANSLATION_TIMEOUT_MS: 120000,
+
   async translate(text, from, to) {
     // In this backend, translation endpoints require admin auth.
     // We keep a safe fallback to avoid breaking the UI for guests.
+    const opts = { method: "POST", body: { text, from, to }, auth: true, timeout: PublicApi.TRANSLATION_TIMEOUT_MS };
     try {
-      const result = await apiFetch("/translation/translate", {
-        method: "POST",
-        body: { text, from, to },
-        auth: true,
-      });
+      const result = await apiFetch("/translation/translate", opts);
       return result;
     } catch {
       try {
@@ -412,6 +425,7 @@ export const PublicApi = {
           method: "POST",
           body: { texts: [text], from, to },
           auth: true,
+          timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
         });
         const translated = Array.isArray(result?.translated) ? result.translated[0] : text;
         return { original: text, translated, from, to };
@@ -434,6 +448,7 @@ export const PublicApi = {
         method: "POST",
         body: { texts, from, to },
         auth: true,
+        timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
       });
       const translated = Array.isArray(result?.translated) ? result.translated : texts;
       return { translated, rateLimited: false };

@@ -7,7 +7,7 @@ import { formatNewsDateTime } from "../utils/dateFormat.js";
 
 export default function NewsBlock() {
   const { news, loading, errors, reload } = useData();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [category, setCategory] = React.useState("Все");
   const maxItems = 6; // На главной только последние 6, остальные — на странице /news
 
@@ -122,7 +122,7 @@ export default function NewsBlock() {
                   ) : null}
                   <div className="news-block__card-body">
                     <span className="news-block__card-cat">{n.category}</span>
-                    <div className="news-block__card-title">{n.title}</div>
+                    <div className="news-block__card-title">{(lang === "ty" && n.titleTy) ? n.titleTy : n.title}</div>
                     <div className="news-block__card-date">{formatNewsDateTime(n.date)}</div>
                   </div>
                 </a>

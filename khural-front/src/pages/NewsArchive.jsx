@@ -16,8 +16,19 @@ function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
 }
 
+/** Выбор локализованных полей новости по текущему языку (ru / ty). */
+function localizeNewsItem(item, lang) {
+  if (!item) return { title: "", excerpt: "", contentHtml: "" };
+  const useTy = lang === "ty";
+  return {
+    title: useTy && item.titleTy ? item.titleTy : (item.title || ""),
+    excerpt: useTy && item.excerptTy ? item.excerptTy : (item.excerpt || ""),
+    contentHtml: useTy && item.contentHtmlTy ? item.contentHtmlTy : (item.contentHtml || ""),
+  };
+}
+
 export default function NewsArchive() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { news, loading, errors, reload } = useData();
 
   const getInitialPage = () => {
@@ -186,11 +197,12 @@ export default function NewsArchive() {
       );
     }
 
+    const localized = localizeNewsItem(item, lang);
     const shareUrl =
       typeof window !== "undefined"
         ? `${window.location.origin}/news?id=${encodeURIComponent(item.id)}`
         : `/news?id=${encodeURIComponent(item.id)}`;
-    const shareTitle = String(item.title || "").trim();
+    const shareTitle = String(localized.title || item.title || "").trim();
 
     return (
       <section className="section">
@@ -213,7 +225,7 @@ export default function NewsArchive() {
                 {t("backToNewsList")}
               </a>
               <div>
-                <h1 style={{ marginBottom: 8, display: "block" }}>{item.title}</h1>
+                <h1 style={{ marginBottom: 8, display: "block" }}>{localized.title || item.title}</h1>
                 <div style={{ color: "#6b7280", marginBottom: 16 }}>
                   {formatNewsDateTime(item.date)} · {item.category}
                 </div>
@@ -235,16 +247,16 @@ export default function NewsArchive() {
               />
 
               <div className="prose" style={{ marginTop: 16 }}>
-                {item.excerpt ? (
-                  looksLikeHtml(item.excerpt) ? (
-                    <div dangerouslySetInnerHTML={{ __html: String(item.excerpt) }} />
+                {(localized.excerpt || item.excerpt) ? (
+                  looksLikeHtml(localized.excerpt || item.excerpt) ? (
+                    <div dangerouslySetInnerHTML={{ __html: String(localized.excerpt || item.excerpt) }} />
                   ) : (
-                    <p>{item.excerpt}</p>
+                    <p>{localized.excerpt || item.excerpt}</p>
                   )
                 ) : null}
 
-                {item.contentHtml ? (
-                  <div dangerouslySetInnerHTML={{ __html: String(item.contentHtml) }} />
+                {(localized.contentHtml || item.contentHtml) ? (
+                  <div dangerouslySetInnerHTML={{ __html: String(localized.contentHtml || item.contentHtml) }} />
                 ) : Array.isArray(item.content) && item.content.length > 0 ? (
                   item.content.map((p, i) =>
                     looksLikeHtml(p) ? (
@@ -398,7 +410,7 @@ export default function NewsArchive() {
                       <div style={{ fontSize: 14, color: "#6b7280" }}>
                         {formatNewsDateTime(n.date)}
                       </div>
-                      <div style={{ fontWeight: 700 }}>{n.title}</div>
+                      <div style={{ fontWeight: 700 }}>{localizeNewsItem(n, lang).title || n.title}</div>
                     </a>
                   ))}
               </div>
@@ -523,7 +535,7 @@ export default function NewsArchive() {
 
                       <div className="news-archive__card-body">
                         <span className="news-archive__card-cat">{n.category}</span>
-                        <div className="news-archive__card-title">{n.title}</div>
+                        <div className="news-archive__card-title">{localizeNewsItem(n, lang).title || n.title}</div>
                         <div className="news-archive__card-date">{formatNewsDateTime(n.date)}</div>
                       </div>
                     </a>
