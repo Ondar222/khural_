@@ -6,13 +6,39 @@ function normalizeUrl(url) {
   if (!url) return "";
   const normalized = normalizeFilesUrl(url);
   if (!normalized) return "";
-  // Уже полный URL с базой khural — возвращаем как есть, чтобы открывалось в формате /upload/.../№ 2240 ПВХ-III от 28.11.2023.pdf
   if (normalized.startsWith("http")) return normalized;
   try {
     return new URL(normalized, window.location.origin).toString();
   } catch {
     return normalized;
   }
+}
+
+/** На продакшене запрос к API/файлам через тот же origin (rewrite /files -> backend), чтобы не было CORS. */
+function getFetchUrl(pdfUrl) {
+  if (!pdfUrl || typeof pdfUrl !== "string") return pdfUrl;
+  try {
+    const pageOrigin = typeof window !== "undefined" ? window.location.origin : "";
+    const url = new URL(pdfUrl);
+    if (url.origin === pageOrigin) return pdfUrl;
+    const apiBase = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) || "";
+    const filesBase = (typeof import.meta !== "undefined" && import.meta.env?.VITE_FILES_BASE_URL) || "";
+    for (const base of [apiBase, filesBase].filter((b) => b && String(b).startsWith("http"))) {
+      try {
+        const baseUrl = new URL(base);
+        if (url.origin === baseUrl.origin) return url.pathname + url.search;
+      } catch (_) {}
+    }
+  } catch (_) {}
+  return pdfUrl;
+}
+
+const FETCH_TIMEOUT_MS = 25000;
+
+function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
 }
 
 // Используем Google Docs Viewer как fallback для обхода X-Frame-Options
@@ -38,64 +64,36 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
     let objectUrl = "";
 
     (async () => {
-      // Пробуем загрузить PDF как blob для обхода X-Frame-Options
       setLoading(true);
       setBlobSrc("");
       setUseGoogleViewer(false);
-      
-      // Если PDF находится на khural.rtyva.ru, пробуем использовать прокси
+
       const isKhuralDomain = pdfSrc.includes("khural.rtyva.ru");
-      const proxyUrl = isKhuralDomain 
-        ? pdfSrc.replace("https://khural.rtyva.ru", "/pdf-proxy")
-        : pdfSrc;
-      
+      const fetchUrl =
+        isKhuralDomain
+          ? pdfSrc.replace("https://khural.rtyva.ru", "/pdf-proxy")
+          : getFetchUrl(pdfSrc);
+
+      const opts = {
+        method: "GET",
+        mode: "cors",
+        credentials: "omit",
+        headers: { Accept: "application/pdf" },
+      };
+
       try {
-        // Сначала пробуем через прокси (если это khural.rtyva.ru)
-        let res;
-        if (isKhuralDomain) {
-          try {
-            res = await fetch(proxyUrl, { 
-              method: "GET", 
-              mode: "cors", 
-              credentials: "omit",
-              headers: {
-                'Accept': 'application/pdf',
-              }
-            });
-          } catch (proxyError) {
-            // Если прокси не работает, пробуем напрямую
-            res = await fetch(pdfSrc, { 
-              method: "GET", 
-              mode: "cors", 
-              credentials: "omit",
-              headers: {
-                'Accept': 'application/pdf',
-              }
-            });
-          }
-        } else {
-          res = await fetch(pdfSrc, { 
-            method: "GET", 
-            mode: "cors", 
-            credentials: "omit",
-            headers: {
-              'Accept': 'application/pdf',
-            }
-          });
+        let res = await fetchWithTimeout(fetchUrl, opts);
+        if (!res.ok && isKhuralDomain) {
+          res = await fetchWithTimeout(pdfSrc, opts);
         }
-        
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
-        if (blob.type !== "application/pdf" && !pdfSrc.toLowerCase().includes(".pdf")) {
+        if (blob.type !== "application/pdf" && !String(pdfSrc).toLowerCase().includes(".pdf")) {
           throw new Error("Not a PDF file");
         }
         objectUrl = URL.createObjectURL(blob);
-        if (!cancelled) {
-          setBlobSrc(objectUrl);
-        }
+        if (!cancelled) setBlobSrc(objectUrl);
       } catch (e) {
-        // Если не удалось загрузить как blob (CORS блокирует),
-        // используем Google Docs Viewer как fallback
         if (!cancelled) {
           console.warn("Failed to load PDF as blob, using Google Docs Viewer:", e);
           setUseGoogleViewer(true);
