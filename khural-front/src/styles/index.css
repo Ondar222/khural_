@@ -55,6 +55,16 @@ body {
   font-size: calc(var(--fs-body) * var(--font-scale, 1));
   overflow-x: hidden; /* avoid accidental horizontal scroll */
 }
+
+/* Настройки доступности: отключение анимаций и переходов */
+body.a11y-no-motion,
+body.a11y-no-motion * {
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+}
+
 /* Media should never overflow container */
 img,
 svg,

@@ -48,11 +48,14 @@ function normalizeUser(u) {
     Boolean(u?.role?.admin_access) ||
     String(roleStr).toLowerCase() === "admin";
   
-  // Формируем полное имя из surname и name, если они есть
-  const fullName = [lastName, firstName].filter(Boolean).join(" ") || 
-                   u?.name || 
-                   [firstName, lastName].filter(Boolean).join(" ") || 
-                   u?.email || "";
+  // Формируем полное имя из surname и name; если имя и фамилия совпадают — показываем один раз
+  const last = String(lastName).trim();
+  const first = String(firstName).trim();
+  const combined =
+    last && first && last.toLowerCase() === first.toLowerCase()
+      ? first
+      : [lastName, firstName].filter(Boolean).join(" ").trim();
+  const fullName = combined || u?.name || u?.email || "";
   
   return {
     ...u,

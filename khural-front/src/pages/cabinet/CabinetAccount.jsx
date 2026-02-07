@@ -21,7 +21,7 @@ function roleLabel(role) {
 
 export default function CabinetAccount() {
   const { user } = useAuth();
-  const { mode, fontScale, cycleMode, setFontScale } = useA11y();
+  const { mode, fontScale, disableAnimations, setFontScale, setMode, setDisableAnimations } = useA11y();
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
@@ -51,12 +51,11 @@ export default function CabinetAccount() {
         }
       } catch (error) {
         console.error("Failed to load accessibility settings:", error);
-        // Устанавливаем текущие значения из контекста
         form.setFieldsValue({
           fontSize: Math.round(16 * fontScale),
-          colorScheme: mode === "yb" ? "yb" : mode === "bw" ? "default" : "default",
+          colorScheme: mode === "yb" ? "yb" : "default",
           contrast: mode === "bw" ? "high" : "normal",
-          disableAnimations: false,
+          disableAnimations,
         });
       } finally {
         setLoading(false);
@@ -80,18 +79,17 @@ export default function CabinetAccount() {
 
       await AccessibilityApi.saveSettings(payload);
       message.success("Настройки доступности сохранены");
-      
-      // Обновляем контекст доступности
-      const newFontScale = Math.max(0.85, Math.min(1.6, payload.fontSize / 16));
+
+      const newFontScale = Math.max(0.75, Math.min(1.5, payload.fontSize / 16));
       setFontScale(newFontScale);
-      
-      // A11yContext автоматически обновит режим при следующей загрузке настроек
-      // Перезагружаем настройки, чтобы A11yContext их подхватил
-      const updated = await AccessibilityApi.getSettings(sessionStorage.getItem("sessionId") || "");
+      setMode(
+        payload.contrast === "high" ? "bw" : payload.colorScheme === "yb" ? "yb" : "normal"
+      );
+      setDisableAnimations(payload.disableAnimations);
+
+      const updated = await AccessibilityApi.getSettings(sessionStorage.getItem("sessionId") || "").catch(() => payload);
       setSettings(updated);
-      
-      // Триггерим событие для обновления A11yContext
-      window.dispatchEvent(new CustomEvent("accessibility-settings-updated", { detail: updated }));
+      window.dispatchEvent(new CustomEvent("accessibility-settings-updated", { detail: updated?.settings || updated?.data || updated || payload }));
     } catch (error) {
       if (error?.errorFields) return;
       message.error(error?.message || "Не удалось сохранить настройки");
@@ -102,7 +100,7 @@ export default function CabinetAccount() {
 
   const handleFontSizeChange = (value) => {
     form.setFieldsValue({ fontSize: value });
-    const newScale = Math.max(0.85, Math.min(1.6, value / 16));
+    const newScale = Math.max(0.75, Math.min(1.5, value / 16));
     setFontScale(newScale);
   };
 
@@ -187,14 +185,14 @@ export default function CabinetAccount() {
                 };
                 form.setFieldsValue(resetPayload);
                 setFontScale(1);
-                
-                // Сохраняем сброшенные настройки
+                setMode("normal");
+                setDisableAnimations(false);
                 try {
                   await AccessibilityApi.saveSettings(resetPayload);
                   message.success("Настройки сброшены");
-                  const updated = await AccessibilityApi.getSettings(sessionStorage.getItem("sessionId") || "");
+                  const updated = await AccessibilityApi.getSettings(sessionStorage.getItem("sessionId") || "").catch(() => resetPayload);
                   setSettings(updated);
-                  window.dispatchEvent(new CustomEvent("accessibility-settings-updated", { detail: updated }));
+                  window.dispatchEvent(new CustomEvent("accessibility-settings-updated", { detail: updated?.settings || updated?.data || updated || resetPayload }));
                 } catch (error) {
                   message.error("Не удалось сбросить настройки");
                 }
