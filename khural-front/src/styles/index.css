@@ -2611,9 +2611,14 @@ a {
 .btn.btn--primary:visited {
   color: #ffffff;
 }
-.btn.btn--primary:hover {
-  filter: brightness(0.96);
+.btn.btn--primary:hover,
+.btn.btn--primary:focus-visible,
+a.btn.btn--primary:hover,
+a.btn.btn--primary:focus-visible {
+  background: #083562;
   color: #ffffff;
+  border-color: #083562;
+  filter: brightness(0.96);
 }
 
 /* Apparatus page: make "Подробнее" hover like org chart */
@@ -2897,6 +2902,93 @@ a {
   text-decoration: none;
   font-weight: 800;
   color: var(--link);
+}
+
+/* Docs page (Законы, Постановления и т.д.) — адаптивная вёрстка */
+.section--docs .docs-page__title {
+  margin: 0 0 4px;
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  line-height: 1.25;
+  color: var(--primary);
+}
+.section--docs .docs-search-wrap {
+  margin: 12px 0 24px;
+  max-width: 460px;
+}
+.section--docs .docs-search-wrap input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.section--docs .docs-page__list {
+  gap: 14px;
+}
+.section--docs .law-item {
+  gap: 14px;
+  padding: 16px;
+}
+.section--docs .law-title {
+  line-height: 1.35;
+  word-break: break-word;
+}
+@media (max-width: 959px) {
+  .section--docs .page-grid {
+    gap: 24px;
+  }
+  .section--docs .docs-page__main {
+    min-width: 0;
+  }
+  .section--docs .docs-page__list {
+    gap: 16px;
+  }
+  .section--docs .law-item {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px;
+    gap: 16px;
+  }
+  .section--docs .law-item .btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  .section--docs .law-left {
+    gap: 10px;
+  }
+  .section--docs .law-title {
+    font-size: 15px;
+  }
+}
+@media (max-width: 559px) {
+  .section--docs .docs-page__title {
+    font-size: 1.25rem;
+  }
+  .section--docs .docs-search-wrap {
+    margin: 10px 0 20px;
+  }
+  .section--docs .law-item {
+    padding: 14px;
+    gap: 14px;
+  }
+  .section--docs .law-left {
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+  }
+  .section--docs .law-ico {
+    font-size: 18px;
+  }
+  .section--docs .law-title {
+    font-size: 14px;
+  }
+  .section--docs .law-status {
+    font-size: 13px;
+  }
+  .section--docs .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .section--docs .sidenav--card {
+    padding: 12px;
+  }
 }
 
 /* Income docs */

@@ -122,17 +122,12 @@ export default function DocsPage() {
   }, [docs, query]);
 
   return (
-    <section className="section">
+    <section className="section section--docs">
       <div className="container">
         <div className="page-grid">
-          <div>
-            <h1>{cat.title}</h1>
-            <div
-              style={{
-                margin: "12px 0 24px",
-                maxWidth: 460,
-              }}
-            >
+          <div className="docs-page__main">
+            <h1 className="docs-page__title">{cat.title}</h1>
+            <div className="docs-search-wrap">
               <input
                 type="text"
                 placeholder="Поиск по названию, номеру, описанию"
@@ -161,7 +156,7 @@ export default function DocsPage() {
                 aria-label="Поиск документов"
               />
             </div>
-            <div className="law-list">
+            <div className="law-list docs-page__list">
               {visibleDocs.map((d) => (
                   <div key={d.id || d.url} className="law-item card">
                   <div className="law-left">
