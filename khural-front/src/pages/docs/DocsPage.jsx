@@ -1,5 +1,4 @@
 import React from "react";
-import PdfPreviewModal from "../../components/PdfPreviewModal.jsx";
 import SideNav from "../../components/SideNav.jsx";
 import ScrollToTop from "../../components/ScrollToTop.jsx";
 import { useData } from "../../context/DataContext.jsx";
@@ -9,11 +8,6 @@ import { decodeHtmlEntities } from "../../utils/html.js";
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
-}
-
-function looksLikePdf(url) {
-  const u = String(url || "").toLowerCase();
-  return u.includes(".pdf");
 }
 
 const CATEGORIES = [
@@ -54,7 +48,6 @@ export default function DocsPage() {
   const { route } = useHashRoute();
   const [docs, setDocs] = React.useState([]);
   const [query, setQuery] = React.useState("");
-  const [preview, setPreview] = React.useState(null); // {url, title}
 
   const slug = React.useMemo(() => {
     const base = (route || "/").split("?")[0];
@@ -169,9 +162,7 @@ export default function DocsPage() {
               />
             </div>
             <div className="law-list">
-              {visibleDocs.map((d) => {
-                const isPdf = looksLikePdf(d.url);
-                return (
+              {visibleDocs.map((d) => (
                   <div key={d.id || d.url} className="law-item card">
                   <div className="law-left">
                     <div className="law-ico">📄</div>
@@ -191,28 +182,17 @@ export default function DocsPage() {
                       {d.number && <div className="law-status">№ {d.number}</div>}
                     </div>
                   </div>
-                  {isPdf ? (
-                    <button
-                      type="button"
-                      className="btn btn--primary"
-                      onClick={() => setPreview({ url: d.url, title: d.title })}
-                    >
-                      Открыть
-                    </button>
-                  ) : (
-                    <a
-                      className="btn btn--primary"
-                      href={d.url || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download={d.url ? true : undefined}
-                    >
-                      Открыть
-                    </a>
-                  )}
+                  <a
+                    className="btn btn--primary"
+                    href={d.url || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download={d.url ? true : undefined}
+                  >
+                    Открыть
+                  </a>
                 </div>
-                );
-              })}
+              ))}
             </div>
           </div>
           <SideNav
@@ -238,12 +218,6 @@ export default function DocsPage() {
         </div>
       </div>
       <ScrollToTop />
-      <PdfPreviewModal
-        open={!!preview}
-        onClose={() => setPreview(null)}
-        url={preview?.url}
-        title={preview?.title}
-      />
     </section>
   );
 }

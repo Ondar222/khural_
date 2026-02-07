@@ -1,7 +1,6 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
-import PdfPreviewModal from "./PdfPreviewModal.jsx";
 import { decodeHtmlEntities } from "../utils/html.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { formatConvocationLabelWithYears } from "../utils/convocationLabels.js";
@@ -86,7 +85,6 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
           : []);
 
   const [active, setActive] = React.useState("bio");
-  const [preview, setPreview] = React.useState(null); // {url, title}
   const phoneIconStyle = { transform: "scaleX(-1)" };
 
   // Smooth-scroll to section without breaking hash-based routing
@@ -359,20 +357,15 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
                       </div>
                     </div>
                     {entry.document || entry.url ? (
-                      <button
+                      <a
                         className="btn btn--primary"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const raw = entry.document || entry.url;
-                          const docUrl = raw ? normalizeFilesUrl(raw) : "";
-                          if (docUrl) {
-                            setPreview({ url: docUrl, title: entry.title || entry.number || "Документ" });
-                          }
-                        }}
-                        aria-label="Открыть предпросмотр"
+                        href={entry.document || entry.url ? normalizeFilesUrl(entry.document || entry.url) : "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Открыть документ"
                       >
                         Открыть
-                      </button>
+                      </a>
                     ) : null}
                   </div>
                 ))}
@@ -403,19 +396,14 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
                     </div>
                     <div>
                       {doc.document || doc.url ? (
-                        <button
+                        <a
                           className="btn btn--gold"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const raw = doc.document || doc.url;
-                            const docUrl = raw ? normalizeFilesUrl(raw) : "";
-                            if (docUrl) {
-                              setPreview({ url: docUrl, title: doc.title || (doc.year ? `Декларация за ${doc.year} год` : "Документ") });
-                            }
-                          }}
+                          href={normalizeFilesUrl(doc.document || doc.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
                         >
                           Перейти к документу
-                        </button>
+                        </a>
                       ) : (
                         <span className="doc-meta">Документ не загружен</span>
                       )}
@@ -458,12 +446,6 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
           )}
         </div>
       </div>
-      <PdfPreviewModal
-        open={!!preview}
-        onClose={() => setPreview(null)}
-        url={preview?.url}
-        title={preview?.title}
-      />
     </section>
   );
 }

@@ -4,7 +4,6 @@ import { Input, Select, Space, Switch } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import ScrollToTop from "../components/ScrollToTop.jsx";
-import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
 
@@ -14,11 +13,6 @@ function norm(v) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-}
-
-function looksLikePdf(url) {
-  const u = String(url || "").toLowerCase();
-  return u.includes(".pdf");
 }
 
 function looksLikeHtml(s) {
@@ -43,7 +37,6 @@ export default function Documents() {
   const [qNumber, setQNumber] = React.useState("");
   const [qDate, setQDate] = React.useState("");
   const [groupByCategory, setGroupByCategory] = React.useState(true);
-  const [preview, setPreview] = React.useState(null); // {url, title}
 
   const cats = React.useMemo(
     () => ["Все", ...Array.from(new Set(documents.map((d) => d.category).filter(Boolean)))],
@@ -202,7 +195,6 @@ export default function Documents() {
                         <div className="law-list" style={{ marginTop: 10 }}>
                           {items.map((d) => {
                             const url = normalizeFilesUrl(d.url || d.file?.link || "");
-                            const isPdf = looksLikePdf(url);
                             return (
                               <div key={d.id || url || d.title} className="law-item card">
                                 <div className="law-left">
@@ -218,17 +210,8 @@ export default function Documents() {
                                   </div>
                                 </div>
                                 <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
-                                  {isPdf && url ? (
-                                    <button
-                                      type="button"
-                                      className="btn btn--primary"
-                                      onClick={() => setPreview({ url, title: d.title })}
-                                    >
-                                      Предпросмотр
-                                    </button>
-                                  ) : null}
                                   <a
-                                    className="btn"
+                                    className="btn btn--primary"
                                     href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -248,7 +231,6 @@ export default function Documents() {
                   <div className="law-list">
                     {filtered.map((d) => {
                       const url = normalizeFilesUrl(d.url || d.file?.link || "");
-                      const isPdf = looksLikePdf(url);
                       return (
                         <div key={d.id || url || d.title} className="law-item card">
                       <div className="law-left">
@@ -264,17 +246,8 @@ export default function Documents() {
                         </div>
                       </div>
                           <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
-                            {isPdf && url ? (
-                              <button
-                                type="button"
-                                className="btn btn--primary"
-                                onClick={() => setPreview({ url, title: d.title })}
-                              >
-                                Предпросмотр
-                              </button>
-                            ) : null}
                             <a
-                              className="btn"
+                              className="btn btn--primary"
                               href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -314,12 +287,6 @@ export default function Documents() {
         </div>
       </div>
       <ScrollToTop />
-      <PdfPreviewModal
-        open={!!preview}
-        onClose={() => setPreview(null)}
-        url={preview?.url}
-        title={preview?.title}
-      />
     </section>
   );
 }
