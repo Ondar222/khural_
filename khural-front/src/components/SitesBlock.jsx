@@ -2,13 +2,16 @@ import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { SitesApi } from "../api/client.js";
 
+const SITES_ENABLED = String(import.meta.env.VITE_SITES_ENABLED || "").toLowerCase() === "true";
+
 export default function SitesBlock() {
   const { t } = useI18n();
   const [sites, setSites] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(SITES_ENABLED);
   const [error, setError] = React.useState(null);
 
   React.useEffect(() => {
+    if (!SITES_ENABLED) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -25,7 +28,7 @@ export default function SitesBlock() {
     return () => { cancelled = true; };
   }, []);
 
-  if (loading || error) return null;
+  if (!SITES_ENABLED || loading || error) return null;
   if (!sites.length) return null;
 
   return (
