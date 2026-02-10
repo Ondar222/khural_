@@ -871,9 +871,9 @@ export default function AdminDeputiesV2({
           </div>
 
           <Form.Item
-            label="График приема граждан (HTML)"
+            label="График приема граждан"
             name="receptionSchedule"
-            tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+            tooltip="Описание"
             getValueFromEvent={(value) => value}
           >
             <TinyMCEEditor
@@ -1111,9 +1111,9 @@ export default function AdminDeputiesV2({
           </div>
 
           <Form.Item
-            label="График приема граждан (HTML)"
+            label="График приема граждан"
             name="receptionSchedule"
-            tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+            tooltip="Описание"
             getValueFromEvent={(value) => value}
           >
             <TinyMCEEditor

@@ -274,7 +274,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           </Form.Item>
 
           <Form.Item
-            label="Содержимое (HTML)"
+            label="Содержимое"
             name="content"
             tooltip="Используйте редактор для форматирования текста"
             getValueFromEvent={(value) => value}
@@ -329,7 +329,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
 
                         {blockType === "text" && (
                           <>
-                            <Form.Item name={[field.name, "content"]} label="Текст (HTML)">
+                            <Form.Item name={[field.name, "content"]} label="Текст">
                               <Input.TextArea
                                 autoSize={{ minRows: 4, maxRows: 12 }}
                                 placeholder="<p>Текст блока...</p>"

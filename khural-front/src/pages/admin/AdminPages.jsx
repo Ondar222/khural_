@@ -221,7 +221,7 @@ export default function AdminPages({ items, onCreate, onUpdate, onDelete, busy, 
             <Input placeholder="ru или tyv" />
           </Form.Item>
           <Form.Item
-            label="Содержимое (HTML)"
+            label="Содержимое"
             name="content"
             rules={[{ required: true, message: "Укажите содержимое" }]}
           >
@@ -262,7 +262,7 @@ export default function AdminPages({ items, onCreate, onUpdate, onDelete, busy, 
             <Input placeholder="ru или tyv" />
           </Form.Item>
           <Form.Item
-            label="Содержимое (HTML)"
+            label="Содержимое"
             name="content"
             rules={[{ required: true, message: "Укажите содержимое" }]}
           >

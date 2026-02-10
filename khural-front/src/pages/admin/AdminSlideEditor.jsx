@@ -164,7 +164,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
           </div>
 
           <Form.Item
-            label="Описание (HTML)"
+            label="Описание"
             name="description"
             tooltip="Используйте редактор для форматирования текста"
             getValueFromEvent={(value) => value}

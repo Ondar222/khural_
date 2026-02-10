@@ -1076,9 +1076,9 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           <div className="admin-card">
             <div className="admin-deputy-editor__section-title">Приём граждан</div>
             <Form.Item
-              label="График приема граждан (HTML)"
+              label="График приема граждан"
               name="receptionSchedule"
-              tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
+              tooltip="Описание"
               getValueFromEvent={(value) => value}
             >
               <TinyMCEEditor

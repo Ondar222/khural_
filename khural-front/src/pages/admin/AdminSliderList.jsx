@@ -3,6 +3,14 @@ import { App, Button, Input, Modal, Space, Table, Switch, Upload } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { SliderApi } from "../../api/client.js";
+import { stripHtmlTags } from "../../utils/html.js";
+
+/** Показ только текста без тегов и сущностей (<p>, &ndash; и т.д.) */
+function plainText(html) {
+  if (html == null || html === "") return "";
+  const s = stripHtmlTags(String(html));
+  return s.replace(/\s+/g, " ").trim();
+}
 
 export default function AdminSliderList({
   items,
@@ -135,7 +143,7 @@ export default function AdminSliderList({
             boxSizing: "border-box"
           }}
         >
-          <div style={{ fontWeight: 800, lineHeight: "1.4" }}>{row.title || "(без заголовка)"}</div>
+          <div style={{ fontWeight: 800, lineHeight: "1.4" }}>{plainText(row.title) || "(без заголовка)"}</div>
           {row.description ? (
             <div style={{ 
               opacity: 0.75, 
@@ -145,7 +153,7 @@ export default function AdminSliderList({
               wordWrap: "break-word",
               whiteSpace: "normal"
             }}>
-              {String(row.description)}
+              {plainText(row.description)}
             </div>
           ) : null}
           {row.url ? (
@@ -359,7 +367,7 @@ export default function AdminSliderList({
                         textAlign: 'center',
                         flex: 1,
                       }}>
-                        {row.title || "(без заголовка)"}
+                        {plainText(row.title) || "(без заголовка)"}
                       </div>
                     </div>
                     {row.description ? (
@@ -374,7 +382,7 @@ export default function AdminSliderList({
                         whiteSpace: 'normal',
                         textAlign: 'center',
                       }}>
-                        {String(row.description)}
+                        {plainText(row.description)}
                       </div>
                     ) : null}
                     {row.url ? (

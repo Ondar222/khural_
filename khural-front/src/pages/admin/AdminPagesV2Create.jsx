@@ -203,7 +203,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
           <div className="admin-page-editor__hero-left">
             <div className="admin-page-editor__kicker">Страницы</div>
             <div className="admin-page-editor__title">Создать страницу</div>
-            <div className="admin-page-editor__subtitle">Контентная страница (HTML) для сайта</div>
+            <div className="admin-page-editor__subtitle">Контентная страница для сайта</div>
           </div>
           <div className="admin-page-editor__hero-actions">
             <Button onClick={onDone}>Назад</Button>
@@ -261,7 +261,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
             />
           </Form.Item>
           <Form.Item
-            label="Содержимое (HTML)"
+            label="Содержимое"
             name="content"
             tooltip="Используйте редактор для форматирования текста"
             getValueFromEvent={(value) => value}
@@ -315,10 +315,10 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
                         {blockType === "text" && (
                           <>
-                            <Form.Item name={[field.name, "content"]} label="Текст (HTML)">
+                            <Form.Item name={[field.name, "content"]} label="Текст">
                               <Input.TextArea
                                 autoSize={{ minRows: 4, maxRows: 12 }}
-                                placeholder="<p>Текст блока...</p>"
+                                placeholder="Текст блока..."
                               />
                             </Form.Item>
                           </>
