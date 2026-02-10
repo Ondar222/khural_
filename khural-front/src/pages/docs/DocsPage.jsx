@@ -184,7 +184,7 @@ export default function DocsPage() {
               />
             </div>
             <div className="docs-filter-wrap" style={{ marginBottom: 16 }}>
-              <label style={{ marginRight: 8, fontSize: 14, color: "#374151" }}>Связано с:</label>
+              {/* <label style={{ marginRight: 8, fontSize: 14, color: "#374151" }}>Связано с:</label>
               <select
                 value={filterEntity ? `${filterEntity.type}:${filterEntity.id}` : ""}
                 onChange={(e) => {
@@ -231,7 +231,7 @@ export default function DocsPage() {
                     );
                   })}
                 </optgroup>
-              </select>
+              </select> */}
             </div>
             <div className="law-list docs-page__list">
               {visibleDocs.map((d) => {
