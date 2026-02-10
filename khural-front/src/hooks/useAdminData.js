@@ -957,7 +957,7 @@ export function useAdminData() {
     };
     try {
       const created = await EventsApi.create(toCalendarDto(payload));
-      message.success("Событие создано");
+      message.success("Событие создано и будет видно всем на сайте");
 
       if (created) {
         const toText = (v) => {
@@ -1005,14 +1005,14 @@ export function useAdminData() {
       }
 
       await new Promise((resolve) => setTimeout(resolve, 100));
-      await reload();
       if (typeof reloadDataContextEvents === "function") reloadDataContextEvents();
+      await reload();
     } catch (e) {
       // При недоступности API сохраняем только локально (видено только на этом устройстве)
       addCreatedEvent(localEvent);
       setDataContextEvents((prev) => [...prev, localEvent]);
       message.warning(
-        "Событие сохранено только на этом устройстве. Не удалось отправить на сервер — на других устройствах его не будет. Проверьте подключение или попробуйте позже."
+        "Событие сохранено только на этом устройстве. Чтобы оно было видно всем, настройте API календаря (бэкенд) и проверьте подключение."
       );
     } finally {
       setBusy(false);

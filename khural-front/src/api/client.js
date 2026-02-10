@@ -1144,13 +1144,25 @@ const calendarFetch = (path, opts) =>
 export const EventsApi = {
   async list(params) {
     const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-    return calendarFetch(`/calendar${qs}`, { method: "GET", auth: false });
+    return calendarFetch(`/calendar${qs}`, {
+      method: "GET",
+      auth: false,
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    });
   },
   async getByMonth(year, month) {
-    return calendarFetch(`/calendar/month/${year}/${month}`, { method: "GET", auth: false });
+    return calendarFetch(`/calendar/month/${year}/${month}`, {
+      method: "GET",
+      auth: false,
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    });
   },
   async getByYear(year) {
-    return calendarFetch(`/calendar/year/${year}`, { method: "GET", auth: false });
+    return calendarFetch(`/calendar/year/${year}`, {
+      method: "GET",
+      auth: false,
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    });
   },
   async getById(id) {
     return calendarFetch(`/calendar/${id}`, { method: "GET", auth: false });
