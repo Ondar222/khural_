@@ -3,6 +3,7 @@ import { App, Button, Form, Input, Select, Upload, Modal, Checkbox } from "antd"
 import { useHashRoute } from "../../Router.jsx";
 import { CommitteesApi, PersonsApi } from "../../api/client.js";
 import { useData, enrichDeputyFromPersonInfo } from "../../context/DataContext.jsx";
+import { buildFactionOptions, buildDistrictOptions } from "../../utils/deputyFilterOptions.js";
 import { toPersonsApiBody } from "../../api/personsPayload.js";
 import { readDeputiesOverrides, writeDeputiesOverrides } from "./deputiesOverrides.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
@@ -226,6 +227,16 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const [factionEntities, setFactionEntities] = React.useState([]);
   const [districtEntities, setDistrictEntities] = React.useState([]);
   const [convocationEntities, setConvocationEntities] = React.useState([]);
+
+  // Те же списки, что в фильтрах на странице «Депутаты»: API + структура + из депутатов (поле + биография)
+  const factionOptions = React.useMemo(
+    () => buildFactionOptions(factions, deputies),
+    [factions, deputies]
+  );
+  const districtOptions = React.useMemo(
+    () => buildDistrictOptions(districts, deputies),
+    [districts, deputies]
+  );
 
   const deputyIdNum = React.useMemo(() => {
     const n = Number(deputyId);
@@ -837,7 +848,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                   allowClear
                   showSearch
                   optionFilterProp="label"
-                  options={(Array.isArray(factions) ? factions : [])
+                  options={(Array.isArray(factionOptions) ? factionOptions : [])
                     .filter((x) => x && String(x).trim() !== "")
                     .map((x) => ({ value: String(x), label: String(x) }))}
                   dropdownRender={(menu) => (
@@ -859,7 +870,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                   allowClear
                   showSearch
                   optionFilterProp="label"
-                  options={(Array.isArray(districts) ? districts : [])
+                  options={(Array.isArray(districtOptions) ? districtOptions : [])
                     .filter((x) => x && String(x).trim() !== "")
                     .map((x) => ({ value: String(x), label: String(x) }))}
                   dropdownRender={(menu) => (
