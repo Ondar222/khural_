@@ -5,7 +5,49 @@ import { Select } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { decodeHtmlEntities } from "../utils/html.js";
 import { formatConvocationLabelWithYears, CANONICAL_CONVOCATIONS } from "../utils/convocationLabels.js";
+
+function getFactionsFromBio(bioRaw) {
+  if (!bioRaw || typeof bioRaw !== "string") return [];
+  const text = decodeHtmlEntities(bioRaw).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  if (!text) return [];
+  const found = new Set();
+  const known = ["Единая Россия", "КПРФ", "ЛДПР", "Новые люди", "Единая Тыва"];
+  const lower = text.toLowerCase();
+  for (const name of known) {
+    if (lower.includes(name.toLowerCase())) found.add(name);
+  }
+  const quoted = text.matchAll(/(?:Партии|партии|фракци[ия]?|сторонником)\s*[«"]([^»"]+)[»"]/gi);
+  for (const m of quoted) {
+    const s = (m[1] || "").trim();
+    if (s.length > 0 && s.length < 80) found.add(s);
+  }
+  return Array.from(found);
+}
+
+function normalizeFactionKey(s) {
+  const key = String(s || "").trim().replace(/\s+/g, " ").toLowerCase();
+  if (key === "едина россия") return "единая россия";
+  if (key === "кпрф" || key === "коммунистическая партия российской федерации") return "кпрф";
+  return key;
+}
+
+function canonicalizeFactionDisplay(name) {
+  const key = normalizeFactionKey(name);
+  if (key === "единая россия") return "Единая Россия";
+  if (key === "кпрф") return "КПРФ";
+  return String(name || "").trim();
+}
+
+function deputyMatchesFaction(deputy, factionName) {
+  if (!factionName || factionName === "Все") return true;
+  const key = normalizeFactionKey(factionName);
+  const dFaction = String(deputy?.faction || "").trim();
+  if (dFaction && normalizeFactionKey(dFaction) === key) return true;
+  const bio = deputy?.biography || deputy?.bio || deputy?.description || "";
+  return getFactionsFromBio(bio).some((f) => normalizeFactionKey(f) === key);
+}
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
 
@@ -64,18 +106,23 @@ export default function Deputies() {
   }, []);
   
   const factions = React.useMemo(() => {
-    const items = Array.isArray(structureFactions) ? structureFactions : [];
-    const stringItems = items
-      .map((item) => {
-        if (typeof item === "string") return item;
-        if (item && typeof item === "object") {
-          return item.name || item.title || item.label || String(item);
-        }
-        return String(item || "");
-      })
-      .filter((item) => item && item.trim() !== "");
-    return ["Все", ...stringItems];
-  }, [structureFactions]);
+    const toStr = (item) => {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object") return String(item.name || item.title || item.label || item).trim();
+      return String(item || "").trim();
+    };
+    const fromStructure = (Array.isArray(structureFactions) ? structureFactions : []).map(toStr).filter(Boolean);
+    const fromDeputies = Array.from(
+      new Set((Array.isArray(deputies) ? deputies : []).map((d) => toStr(d?.faction)).filter(Boolean))
+    );
+    const fromBio = (Array.isArray(deputies) ? deputies : []).flatMap((d) =>
+      getFactionsFromBio(d?.biography || d?.bio || d?.description || "")
+    );
+    const raw = [...fromStructure, ...fromDeputies, ...fromBio].filter(Boolean);
+    const merged = Array.from(new Set(raw.map(canonicalizeFactionDisplay))).filter(Boolean);
+    merged.sort((a, b) => a.localeCompare(b, "ru"));
+    return ["Все", ...merged];
+  }, [structureFactions, deputies]);
   const committeeOptions = React.useMemo(() => {
     return ["Все", ...(committees || []).map((c) => c.id)];
   }, [committees]);
@@ -97,7 +144,7 @@ export default function Deputies() {
   const filtered = React.useMemo(() => {
     return deputies.filter((d) => {
       if (convocation !== "Все" && d.convocation !== convocation) return false;
-      if (faction !== "Все" && d.faction !== faction) return false;
+      if (faction !== "Все" && !deputyMatchesFaction(d, faction)) return false;
       if (district !== "Все" && d.district !== district) return false;
       if (committeeMatcher) {
         if (committeeMatcher.ids.has(d.id)) return true;
