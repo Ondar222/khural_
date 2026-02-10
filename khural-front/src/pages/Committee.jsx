@@ -10,6 +10,7 @@ import {
   readCommitteesOverrides,
 } from "../utils/committeesOverrides.js";
 import { toCommitteeHtml } from "../utils/committeeHtml.js";
+import { getDocumentLinkedEntities } from "../utils/documentMentions.js";
 
 function mergeCommitteesWithOverrides(base, overrides) {
   const created = Array.isArray(overrides?.created) ? overrides.created : [];
@@ -133,7 +134,7 @@ function deduplicateCommitteesByRichness(list) {
 }
 
 export default function Committee() {
-  const { committees: committeesFromContext, deputies, convocations, loading, errors, reload } = useData();
+  const { committees: committeesFromContext, deputies, convocations, documents: allDocuments, loading, errors, reload } = useData();
   const [committee, setCommittee] = React.useState(null);
   const [apiCommittees, setApiCommittees] = React.useState(null);
   const [overridesSeq, setOverridesSeq] = React.useState(0);
@@ -453,6 +454,33 @@ export default function Committee() {
   // Group by year (must be before early return)
   const { grouped: agendasByYear, sortedYears: agendaYears } = groupByYear(agendas);
   const { grouped: reportsByYear, sortedYears: reportYears } = groupByYear(reports);
+
+  // Документы из общего раздела «Документы», в названии/описании которых упомянут этот комитет
+  const committeeLinkedDocs = React.useMemo(() => {
+    if (!committee || !Array.isArray(allDocuments) || allDocuments.length === 0) return [];
+    const list = [];
+    const committeeForMatch = { id: committee.id, name: committee.name, title: committee.title };
+    for (const d of allDocuments) {
+      const title = typeof d.title === "string" ? d.title : (d?.title?.name ?? d?.title?.title ?? String(d?.title ?? ""));
+      const desc = (() => {
+        const raw = d.desc ?? d.description ?? "";
+        if (typeof raw === "string") return raw;
+        if (Array.isArray(raw)) return raw.join(" ");
+        return raw ? String(raw) : "";
+      })();
+      const linked = getDocumentLinkedEntities((title || "") + " " + (desc || ""), { committees: [committeeForMatch] });
+      if (linked.committees.some((c) => String(c.id) === String(committee.id))) {
+        list.push({
+          id: d.id,
+          title,
+          desc,
+          number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
+          url: d.url,
+        });
+      }
+    }
+    return list;
+  }, [committee, allDocuments]);
 
   // Group all documents by category and year (for "Documents" view)
   const documentsByCategoryAndYear = React.useMemo(() => {
@@ -1339,7 +1367,60 @@ export default function Committee() {
                         )}
                       </div>
                     )}
+                    {committeeLinkedDocs.length > 0 && (
+                      <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid #e5e7eb" }}>
+                        <h3 style={{ marginBottom: 16 }}>Законы и постановления по тематике комитета</h3>
+                        <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 16 }}>
+                          Документы, в названии или описании которых упоминается комитет.
+                        </p>
+                        <div className="law-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          {committeeLinkedDocs.map((doc) => {
+                            const fileUrl = doc.url ? normalizeFilesUrl(doc.url) : "";
+                            return (
+                              <div key={doc.id || doc.url} className="law-item card" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                                <div style={{ flex: "1 1 300px" }}>
+                                  <div style={{ fontWeight: 600, marginBottom: 4 }}>{doc.title || "Без названия"}</div>
+                                  {doc.desc && <div style={{ fontSize: 14, color: "#6b7280", marginTop: 4 }}>{doc.desc.replace(/<[^>]*>/g, "").slice(0, 200)}{doc.desc.replace(/<[^>]*>/g, "").length > 200 ? "…" : ""}</div>}
+                                  {doc.number && <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>№ {doc.number}</div>}
+                                </div>
+                                {fileUrl ? (
+                                  <a className="btn btn--primary" href={fileUrl} target="_blank" rel="noopener noreferrer" download style={{ flexShrink: 0 }}>
+                                    Открыть
+                                  </a>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </>
+                ) : committeeLinkedDocs.length > 0 ? (
+                  <div style={{ marginTop: 24 }}>
+                    <h3 style={{ marginBottom: 16 }}>Законы и постановления по тематике комитета</h3>
+                    <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 16 }}>
+                      Документы, в названии или описании которых упоминается комитет.
+                    </p>
+                    <div className="law-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {committeeLinkedDocs.map((doc) => {
+                        const fileUrl = doc.url ? normalizeFilesUrl(doc.url) : "";
+                        return (
+                          <div key={doc.id || doc.url} className="law-item card" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                            <div style={{ flex: "1 1 300px" }}>
+                              <div style={{ fontWeight: 600, marginBottom: 4 }}>{doc.title || "Без названия"}</div>
+                              {doc.desc && <div style={{ fontSize: 14, color: "#6b7280", marginTop: 4 }}>{doc.desc.replace(/<[^>]*>/g, "").slice(0, 200)}{doc.desc.replace(/<[^>]*>/g, "").length > 200 ? "…" : ""}</div>}
+                              {doc.number && <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>№ {doc.number}</div>}
+                            </div>
+                            {fileUrl ? (
+                              <a className="btn btn--primary" href={fileUrl} target="_blank" rel="noopener noreferrer" download style={{ flexShrink: 0 }}>
+                                Открыть
+                              </a>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ) : (
                   <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
                     Документы пока не добавлены

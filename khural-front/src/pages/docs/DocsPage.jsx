@@ -5,6 +5,7 @@ import { useData } from "../../context/DataContext.jsx";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
+import { getDocumentLinkedEntities } from "../../utils/documentMentions.js";
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
@@ -44,10 +45,11 @@ const CATEGORIES = [
 ];
 
 export default function DocsPage() {
-  const { documents } = useData();
+  const { documents, deputies, committees, convocations } = useData();
   const { route } = useHashRoute();
   const [docs, setDocs] = React.useState([]);
   const [query, setQuery] = React.useState("");
+  const [filterEntity, setFilterEntity] = React.useState(null); // { type: 'deputy'|'committee'|'convocation', id }
 
   const slug = React.useMemo(() => {
     const base = (route || "/").split("?")[0];
@@ -110,16 +112,41 @@ export default function DocsPage() {
     );
   }, [documents, slug]);
 
+  const docLinkedMap = React.useMemo(() => {
+    const map = new Map();
+    for (const d of docs) {
+      const text = (d.title || "") + " " + (d.desc || "");
+      const linked = getDocumentLinkedEntities(text, { deputies, committees, convocations });
+      map.set(d.id ?? d.url, linked);
+    }
+    return map;
+  }, [docs, deputies, committees, convocations]);
+
   const visibleDocs = React.useMemo(() => {
+    let list = docs;
     const q = query.trim().toLowerCase();
-    if (!q) return docs;
-    return docs.filter((d) => {
-      const title = String(d?.title || "").toLowerCase();
-      const desc = String(d?.desc || "").toLowerCase();
-      const number = String(d?.number || "").toLowerCase();
-      return title.includes(q) || desc.includes(q) || number.includes(q);
-    });
-  }, [docs, query]);
+    if (q) {
+      list = list.filter((d) => {
+        const title = String(d?.title || "").toLowerCase();
+        const desc = String(d?.desc || "").toLowerCase();
+        const number = String(d?.number || "").toLowerCase();
+        return title.includes(q) || desc.includes(q) || number.includes(q);
+      });
+    }
+    if (filterEntity) {
+      const { type, id } = filterEntity;
+      list = list.filter((d) => {
+        const key = d.id ?? d.url;
+        const linked = docLinkedMap.get(key);
+        if (!linked) return false;
+        if (type === "deputy") return linked.deputies.some((x) => String(x.id) === String(id));
+        if (type === "committee") return linked.committees.some((x) => String(x.id) === String(id));
+        if (type === "convocation") return linked.convocations.some((x) => String(x.id) === String(id));
+        return false;
+      });
+    }
+    return list;
+  }, [docs, query, filterEntity, docLinkedMap]);
 
   return (
     <section className="section section--docs">
@@ -156,38 +183,107 @@ export default function DocsPage() {
                 aria-label="Поиск документов"
               />
             </div>
+            <div className="docs-filter-wrap" style={{ marginBottom: 16 }}>
+              <label style={{ marginRight: 8, fontSize: 14, color: "#374151" }}>Связано с:</label>
+              <select
+                value={filterEntity ? `${filterEntity.type}:${filterEntity.id}` : ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!v) {
+                    setFilterEntity(null);
+                    return;
+                  }
+                  const [type, id] = v.split(":");
+                  setFilterEntity({ type, id });
+                }}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #dfe3eb",
+                  fontSize: 14,
+                  minWidth: 220,
+                }}
+                aria-label="Фильтр по депутату, комитету или созыву"
+              >
+                <option value="">Все документы</option>
+                <optgroup label="Депутаты">
+                  {(Array.isArray(deputies) ? deputies : []).slice(0, 100).map((p) => (
+                    <option key={`deputy-${p.id}`} value={`deputy:${p.id}`}>
+                      {p.fullName || p.name || p.id}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Комитеты">
+                  {(Array.isArray(committees) ? committees : []).map((c) => (
+                    <option key={`committee-${c.id}`} value={`committee:${c.id}`}>
+                      {c.title || c.name || c.id}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Созывы">
+                  {(Array.isArray(convocations) ? convocations : []).map((c) => {
+                    const id = c && typeof c === "object" ? c.id : c;
+                    const label = c && typeof c === "object" ? (c.name || c.number || c.id) : String(c ?? "");
+                    return (
+                      <option key={`conv-${id}`} value={`convocation:${id}`}>
+                        {label || `Созыв ${id}`}
+                      </option>
+                    );
+                  })}
+                </optgroup>
+              </select>
+            </div>
             <div className="law-list docs-page__list">
-              {visibleDocs.map((d) => (
-                  <div key={d.id || d.url} className="law-item card">
-                  <div className="law-left">
-                    <div className="law-ico">📄</div>
-                    <div>
-                      <div className="law-title">{d.title}</div>
-                      {d.desc ? (
-                        (() => {
-                          const decoded = decodeHtmlEntities(d.desc);
-                          if (!decoded) return null;
-                          return looksLikeHtml(decoded) ? (
-                            <div className="law-desc" dangerouslySetInnerHTML={{ __html: String(decoded) }} />
-                          ) : (
-                            <div className="law-desc">{decoded}</div>
-                          );
-                        })()
-                      ) : null}
-                      {d.number && <div className="law-status">№ {d.number}</div>}
+              {visibleDocs.map((d) => {
+                const key = d.id ?? d.url;
+                const linked = docLinkedMap.get(key) || { deputies: [], committees: [], convocations: [] };
+                const hasLinked = linked.deputies.length > 0 || linked.committees.length > 0 || linked.convocations.length > 0;
+                return (
+                  <div key={key} className="law-item card">
+                    <div className="law-left">
+                      <div className="law-ico">📄</div>
+                      <div>
+                        <div className="law-title">{d.title}</div>
+                        {d.desc ? (
+                          (() => {
+                            const decoded = decodeHtmlEntities(d.desc);
+                            if (!decoded) return null;
+                            return looksLikeHtml(decoded) ? (
+                              <div className="law-desc" dangerouslySetInnerHTML={{ __html: String(decoded) }} />
+                            ) : (
+                              <div className="law-desc">{decoded}</div>
+                            );
+                          })()
+                        ) : null}
+                        {d.number && <div className="law-status">№ {d.number}</div>}
+                        {hasLinked && (
+                          <div className="law-linked" style={{ marginTop: 10, fontSize: 12, display: "flex", flexWrap: "wrap", gap: "6px 12px", alignItems: "center" }}>
+                            <span style={{ color: "#6b7280" }}>Связано:</span>
+                            {linked.deputies.map((x) => (
+                              <span key={`d-${x.id}`} style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 6 }} title="Депутат">👤 {x.label}</span>
+                            ))}
+                            {linked.committees.map((x) => (
+                              <span key={`c-${x.id}`} style={{ background: "#fef3c7", color: "#b45309", padding: "2px 8px", borderRadius: 6 }} title="Комитет">📋 {x.label}</span>
+                            ))}
+                            {linked.convocations.map((x) => (
+                              <span key={`v-${x.id}`} style={{ background: "#e0e7ff", color: "#3730a3", padding: "2px 8px", borderRadius: 6 }} title="Созыв">📅 {x.label}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    <a
+                      className="btn btn--primary"
+                      href={d.url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={d.url ? true : undefined}
+                    >
+                      Открыть
+                    </a>
                   </div>
-                  <a
-                    className="btn btn--primary"
-                    href={d.url || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download={d.url ? true : undefined}
-                  >
-                    Открыть
-                  </a>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           <SideNav
