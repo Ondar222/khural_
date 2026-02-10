@@ -306,7 +306,7 @@ export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, bus
           )}
 
           <Form.Item 
-            label="Биография (HTML)" 
+            label="Биография" 
             name="biography"
             getValueFromEvent={(value) => value}
           >
@@ -332,7 +332,7 @@ export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, bus
           </div>
 
           <Form.Item
-            label="График приема граждан (HTML)"
+            label="График приема граждан"
             name="receptionSchedule"
             tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a и т.д. Сохраняется как есть (в notes)."
             getValueFromEvent={(value) => value}

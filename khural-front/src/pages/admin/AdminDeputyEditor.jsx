@@ -2,7 +2,7 @@ import React from "react";
 import { App, Button, Form, Input, Select, Upload, Modal, Checkbox } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { CommitteesApi, PersonsApi } from "../../api/client.js";
-import { useData } from "../../context/DataContext.jsx";
+import { useData, enrichDeputyFromPersonInfo } from "../../context/DataContext.jsx";
 import { toPersonsApiBody } from "../../api/personsPayload.js";
 import { readDeputiesOverrides, writeDeputiesOverrides } from "./deputiesOverrides.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
@@ -103,6 +103,51 @@ const ROLE_OPTIONS_BY_STRUCTURE = {
 function getLocalDeputyById(list, id) {
   const arr = Array.isArray(list) ? list : [];
   return arr.find((x) => String(x?.id ?? "") === String(id)) || null;
+}
+
+/** Нормализация имени для сопоставления с persons_info (как в DataContext) */
+function normName(s) {
+  return String(s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/** Загружает биографию и приём из persons_info (deputaty.json, deputaty_vseh_sozyvov.json) — те же данные, что на странице «Депутаты» */
+async function loadBiographyFromPersonsInfo(deputyId, deputyName, externalId) {
+  try {
+    const [vseh, deputaty] = await Promise.all([
+      fetch("/persons_info/deputaty_vseh_sozyvov.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+      fetch("/persons_info/deputaty.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    ]);
+    const rows = [...(Array.isArray(vseh) ? vseh : []), ...(Array.isArray(deputaty) ? deputaty : [])];
+    const idStr = String(deputyId ?? "").trim();
+    const extIdStr = externalId != null ? String(externalId).trim() : "";
+    const nameNorm = deputyName ? normName(deputyName) : "";
+
+    for (const row of rows) {
+      const ieId = row?.IE_ID ?? row?.IE_XML_ID;
+      const ieIdStr = ieId != null ? String(ieId).trim() : "";
+      const name = String(row?.IE_NAME ?? "").trim();
+      const nameNormRow = normName(name);
+      const bio = String(row?.IE_DETAIL_TEXT ?? "").trim();
+      const reception = String(row?.IE_PREVIEW_TEXT ?? "").trim();
+
+      const matchById = (idStr && ieIdStr === idStr) || (extIdStr && ieIdStr === extIdStr);
+      const matchByName = nameNorm && nameNormRow === nameNorm;
+      const matchByPartial = nameNorm && nameNormRow && (nameNormRow.includes(nameNorm) || nameNorm.includes(nameNormRow));
+
+      if (!matchById && !matchByName && !matchByPartial) continue;
+
+      return {
+        biography: bio || "",
+        bio: bio || "",
+        description: bio || "",
+        receptionSchedule: reception || "",
+        reception: reception || "",
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 function normalizeInitial(d) {
@@ -503,14 +548,70 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     (async () => {
       setLoading(true);
       try {
-        // Try API; fallback to local list
         const fromApi = await PersonsApi.getById(id).catch(() => null);
         const fromLocal = getLocalDeputyById(deputies, id);
-        // Merge local overrides so status checkbox remains consistent even if backend ignores these fields.
         const ov = readDeputiesOverrides();
         const patch = ov?.updatedById && typeof ov.updatedById === "object" ? ov.updatedById[String(id)] : null;
-        const base = fromApi || fromLocal || patch;
-        const src = patch && base && typeof base === "object" ? { ...base, ...patch } : base;
+        // База — локальный список (биография, контакты из DataContext); поверх — непустые поля из API, затем patch
+        let base = fromLocal && typeof fromLocal === "object" ? { ...fromLocal } : (fromApi || fromLocal || patch);
+        if (fromApi && typeof fromApi === "object") {
+          for (const k of Object.keys(fromApi)) {
+            const v = fromApi[k];
+            if (v !== undefined && v !== null && (typeof v !== "string" || v.trim() !== "")) {
+              base[k] = v;
+            }
+          }
+        }
+        let src = patch && base && typeof base === "object" ? { ...base, ...patch } : base;
+        // 1) Биография из persons_info (deputaty.json, deputaty_vseh_sozyvov.json) — те же данные, что на странице «Депутаты»
+        if (src && typeof src === "object") {
+          const name = src.name || src.fullName || src.full_name || "";
+          const fromPersonsInfo = await loadBiographyFromPersonsInfo(id, name, src.externalId);
+          if (!alive) return;
+          if (fromPersonsInfo) {
+            if (!src.biography && fromPersonsInfo.biography) src.biography = fromPersonsInfo.biography;
+            if (!src.bio && fromPersonsInfo.bio) src.bio = fromPersonsInfo.bio;
+            if (!src.description && fromPersonsInfo.description) src.description = fromPersonsInfo.description;
+            if (!src.receptionSchedule && fromPersonsInfo.receptionSchedule) src.receptionSchedule = fromPersonsInfo.receptionSchedule;
+            if (!src.reception && fromPersonsInfo.reception) src.reception = fromPersonsInfo.reception;
+          }
+        }
+        // 2) Данные из /data/deputies.json по id или по имени
+        if (src && typeof src === "object") {
+          try {
+            const localList = await fetch("/data/deputies.json").then((r) => (r.ok ? r.json() : [])).catch(() => []);
+            const arr = Array.isArray(localList) ? localList : [];
+            const byId = arr.find((d) => String(d?.id ?? "") === id);
+            const name = src.name || src.fullName || src.full_name || "";
+            const byName = name ? arr.find((d) => String(d?.name ?? "").trim().toLowerCase() === String(name).trim().toLowerCase()) : null;
+            const fromJson = byId || byName;
+            if (fromJson && typeof fromJson === "object") {
+              const fill = (key, keys) => {
+                const val = keys.reduce((v, k) => v ?? fromJson[k], undefined);
+                if (val !== undefined && val !== null && (typeof val !== "string" || val.trim() !== "")) {
+                  src[key] = src[key] ?? val;
+                }
+              };
+              fill("biography", ["biography", "bio", "description"]);
+              fill("bio", ["bio", "biography", "description"]);
+              fill("description", ["description", "biography", "bio"]);
+              fill("receptionSchedule", ["receptionSchedule", "reception_schedule", "reception", "schedule"]);
+              if (fromJson.contacts && typeof fromJson.contacts === "object") {
+                if (!src.contacts) src.contacts = {};
+                src.contacts.phone = src.contacts?.phone || fromJson.contacts.phone || "";
+                src.contacts.email = src.contacts?.email || fromJson.contacts.email || "";
+              }
+              fill("address", ["address"]);
+            }
+          } catch (_) {}
+          if (!alive) return;
+        }
+        // 3) Обогащение из DataContext (по externalId и имени) — фото, контакты, биография
+        if (src && typeof src === "object" && (src.name || src.fullName || src.full_name || src.externalId != null || src.id)) {
+          const forEnrich = { ...src, name: src.name || src.fullName || src.full_name };
+          src = await enrichDeputyFromPersonInfo(forEnrich);
+          if (!alive) return;
+        }
         if (!alive) return;
         const normalized = normalizeInitial(src);
         form.setFieldsValue(normalized);
@@ -932,7 +1033,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         <div className="admin-card">
           <div className="admin-deputy-editor__section-title">Биография</div>
           <Form.Item
-            label="Биография (HTML)"
+            label="Биография"
             name="biography"
             tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a, img и т.д. Сохраняется как есть."
             getValueFromEvent={(value) => value}
@@ -940,7 +1041,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             <TinyMCEEditor
               height={400}
               disabled={loading || saving}
-              placeholder="<p>Биография</p>\n<h2>Заголовок блока</h2>\n<ul><li>Пункт</li></ul>"
+              placeholder="Биография..."
             />
           </Form.Item>
         </div>

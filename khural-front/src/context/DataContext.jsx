@@ -22,6 +22,7 @@ import {
 } from "../utils/documentsOverrides.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { normalizeConvocationToCanonical } from "../utils/convocationLabels.js";
+import { buildFactionOptions, buildDistrictOptions } from "../utils/deputyFilterOptions.js";
 
 const DataContext = React.createContext({
   slides: [],
@@ -872,9 +873,11 @@ function enrichDeputyWithPersonInfo(dep, info) {
   return out;
 }
 
-/** Экспортируемая функция для обогащения депутата из JSON файлов (используется в Government.jsx) */
+/** Экспортируемая функция для обогащения депутата из JSON файлов (используется в Government.jsx и в админке) */
 export async function enrichDeputyFromPersonInfo(dep) {
-  if (!dep || !dep.name) return dep;
+  if (!dep) return dep;
+  const hasName = dep.name || dep.fullName || dep.full_name;
+  if (!hasName && dep.externalId == null && dep.id == null) return dep;
   try {
     const [personInfoVseh, personInfoDeputaty] = await Promise.all([
       fetch("/persons_info/deputaty_vseh_sozyvov.json").then((r) => r.ok ? r.json() : []).catch(() => []),
@@ -883,7 +886,15 @@ export async function enrichDeputyFromPersonInfo(dep) {
     const mapVseh = buildPersonInfoMap(personInfoVseh);
     const mapDep = buildPersonInfoMap(personInfoDeputaty);
     const personInfoMap = mergePersonInfoMaps(mapDep, mapVseh);
-    const info = personInfoMap.byName.get(normalizePersonName(dep.name));
+    // Поиск по IE_ID (externalId или id), затем по имени — как на странице «Депутаты»
+    const byId = personInfoMap.byId || new Map();
+    const byName = personInfoMap.byName || new Map();
+    const idKey = String(dep.externalId ?? dep.id ?? "").trim();
+    let info = idKey ? byId.get(idKey) : null;
+    if (!info && hasName) {
+      const name = dep.name || dep.fullName || dep.full_name;
+      info = byName.get(normalizePersonName(name));
+    }
     return enrichDeputyWithPersonInfo(dep, info);
   } catch (e) {
     if (import.meta.env.DEV) {
@@ -1873,6 +1884,13 @@ export default function DataProvider({ children }) {
       );
     return base.length === 0 && fromGov.length === 0 ? base : [...base, ...fromGov];
   }, [deputiesBase, deputiesOverrides, government]);
+
+  // Обогащаем списки фракций и округов из депутатов (поле + биография), как на странице «Депутаты» и в админке
+  React.useEffect(() => {
+    if (!Array.isArray(deputies) || deputies.length === 0) return;
+    setFactions((prev) => buildFactionOptions(prev, deputies));
+    setDistricts((prev) => buildDistrictOptions(prev, deputies));
+  }, [deputies]);
 
   const eventsWithOverrides = React.useMemo(() => {
     return mergeEventsWithOverrides(events, eventsOverrides);

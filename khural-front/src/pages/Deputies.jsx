@@ -5,40 +5,15 @@ import { Select } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
-import { decodeHtmlEntities } from "../utils/html.js";
+import {
+  getFactionsFromBio,
+  getDistrictsFromBio,
+  normalizeFactionKey,
+  normalizeDistrictKey,
+  buildFactionOptions,
+  buildDistrictOptions,
+} from "../utils/deputyFilterOptions.js";
 import { formatConvocationLabelWithYears, CANONICAL_CONVOCATIONS } from "../utils/convocationLabels.js";
-
-function getFactionsFromBio(bioRaw) {
-  if (!bioRaw || typeof bioRaw !== "string") return [];
-  const text = decodeHtmlEntities(bioRaw).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-  if (!text) return [];
-  const found = new Set();
-  const known = ["Единая Россия", "КПРФ", "ЛДПР", "Новые люди", "Единая Тыва"];
-  const lower = text.toLowerCase();
-  for (const name of known) {
-    if (lower.includes(name.toLowerCase())) found.add(name);
-  }
-  const quoted = text.matchAll(/(?:Партии|партии|фракци[ия]?|сторонником)\s*[«"]([^»"]+)[»"]/gi);
-  for (const m of quoted) {
-    const s = (m[1] || "").trim();
-    if (s.length > 0 && s.length < 80) found.add(s);
-  }
-  return Array.from(found);
-}
-
-function normalizeFactionKey(s) {
-  const key = String(s || "").trim().replace(/\s+/g, " ").toLowerCase();
-  if (key === "едина россия") return "единая россия";
-  if (key === "кпрф" || key === "коммунистическая партия российской федерации") return "кпрф";
-  return key;
-}
-
-function canonicalizeFactionDisplay(name) {
-  const key = normalizeFactionKey(name);
-  if (key === "единая россия") return "Единая Россия";
-  if (key === "кпрф") return "КПРФ";
-  return String(name || "").trim();
-}
 
 function deputyMatchesFaction(deputy, factionName) {
   if (!factionName || factionName === "Все") return true;
@@ -47,37 +22,6 @@ function deputyMatchesFaction(deputy, factionName) {
   if (dFaction && normalizeFactionKey(dFaction) === key) return true;
   const bio = deputy?.biography || deputy?.bio || deputy?.description || "";
   return getFactionsFromBio(bio).some((f) => normalizeFactionKey(f) === key);
-}
-
-function getDistrictsFromBio(bioRaw) {
-  if (!bioRaw || typeof bioRaw !== "string") return [];
-  const text = decodeHtmlEntities(bioRaw).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-  if (!text) return [];
-  const found = new Set();
-  const known = [
-    "Кызыльский", "Кызылский кожуун", "Тере-Холь", "Тандинский", "Улуг-Хемский",
-    "Эрзинский", "Тес-Хемский", "Овюрский", "Монгун-Тайгинский", "Каа-Хемский",
-    "Пий-Хемский", "Тоджинский", "Чаа-Хольский", "Чеди-Хольский", "Бай-Тайгинский",
-    "Сут-Хольский", "Барун-Хемчикский", "Дзун-Хемчикский",
-  ];
-  const lower = text.toLowerCase();
-  for (const name of known) {
-    if (lower.includes(name.toLowerCase())) found.add(name);
-  }
-  const numMatch = text.matchAll(/(?:избирательный\s+округ|округ)\s*[№#]?\s*(\d+)/gi);
-  for (const m of numMatch) {
-    if (m[1]) found.add("№ " + m[1]);
-  }
-  const afterRound = text.matchAll(/(?:избирательный\s+округ|по\s+округу)\s*[«:]\s*([^».\n]{1,60})/gi);
-  for (const m of afterRound) {
-    const s = (m[1] || "").trim();
-    if (s.length > 0) found.add(s);
-  }
-  return Array.from(found);
-}
-
-function normalizeDistrictKey(s) {
-  return String(s || "").trim().replace(/\s+/g, " ").toLowerCase().replace(/№\s*/g, "№");
 }
 
 function deputyMatchesDistrict(deputy, districtName) {
@@ -126,19 +70,8 @@ export default function Deputies() {
       if (item && typeof item === "object") return String(item.name || item.title || item.label || item).trim();
       return String(item || "").trim();
     };
-    const fromStructure = (Array.isArray(structureDistricts) ? structureDistricts : []).map(toStr).filter(Boolean);
-    const fromDeputies = Array.from(
-      new Set(
-        (Array.isArray(deputies) ? deputies : [])
-          .map((d) => toStr(d?.district || d?.electoralDistrict))
-          .filter(Boolean)
-      )
-    );
-    const fromBio = (Array.isArray(deputies) ? deputies : []).flatMap((d) =>
-      getDistrictsFromBio(d?.biography || d?.bio || d?.description || "")
-    );
-    const merged = Array.from(new Set([...fromStructure, ...fromDeputies, ...fromBio])).filter(Boolean);
-    merged.sort((a, b) => a.localeCompare(b, "ru"));
+    const existing = (Array.isArray(structureDistricts) ? structureDistricts : []).map(toStr).filter(Boolean);
+    const merged = buildDistrictOptions(existing, deputies);
     return ["Все", ...merged];
   }, [structureDistricts, deputies]);
   
@@ -157,16 +90,8 @@ export default function Deputies() {
       if (item && typeof item === "object") return String(item.name || item.title || item.label || item).trim();
       return String(item || "").trim();
     };
-    const fromStructure = (Array.isArray(structureFactions) ? structureFactions : []).map(toStr).filter(Boolean);
-    const fromDeputies = Array.from(
-      new Set((Array.isArray(deputies) ? deputies : []).map((d) => toStr(d?.faction)).filter(Boolean))
-    );
-    const fromBio = (Array.isArray(deputies) ? deputies : []).flatMap((d) =>
-      getFactionsFromBio(d?.biography || d?.bio || d?.description || "")
-    );
-    const raw = [...fromStructure, ...fromDeputies, ...fromBio].filter(Boolean);
-    const merged = Array.from(new Set(raw.map(canonicalizeFactionDisplay))).filter(Boolean);
-    merged.sort((a, b) => a.localeCompare(b, "ru"));
+    const existing = (Array.isArray(structureFactions) ? structureFactions : []).map(toStr).filter(Boolean);
+    const merged = buildFactionOptions(existing, deputies);
     return ["Все", ...merged];
   }, [structureFactions, deputies]);
   const committeeOptions = React.useMemo(() => {
