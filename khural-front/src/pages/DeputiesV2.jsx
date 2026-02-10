@@ -65,6 +65,68 @@ function deputyMatchesFaction(deputy, factionName) {
   return fromBio.some((f) => normalizeFactionKey(f) === key);
 }
 
+/** Извлекает названия округов из текста биографии (избирательный округ, кожуун, № N и т.д.). */
+function getDistrictsFromBio(bioRaw) {
+  if (!bioRaw || typeof bioRaw !== "string") return [];
+  const text = decodeHtmlEntities(bioRaw)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return [];
+  const found = new Set();
+  const known = [
+    "Кызыльский",
+    "Кызылский кожуун",
+    "Тере-Холь",
+    "Тандинский",
+    "Улуг-Хемский",
+    "Эрзинский",
+    "Тес-Хемский",
+    "Овюрский",
+    "Монгун-Тайгинский",
+    "Каа-Хемский",
+    "Пий-Хемский",
+    "Тоджинский",
+    "Чаа-Хольский",
+    "Чеди-Хольский",
+    "Бай-Тайгинский",
+    "Сут-Хольский",
+    "Барун-Хемчикский",
+    "Дзун-Хемчикский",
+  ];
+  const lower = text.toLowerCase();
+  for (const name of known) {
+    if (lower.includes(name.toLowerCase())) found.add(name);
+  }
+  const numMatch = text.matchAll(/(?:избирательный\s+округ|округ)\s*[№#]?\s*(\d+)/gi);
+  for (const m of numMatch) {
+    const n = m[1];
+    if (n) found.add("№ " + n);
+  }
+  const afterRound = text.matchAll(/(?:избирательный\s+округ|по\s+округу)\s*[«:]\s*([^».\n]{1,60})/gi);
+  for (const m of afterRound) {
+    const s = (m[1] || "").trim();
+    if (s.length > 0) found.add(s);
+  }
+  return Array.from(found);
+}
+
+/** Нормализация округа для сравнения. */
+function normalizeDistrictKey(s) {
+  return String(s || "").trim().replace(/\s+/g, " ").toLowerCase().replace(/№\s*/g, "№");
+}
+
+/** Проверяет, относится ли депутат к данному округу (поле district или упоминание в биографии). */
+function deputyMatchesDistrict(deputy, districtName) {
+  if (!districtName || districtName === "Все") return true;
+  const key = normalizeDistrictKey(districtName);
+  const dDistrict = String(deputy?.district || deputy?.electoralDistrict || "").trim();
+  if (dDistrict && normalizeDistrictKey(dDistrict) === key) return true;
+  const bio = deputy?.biography || deputy?.bio || deputy?.description || "";
+  const fromBio = getDistrictsFromBio(bio);
+  return fromBio.some((d) => normalizeDistrictKey(d) === key);
+}
+
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
 const STORAGE_KEY = "khural_deputies_overrides_v1";
 const STATUS_OPTIONS = [
@@ -529,20 +591,27 @@ export default function DeputiesV2() {
   const [status, setStatus] = React.useState("active");
 
   const districts = React.useMemo(() => {
-    // Prefer API data, fallback to structure data
-    const apiItems = Array.isArray(apiDistricts) && apiDistricts.length > 0 ? apiDistricts : [];
-    const structureItems = Array.isArray(structureDistricts) ? structureDistricts : [];
-    const items = apiItems.length > 0 ? apiItems : structureItems;
-    
-    const stringItems = items
-      .map((item) => {
-        if (typeof item === "string") return item;
-        if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
-        return String(item || "");
-      })
-      .filter((item) => item && item.trim() !== "");
-    return ["Все", ...stringItems];
-  }, [apiDistricts, structureDistricts]);
+    const toStr = (item) => {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object") return String(item.name || item.title || item.label || item).trim();
+      return String(item || "").trim();
+    };
+    const fromApi = (Array.isArray(apiDistricts) ? apiDistricts : []).map(toStr).filter(Boolean);
+    const fromStructure = (Array.isArray(structureDistricts) ? structureDistricts : []).map(toStr).filter(Boolean);
+    const fromDeputies = Array.from(
+      new Set(
+        (Array.isArray(deputies) ? deputies : [])
+          .map((d) => toStr(d?.district || d?.electoralDistrict))
+          .filter(Boolean)
+      )
+    );
+    const fromBio = (Array.isArray(deputies) ? deputies : []).flatMap((d) =>
+      getDistrictsFromBio(d?.biography || d?.bio || d?.description || "")
+    );
+    const merged = Array.from(new Set([...fromApi, ...fromStructure, ...fromDeputies, ...fromBio])).filter(Boolean);
+    merged.sort((a, b) => a.localeCompare(b, "ru"));
+    return ["Все", ...merged];
+  }, [apiDistricts, structureDistricts, deputies]);
 
   // В фильтре только канонические созывы (I, II, III, IV); «11», «2014 год», «2020» не показываем — депутаты из них уже в II/III
   const convocations = React.useMemo(() => {
@@ -621,7 +690,7 @@ export default function DeputiesV2() {
       if (status === "ended" && !ended) return false;
 
       if (faction !== "Все" && !deputyMatchesFaction(d, faction)) return false;
-      if (district !== "Все" && d.district !== district) return false;
+      if (district !== "Все" && !deputyMatchesDistrict(d, district)) return false;
       if (committeeMatcher) {
         if (committeeMatcher.ids.has(d.id)) return true;
         if (committeeMatcher.names.has(d.name)) return true;
@@ -746,6 +815,7 @@ export default function DeputiesV2() {
                   value={convocation}
                   onChange={setConvocation}
                   popupMatchSelectWidth={false}
+                  placement="bottomLeft"
                   options={(Array.isArray(convocations) ? convocations : []).map((c) => ({
                     value: c,
                     label: formatConvocationLabel(c),
@@ -755,6 +825,7 @@ export default function DeputiesV2() {
                   value={status}
                   onChange={setStatus}
                   popupMatchSelectWidth={false}
+                  placement="bottomLeft"
                   options={STATUS_OPTIONS.map((x) => ({
                     value: x.value,
                     label: `Статус: ${x.label}`,
@@ -764,6 +835,7 @@ export default function DeputiesV2() {
                   value={committeeId}
                   onChange={setCommitteeId}
                   popupMatchSelectWidth={false}
+                  placement="bottomLeft"
                   loading={filtersLoading}
                   options={committeeOptions.map((id) => {
                     if (id === "Все") {
@@ -784,6 +856,7 @@ export default function DeputiesV2() {
                   value={faction}
                   onChange={setFaction}
                   popupMatchSelectWidth={false}
+                  placement="bottomLeft"
                   options={factions.map((x) => ({
                     value: x,
                     label: x === "Все" ? "По фракциям: Все" : `По фракциям: ${x}`,
@@ -794,6 +867,7 @@ export default function DeputiesV2() {
                   value={district}
                   onChange={setDistrict}
                   popupMatchSelectWidth={false}
+                  placement="bottomLeft"
                   options={districts.map((x) => ({
                     value: x,
                     label: x === "Все" ? "По округам: Все" : `По округам: ${x}`,
