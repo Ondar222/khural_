@@ -22,6 +22,7 @@ import {
   readConvocationsOverrides,
 } from "../utils/convocationsOverrides.js";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
+import { buildFactionOptions } from "../utils/deputyFilterOptions.js";
 
 const SECTION_TITLE_TO_SLUG = {
   "Кодекс чести мужчины Тувы": "code-of-honor",
@@ -1769,19 +1770,8 @@ export default function SectionPage() {
     }
 
     if (title === "Депутатские фракции") {
-      const defaultFactions = ["Единая Россия", "КПРФ", "ЛДПР", "Новые люди"];
-      const fromStructure = (Array.isArray(structureFactions) ? structureFactions : [])
-        .map((item) => {
-          if (typeof item === "string") return item;
-          if (item && typeof item === "object") return item.name || item.title || item.label || String(item);
-          return String(item || "");
-        })
-        .map((s) => String(s || "").trim())
-        .filter((s) => s && s !== "Все");
-      const fromDeputies = (Array.isArray(deputies) ? deputies : [])
-        .map((d) => String(d?.faction || "").trim())
-        .filter((s) => s && s !== "Все");
-      const mergedFactions = Array.from(new Set([...fromStructure, ...fromDeputies, ...defaultFactions]));
+      // Те же фракции, что в фильтре на странице «Депутаты»: API + структура + из депутатов (поле + биография)
+      const mergedFactions = buildFactionOptions(structureFactions, deputies).filter((f) => f && f !== "Все");
       return (
         <section className="section section-page">
           <div className="container">
