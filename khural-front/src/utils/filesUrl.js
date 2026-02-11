@@ -185,25 +185,3 @@ export function normalizeFilesUrl(src) {
 
   return ensureNoDoubleEncodingInUrl(out || sClean);
 }
-
-const OFFICE_VIEWER_EXT = /\.(doc|docx|xls|xlsx|ppt|pptx|rtf)$/i;
-
-/**
- * Для .doc/.docx и др. — ссылка на просмотр через Google Docs Viewer (корректная кодировка, без «кракозябр» в WPS).
- * Для остальных (в т.ч. PDF) — обычная ссылка на файл.
- */
-export function getDocumentOpenUrl(fileUrl) {
-  const url = String(fileUrl || "").trim();
-  if (!url) return "";
-  const normalized = normalizeFilesUrl(url);
-  if (!normalized) return url;
-  if (OFFICE_VIEWER_EXT.test(normalized)) {
-    return `https://docs.google.com/viewer?url=${encodeURIComponent(normalized)}&embedded=true`;
-  }
-  return normalized;
-}
-
-/** true, если по URL лучше открывать в просмотрщике, а не скачивать (офисные форматы). */
-export function shouldOpenInViewer(fileUrl) {
-  return OFFICE_VIEWER_EXT.test(String(fileUrl || ""));
-}

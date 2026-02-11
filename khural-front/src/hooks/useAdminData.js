@@ -912,11 +912,13 @@ export function useAdminData() {
   }, [message, reload, reloadDataContext]);
 
   const deleteDocument = React.useCallback(async (id) => {
+    const sid = String(id ?? "").trim();
     setBusy(true);
     try {
       try {
         await DocumentsApi.remove(id);
         message.success("Документ удалён");
+        addDeletedDocumentId(sid); // скрыть и при списке из JSON
       } catch {
         // Second attempt via same-origin proxy path (helps when API base was misconfigured on prod)
         try {
@@ -930,9 +932,10 @@ export function useAdminData() {
           });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           message.success("Документ удалён");
+          addDeletedDocumentId(sid);
         } catch {
           // Fallback: hide locally when API is unavailable / no rights
-          addDeletedDocumentId(String(id));
+          addDeletedDocumentId(sid);
           message.warning("Документ удалён локально (сервер недоступен или нет прав)");
         }
       }

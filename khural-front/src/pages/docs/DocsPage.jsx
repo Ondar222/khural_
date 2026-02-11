@@ -3,7 +3,7 @@ import SideNav from "../../components/SideNav.jsx";
 import ScrollToTop from "../../components/ScrollToTop.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useHashRoute } from "../../Router.jsx";
-import { normalizeFilesUrl, getDocumentOpenUrl } from "../../utils/filesUrl.js";
+import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
 import { getDocumentLinkedEntities } from "../../utils/documentMentions.js";
 
@@ -274,10 +274,10 @@ export default function DocsPage() {
                     </div>
                     <a
                       className="btn btn--primary"
-                      href={d.url ? getDocumentOpenUrl(d.url) : "#"}
+                      href={d.url || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
-                      download={d.url && !getDocumentOpenUrl(d.url).includes("docs.google.com") ? true : undefined}
+                      download={d.url ? true : undefined}
                     >
                       Открыть
                     </a>
