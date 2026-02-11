@@ -4,7 +4,7 @@ import { Input, Select, Space, Switch } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import ScrollToTop from "../components/ScrollToTop.jsx";
-import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { normalizeFilesUrl, getDocumentOpenUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
 
 function norm(v) {
@@ -212,10 +212,10 @@ export default function Documents() {
                                 <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
                                   <a
                                     className="btn btn--primary"
-                                    href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
+                                    href={url ? getDocumentOpenUrl(url) : (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    download={url && !url.includes(".pdf") ? true : undefined}
+                                    download={url && !getDocumentOpenUrl(url).includes("docs.google.com") ? true : undefined}
                                   >
                                     Открыть ↗
                                   </a>
@@ -248,10 +248,10 @@ export default function Documents() {
                           <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
                             <a
                               className="btn btn--primary"
-                              href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
+                              href={url ? getDocumentOpenUrl(url) : (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
                               target="_blank"
                               rel="noopener noreferrer"
-                              download={url && !url.includes(".pdf") ? true : undefined}
+                              download={url && !getDocumentOpenUrl(url).includes("docs.google.com") ? true : undefined}
                             >
                               Открыть ↗
                             </a>
