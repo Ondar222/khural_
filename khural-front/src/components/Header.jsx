@@ -182,18 +182,10 @@ export default function Header() {
               </>
             ) : (
               <>
-                <a 
-                  href="/login" 
-                  className="btn btn--primary"
-                  style={{ padding: "6px 12px", fontSize: "13px", marginTop: "4px", marginBottom: "4px" }}
-                >
+                <a href="/login" className="btn btn--primary">
                   {t("login")}
                 </a>
-                <a 
-                  href="/register" 
-                  className="btn"
-                  style={{ padding: "6px 12px", fontSize: "13px", marginTop: "4px", marginBottom: "4px" }}
-                >
+                <a href="/register" className="btn">
                   {t("register")}
                 </a>
               </>
@@ -410,7 +402,6 @@ export default function Header() {
             <img 
               id="specialButton" 
               onClick={handleAccessibilityToggle}
-              style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
               src="https://lidrekon.ru/images/special.png" 
               alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
               title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 

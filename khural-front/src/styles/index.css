@@ -369,8 +369,13 @@ a {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   margin-bottom: 20px;
+}
+.site-header #specialButton {
+  max-width: 32px;
+  height: auto;
+  cursor: pointer;
 }
 
 .modal__close_icon-btn_header {
@@ -467,15 +472,16 @@ a {
   }
 }
 .icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
   border: 1px solid #e5e7eb;
   background: #0d4b8f;
   color: #ffffff;
   cursor: pointer;
+  font-size: 12px;
   transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease,
     border-color 160ms ease, background 160ms ease;
 }
@@ -491,19 +497,19 @@ a {
 }
 @media (max-width: 959px) {
   .icon-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
   }
   .header-actions {
-    gap: 10px;
+    gap: 8px;
   }
   /* Accessibility icon (eye) in header */
   .site-header #specialButton {
-    max-width: 34px !important;
+    max-width: 28px !important;
   }
   .burger span {
-    width: 14px;
+    width: 12px;
   }
   .header .icon-btn,
   .header-actions .icon-btn {
@@ -4533,6 +4539,8 @@ html[data-lang="tyv"] .topbar > a {
   text-align: right;
   flex-wrap: nowrap;
   min-width: 0;
+  margin-bottom: 20px;
+  margin-top: 10px;
 }
 .topbar-auth__name {
   font-weight: 800;
@@ -4575,6 +4583,10 @@ html[data-lang="tyv"] .topbar > a {
 }
 .topbar-auth .btn {
   width: auto;
+  padding: 5px 10px !important;
+  font-size: 12px !important;
+  min-height: 30px;
+  border-radius: 10px;
 }
 @media (max-width: 959px) {
   .topbar-auth {
