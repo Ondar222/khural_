@@ -1706,58 +1706,67 @@ export default function DataProvider({ children }) {
     })();
   }, [reloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Загрузка событий календаря: при первой загрузке и при вызове reload() или reloadEvents()
+  // Загрузка событий календаря: API — единый источник для всех устройств; при ошибке — fallback на JSON + overrides
   React.useEffect(() => {
     let cancelled = false;
     markLoading("events", true);
     markError("events", null);
     (async () => {
-      try {
-        const apiEvents = await EventsApi.list();
-        if (cancelled) return;
-        const arr = Array.isArray(apiEvents) ? apiEvents : (apiEvents?.items && Array.isArray(apiEvents.items) ? apiEvents.items : null);
-        if (arr !== null) {
-          if (arr.length === 0) {
-            setEvents(mergeEventsWithOverrides([], readEventsOverrides()));
-            markLoading("events", false);
-            return;
+      let apiEvents = null;
+      for (let attempt = 0; attempt < 2 && !cancelled; attempt++) {
+        try {
+          apiEvents = await EventsApi.list();
+          break;
+        } catch (e) {
+          if (import.meta.env.DEV && attempt === 0) {
+            console.warn("Calendar API недоступен, повторная попытка…", e?.message || e);
           }
-          const mapped = arr.map((e) => ({
-            id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
-            date: (() => {
-              const d = pick(e.date, e.date_of_event);
-              if (d) return String(d);
-              const start = pick(e.startDate, e.start_date);
-              if (!start) return "";
-              const dt = new Date(Number(start));
-              return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
-            })(),
-            title: String(pick(e.title, e.event_title) || ""),
-            time: (() => {
-              const t = pick(e.time, e.event_time);
-              if (t) return String(t);
-              const start = pick(e.startDate, e.start_date);
-              if (!start) return "";
-              const dt = new Date(Number(start));
-              if (isNaN(dt.getTime())) return "";
-              return dt.toISOString().slice(11, 16);
-            })(),
-            place: String(pick(e.place, e.event_place, e.location) || ""),
-            desc: String(pick(e.desc, e.description) || ""),
-            isImportant: Boolean(
-              pick(e.isImportant, e.is_important, e.important, e.featured, e.pinned, e.is_featured)
-            ),
-          }));
-          setEvents(mergeEventsWithOverrides(mapped, readEventsOverrides()));
-          markLoading("events", false);
-          return;
-        }
-      } catch (e) {
-        if (!cancelled && import.meta.env.DEV) {
-          console.warn("Calendar API недоступен, используем локальные данные", e);
+          if (attempt === 0) await new Promise((r) => setTimeout(r, 800));
         }
       }
       if (cancelled) return;
+      const arr =
+        apiEvents !== null
+          ? Array.isArray(apiEvents)
+            ? apiEvents
+            : apiEvents?.items && Array.isArray(apiEvents.items)
+              ? apiEvents.items
+              : null
+          : null;
+      if (arr !== null) {
+        const mapped = arr.map((e) => ({
+          id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
+          date: (() => {
+            const d = pick(e.date, e.date_of_event);
+            if (d) return String(d);
+            const start = pick(e.startDate, e.start_date);
+            if (!start) return "";
+            const dt = new Date(Number(start));
+            return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
+          })(),
+          title: String(pick(e.title, e.event_title) || ""),
+          time: (() => {
+            const t = pick(e.time, e.event_time);
+            if (t) return String(t);
+            const start = pick(e.startDate, e.start_date);
+            if (!start) return "";
+            const dt = new Date(Number(start));
+            if (isNaN(dt.getTime())) return "";
+            return dt.toISOString().slice(11, 16);
+          })(),
+          place: String(pick(e.place, e.event_place, e.location) || ""),
+          desc: String(pick(e.desc, e.description) || ""),
+          isImportant: Boolean(
+            pick(e.isImportant, e.is_important, e.important, e.featured, e.pinned, e.is_featured)
+          ),
+        }));
+        setEvents(mergeEventsWithOverrides(mapped, readEventsOverrides()));
+        markLoading("events", false);
+        return;
+      }
+      if (import.meta.env.DEV) {
+        console.warn("Calendar API недоступен, используем локальные данные. Проверьте VITE_API_BASE_URL.");
+      }
       fetchJson("/data/events.json")
         .then((arr) => {
           if (!cancelled) setEvents(mergeEventsWithOverrides(Array.isArray(arr) ? arr : [], readEventsOverrides()));
@@ -1768,7 +1777,9 @@ export default function DataProvider({ children }) {
             setEvents(mergeEventsWithOverrides([], readEventsOverrides()));
           }
         })
-        .finally(() => { if (!cancelled) markLoading("events", false); });
+        .finally(() => {
+          if (!cancelled) markLoading("events", false);
+        });
     })();
     return () => { cancelled = true; };
   }, [reloadSeq, eventsReloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
