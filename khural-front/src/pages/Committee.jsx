@@ -79,6 +79,8 @@ function mergeCommitteesPreferApi(apiList, fallbackList) {
       if (!Array.isArray(target.members) && Array.isArray(c?.members)) target.members = c.members;
       if (!Array.isArray(target.staff) && Array.isArray(c?.staff)) target.staff = c.staff;
       if (!target.convocation && c?.convocation) target.convocation = c.convocation;
+      if ((!Array.isArray(target.plans) || target.plans.length === 0) && Array.isArray(c?.plans) && c.plans.length > 0) target.plans = c.plans;
+      if ((!Array.isArray(target.activities) || target.activities.length === 0) && Array.isArray(c?.activities) && c.activities.length > 0) target.activities = c.activities;
       continue;
     }
     out.push(c);
@@ -522,8 +524,57 @@ export default function Committee() {
     return [...committeeAgendas, ...convAgendas, ...(siteDocsForCommittee.agendas || [])];
   }, [committeeAgendas, convocationDocuments, siteDocsForCommittee.agendas]);
   
-  const plans = committee ? (Array.isArray(committee.plans) ? committee.plans : []) : [];
-  const activities = committee ? (Array.isArray(committee.activities) ? committee.activities : []) : [];
+  // Моковые данные для раздела «Планы» и «Деятельность», если комитет без них (Верховный Хурал / Парламент РТ)
+  const DEFAULT_MOCK_PLANS = [
+    {
+      title: "План работы комитета Верховного Хурала Республики Тыва на 2025 год",
+      date: "2025",
+      description:
+        "План законодательной и контрольной деятельности комитета Верховного Хурала (парламента) Республики Тыва на текущий год. Включает подготовку законопроектов, проведение заседаний и участие в пленарных заседаниях.",
+    },
+    {
+      title: "План законодательной работы комитета на текущий созыв",
+      date: "2024–2029",
+      description:
+        "Сводный план работы комитета на период созыва парламента Республики Тыва: приоритетные направления, законопроекты и экспертиза нормативных актов.",
+    },
+  ];
+  const DEFAULT_MOCK_ACTIVITIES = [
+    {
+      title: "Заседание комитета Верховного Хурала Республики Тыва",
+      date: "2025",
+      type: "Заседание комитета",
+      description:
+        "Регулярные заседания комитета по вопросам, отнесённым к его ведению. Обсуждение законопроектов и подготовка заключений для пленарных заседаний парламента Республики Тыва.",
+    },
+    {
+      title: "Участие в пленарных заседаниях парламента Республики Тыва",
+      date: "2025",
+      type: "Пленарное заседание",
+      description:
+        "Участие членов комитета в заседаниях Верховного Хурала (парламента) Республики Тыва, представление законопроектов и заключений комитета.",
+    },
+    {
+      title: "Работа над законопроектами в сфере ведения комитета",
+      date: "2025",
+      type: "Законодательная работа",
+      description:
+        "Подготовка и экспертиза проектов законов Республики Тыва, работа с инициативами депутатов и обращений граждан в рамках полномочий комитета.",
+    },
+  ];
+
+  const plans =
+    committee && Array.isArray(committee.plans) && committee.plans.length > 0
+      ? committee.plans
+      : committee
+        ? DEFAULT_MOCK_PLANS
+        : [];
+  const activities =
+    committee && Array.isArray(committee.activities) && committee.activities.length > 0
+      ? committee.activities
+      : committee
+        ? DEFAULT_MOCK_ACTIVITIES
+        : [];
   const staff = committee ? (Array.isArray(committee.staff) ? committee.staff : []) : [];
 
   // Group by year (must be before early return)

@@ -68,6 +68,49 @@ export default function AdminCommitteesEditor({
     return `Созыв ${raw}`;
   }, []);
 
+  // Моковые данные для разделов «Планы» и «Деятельность» (Верховный Хурал / Парламент РТ), если в комитете их ещё нет
+  const DEFAULT_PLANS = [
+    {
+      title: "План работы комитета Верховного Хурала Республики Тыва на 2025 год",
+      date: "2025",
+      description:
+        "План законодательной и контрольной деятельности комитета Верховного Хурала (парламента) Республики Тыва на текущий год. Включает подготовку законопроектов, проведение заседаний и участие в пленарных заседаниях.",
+      fileLink: "",
+      fileId: "",
+    },
+    {
+      title: "План законодательной работы комитета на текущий созыв",
+      date: "2024–2029",
+      description:
+        "Сводный план работы комитета на период созыва парламента Республики Тыва: приоритетные направления, законопроекты и экспертиза нормативных актов.",
+      fileLink: "",
+      fileId: "",
+    },
+  ];
+  const DEFAULT_ACTIVITIES = [
+    {
+      title: "Заседание комитета Верховного Хурала Республики Тыва",
+      date: "2025",
+      type: "Заседание комитета",
+      description:
+        "Регулярные заседания комитета по вопросам, отнесённым к его ведению. Обсуждение законопроектов и подготовка заключений для пленарных заседаний парламента Республики Тыва.",
+    },
+    {
+      title: "Участие в пленарных заседаниях парламента Республики Тыва",
+      date: "2025",
+      type: "Пленарное заседание",
+      description:
+        "Участие членов комитета в заседаниях Верховного Хурала (парламента) Республики Тыва, представление законопроектов и заключений комитета.",
+    },
+    {
+      title: "Работа над законопроектами в сфере ведения комитета",
+      date: "2025",
+      type: "Законодательная работа",
+      description:
+        "Подготовка и экспертиза проектов законов Республики Тыва, работа с инициативами депутатов и обращений граждан в рамках полномочий комитета.",
+    },
+  ];
+
   const selectedConvocation = React.useMemo(() => {
     const list = Array.isArray(convocations) ? convocations : [];
     if (!convocationIdValue) return null;
@@ -129,23 +172,25 @@ export default function AdminCommitteesEditor({
               order: m?.order ?? idx,
             }))
           : [],
-        plans: Array.isArray(found.plans)
-          ? found.plans.map((p) => ({
-              title: p?.title || "",
-              date: p?.date || "",
-              description: p?.description || "",
-              fileLink: p?.fileLink || "",
-              fileId: p?.fileId ?? "",
-            }))
-          : [],
-        activities: Array.isArray(found.activities)
-          ? found.activities.map((a) => ({
-              title: a?.title || "",
-              date: a?.date || "",
-              type: a?.type || "",
-              description: a?.description || "",
-            }))
-          : [],
+        plans:
+          Array.isArray(found.plans) && found.plans.length > 0
+            ? found.plans.map((p) => ({
+                title: p?.title || "",
+                date: p?.date || "",
+                description: p?.description || "",
+                fileLink: p?.fileLink || "",
+                fileId: p?.fileId ?? "",
+              }))
+            : DEFAULT_PLANS,
+        activities:
+          Array.isArray(found.activities) && found.activities.length > 0
+            ? found.activities.map((a) => ({
+                title: a?.title || "",
+                date: a?.date || "",
+                type: a?.type || "",
+                description: a?.description || "",
+              }))
+            : DEFAULT_ACTIVITIES,
       });
     } finally {
       setLoading(false);

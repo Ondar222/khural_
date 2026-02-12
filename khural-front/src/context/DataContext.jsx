@@ -512,6 +512,8 @@ function mergeCommitteesPreferApi(apiList, staticList) {
       if (!Array.isArray(target.members) && Array.isArray(c?.members)) target.members = c.members;
       if (!Array.isArray(target.staff) && Array.isArray(c?.staff)) target.staff = c.staff;
       if (!target.convocation && c?.convocation) target.convocation = c.convocation;
+      if ((!Array.isArray(target.plans) || target.plans.length === 0) && Array.isArray(c?.plans) && c.plans.length > 0) target.plans = c.plans;
+      if ((!Array.isArray(target.activities) || target.activities.length === 0) && Array.isArray(c?.activities) && c.activities.length > 0) target.activities = c.activities;
       continue;
     }
     out.push(c);
