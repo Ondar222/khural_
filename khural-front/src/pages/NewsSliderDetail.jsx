@@ -79,7 +79,7 @@ export default function NewsSliderDetail() {
     return list.find((s) => String(s?.id ?? "") === id) || null;
   }, [slides, slideId]);
 
-  const useTy = lang === "ty" && (item?.titleTy || item?.descTy || item?.descriptionTy);
+  const useTy = (lang === "ty" || lang === "tyv") && (item?.titleTy || item?.descTy || item?.descriptionTy);
   const rawDesc = useTy && (item?.descTy || item?.descriptionTy)
     ? String(item.descTy ?? item.descriptionTy ?? "").trim()
     : String(item?.desc ?? item?.description ?? item?.subtitle ?? "").trim();
@@ -267,7 +267,8 @@ export default function NewsSliderDetail() {
                     .slice(0, 6)
                     .map((s) => {
                       const id = String(s?.id ?? "").trim();
-                      const title = String(s?.title || "").trim() || "—";
+                      const useTySlide = (lang === "ty" || lang === "tyv") && (s?.titleTy || s?.descTy || s?.descriptionTy);
+                      const title = (useTySlide && s?.titleTy) ? String(s.titleTy).trim() : (String(s?.title || "").trim() || "—");
                       const raw = String(s?.desc ?? s?.description ?? s?.subtitle ?? "");
                       const plain = stripHtmlToText(raw);
                       const { date: d } = splitDateAndDescription(plain);

@@ -41,7 +41,7 @@ function splitDateAndDescription(text) {
 
 export default function NewsWeekHighlights() {
   const { slides, loading, errors, reload } = useData();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const items = React.useMemo(() => {
     const list = Array.isArray(slides) ? slides : [];
@@ -70,8 +70,10 @@ export default function NewsWeekHighlights() {
           <div className="grid cols-3 news-week__grid" style={{ marginTop: 16 }}>
             {items.map((s) => {
               const id = String(s?.id ?? "").trim();
-              const title = String(s?.title || "").trim();
-              const raw = stripHtmlToText(s?.desc ?? s?.description ?? s?.subtitle ?? "");
+              const useTy = (lang === "ty" || lang === "tyv") && (s?.titleTy || s?.descTy || s?.descriptionTy);
+              const title = (useTy && s?.titleTy) ? String(s.titleTy).trim() : String(s?.title || "").trim();
+              const descSource = useTy && (s?.descTy || s?.descriptionTy) ? (s.descTy ?? s.descriptionTy ?? "") : (s?.desc ?? s?.description ?? s?.subtitle ?? "");
+              const raw = stripHtmlToText(descSource);
               const { date, description } = splitDateAndDescription(raw);
               const subtitle = String(description || "").trim();
               const subtitlePreview = truncateWords(subtitle, 30);

@@ -104,7 +104,7 @@ export default function HeroCarousel() {
   if (!slides.length) return null;
 
   const current = slides[active] || slides[0];
-  const useTy = lang === "ty" && (current?.titleTy || current?.descTy);
+  const useTy = (lang === "ty" || lang === "tyv") && (current?.titleTy || current?.descTy);
   const desc = useTy && current?.descTy
     ? String(current.descTy).trim()
     : (current?.desc ? String(current.desc).trim() : "");

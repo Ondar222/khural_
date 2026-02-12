@@ -134,9 +134,9 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
         description: joinDateAndDescription(values.date, values.description || ""),
         url: values.url,
         isActive: values.isActive,
+        titleTy: values.titleTy != null ? String(values.titleTy).trim() : "",
+        descriptionTy: values.descriptionTy != null ? String(values.descriptionTy).trim() : "",
       };
-      if (values.titleTy?.trim()) payload.titleTy = values.titleTy.trim();
-      if (values.descriptionTy?.trim()) payload.descriptionTy = values.descriptionTy.trim();
 
       if (mode === "create") {
         const existingCount = Array.isArray(items) ? items.length : 0;

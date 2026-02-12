@@ -114,12 +114,13 @@ function pickSlideImage(s) {
 }
 
 function toSliderRow(s) {
-  // Supports both API slider items and DataContext slides (title/desc/link/image).
   const fromContext = s && (s.desc !== undefined || s.link !== undefined);
   return {
     id: String(s?.id ?? Math.random().toString(36).slice(2)),
     title: String(s?.title || ""),
     description: String(s?.description ?? s?.desc ?? s?.subtitle ?? ""),
+    titleTy: s?.titleTy ?? s?.title_ty ?? "",
+    descriptionTy: s?.descTy ?? s?.descriptionTy ?? s?.description_ty ?? "",
     url: String(s?.url ?? s?.link ?? s?.href ?? ""),
     isActive: s?.isActive !== false,
     order: Number(s?.order ?? 0),
@@ -1102,19 +1103,22 @@ export function useAdminData() {
     }
   }, [message, reload, reloadDataContext, setDataContextEvents, dataContextEvents]);
 
-  const createSlide = React.useCallback(async ({ title, description, url, isActive }) => {
+  const createSlide = React.useCallback(async ({ title, description, url, isActive, titleTy, descriptionTy }) => {
     setBusy(true);
     try {
       if (Array.isArray(slider) && slider.length >= 5) {
         throw new Error("Максимум 5 слайдов");
       }
+      const createPayload = {
+        title: title || "",
+        description: description || "",
+        url: url || "",
+        isActive: isActive ?? true,
+      };
+      if (titleTy != null && String(titleTy).trim()) createPayload.titleTy = String(titleTy).trim();
+      if (descriptionTy != null && String(descriptionTy).trim()) createPayload.descriptionTy = String(descriptionTy).trim();
       try {
-        const created = await SliderApi.create({
-          title: title || "",
-          description: description || "",
-          url: url || "",
-          isActive: isActive ?? true,
-        });
+        const created = await SliderApi.create(createPayload);
         message.success("Слайд создан");
         await reload();
         reloadDataContext();
@@ -1126,8 +1130,10 @@ export function useAdminData() {
           id: localId,
           title: String(title || ""),
           desc: String(description || ""),
+          titleTy: titleTy != null ? String(titleTy).trim() : "",
+          descTy: descriptionTy != null ? String(descriptionTy).trim() : "",
           link: String(url || ""),
-          image: "", // can be set via upload fallback
+          image: "",
           isActive: isActive ?? true,
           order: 0,
         };
@@ -1142,7 +1148,8 @@ export function useAdminData() {
     }
   }, [message, reload, reloadDataContext, slider]);
 
-  const updateSlide = React.useCallback(async (id, { title, description, url, isActive }) => {
+  const updateSlide = React.useCallback(async (id, body) => {
+    const { title, description, url, isActive, titleTy, descriptionTy } = body || {};
     setBusy(true);
     try {
       const payload = {
@@ -1151,6 +1158,8 @@ export function useAdminData() {
         url: url || "",
         isActive: isActive ?? true,
       };
+      if (titleTy != null) payload.titleTy = String(titleTy).trim();
+      if (descriptionTy != null) payload.descriptionTy = String(descriptionTy).trim();
       const looksLocal = String(id || "").startsWith("imp-") || String(id || "").startsWith("local-");
       if (!looksLocal) {
         try {
@@ -1167,6 +1176,8 @@ export function useAdminData() {
         id: String(id),
         title: String(payload.title),
         desc: String(payload.description),
+        titleTy: payload.titleTy ?? "",
+        descTy: payload.descriptionTy ?? "",
         link: String(payload.url),
         isActive: payload.isActive,
       });
@@ -1177,6 +1188,8 @@ export function useAdminData() {
                 ...s,
                 title: String(payload.title),
                 description: String(payload.description),
+                titleTy: payload.titleTy ?? "",
+                descTy: payload.descriptionTy ?? "",
                 url: String(payload.url),
                 isActive: payload.isActive,
               }
