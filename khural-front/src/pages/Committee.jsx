@@ -240,31 +240,58 @@ export default function Committee() {
     return yearMatch ? yearMatch[1] : null;
   });
 
+  // Текущий id из URL (чтобы эффект перезапускался при смене комитета)
+  const committeeIdFromUrl = typeof window !== "undefined" ? new URLSearchParams(window.location.search || "").get("id") : null;
+
+  // Загрузка комитета: из списка + полные данные по ID (планы, деятельность) с API, чтобы данные из админки попадали на страницу
   React.useEffect(() => {
-    const sp = new URLSearchParams(window.location.search || "");
-    const id = sp.get("id");
-    if (id) {
-    const c = (committees || []).find((x) => String(x?.id ?? "") === String(id));
-    setCommittee(c || null);
-    } else {
+    const id = committeeIdFromUrl;
+    if (!id) {
       setCommittee(null);
+      window.scrollTo({ top: 0, behavior: "instant" });
+      return;
     }
-    // Прокручиваем вверх при загрузке или изменении комитета
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, [committees]);
+    const fromList = (committees || []).find((x) => String(x?.id ?? "") === String(id));
+    let alive = true;
+    (async () => {
+      try {
+        const full = await CommitteesApi.getById(id).catch(() => null);
+        if (!alive) return;
+        const merged = full
+          ? { ...fromList, ...full, id: full.id ?? fromList?.id ?? id }
+          : fromList;
+        setCommittee(merged || null);
+      } catch {
+        if (alive) setCommittee(fromList || null);
+      }
+      window.scrollTo({ top: 0, behavior: "instant" });
+    })();
+    return () => { alive = false; };
+  }, [committees, committeeIdFromUrl]);
 
   React.useEffect(() => {
     const onNav = () => {
-      const sp = new URLSearchParams(window.location.search || "");
-      const id = sp.get("id");
-      if (id) {
-      const c = (committees || []).find((x) => String(x?.id ?? "") === String(id));
-      setCommittee(c || null);
-      } else {
+      const id = typeof window !== "undefined" ? new URLSearchParams(window.location.search || "").get("id") : null;
+      if (!id) {
         setCommittee(null);
+        return;
       }
-      // Прокручиваем вверх при навигации
-      window.scrollTo({ top: 0, behavior: "instant" });
+      const fromList = (committees || []).find((x) => String(x?.id ?? "") === String(id));
+      let alive = true;
+      (async () => {
+        try {
+          const full = await CommitteesApi.getById(id).catch(() => null);
+          if (!alive) return;
+          const merged = full
+            ? { ...fromList, ...full, id: full.id ?? fromList?.id ?? id }
+            : fromList;
+          setCommittee(merged || null);
+        } catch {
+          if (alive) setCommittee(fromList || null);
+        }
+        window.scrollTo({ top: 0, behavior: "instant" });
+      })();
+      return () => { alive = false; };
     };
     window.addEventListener("popstate", onNav);
     window.addEventListener("app:navigate", onNav);
@@ -393,7 +420,9 @@ export default function Committee() {
 
   // Load documents from convocations for this committee
   const [convocationDocuments, setConvocationDocuments] = React.useState([]);
-  
+  // Отчёты и повестки, загруженные с сайта khural.rtyva.ru (import-committee-reports)
+  const [siteReportsData, setSiteReportsData] = React.useState(null);
+
   const committeeIdForDocs = committee?.id;
   React.useEffect(() => {
     if (!committeeIdForDocs) {
@@ -431,21 +460,67 @@ export default function Committee() {
     return () => { alive = false; };
   }, [committeeIdForDocs]);
 
+  // Загрузка отчётов/повесток с сайта (committee_reports_from_site.json)
+  React.useEffect(() => {
+    let alive = true;
+    fetch("/data/committee_reports_from_site.json", { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (alive && data && (data.byConvocation || data.allDocuments)) setSiteReportsData(data);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  // Номер созыва комитета для подбора документов с сайта (3, 4, "sessions" и т.д.)
+  const committeeConvocationKey = React.useMemo(() => {
+    if (!committee) return null;
+    const num = committee.convocation?.number ?? committee.convocationId ?? committee.convocation_id ?? committee.convocation;
+    if (num == null || num === "") return null;
+    const n = typeof num === "number" ? num : parseInt(String(num), 10);
+    if (!Number.isNaN(n)) return n;
+    return String(num);
+  }, [committee]);
+
   // Get reports, plans, activities, staff (only if committee exists)
-  // Combine committee's own reports/agendas with documents from convocations
+  // Combine committee's own reports/agendas with documents from convocations and from site import
   const committeeReports = committee ? (Array.isArray(committee.reports) ? committee.reports : []) : [];
   const committeeAgendas = committee ? (Array.isArray(committee.agendas) ? committee.agendas : []) : [];
   
-  // Merge convocation documents with committee's own documents
+  // Документы с сайта для этого созыва (общие отчёты по комитетам созыва показываем каждому комитету)
+  const siteDocsForCommittee = React.useMemo(() => {
+    if (!siteReportsData || !committeeConvocationKey) return { reports: [], agendas: [] };
+    const byConv = siteReportsData.byConvocation || {};
+    const forConv = byConv[committeeConvocationKey] || [];
+    const sessions = byConv.sessions || [];
+    const reports = (forConv.filter((d) => d.category === "report") || []).map((d) => ({
+      title: d.title,
+      fileLink: d.fileLink,
+      date: d.date || "",
+      size: d.size,
+    }));
+    const agendas = [
+      ...(forConv.filter((d) => d.category === "agenda") || []),
+      ...sessions,
+    ].map((d) => ({
+      title: d.title,
+      fileLink: d.fileLink,
+      date: d.date || "",
+      size: d.size,
+    }));
+    return { reports, agendas };
+  }, [siteReportsData, committeeConvocationKey]);
+
+  // Merge convocation documents with committee's own and site-imported documents
   const reports = React.useMemo(() => {
     const convReports = convocationDocuments.filter(doc => doc.category === "report");
-    return [...committeeReports, ...convReports];
-  }, [committeeReports, convocationDocuments]);
+    return [...committeeReports, ...convReports, ...(siteDocsForCommittee.reports || [])];
+  }, [committeeReports, convocationDocuments, siteDocsForCommittee.reports]);
   
   const agendas = React.useMemo(() => {
     const convAgendas = convocationDocuments.filter(doc => doc.category === "agenda");
-    return [...committeeAgendas, ...convAgendas];
-  }, [committeeAgendas, convocationDocuments]);
+    return [...committeeAgendas, ...convAgendas, ...(siteDocsForCommittee.agendas || [])];
+  }, [committeeAgendas, convocationDocuments, siteDocsForCommittee.agendas]);
   
   const plans = committee ? (Array.isArray(committee.plans) ? committee.plans : []) : [];
   const activities = committee ? (Array.isArray(committee.activities) ? committee.activities : []) : [];
@@ -987,9 +1062,33 @@ export default function Committee() {
                           </div>
                         )}
                       </>
+                    ) : agendas.length > 0 ? (
+                      <ul style={{ listStyle: "none", padding: 0, marginTop: 16 }}>
+                        {agendas.map((agenda, idx) => (
+                          <li key={idx} style={{ marginBottom: 12, padding: 12, background: "#f9fafb", borderRadius: 6 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", padding: "4px 8px", background: "#fff", borderRadius: 4 }}>DOC</span>
+                              <div style={{ flex: 1 }}>
+                                <a
+                                  href={agenda.fileLink ? normalizeFilesUrl(agenda.fileLink) : (agenda.fileId ? normalizeFilesUrl(`/files/v2/${agenda.fileId}`) : "#")}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
+                                >
+                                  {agenda.title || `Повестка от ${agenda.date || ""} г.`}
+                                </a>
+                                {agenda.size && <span style={{ marginLeft: 8, fontSize: 13, color: "#6b7280" }}>({agenda.size})</span>}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
                     ) : (
                       <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
                         Повестки пока не добавлены
+                        <div style={{ marginTop: 16, fontSize: 14 }}>
+                          <a href="https://khural.rtyva.ru/activity/sessions/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Повестки и заседания сессий на официальном сайте →</a>
+                        </div>
                       </div>
                     )}
                   </>
@@ -1066,9 +1165,39 @@ export default function Committee() {
                           </div>
                         )}
                       </>
+                    ) : reports.length > 0 ? (
+                      <ul style={{ listStyle: "none", padding: 0, marginTop: 16 }}>
+                        {reports.map((report, idx) => (
+                          <li key={idx} style={{ marginBottom: 12, padding: 12, background: "#f9fafb", borderRadius: 6 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", padding: "4px 8px", background: "#fff", borderRadius: 4 }}>DOC</span>
+                              <div style={{ flex: 1 }}>
+                                <a
+                                  href={report.fileLink ? normalizeFilesUrl(report.fileLink) : (report.fileId ? normalizeFilesUrl(`/files/v2/${report.fileId}`) : "#")}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
+                                >
+                                  {report.title || `Отчет от ${report.date || ""} г.`}
+                                </a>
+                                {report.size && <span style={{ marginLeft: 8, fontSize: 13, color: "#6b7280" }}>({report.size})</span>}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
                     ) : (
                       <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
                         Отчеты пока не добавлены
+                        <div style={{ marginTop: 16, fontSize: 14, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
+                          Отчёты о деятельности комитетов по созывам — на официальном сайте:
+                          <ul style={{ listStyle: "none", paddingLeft: 0, marginTop: 8, textAlign: "left" }}>
+                            <li><a href="https://khural.rtyva.ru/activity/313/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Отчеты комитетов 3 созыва</a></li>
+                            <li><a href="https://khural.rtyva.ru/activity/320/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Отчеты комитетов (320)</a></li>
+                            <li><a href="https://khural.rtyva.ru/activity/445/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Отчет комитетов 4 созыва</a></li>
+                            <li><a href="https://khural.rtyva.ru/struct/committees/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Структура комитетов</a></li>
+                          </ul>
+                        </div>
                       </div>
                     )}
                   </>

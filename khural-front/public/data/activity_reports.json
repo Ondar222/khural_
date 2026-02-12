@@ -1,26 +1,11 @@
 {
   "items": [
-    {
-      "title": "Отчеты о деятельности Верховного Хурала (парламента) Республики Тыва",
-      "url": "https://khural.rtyva.ru/activity/167/"
-    },
-    {
-      "title": "Отчеты о деятельности комитетов 3 созыва",
-      "url": "https://khural.rtyva.ru/activity/313/"
-    },
-    {
-      "title": "Информация об исполнении плана законопроектной работы",
-      "url": "https://khural.rtyva.ru/activity/286/"
-    },
-    {
-      "title": "Отчеты о работе сенатора Российской Федерации",
-      "url": "https://khural.rtyva.ru/activity/408/"
-    },
-    {
-      "title": "Отчет о деятельности комитетов 4 созыва",
-      "url": "https://khural.rtyva.ru/activity/445/"
-    }
-  ]
+    {"title": "Отчеты о деятельности Верховного Хурала (парламента) Республики Тыва", "url": "https://khural.rtyva.ru/activity/167/"},
+    {"title": "Отчеты о деятельности комитетов 3 созыва", "url": "https://khural.rtyva.ru/activity/313/"},
+    {"title": "Отчеты о деятельности комитетов (320)", "url": "https://khural.rtyva.ru/activity/320/"},
+    {"title": "Информация об исполнении плана законопроектной работы", "url": "https://khural.rtyva.ru/activity/286/"},
+    {"title": "Отчеты о работе сенатора Российской Федерации", "url": "https://khural.rtyva.ru/activity/408/"},
+    {"title": "Отчет о деятельности комитетов 4 созыва", "url": "https://khural.rtyva.ru/activity/445/"}
+  ],
+  "sourcesNote": "Отчеты и повестки для комитетов также берутся с https://khural.rtyva.ru/struct/committees/ и страниц activity/313, 320, 445 и т.д. Повестки: https://khural.rtyva.ru/activity/sessions/"
 }
-
-

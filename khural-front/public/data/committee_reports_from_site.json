@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "source": "https://khural.rtyva.ru",
+    "fetchedAt": "2026-02-12T14:14:08.482Z",
+    "urls": {
+      "committees": "https://khural.rtyva.ru/struct/committees/",
+      "activity": [
+        "https://khural.rtyva.ru/activity/313/",
+        "https://khural.rtyva.ru/activity/445/"
+      ],
+      "sessions": "https://khural.rtyva.ru/activity/sessions/"
+    }
+  },
+  "pages": [
+    {
+      "pageUrl": "https://khural.rtyva.ru/struct/committees/",
+      "error": "fetch failed",
+      "title": "Комитеты (структура)",
+      "committees": [],
+      "documents": []
+    },
+    {
+      "pageUrl": "https://khural.rtyva.ru/activity/313/",
+      "error": "fetch failed",
+      "title": "Отчеты о деятельности комитетов 3 созыва",
+      "committees": [],
+      "documents": []
+    },
+    {
+      "pageUrl": "https://khural.rtyva.ru/activity/320/",
+      "error": "fetch failed",
+      "title": "Отчеты о деятельности комитетов (320)",
+      "committees": [],
+      "documents": []
+    },
+    {
+      "pageUrl": "https://khural.rtyva.ru/activity/445/",
+      "error": "fetch failed",
+      "title": "Отчет о деятельности комитетов 4 созыва",
+      "committees": [],
+      "documents": []
+    },
+    {
+      "pageUrl": "https://khural.rtyva.ru/activity/sessions/",
+      "error": "fetch failed",
+      "documents": []
+    }
+  ],
+  "byConvocation": {},
+  "allDocuments": []
+}

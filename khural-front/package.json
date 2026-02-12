@@ -9,6 +9,7 @@
     "copy-tinymce": "node scripts/copy-tinymce.js",
     "postinstall": "node scripts/copy-tinymce.js",
     "import-documents": "node scripts/import-documents-from-site.js",
+    "import-committee-reports": "node scripts/import-committee-reports-from-site.js",
     "preview": "vite preview --port 5173",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings=0",

@@ -1,8 +1,10 @@
 import React from "react";
-import { App, Button, Form, Input, Switch, Select, Space, Divider, InputNumber, Tag } from "antd";
+import { App, Button, Form, Input, Switch, Select, Space, Divider, InputNumber, Tag, Upload } from "antd";
+import { UploadOutlined, FileOutlined } from "@ant-design/icons";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
+import { DocumentsApi, API_BASE_URL } from "../../api/client.js";
 
 export default function AdminCommitteesEditor({
   mode,
@@ -23,11 +25,40 @@ export default function AdminCommitteesEditor({
   const [windowWidth, setWindowWidth] = React.useState(
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
+  const [uploadingPlanIndex, setUploadingPlanIndex] = React.useState(null);
 
   const nameValue = Form.useWatch("name", form);
   const descriptionValue = Form.useWatch("description", form);
   const convocationIdValue = Form.useWatch("convocationId", form);
   const isActiveValue = Form.useWatch("isActive", form);
+  const plansValue = Form.useWatch("plans", form);
+
+  const handlePlanFileUpload = React.useCallback(
+    async (planIndex, file) => {
+      if (!file || !(file instanceof File)) return;
+      setUploadingPlanIndex(planIndex);
+      try {
+        const tempDoc = await DocumentsApi.create({
+          title: `[План комитета] ${file.name}`,
+          type: "other",
+          isPublished: false,
+        });
+        if (!tempDoc?.id) throw new Error("Не удалось создать документ для загрузки");
+        await DocumentsApi.uploadFile(tempDoc.id, file);
+        const updated = await DocumentsApi.getById(tempDoc.id);
+        const fileId = updated?.pdfFile?.id;
+        if (!fileId) throw new Error("Не удалось получить ID файла");
+        form.setFieldValue(["plans", planIndex, "fileId"], fileId);
+        message.success("Документ загружен");
+      } catch (err) {
+        console.error("Plan file upload error:", err);
+        message.error(err?.message || "Не удалось загрузить файл");
+      } finally {
+        setUploadingPlanIndex(null);
+      }
+    },
+    [form, message]
+  );
 
   const formatConvocationLabel = React.useCallback((c) => {
     const raw = String(c?.name || c?.number || "").trim();
@@ -96,6 +127,23 @@ export default function AdminCommitteesEditor({
               name: m?.name || m?.person?.fullName || m?.person?.name || "",
               role: m?.role || "Член комитета",
               order: m?.order ?? idx,
+            }))
+          : [],
+        plans: Array.isArray(found.plans)
+          ? found.plans.map((p) => ({
+              title: p?.title || "",
+              date: p?.date || "",
+              description: p?.description || "",
+              fileLink: p?.fileLink || "",
+              fileId: p?.fileId ?? "",
+            }))
+          : [],
+        activities: Array.isArray(found.activities)
+          ? found.activities.map((a) => ({
+              title: a?.title || "",
+              date: a?.date || "",
+              type: a?.type || "",
+              description: a?.description || "",
             }))
           : [],
       });
@@ -196,6 +244,35 @@ export default function AdminCommitteesEditor({
         })
         .filter(Boolean);
       payload.members = normalizedMembers;
+
+      // Планы комитета
+      const rawPlans = Array.isArray(values.plans) ? values.plans : [];
+      payload.plans = rawPlans
+        .map((p) => {
+          const title = String(p?.title || "").trim();
+          if (!title) return null;
+          const plan = { title };
+          if (p?.date?.trim()) plan.date = p.date.trim();
+          if (p?.description?.trim()) plan.description = p.description.trim();
+          if (p?.fileLink?.trim()) plan.fileLink = p.fileLink.trim();
+          if (p?.fileId != null && String(p.fileId).trim() !== "") plan.fileId = p.fileId;
+          return plan;
+        })
+        .filter(Boolean);
+
+      // Деятельность комитета
+      const rawActivities = Array.isArray(values.activities) ? values.activities : [];
+      payload.activities = rawActivities
+        .map((a) => {
+          const title = String(a?.title || "").trim();
+          if (!title) return null;
+          const activity = { title };
+          if (a?.date?.trim()) activity.date = a.date.trim();
+          if (a?.type?.trim()) activity.type = a.type.trim();
+          if (a?.description?.trim()) activity.description = a.description.trim();
+          return activity;
+        })
+        .filter(Boolean);
       
       console.log("[AdminCommitteesEditor] ⚠️ Отправка payload на https://someshit.yurta.site/committees:");
       console.log("[AdminCommitteesEditor] Payload:", JSON.stringify(payload, null, 2));
@@ -334,7 +411,7 @@ export default function AdminCommitteesEditor({
         <Form 
           layout="vertical" 
           form={form} 
-          initialValues={{ isActive: true, members: [] }}
+          initialValues={{ isActive: true, members: [], plans: [], activities: [] }}
           style={{ padding: windowWidth <= 768 ? '16px' : '24px' }}
         >
           {/* Основная информация */}
@@ -549,6 +626,140 @@ export default function AdminCommitteesEditor({
                       + Добавить участника
                     </Button>
                   </Space>
+                </div>
+              )}
+            </Form.List>
+          </div>
+
+          <Divider style={{ margin: "24px 0 16px" }} />
+
+          {/* Планы комитета */}
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>Планы комитета</div>
+            <div style={{ opacity: 0.75, fontSize: 13, lineHeight: 1.45 }}>
+              Планы работы, документы. Отображаются на странице комитета во вкладке «Планы».
+            </div>
+            <Form.List name="plans">
+              {(fields, { add, remove }) => (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {fields.map((field, idx) => (
+                    <div
+                      key={field.key}
+                      style={{
+                        border: "1px solid rgba(10, 31, 68, 0.08)",
+                        borderRadius: 12,
+                        padding: 12,
+                        background: "rgba(255,255,255,0.55)",
+                        display: "grid",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                        <div style={{ fontWeight: 800 }}>План #{idx + 1}</div>
+                        <Button danger size="small" onClick={() => remove(field.name)} disabled={loading || saving}>
+                          Удалить
+                        </Button>
+                      </div>
+                      <Form.Item {...field} label="Название" name={[field.name, "title"]} style={{ marginBottom: 0 }} rules={[{ required: true, message: "Укажите название" }]}>
+                        <Input placeholder="Например: План работы на 2024 год" disabled={loading || saving} />
+                      </Form.Item>
+                      <Form.Item {...field} label="Дата" name={[field.name, "date"]} style={{ marginBottom: 0 }}>
+                        <Input placeholder="2024" disabled={loading || saving} />
+                      </Form.Item>
+                      <Form.Item {...field} label="Описание" name={[field.name, "description"]} style={{ marginBottom: 0 }}>
+                        <Input.TextArea rows={2} placeholder="Краткое описание" disabled={loading || saving} />
+                      </Form.Item>
+                      <Form.Item {...field} label="Ссылка на файл" name={[field.name, "fileLink"]} style={{ marginBottom: 0 }}>
+                        <Input placeholder="https://... или /upload/... (если не загружаете документ)" disabled={loading || saving} />
+                      </Form.Item>
+                      <Form.Item {...field} name={[field.name, "fileId"]} style={{ marginBottom: 0 }} hidden>
+                        <Input type="hidden" />
+                      </Form.Item>
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
+                        <Upload
+                          accept=".pdf,.doc,.docx,.xls,.xlsx"
+                          showUploadList={false}
+                          beforeUpload={(file) => {
+                            handlePlanFileUpload(field.name, file);
+                            return Upload.LIST_IGNORE;
+                          }}
+                          disabled={loading || saving || uploadingPlanIndex === field.name}
+                        >
+                          <Button icon={<UploadOutlined />} loading={uploadingPlanIndex === field.name}>
+                            {uploadingPlanIndex === field.name ? "Загрузка…" : "Загрузить документ"}
+                          </Button>
+                        </Upload>
+                        {(plansValue?.[field.name]?.fileId || form.getFieldValue(["plans", field.name, "fileId"])) && (
+                          <span style={{ fontSize: 13, color: "#52c41a", display: "flex", alignItems: "center", gap: 8 }}>
+                            <FileOutlined /> Документ загружен (
+                            <a href={`${API_BASE_URL.replace(/\/+$/, "")}/files/v2/${plansValue?.[field.name]?.fileId || form.getFieldValue(["plans", field.name, "fileId"])}`} target="_blank" rel="noopener noreferrer">
+                              открыть
+                            </a>
+                            )
+                            <Button type="link" size="small" style={{ padding: 0, height: "auto" }} onClick={() => form.setFieldValue(["plans", field.name, "fileId"], "")}>
+                              Сбросить
+                            </Button>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <Button onClick={() => add({ title: "", date: "", description: "", fileLink: "", fileId: "" })} disabled={loading || saving}>
+                    + Добавить план
+                  </Button>
+                </div>
+              )}
+            </Form.List>
+          </div>
+
+          <Divider style={{ margin: "24px 0 16px" }} />
+
+          {/* Деятельность комитета */}
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>Деятельность комитета</div>
+            <div style={{ opacity: 0.75, fontSize: 13, lineHeight: 1.45 }}>
+              События, мероприятия. Отображаются на странице комитета во вкладке «Деятельность».
+            </div>
+            <Form.List name="activities">
+              {(fields, { add, remove }) => (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {fields.map((field, idx) => (
+                    <div
+                      key={field.key}
+                      style={{
+                        border: "1px solid rgba(10, 31, 68, 0.08)",
+                        borderRadius: 12,
+                        padding: 12,
+                        background: "rgba(255,255,255,0.55)",
+                        display: "grid",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                        <div style={{ fontWeight: 800 }}>Деятельность #{idx + 1}</div>
+                        <Button danger size="small" onClick={() => remove(field.name)} disabled={loading || saving}>
+                          Удалить
+                        </Button>
+                      </div>
+                      <Form.Item {...field} label="Название" name={[field.name, "title"]} style={{ marginBottom: 0 }} rules={[{ required: true, message: "Укажите название" }]}>
+                        <Input placeholder="Например: Заседание комитета" disabled={loading || saving} />
+                      </Form.Item>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        <Form.Item {...field} label="Дата" name={[field.name, "date"]} style={{ marginBottom: 0 }}>
+                          <Input placeholder="01.12.2024" disabled={loading || saving} />
+                        </Form.Item>
+                        <Form.Item {...field} label="Тип" name={[field.name, "type"]} style={{ marginBottom: 0 }}>
+                          <Input placeholder="Заседание / Совещание / и т.д." disabled={loading || saving} />
+                        </Form.Item>
+                      </div>
+                      <Form.Item {...field} label="Описание" name={[field.name, "description"]} style={{ marginBottom: 0 }}>
+                        <Input.TextArea rows={3} placeholder="Описание мероприятия" disabled={loading || saving} />
+                      </Form.Item>
+                    </div>
+                  ))}
+                  <Button onClick={() => add({ title: "", date: "", type: "", description: "" })} disabled={loading || saving}>
+                    + Добавить деятельность
+                  </Button>
                 </div>
               )}
             </Form.List>
