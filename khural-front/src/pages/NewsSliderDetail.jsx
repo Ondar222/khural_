@@ -61,7 +61,7 @@ function formatRuDateMaybe(dateStr) {
 export default function NewsSliderDetail() {
   const { slides, loading, errors, reload } = useData();
   const { route } = useHashRoute();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   const slideId = React.useMemo(() => {
     const base = (route || "/").split("?")[0];
@@ -79,16 +79,20 @@ export default function NewsSliderDetail() {
     return list.find((s) => String(s?.id ?? "") === id) || null;
   }, [slides, slideId]);
 
-  const rawDesc = String(item?.desc ?? item?.description ?? item?.subtitle ?? "").trim();
+  const useTy = lang === "ty" && (item?.titleTy || item?.descTy || item?.descriptionTy);
+  const rawDesc = useTy && (item?.descTy || item?.descriptionTy)
+    ? String(item.descTy ?? item.descriptionTy ?? "").trim()
+    : String(item?.desc ?? item?.description ?? item?.subtitle ?? "").trim();
   const plainDesc = stripHtmlToText(rawDesc);
   const { date, body } = splitDateAndDescription(plainDesc);
   const isHtml = looksLikeHtml(body);
+  const displayTitle = useTy && item?.titleTy ? item.titleTy : (item?.title || "Главные события недели");
 
   const shareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/news/slider/${encodeURIComponent(String(slideId || ""))}`
       : `/news/slider/${encodeURIComponent(String(slideId || ""))}`;
-  const shareTitle = String(item?.title || "").trim() || "Главные события недели";
+  const shareTitle = String(displayTitle).trim() || "Главные события недели";
 
   return (
     <section className="section">
@@ -106,7 +110,7 @@ export default function NewsSliderDetail() {
                 {t("backToNewsList")}
               </a>
               <div>
-                <h1 style={{ marginBottom: 8, display: "block" }}>{item?.title || "Главные события недели"}</h1>
+                <h1 style={{ marginBottom: 8, display: "block" }}>{displayTitle}</h1>
                 {date ? (
                   <div style={{ color: "#6b7280", marginBottom: 16 }}>
                     {formatRuDateMaybe(date)} · Главные события недели

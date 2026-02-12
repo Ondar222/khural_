@@ -1096,6 +1096,8 @@ export default function DataProvider({ children }) {
               id: String(s.id ?? ""),
               title: s.title || "",
               desc: pick(s.desc, s.description, s.subtitle) || "",
+              titleTy: s.titleTy || "",
+              descTy: pick(s.descTy, s.descriptionTy) || "",
               link: pick(s.link, s.url, s.href) || "",
               image: firstFileLink(s.image) || "",
               isActive: s.isActive !== false,

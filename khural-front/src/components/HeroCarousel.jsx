@@ -5,7 +5,7 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 export default function HeroCarousel() {
   const { slides: dataSlides } = useData();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [active, setActive] = React.useState(0);
   const [isMobile, setIsMobile] = React.useState(() => {
     if (typeof window === "undefined") return false;
@@ -73,7 +73,9 @@ export default function HeroCarousel() {
     return base.map((s) => ({
       id: String(s?.id ?? "").trim(),
       title: String(s?.title || "").trim(),
+      titleTy: String(s?.titleTy ?? "").trim(),
       desc: String(s?.desc ?? s?.description ?? s?.subtitle ?? "").trim(),
+      descTy: String(s?.descTy ?? s?.descriptionTy ?? "").trim(),
       link: s?.link ? String(s.link) : "/news",
       image: s?.image || "",
     }));
@@ -102,12 +104,16 @@ export default function HeroCarousel() {
   if (!slides.length) return null;
 
   const current = slides[active] || slides[0];
-  const desc = current?.desc ? String(current.desc).trim() : "";
+  const useTy = lang === "ty" && (current?.titleTy || current?.descTy);
+  const desc = useTy && current?.descTy
+    ? String(current.descTy).trim()
+    : (current?.desc ? String(current.desc).trim() : "");
   const previewText = stripHtmlToText(desc);
   const { date, description } = splitDateAndDescription(previewText);
   const subtitleText = String(description || "").trim();
   // On mobile, keep subtitle short to avoid overflowing the hero card.
   const subtitlePreview = truncateWords(subtitleText, isMobile ? 15 : 30);
+  const displayTitle = useTy && current?.titleTy ? current.titleTy : (current?.title || "");
   const href = current?.id
     ? `/news/slider/${encodeURIComponent(String(current.id))}`
     : "/news";
@@ -127,7 +133,7 @@ export default function HeroCarousel() {
         </div>
         <div className="caption center">
           <div className="hero__panel">
-            <h1 className="title center">{current?.title}</h1>
+            <h1 className="title center">{displayTitle}</h1>
             {subtitlePreview ? <p className="hero__desc">{subtitlePreview}</p> : null}
             {date ? <div className="hero__date">{date}</div> : null}
             <div className="hero__actions">

@@ -3,6 +3,7 @@ import { App, Button, Form, Input, Switch, Upload } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { SliderApi } from "../../api/client.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
+import { useTranslation } from "../../hooks/index.js";
 
 function splitDateAndDescription(desc) {
   const s = String(desc || "");
@@ -38,6 +39,39 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
   const [saving, setSaving] = React.useState(false);
   const [imageFile, setImageFile] = React.useState(null);
   const titleValue = Form.useWatch("title", form);
+  const { translate, loading: translating, error: translationError, clearError } = useTranslation({ defaultFrom: "ru", defaultTo: "tyv" });
+
+  React.useEffect(() => {
+    if (translationError) {
+      message.error("Ошибка при переводе: " + (translationError?.message || "Неизвестная ошибка"));
+      clearError();
+    }
+  }, [translationError, message, clearError]);
+
+  const handleTranslateToTy = async () => {
+    try {
+      const values = form.getFieldsValue();
+      const title = String(values.title || "").trim();
+      const description = String(values.description || "").trim();
+      if (!title && !description) {
+        message.warning("Заполните заголовок или описание (RU) для перевода");
+        return;
+      }
+      const [titleResult, descResult] = await Promise.all([
+        title ? translate(title, "ru", "tyv") : Promise.resolve({ translated: "" }),
+        description ? translate(description, "ru", "tyv") : Promise.resolve({ translated: "" }),
+      ]);
+      const translatedTitle = String(titleResult?.translated ?? "").trim();
+      const translatedDesc = String(descResult?.translated ?? "").trim();
+      form.setFieldsValue({
+        titleTy: translatedTitle,
+        descriptionTy: translatedDesc,
+      });
+      message.success("Перевод выполнен");
+    } catch (err) {
+      console.error("Slider translate error:", err);
+    }
+  };
 
   React.useEffect(() => {
     if (mode !== "edit") return;
@@ -70,12 +104,16 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
               : true;
 
         const dateSplit = splitDateAndDescription(descriptionRaw);
+        const titleTy = pickText(fromApi?.titleTy, local?.titleTy);
+        const descriptionTyRaw = pickText(fromApi?.descriptionTy, fromApi?.descTy, local?.descriptionTy, local?.descTy);
         form.setFieldsValue({
           title: title || "",
           date: dateSplit.date || "",
           description: dateSplit.description || "",
           url: url || "",
           isActive,
+          titleTy: titleTy || "",
+          descriptionTy: descriptionTyRaw || "",
         });
       } finally {
         if (alive) setLoading(false);
@@ -97,6 +135,8 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
         url: values.url,
         isActive: values.isActive,
       };
+      if (values.titleTy?.trim()) payload.titleTy = values.titleTy.trim();
+      if (values.descriptionTy?.trim()) payload.descriptionTy = values.descriptionTy.trim();
 
       if (mode === "create") {
         const existingCount = Array.isArray(items) ? items.length : 0;
@@ -153,9 +193,9 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
 
       <div className="admin-card">
         <div className="admin-slider-editor__section-title">Данные слайда</div>
-        <Form layout="vertical" form={form} initialValues={{ isActive: true }}>
+        <Form layout="vertical" form={form} initialValues={{ isActive: true, titleTy: "", descriptionTy: "" }}>
           <div className="admin-split">
-            <Form.Item label="Заголовок" name="title" rules={[{ required: true, message: "Укажите заголовок" }]}>
+            <Form.Item label="Заголовок (RU)" name="title" rules={[{ required: true, message: "Укажите заголовок" }]}>
               <Input disabled={loading || saving} />
             </Form.Item>
             <Form.Item label="Дата события" name="date" rules={[{ required: true, message: "Укажите дату события" }]}>
@@ -164,7 +204,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
           </div>
 
           <Form.Item
-            label="Описание"
+            label="Описание (RU)"
             name="description"
             tooltip="Используйте редактор для форматирования текста"
             getValueFromEvent={(value) => value}
@@ -175,6 +215,35 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
               disabled={loading || saving}
             />
           </Form.Item>
+
+          <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid rgba(10, 31, 68, 0.08)" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>Тувинский язык (TY)</div>
+              <Button
+                type="default"
+                onClick={handleTranslateToTy}
+                loading={translating}
+                disabled={!canWrite || translating || loading || saving}
+              >
+                Получить автоматический перевод
+              </Button>
+            </div>
+            <Form.Item label="Заголовок (TY)" name="titleTy">
+              <Input placeholder="Заголовок на тувинском языке" disabled={loading || saving} />
+            </Form.Item>
+            <Form.Item
+              label="Описание (TY)"
+              name="descriptionTy"
+              tooltip="Описание слайда на тувинском языке"
+              getValueFromEvent={(value) => value}
+            >
+              <TinyMCEEditor
+                height={300}
+                placeholder="Описание на тувинском языке"
+                disabled={loading || saving}
+              />
+            </Form.Item>
+          </div>
 
           <div className="admin-split">
             <Form.Item label="Ссылка" name="url">
