@@ -27,7 +27,7 @@ function committeeRichness(c) {
 }
 
 export default function About() {
-  const { committees, government } = useData();
+  const { committees, commissions, government } = useData();
   // NOTE: government is used to link Chairman in the structure diagram.
   const { t } = useI18n();
   const [activeTab, setActiveTab] = React.useState("general"); // general | structure
@@ -322,39 +322,22 @@ export default function About() {
                     </a>
                   </div>
                   <div className="org__col org__col--span2" id="focus-commissions">
-                    {[
-                      {
-                        title:
-                          "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
-                        id: "reglament-etika",
-                      },
-                      {
-                        title:
-                          "Комиссия Верховного Хурала (парламента) Республики Тыва контрольно за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
-                        id: "kontrol-dostovernost",
-                      },
-                      {
-                        title: "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
-                        id: "nagradnaya",
-                      },
-                      {
-                        title:
-                          "Комиссия Верховного Хурала (парламента) Республики Тыва по поддержке участников специальной военной операции и их семей",
-                        id: "svo-podderzhka",
-                      },
-                      {
-                        title: "Счетная комиссия Верховного Хурала (парламента) Республики Тыва",
-                        id: "schetnaya",
-                      },
-                    ].map((item, i) => (
-                      <a
-                        key={`wide-${i}`}
-                        className="org__item org__item--blue"
-                        href={`/commission?id=${item.id}`}
-                      >
-                        {t(item.title)}
-                      </a>
-                    ))}
+                    {(Array.isArray(commissions) ? commissions : []).map((item) => {
+                      const rawName = item.name;
+                      const nameText =
+                        typeof rawName === "string" && /<[^>]+>/.test(rawName)
+                          ? rawName.replace(/<[^>]*>/g, "").trim() || rawName
+                          : rawName;
+                      return (
+                        <a
+                          key={item.id}
+                          className="org__item org__item--blue"
+                          href={`/commission?id=${item.id}`}
+                        >
+                          {t(nameText)}
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
                 {/* Councils anchor (same visual area for now) */}

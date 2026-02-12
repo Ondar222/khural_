@@ -28,6 +28,14 @@ import {
   SYSTEM_COMMITTEE_IDS,
   COMMITTEE_DEFAULT_CONVOCATION,
 } from "../utils/committeesOverrides.js";
+import {
+  readCommissionsOverrides,
+  writeCommissionsOverrides,
+  mergeCommissionsWithOverrides,
+  DEFAULT_COMMISSIONS_LIST,
+  COMMISSIONS_OVERRIDES_EVENT_NAME,
+  COMMISSIONS_OVERRIDES_STORAGE_KEY,
+} from "../utils/commissionsOverrides.js";
 import { normalizeBool } from "../utils/bool.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import {
@@ -429,6 +437,9 @@ export function useAdminData() {
   const [appeals, setAppeals] = React.useState([]);
   const [convocations, setConvocations] = React.useState([]);
   const [committees, setCommittees] = React.useState([]);
+  const [commissions, setCommissions] = React.useState(() =>
+    mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides())
+  );
   const [pages, setPages] = React.useState([]);
 
   const canWrite = isAuthenticated;
@@ -605,6 +616,7 @@ export function useAdminData() {
       return { ...c, convocationId: c.convocationId ?? convId, convocation: c.convocation && (c.convocation?.name ?? c.convocation?.id) ? c.convocation : convObj };
     });
     setCommittees(mergeCommitteesWithOverrides(baseCommittees, readCommitteesOverrides()));
+    setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
     const pagesList = normalizeServerList(apiPages);
     setPages(Array.isArray(pagesList) ? pagesList : []);
   }, [publicCommitteesFallback]);
@@ -675,6 +687,22 @@ export function useAdminData() {
     return () => {
       window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, apply);
       window.removeEventListener("storage", apply);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const apply = () => {
+      setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
+    };
+    const onStorage = (e) => {
+      if (e?.key === COMMISSIONS_OVERRIDES_STORAGE_KEY) apply();
+    };
+    window.addEventListener(COMMISSIONS_OVERRIDES_EVENT_NAME, apply);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(COMMISSIONS_OVERRIDES_EVENT_NAME, apply);
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 
@@ -1509,6 +1537,47 @@ export function useAdminData() {
     await updateCommittee(id, { isActive: false });
   }, [message, updateCommittee]);
 
+  const createCommission = React.useCallback(
+    async (payload) => {
+      const id = String(payload?.id || "").trim() || `commission-${Date.now()}`;
+      const name = String(payload?.name || "").trim() || "Комиссия";
+      const ov = readCommissionsOverrides();
+      const created = [...(Array.isArray(ov.created) ? ov.created : []), { id, name }];
+      writeCommissionsOverrides({ ...ov, created });
+      setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
+      window.dispatchEvent(new Event(COMMISSIONS_OVERRIDES_EVENT_NAME));
+      message.success("Комиссия добавлена");
+      return { id, name };
+    },
+    [message]
+  );
+
+  const updateCommission = React.useCallback(
+    async (id, payload) => {
+      const sid = String(id);
+      const ov = readCommissionsOverrides();
+      const updatedById = { ...(ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {}), [sid]: { ...(ov.updatedById?.[sid] || {}), ...payload } };
+      writeCommissionsOverrides({ ...ov, updatedById });
+      setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
+      window.dispatchEvent(new Event(COMMISSIONS_OVERRIDES_EVENT_NAME));
+      message.success("Комиссия обновлена");
+    },
+    [message]
+  );
+
+  const deleteCommission = React.useCallback(
+    async (id) => {
+      const sid = String(id);
+      const ov = readCommissionsOverrides();
+      const deletedIds = [...(Array.isArray(ov.deletedIds) ? ov.deletedIds : []), sid];
+      writeCommissionsOverrides({ ...ov, deletedIds });
+      setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
+      window.dispatchEvent(new Event(COMMISSIONS_OVERRIDES_EVENT_NAME));
+      message.success("Комиссия удалена");
+    },
+    [message]
+  );
+
   const stats = React.useMemo(() => {
     const deletedNewsIds = new Set((readNewsOverrides()?.deletedIds || []).map(String));
     const visibleNews = (news || []).filter((n) => !deletedNewsIds.has(String(n?.id ?? n?._id ?? "")));
@@ -1522,8 +1591,9 @@ export function useAdminData() {
       appeals: Array.isArray(appeals) ? appeals.length : 0,
       convocations: Array.isArray(convocations) ? convocations.length : 0,
       committees: countDeduplicatedCommittees(committees),
+      commissions: Array.isArray(commissions) ? commissions.length : 0,
     };
-  }, [persons, pages, documents, news, events, slider, appeals, convocations, committees]);
+  }, [persons, pages, documents, news, events, slider, appeals, convocations, committees, commissions]);
 
   const handleLogin = React.useCallback(async () => {
     setLoginBusy(true);
@@ -1568,6 +1638,7 @@ export function useAdminData() {
     appeals,
     convocations,
     committees,
+    commissions,
     pages,
     stats,
     apiBase,
@@ -1613,6 +1684,11 @@ export function useAdminData() {
     createCommittee,
     updateCommittee,
     deleteCommittee,
+    
+    // CRUD Commissions
+    createCommission,
+    updateCommission,
+    deleteCommission,
     
     // State
     busy,

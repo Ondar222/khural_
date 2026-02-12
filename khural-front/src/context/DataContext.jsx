@@ -20,6 +20,13 @@ import {
   DOCUMENTS_OVERRIDES_EVENT_NAME,
   DOCUMENTS_OVERRIDES_STORAGE_KEY,
 } from "../utils/documentsOverrides.js";
+import {
+  readCommissionsOverrides,
+  COMMISSIONS_OVERRIDES_EVENT_NAME,
+  COMMISSIONS_OVERRIDES_STORAGE_KEY,
+  mergeCommissionsWithOverrides,
+  DEFAULT_COMMISSIONS_LIST,
+} from "../utils/commissionsOverrides.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { normalizeConvocationToCanonical } from "../utils/convocationLabels.js";
 import { buildFactionOptions, buildDistrictOptions } from "../utils/deputyFilterOptions.js";
@@ -1052,6 +1059,7 @@ export default function DataProvider({ children }) {
   const [deputiesOverrides, setDeputiesOverrides] = React.useState(() => readDeputiesOverrides());
   const [eventsOverrides, setEventsOverrides] = React.useState(() => readEventsOverrides());
   const [slidesOverrides, setSlidesOverrides] = React.useState(() => readSliderOverrides());
+  const [commissionsOverrides, setCommissionsOverrides] = React.useState(() => readCommissionsOverrides());
 
   const markLoading = React.useCallback((key, value) => {
     setLoading((s) => ({ ...s, [key]: Boolean(value) }));
@@ -1640,7 +1648,7 @@ export default function DataProvider({ children }) {
         setConvocations((prev) =>
           normalizeStringList([...(Array.isArray(prev) ? prev : []), ...(s?.convocations || [])])
         );
-        setCommissions(s.commissions || []);
+        // Комиссии берём из commissionsOverrides + DEFAULT_COMMISSIONS_LIST, не из structure
         setCouncils(s.councils || []);
       })
       .catch((e) => markError("structure", e))
@@ -1867,6 +1875,23 @@ export default function DataProvider({ children }) {
     };
   }, []);
 
+  // Keep commissions overrides in sync (admin edits from /admin/commissions)
+  React.useEffect(() => {
+    const onLocal = () => setCommissionsOverrides(readCommissionsOverrides());
+    window.addEventListener(COMMISSIONS_OVERRIDES_EVENT_NAME, onLocal);
+    window.addEventListener("storage", (e) => {
+      if (e?.key === COMMISSIONS_OVERRIDES_STORAGE_KEY) onLocal();
+    });
+    return () => {
+      window.removeEventListener(COMMISSIONS_OVERRIDES_EVENT_NAME, onLocal);
+    };
+  }, []);
+
+  const commissionsWithOverrides = React.useMemo(
+    () => mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, commissionsOverrides),
+    [commissionsOverrides]
+  );
+
   const deputies = React.useMemo(() => {
     const base = mergeDeputiesWithOverrides(deputiesBase, deputiesOverrides);
     const govList = Array.isArray(government) ? government : [];
@@ -1934,7 +1959,7 @@ export default function DataProvider({ children }) {
       factions,
       districts,
       convocations,
-      commissions,
+      commissions: commissionsWithOverrides,
       councils,
       government,
       authorities,
@@ -1954,7 +1979,6 @@ export default function DataProvider({ children }) {
       setFactions,
       setDistricts,
       setConvocations,
-      setCommissions,
       setCouncils,
       setGovernment,
       setAuthorities,
@@ -1971,7 +1995,7 @@ export default function DataProvider({ children }) {
       factions,
       districts,
       convocations,
-      commissions,
+      commissionsWithOverrides,
       councils,
       government,
       authorities,

@@ -8411,6 +8411,176 @@ body.admin-mode .admin-table .ant-table-tbody > tr > td .admin-slider-title-cell
   }
 }
 
+/* Комиссии: список и форма редактирования (как Комитеты) */
+.admin-commissions {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+.admin-commissions .admin-toolbar .admin-commissions-list__toolbar-left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex: 1 1 520px;
+  min-width: min(520px, 100%);
+  flex-wrap: wrap;
+}
+.admin-commissions .admin-toolbar .admin-commissions-list__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.admin-commissions .admin-toolbar .admin-commissions-list__toolbar-right .ant-btn {
+  border-radius: 12px;
+  font-weight: 800;
+}
+.admin-commissions .admin-table .ant-table {
+  font-size: 14px;
+}
+.admin-commissions .admin-table .ant-table-cell {
+  word-break: break-word;
+}
+.admin-commissions-list__actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin-commissions-list__actions .ant-btn {
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+.admin-commissions-list__id {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 8px;
+  border-radius: 8px;
+  display: inline-block;
+}
+body.admin-mode[data-admin-theme="light"] .admin-commissions-list__id {
+  color: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.06);
+}
+.admin-commissions-list__name {
+  line-height: 1.45;
+  display: block;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+@media (max-width: 820px) {
+  .admin-commissions .admin-toolbar .admin-commissions-list__toolbar-left {
+    flex-direction: column;
+    align-items: stretch;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .admin-commissions .admin-toolbar .admin-commissions-list__toolbar-left .admin-commissions-search,
+  .admin-commissions .admin-toolbar .admin-commissions-list__toolbar-left .admin-commissions-search.ant-input,
+  .admin-commissions .admin-toolbar .admin-commissions-list__toolbar-left .admin-commissions-search.ant-input-sm {
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+  }
+  .admin-commissions .admin-toolbar .admin-commissions-list__toolbar-left .admin-commissions-search input {
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+  }
+  .admin-commissions .admin-toolbar .admin-commissions-list__toolbar-right {
+    width: 100%;
+  }
+  .admin-commissions .admin-toolbar .admin-commissions-list__toolbar-right .ant-btn {
+    width: 100%;
+  }
+}
+
+/* Мобильные карточки комиссий */
+.admin-commissions--mobile {
+  padding: 0 4px;
+}
+.admin-commissions-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+.admin-commissions-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 12px;
+  min-width: 0;
+}
+.admin-commissions-card .admin-commissions-list__id {
+  align-self: flex-start;
+}
+.admin-commissions-card__name {
+  font-weight: 500;
+  line-height: 1.45;
+  word-break: break-word;
+  color: rgba(255, 255, 255, 0.95);
+}
+body.admin-mode[data-admin-theme="light"] .admin-commissions-card__name {
+  color: rgba(15, 23, 42, 0.9);
+}
+.admin-commissions-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+}
+.admin-commissions-card__actions .ant-btn {
+  width: 100%;
+  margin: 0;
+}
+.admin-commissions-empty {
+  padding: 32px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+body.admin-mode[data-admin-theme="light"] .admin-commissions-empty {
+  color: rgba(15, 23, 42, 0.5);
+}
+.admin-commissions-edit {
+  max-width: 820px;
+  padding: 28px 32px;
+  border-radius: 16px;
+}
+.admin-commissions-edit-form .ant-form-item {
+  margin-bottom: 20px;
+}
+.admin-commissions-edit__section-title {
+  margin-top: 28px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+}
+body.admin-mode[data-admin-theme="light"] .admin-commissions-edit__section-title {
+  color: rgba(15, 23, 42, 0.85);
+}
+.admin-commissions-edit__name.ant-input {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.admin-commissions-edit__actions .ant-form-item-control-input-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+@media (max-width: 768px) {
+  .admin-commissions-edit {
+    padding: 20px 16px;
+  }
+}
+
 /* Стили для версии для слабовидящих */
 body.a11y-large {
   font-size: 125% !important;

@@ -10,6 +10,7 @@ const NAV = [
   { key: "convocations", label: "Созывы", href: "/admin/convocations" },
   { key: "convocations-documents", label: "Документы созывов", href: "/admin/convocations/documents" },
   { key: "committees", label: "Комитеты", href: "/admin/committees" },
+  { key: "commissions", label: "Комиссии", href: "/admin/commissions" },
   { key: "deputies", label: "Депутаты", href: "/admin/deputies" },
   { key: "portals", label: "Порталы", href: "/admin/portals" },
   { key: "pages", label: "Страницы", href: "/admin/pages" },

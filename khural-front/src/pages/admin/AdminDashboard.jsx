@@ -68,6 +68,7 @@ export default function AdminDashboard({ stats, onReload, onReloadSuccess }) {
       <div className="admin-cards admin-cards--stats">
         <StatCard label="Созывы" value={stats.convocations ?? 0} href="/admin/convocations" />
         <StatCard label="Комитеты" value={stats.committees ?? 0} href="/admin/committees" />
+        <StatCard label="Комиссии" value={stats.commissions ?? 0} href="/admin/commissions" />
         <StatCard label="Депутаты" value={stats.deputies ?? 0} href="/admin/deputies" />
         <StatCard label="Страницы" value={stats.pages ?? 0} href="/admin/pages" />
         {/* <StatCard label="Документы" value={stats.documents ?? 0} href="/admin/documents" /> */}

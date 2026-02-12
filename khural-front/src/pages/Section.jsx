@@ -1628,7 +1628,7 @@ function deduplicateCommitteesByRichness(list) {
 export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
-  const { committees, factions: structureFactions, government, deputies, convocations } = useData();
+  const { committees, commissions, factions: structureFactions, government, deputies, convocations } = useData();
   const focus = q.get("focus");
 
   const committeesDeduped = React.useMemo(
@@ -1711,42 +1711,9 @@ export default function SectionPage() {
       );
     }
 
-    // Special handling for Комиссии page
+    // Special handling for Комиссии page (данные из админки /admin/commissions)
     if (title === "Комиссии") {
-      const commissionsList = [
-        {
-          id: "nagradnaya",
-          name: "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
-        },
-        {
-          id: "kontrol-dostovernost",
-          name: "Комиссия Верховного Хурала (парламента) Республики Тыва по контролю за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
-        },
-        {
-          id: "schetnaya",
-          name: "Счетная комиссия Верховного Хурала",
-        },
-        {
-          id: "reglament-etika",
-          name: "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
-        },
-        {
-          id: "reabilitatsiya",
-          name: "Республиканская комиссия по восстановлению прав реабилитированных жертв политических репрессий",
-        },
-        {
-          id: "svo-podderzhka",
-          name: "Комиссия Верховного Хурала (парламента) Республики Тыва по поддержке участников специальной военной операции и их семей",
-        },
-        {
-          id: "smi-obshestvo",
-          name: "Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями",
-        },
-        {
-          id: "mezhregionalnye-svyazi",
-          name: "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным и международным связям",
-        },
-      ];
+      const commissionsList = Array.isArray(commissions) ? commissions : [];
 
       return (
         <section className="section section-page">
@@ -1754,13 +1721,21 @@ export default function SectionPage() {
             <div className="page-grid">
               <div>
                 <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
-                <ul>
-                  {commissionsList.map((item) => (
+                {commissionsList.length > 0 ? (
+                  <ul>
+{commissionsList.map((item) => (
                     <li key={item.id}>
-                      <a href={`/commission?id=${item.id}`}>{item.name}</a>
+                      <a href={`/commission?id=${item.id}`}>
+                        {typeof item.name === "string" && /<[^>]+>/.test(item.name)
+                          ? item.name.replace(/<[^>]*>/g, "").trim() || item.name
+                          : item.name}
+                      </a>
                     </li>
                   ))}
-                </ul>
+                  </ul>
+                ) : (
+                  <p style={{ marginTop: 0 }}>Список комиссий пока не заполнен. Добавьте комиссии в админ-панели.</p>
+                )}
               </div>
               <SideNav title="Разделы" />
             </div>
@@ -2271,37 +2246,15 @@ export default function SectionPage() {
                   </a>
                 </div>
                 <div className="org__col org__col--span2" id="focus-commissions">
-                  {[
-                    {
-                      title:
-                        "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
-                      id: "reglament-etika",
-                    },
-                    {
-                      title:
-                        "Комиссия Верховного Хурала (парламента) Республики Тыва контрольно за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
-                      id: "kontrol-dostovernost",
-                    },
-                    {
-                      title: "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
-                      id: "nagradnaya",
-                    },
-                    {
-                      title:
-                        "Комиссия Верховного Хурала (парламента) Республики Тыва по поддержке участников специальной военной операции и их семей",
-                      id: "svo-podderzhka",
-                    },
-                    {
-                      title: "Счетная комиссия Верховного Хурала (парламента) Республики Тыва",
-                      id: "schetnaya",
-                    },
-                  ].map((item, i) => (
+                  {(Array.isArray(commissions) ? commissions : []).map((item) => (
                     <a
-                      key={`wide-${i}`}
+                      key={item.id}
                       className="org__item org__item--blue"
                       href={`/commission?id=${item.id}`}
                     >
-                      {item.title}
+                      {typeof item.name === "string" && /<[^>]+>/.test(item.name)
+                        ? item.name.replace(/<[^>]*>/g, "").trim() || item.name
+                        : item.name}
                     </a>
                   ))}
                 </div>
