@@ -84,6 +84,7 @@ import AdminConvocationsDocumentEditPage from "./pages/admin/AdminConvocationsDo
 import AdminCommitteesPage from "./pages/admin/AdminCommitteesPage.jsx";
 import AdminCommitteesCreatePage from "./pages/admin/AdminCommitteesCreatePage.jsx";
 import AdminCommitteesEditPage from "./pages/admin/AdminCommitteesEditPage.jsx";
+import AdminCommitteeReportsPage from "./pages/admin/AdminCommitteeReportsPage.jsx";
 import AdminCommissionsPage from "./pages/admin/AdminCommissionsPage.jsx";
 import AdminCommissionsCreatePage from "./pages/admin/AdminCommissionsCreatePage.jsx";
 import AdminCommissionsEditPage from "./pages/admin/AdminCommissionsEditPage.jsx";
@@ -256,6 +257,7 @@ export default function App() {
                           "/admin/committees": AdminProtected(AdminCommitteesPage),
                           "/admin/committees/create": AdminProtected(AdminCommitteesCreatePage),
                           "/admin/committees/edit/:id": AdminProtected(AdminCommitteesEditPage),
+                          "/admin/committee-reports": AdminProtected(AdminCommitteeReportsPage),
                           "/admin/commissions": AdminProtected(AdminCommissionsPage),
                           "/admin/commissions/create": AdminProtected(AdminCommissionsCreatePage),
                           "/admin/commissions/edit/:id": AdminProtected(AdminCommissionsEditPage),
