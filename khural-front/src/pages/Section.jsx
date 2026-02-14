@@ -1424,7 +1424,7 @@ function DeputyGrid({ deputies, structureType, backHref }) {
       </div>
     );
   }
-
+d
   return (
     <div className="grid cols-3" style={{ marginTop: 16, gap: 16 }}>
       {filtered.map((d) => (
@@ -1490,7 +1490,7 @@ function DeputyGrid({ deputies, structureType, backHref }) {
   );
 }
 
-function ApparatusPersonCard({ p }) {
+function ApparatusPersonCard({ p, href }) {
   const initials = React.useMemo(() => {
     const parts = String(p?.name || "")
       .trim()
@@ -1510,8 +1510,8 @@ function ApparatusPersonCard({ p }) {
 
   if (!p) return null;
 
-  return (
-    <div className="card apparatus-person-card">
+  const cardContent = (
+    <>
       <div className="apparatus-person-card__avatarWrap">
         {p.photo ? (
           <img className="apparatus-person-card__avatar" src={p.photo} alt="" loading="lazy" />
@@ -1529,7 +1529,7 @@ function ApparatusPersonCard({ p }) {
         <div className="apparatus-person-card__meta">
           {p.phone ? (
             telHref ? (
-              <a className="apparatus-person-card__metaItem" href={telHref}>
+              <a className="apparatus-person-card__metaItem" href={telHref} onClick={(e) => e.stopPropagation()}>
                 <PhoneOutlined />
                 <span>{p.phone}</span>
               </a>
@@ -1542,7 +1542,7 @@ function ApparatusPersonCard({ p }) {
           ) : null}
 
           {p.email ? (
-            <a className="apparatus-person-card__metaItem" href={`mailto:${String(p.email).trim()}`}>
+            <a className="apparatus-person-card__metaItem" href={`mailto:${String(p.email).trim()}`} onClick={(e) => e.stopPropagation()}>
               <MailOutlined />
               <span>{p.email}</span>
             </a>
@@ -1556,8 +1556,18 @@ function ApparatusPersonCard({ p }) {
           ) : null}
         </div>
       </div>
-    </div>
+    </>
   );
+
+  const className = href ? "card apparatus-person-card apparatus-person-card--link" : "card apparatus-person-card";
+  if (href) {
+    return (
+      <a className={className} href={href} style={{ textDecoration: "none", color: "inherit" }}>
+        {cardContent}
+      </a>
+    );
+  }
+  return <div className={className}>{cardContent}</div>;
 }
 
 function ApparatusSectionDetail({ title, backHref }) {
@@ -1582,7 +1592,11 @@ function ApparatusSectionDetail({ title, backHref }) {
             {people.length ? (
               <div className="apparatus-person-grid">
                 {people.map((p, i) => (
-                  <ApparatusPersonCard key={`${p.name || "p"}-${i}`} p={p} />
+                  <ApparatusPersonCard
+                    key={`${p.name || "p"}-${i}`}
+                    p={p}
+                    href={`/section?title=${encodeURIComponent(title)}&person=${i}`}
+                  />
                 ))}
               </div>
             ) : (
@@ -1662,8 +1676,44 @@ export default function SectionPage() {
       // ignore invalid URI encoding
     }
 
-    // Prefilled (old) apparatus pages: show people/info instead of empty CMS.
+    // Prefilled (old) apparatus pages: show people/info or person detail.
     if (APPARATUS_SECTIONS?.[title]) {
+      const personIndex = parseInt(q.get("person") ?? "", 10);
+      const data = APPARATUS_SECTIONS[title];
+      const people = Array.isArray(data.people) ? data.people : [];
+      const person =
+        Number.isInteger(personIndex) && personIndex >= 0 && personIndex < people.length
+          ? people[personIndex]
+          : null;
+      const sectionBackHref = `/section?title=${encodeURIComponent(title)}`;
+      if (person) {
+        const item = {
+          name: person.name,
+          role: person.role,
+          position: person.role,
+          phone: person.phone,
+          email: person.email,
+          address: person.address,
+          photo: person.photo,
+        };
+        return (
+          <section className="section section-page">
+            <div className="container">
+              <div className="page-grid">
+                <div className="page-grid__main">
+                  <div className="section-page__topbar">
+                    <a className="btn btn-back" href={sectionBackHref}>
+                      ← Назад
+                    </a>
+                  </div>
+                  <PersonDetail item={item} type="gov" backHref={sectionBackHref} />
+                </div>
+                <SideNav title="Разделы" links={APPARATUS_NAV_LINKS} />
+              </div>
+            </div>
+          </section>
+        );
+      }
       return (
         <ApparatusSectionDetail
           title={title}
