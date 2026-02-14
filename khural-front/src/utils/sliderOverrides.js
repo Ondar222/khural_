@@ -1,3 +1,8 @@
+/**
+ * Локальные правки слайдера (localStorage). Видны только на этом устройстве/браузере.
+ * Чтобы перевод (TY) и правки слайдов были на всех устройствах — бэкенд должен сохранять
+ * titleTy/descriptionTy (или content[] с locale tyv) и отдавать их в GET /slider.
+ */
 const STORAGE_KEY = "khural_slider_overrides_v1";
 const EVENT_NAME = "khural:slider-updated";
 
