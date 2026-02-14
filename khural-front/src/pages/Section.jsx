@@ -23,6 +23,15 @@ import {
 } from "../utils/convocationsOverrides.js";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import { buildFactionOptions } from "../utils/deputyFilterOptions.js";
+import {
+  COUNCIL_BASE_TITLE,
+  COUNCIL_NAV,
+  PRESIDIUM,
+  COUNCIL_GROUPS,
+  COUNCIL_AGENDAS,
+  COUNCIL_RESOLUTION,
+  COUNCIL_POLOZHENIE,
+} from "../data/councilSovete.js";
 
 const SECTION_TITLE_TO_SLUG = {
   "Кодекс чести мужчины Тувы": "code-of-honor",
@@ -1934,23 +1943,279 @@ export default function SectionPage() {
       );
     }
 
-    if (title === "Совет по взаимодействию с представительными органами муниципальных образований") {
+    const councilBackHref = `/section?title=${encodeURIComponent(COUNCIL_BASE_TITLE)}`;
+
+    if (title === "Постановление") {
+      const R = COUNCIL_RESOLUTION;
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <a href={councilBackHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                  ← {COUNCIL_BASE_TITLE}
+                </a>
+                <h1 className="no-gold-underline">{R.title}</h1>
+                <p style={{ fontWeight: 600, marginTop: 8 }}>{R.issuer}</p>
+                <p style={{ color: "#374151", marginTop: 4 }}>{R.dateNumber}</p>
+                <p style={{ fontWeight: 600, marginTop: 16 }}>{R.subject}</p>
+                <p style={{ marginTop: 16 }}>{R.preamble}</p>
+                <ol start={1} style={{ marginTop: 16 }}>
+                  {R.points.map((text, i) => (
+                    <li key={i} style={{ marginBottom: 8 }}>{text}</li>
+                  ))}
+                </ol>
+                <p style={{ marginTop: 24 }}>{R.signatory}</p>
+                <p style={{ color: "#374151", marginTop: 4 }}>{R.placeDate}</p>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (title === COUNCIL_BASE_TITLE) {
       return (
         <section className="section section-page">
           <div className="container">
             <div className="page-grid">
               <div className="page-grid__main">
                 <h1 className="no-gold-underline">{title}</h1>
-                <p style={{ marginTop: 0 }}>
-                  Состав формируется автоматически по полю <strong>Тип структуры</strong> у депутата.
+                <ul className="section-list" style={{ marginTop: 16, marginBottom: 24 }}>
+                  {COUNCIL_NAV.map((item, i) => (
+                    <li key={i} style={{ marginBottom: 8 }}>
+                      <a
+                        href={`/section?title=${encodeURIComponent(item.title)}`}
+                        className="link"
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (title === "Положение о Совете") {
+      const P = COUNCIL_POLOZHENIE;
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <a href={councilBackHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                  ← {COUNCIL_BASE_TITLE}
+                </a>
+                <div className="prose" style={{ marginTop: 0 }}>
+                  <p style={{ textAlign: "center", marginBottom: 24, color: "#374151" }}>
+                    {P.approvedBy.map((line, i) => (
+                      <span key={i} style={{ display: "block" }}>{line}</span>
+                    ))}
+                  </p>
+                  <h1 className="no-gold-underline" style={{ textAlign: "center", fontSize: "1.5rem", marginTop: 8 }}>{P.docTitle}</h1>
+                  <p style={{ textAlign: "center", fontWeight: 600, marginTop: 8, marginBottom: 32 }}>
+                    {P.docSubtitle}
+                  </p>
+                  {P.sections.map((sec, idx) => (
+                    <React.Fragment key={idx}>
+                      <h3 style={{ marginTop: idx > 0 ? 28 : 0, marginBottom: 12 }}>{sec.heading}</h3>
+                      {sec.paragraphs.map((text, i) => (
+                        <p key={i} style={{ marginBottom: 12 }}>{text}</p>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                  <p style={{ marginTop: 32, paddingTop: 16, borderTop: "1px solid #e5e7eb", color: "#6b7280" }}>
+                    {P.documentUrl ? (
+                      <a href={P.documentUrl} target="_blank" rel="noopener noreferrer" className="link">
+                        {P.documentFooter}
+                      </a>
+                    ) : (
+                      P.documentFooter
+                    )}
+                  </p>
+                </div>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (title === "Президиум Совета") {
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <a href={councilBackHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                  ← {COUNCIL_BASE_TITLE}
+                </a>
+                <h1 className="no-gold-underline">Президиум Совета</h1>
+                <p style={{ marginTop: 8, color: "#6b7280" }}>
+                  Руководители групп Совета Хуралов РТ.
                 </p>
-                <DeputyGrid
-                  deputies={deputies}
-                  structureType="municipal_council"
-                  backHref={`/section?title=${encodeURIComponent(
-                    "Совет по взаимодействию с представительными органами муниципальных образований"
-                  )}`}
-                />
+                <ul className="section-list" style={{ marginTop: 16, listStyle: "none", paddingLeft: 0 }}>
+                  {PRESIDIUM.map((p, i) => (
+                    <li key={i} style={{ marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #e5e7eb" }}>
+                      <strong style={{ display: "block", marginBottom: 4 }}>{p.surname} {p.name}</strong>
+                      <span style={{ color: "#374151" }}>{p.role}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (title === "Структура Совета Хуралов") {
+      const approvalLines = [
+        "Утверждена",
+        "решением Совета Верховного Хурала (парламента)",
+        "Республики Тыва с представительными органами",
+        "муниципальных образований Республики Тыва",
+        "от 20 декабря 2019 г.",
+      ];
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <a href={councilBackHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                  ← {COUNCIL_BASE_TITLE}
+                </a>
+                <div className="council-chart">
+                  <div className="council-chart__header">
+                    <h1 className="council-chart__page-title no-gold-underline">Структура Совета Хуралов</h1>
+                    <div className="council-chart__approval">
+                      {approvalLines.map((line, i) => (
+                        <span key={i} style={{ display: "block" }}>{line}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <h2 className="council-chart__chart-title">СТРУКТУРА СОВЕТА</h2>
+                  <div className="council-chart__grid">
+                    <div className="council-chart__box council-chart__box--chairman">
+                      <span className="council-chart__box-title">ПРЕДСЕДАТЕЛЬ СОВЕТА</span>
+                      по взаимодействию Верховного Хурала (парламента) Республики Тыва с представительными органами муниципальных образований Республики Тыва
+                    </div>
+                    <div className="council-chart__connector--h-wrap" style={{ minHeight: 28 }} />
+                    <div className="council-chart__connector-v-three">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i}><span aria-hidden="true" /></div>
+                      ))}
+                    </div>
+                    <div className="council-chart__row council-chart__row--three">
+                      <div className="council-chart__box council-chart__box--deputy">
+                        <span className="council-chart__box-title">Заместитель председателя Совета</span>
+                        по координации законотворческой деятельности представительных органов муниципальных образований
+                      </div>
+                      <div className="council-chart__box council-chart__box--presidium">
+                        <span className="council-chart__box-title">ПРЕЗИДИУМ СОВЕТА</span>
+                        по взаимодействию Верховного Хурала (парламента) Республики Тыва с представительными органами муниципальных образований Республики Тыва
+                        <span style={{ display: "block", marginTop: 6, fontWeight: 500 }}>(Председатель, 2 заместителя, руководители групп)</span>
+                      </div>
+                      <div className="council-chart__box council-chart__box--deputy">
+                        <span className="council-chart__box-title">Заместитель председателя Совета</span>
+                        по вопросам местного самоуправления и общественной безопасности
+                      </div>
+                    </div>
+                    <div className="council-chart__connector--six" style={{ minHeight: 28 }} />
+                    <div className="council-chart__row council-chart__row--six">
+                      {COUNCIL_GROUPS.map((g) => (
+                        <div key={g.num} className="council-chart__box council-chart__box--leader">
+                          Руководитель группы
+                        </div>
+                      ))}
+                    </div>
+                    <div className="council-chart__connector-v-six">
+                      {COUNCIL_GROUPS.map((g) => (
+                        <div key={g.num}><span aria-hidden="true" /></div>
+                      ))}
+                    </div>
+                    <div className="council-chart__row council-chart__row--six">
+                      {COUNCIL_GROUPS.map((g) => (
+                        <div key={g.num} className="council-chart__box council-chart__box--group">
+                          <span className="council-chart__box-title">ГРУППА № {g.num}</span>
+                          {g.theme}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (title === "Персональный состав ГРУПП") {
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <a href={councilBackHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                  ← {COUNCIL_BASE_TITLE}
+                </a>
+                <h1 className="no-gold-underline">Персональный состав ГРУПП</h1>
+                <p style={{ marginTop: 8, color: "#6b7280" }}>
+                  Утверждена решением Совета от 23 декабря 2020 г.
+                </p>
+                <div style={{ marginTop: 24 }}>
+                  {COUNCIL_GROUPS.map((g) => (
+                    <div key={g.num} className="card" style={{ marginBottom: 24, padding: 20 }}>
+                      <h3 style={{ marginTop: 0 }}>ГРУППА № {g.num}</h3>
+                      <p style={{ color: "#6b7280", marginBottom: 12 }}>{g.theme}</p>
+                      <p><strong>Руководитель:</strong> {g.leader}</p>
+                      {g.deputyLeader ? <p><strong>Заместитель:</strong> {g.deputyLeader}</p> : null}
+                      <p><strong>Члены группы:</strong> {Array.isArray(g.members) ? g.members.join("; ") : g.members}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (title === "Повестки заседаний Совета") {
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <a href={councilBackHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                  ← {COUNCIL_BASE_TITLE}
+                </a>
+                <h1 className="no-gold-underline">Повестки заседаний Совета</h1>
+                <ul className="section-list" style={{ marginTop: 16 }}>
+                  {COUNCIL_AGENDAS.map((item, i) => (
+                    <li key={i} style={{ marginBottom: 8 }}>
+                      {item.url ? (
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="link">
+                          {item.label}
+                        </a>
+                      ) : (
+                        <span>{item.label}</span>
+                      )}
+                      {item.size ? <span style={{ color: "#6b7280", marginLeft: 8 }}>({item.size})</span> : null}
+                    </li>
+                  ))}
+                </ul>
               </div>
               <SideNav title="Разделы" />
             </div>
