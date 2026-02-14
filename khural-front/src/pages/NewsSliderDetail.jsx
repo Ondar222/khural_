@@ -86,13 +86,14 @@ export default function NewsSliderDetail() {
   const plainDesc = stripHtmlToText(rawDesc);
   const { date, body } = splitDateAndDescription(plainDesc);
   const isHtml = looksLikeHtml(body);
-  const displayTitle = useTy && item?.titleTy ? item.titleTy : (item?.title || "Главные события недели");
+  const mainEventsLabel = t("mainEventsOfWeek");
+  const displayTitle = useTy && item?.titleTy ? item.titleTy : (item?.title || mainEventsLabel);
 
   const shareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/news/slider/${encodeURIComponent(String(slideId || ""))}`
       : `/news/slider/${encodeURIComponent(String(slideId || ""))}`;
-  const shareTitle = String(displayTitle).trim() || "Главные события недели";
+  const shareTitle = String(displayTitle).trim() || mainEventsLabel;
 
   return (
     <section className="section">
@@ -113,10 +114,10 @@ export default function NewsSliderDetail() {
                 <h1 style={{ marginBottom: 8, display: "block" }}>{displayTitle}</h1>
                 {date ? (
                   <div style={{ color: "#6b7280", marginBottom: 16 }}>
-                    {formatRuDateMaybe(date)} · Главные события недели
+                    {formatRuDateMaybe(date)} · {mainEventsLabel}
                   </div>
                 ) : (
-                  <div style={{ color: "#6b7280", marginBottom: 16 }}>Главные события недели</div>
+                  <div style={{ color: "#6b7280", marginBottom: 16 }}>{mainEventsLabel}</div>
                 )}
               </div>
             </div>

@@ -1091,7 +1091,9 @@ export default function DataProvider({ children }) {
             .map((s, i) => ({
               id: String(s?.id ?? `imp-${i + 1}`),
               title: String(s?.title || ""),
-              desc: String(s?.desc || s?.description || ""),
+              desc: String(s?.desc ?? s?.description ?? ""),
+              titleTy: String(s?.titleTy ?? s?.title_ty ?? ""),
+              descTy: String(s?.descTy ?? s?.descriptionTy ?? ""),
               link: String(s?.link || s?.url || s?.href || "/news"),
               image: String(s?.image || ""),
               isActive: true,
@@ -1102,17 +1104,48 @@ export default function DataProvider({ children }) {
           const mapped = apiSlides
             .filter((s) => s) // keep even inactive; we'll filter after overrides
             .sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
-            .map((s) => ({
-              id: String(s.id ?? ""),
-              title: s.title || "",
-              desc: pick(s.desc, s.description, s.subtitle) || "",
-              titleTy: s.titleTy || "",
-              descTy: pick(s.descTy, s.descriptionTy) || "",
-              link: pick(s.link, s.url, s.href) || "",
-              image: firstFileLink(s.image) || "",
-              isActive: s.isActive !== false,
-              order: Number(s.order || 0),
-            }));
+            .map((s) => {
+              // Локализация как у новостей: content[] с locale "ru" / "ty" / "tyv"
+              const contentArr = Array.isArray(s.content) ? s.content : [];
+              const ru =
+                contentArr.find((c) => normalizeLocaleKey(c?.locale || c?.lang) === "ru") ||
+                contentArr[0] ||
+                null;
+              const tyv =
+                contentArr.find((c) => normalizeLocaleKey(c?.locale || c?.lang) === "tyv") ||
+                contentArr.find((c) => normalizeLocaleKey(c?.locale || c?.lang) === "ty") ||
+                null;
+              const title = String(ru?.title ?? s.title ?? "").trim();
+              const desc = String(
+                pick(ru?.description, ru?.desc, ru?.content, s.desc, s.description, s.subtitle) ||
+                  ""
+              ).trim();
+              const titleTy = String(
+                tyv?.title ?? s.titleTy ?? s.title_ty ?? ""
+              ).trim();
+              const descTy = String(
+                pick(
+                  tyv?.description,
+                  tyv?.desc,
+                  tyv?.content,
+                  s.descTy,
+                  s.descriptionTy,
+                  s.description_ty
+                ) || ""
+              ).trim();
+              const link = pick(s.buttonLink, s.link, s.url, s.href) || "";
+              return {
+                id: String(s.id ?? ""),
+                title: title || s.title || "",
+                desc: desc || pick(s.desc, s.description, s.subtitle) || "",
+                titleTy: titleTy || s.titleTy || "",
+                descTy: descTy || pick(s.descTy, s.descriptionTy) || "",
+                link: link || "/news",
+                image: firstFileLink(s.image) || "",
+                isActive: s.isActive !== false,
+                order: Number(s.order || 0),
+              };
+            });
           setSlides(mapped);
         }
       } else {

@@ -1194,6 +1194,12 @@ export function useAdminData() {
       if (!looksLocal) {
         try {
           await SliderApi.patch(id, payload);
+          // Сохраняем TY в overrides, чтобы на сайте показывался перевод даже если API в списке его не отдаёт
+          updateSlideOverride(String(id), {
+            id: String(id),
+            titleTy: payload.titleTy ?? "",
+            descTy: payload.descriptionTy ?? "",
+          });
           message.success("Слайд обновлён");
           await reload();
           reloadDataContext();
