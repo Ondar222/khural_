@@ -37,6 +37,10 @@ import {
   CONV3_COMMITTEES,
   getConv3DocsByCommittee,
 } from "../data/committeeReportsConv3.js";
+import {
+  CONV4_COMMITTEES,
+  getConv4DocsByCommittee,
+} from "../data/committeeReportsConv4.js";
 
 const SECTION_TITLE_TO_SLUG = {
   "Кодекс чести мужчины Тувы": "code-of-honor",
@@ -2559,6 +2563,96 @@ export default function SectionPage() {
                     <span style={{ color: "#6b7280", marginLeft: 8 }}>({CONV3_RESOLUTION.size})</span>
                   ) : null}
                 </p>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Отчеты комитетов 4 созыва — данные из committeeReportsConv4 (только ссылки на документы)
+    if (title === "Отчеты комитетов 4 созыва") {
+      const committees4 = CONV4_COMMITTEES;
+      const committeeIndex = parseInt(q.get("committee") ?? "", 10);
+      const hasCommittee = Number.isInteger(committeeIndex) && committeeIndex >= 0 && committeeIndex < committees4.length;
+      const baseHref = `/section?title=${encodeURIComponent("Отчеты комитетов 4 созыва")}`;
+      const reportYears4 = [2025, 2024];
+
+      if (hasCommittee) {
+        const committeeName = committees4[committeeIndex];
+        const { agendas, reports } = getConv4DocsByCommittee(committeeIndex);
+        const renderYearDocs = (list, year) => {
+          const docs = list[year] || [];
+          if (docs.length === 0) return <li key={year} style={{ marginBottom: 8 }}>{year} год</li>;
+          return (
+            <li key={year} style={{ marginBottom: 12 }}>
+              <strong>{year} год</strong>
+              <ul style={{ marginTop: 6, paddingLeft: 20, listStyle: "disc" }}>
+                {docs.map((d, i) => (
+                  <li key={i} style={{ marginBottom: 4 }}>
+                    <a href={d.url} target="_blank" rel="noopener noreferrer" className="link">
+                      {d.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          );
+        };
+        return (
+          <section className="section section-page">
+            <div className="container">
+              <div className="page-grid">
+                <div className="page-grid__main">
+                  <a href={baseHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                    ← Отчеты о деятельности комитетов 4 созыва
+                  </a>
+                  <h1 className="no-gold-underline">{committeeName}</h1>
+                  <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 32 }}>
+                    <div>
+                      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: 16 }}>Повестки</h2>
+                      <ul className="section-list" style={{ paddingLeft: 24, margin: 0 }}>
+                        {reportYears4.map((y) => renderYearDocs(agendas, y))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: 16 }}>Отчеты</h2>
+                      <ul className="section-list" style={{ paddingLeft: 24, margin: 0 }}>
+                        {reportYears4.map((y) => renderYearDocs(reports, y))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <SideNav title="Разделы" />
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <a
+                  href={`/section?title=${encodeURIComponent("Отчеты комитетов")}`}
+                  className="link"
+                  style={{ display: "inline-block", marginBottom: 16 }}
+                >
+                  ← Отчеты комитетов
+                </a>
+                <h1 className="no-gold-underline">Отчеты о деятельности комитетов 4 созыва</h1>
+                <ul className="section-list" style={{ marginTop: 20, paddingLeft: 24 }}>
+                  {committees4.map((name, i) => (
+                    <li key={i} style={{ marginBottom: 10 }}>
+                      <a href={`${baseHref}&committee=${i}`} className="link">
+                        {name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
               <SideNav title="Разделы" />
             </div>
