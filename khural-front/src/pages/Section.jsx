@@ -32,6 +32,11 @@ import {
   COUNCIL_RESOLUTION,
   COUNCIL_POLOZHENIE,
 } from "../data/councilSovete.js";
+import {
+  CONV3_RESOLUTION,
+  CONV3_COMMITTEES,
+  getConv3DocsByCommittee,
+} from "../data/committeeReportsConv3.js";
 
 const SECTION_TITLE_TO_SLUG = {
   "Кодекс чести мужчины Тувы": "code-of-honor",
@@ -2464,27 +2469,35 @@ export default function SectionPage() {
       );
     }
 
-    // Отчеты комитетов 3 созыва — список комитетов; при переходе в комитет: два раздела «Повестки» и «Отчеты»
+    // Отчеты комитетов 3 созыва — данные из committeeReportsConv3 (только ссылки на документы)
     if (title === "Отчеты комитетов 3 созыва") {
-      const committees3 = [
-        "Комитет по аграрной политике, земельным имущественным отношениям и экологии",
-        "Комитет по безопасности, правопорядку и приграничным вопросам",
-        "Комитет по бюджету, налогам, экономике и предпринимательству",
-        "Комитет по взаимодействию с федеральными органами власти, органами местного самоуправления, институтами гражданского общества и информационной политике",
-        "Комитет по здравоохранению и социальному развитию",
-        "Комитет по конституционно-правовой политике и государственному строительству",
-        "Комитет по образованию, культуре, молодежной политике и спорту",
-        "Комитет по энергетике, строительству, транспорту и жилищно-коммунальному хозяйству",
-      ];
-      const docText3 =
-        'Постановление Верховного Хурала (парламента) Республики Тыва "О комитетах и комиссии Верховного Хурала (парламента) Республики Тыва третьего созыва" (12752.3 КБ)';
+      const committees3 = CONV3_COMMITTEES;
       const committeeIndex = parseInt(q.get("committee") ?? "", 10);
       const hasCommittee = Number.isInteger(committeeIndex) && committeeIndex >= 0 && committeeIndex < committees3.length;
       const baseHref = `/section?title=${encodeURIComponent("Отчеты комитетов 3 созыва")}`;
 
       if (hasCommittee) {
         const committeeName = committees3[committeeIndex];
+        const { agendas, reports } = getConv3DocsByCommittee(committeeIndex);
         const reportYears = [2023, 2022, 2021, 2020, 2019];
+        const renderYearDocs = (list, year) => {
+          const docs = list[year] || [];
+          if (docs.length === 0) return <li key={year} style={{ marginBottom: 8 }}>{year} год</li>;
+          return (
+            <li key={year} style={{ marginBottom: 12 }}>
+              <strong>{year} год</strong>
+              <ul style={{ marginTop: 6, paddingLeft: 20, listStyle: "disc" }}>
+                {docs.map((d, i) => (
+                  <li key={i} style={{ marginBottom: 4 }}>
+                    <a href={d.url} target="_blank" rel="noopener noreferrer" className="link">
+                      {d.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          );
+        };
         return (
           <section className="section section-page">
             <div className="container">
@@ -2498,21 +2511,13 @@ export default function SectionPage() {
                     <div>
                       <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: 16 }}>Повестки</h2>
                       <ul className="section-list" style={{ paddingLeft: 24, margin: 0 }}>
-                        {reportYears.map((y) => (
-                          <li key={y} style={{ marginBottom: 8 }}>
-                            {y} год
-                          </li>
-                        ))}
+                        {reportYears.map((y) => renderYearDocs(agendas, y))}
                       </ul>
                     </div>
                     <div>
                       <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: 16 }}>Отчеты</h2>
                       <ul className="section-list" style={{ paddingLeft: 24, margin: 0 }}>
-                        {reportYears.map((y) => (
-                          <li key={y} style={{ marginBottom: 8 }}>
-                            {y} год
-                          </li>
-                        ))}
+                        {reportYears.map((y) => renderYearDocs(reports, y))}
                       </ul>
                     </div>
                   </div>
@@ -2546,7 +2551,14 @@ export default function SectionPage() {
                     </li>
                   ))}
                 </ul>
-                <p style={{ marginTop: 24, color: "#374151" }}>{docText3}</p>
+                <p style={{ marginTop: 24 }}>
+                  <a href={CONV3_RESOLUTION.url} target="_blank" rel="noopener noreferrer" className="link">
+                    {CONV3_RESOLUTION.title}
+                  </a>
+                  {CONV3_RESOLUTION.size ? (
+                    <span style={{ color: "#6b7280", marginLeft: 8 }}>({CONV3_RESOLUTION.size})</span>
+                  ) : null}
+                </p>
               </div>
               <SideNav title="Разделы" />
             </div>
