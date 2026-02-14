@@ -2427,6 +2427,134 @@ export default function SectionPage() {
       );
     }
 
+    // Страница «Отчеты комитетов» — внутри два пункта по созывам (не в сайдбаре)
+    if (title === "Отчеты комитетов") {
+      const committeeReportsLinks = [
+        { label: "Отчеты комитетов 3 созыва", sectionTitle: "Отчеты комитетов 3 созыва" },
+        { label: "Отчеты комитетов 4 созыва", sectionTitle: "Отчеты комитетов 4 созыва" },
+      ];
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <h1 className="no-gold-underline">Отчеты комитетов</h1>
+                <p style={{ marginTop: 8, color: "#6b7280" }}>
+                  Выберите созыв для просмотра отчётов комитетов.
+                </p>
+                <ul className="section-list" style={{ marginTop: 24, listStyle: "none", paddingLeft: 0 }}>
+                  {committeeReportsLinks.map((item) => (
+                    <li key={item.sectionTitle} style={{ marginBottom: 12 }}>
+                      <a
+                        href={`/section?title=${encodeURIComponent(item.sectionTitle)}`}
+                        className="tile link"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 12 }}
+                      >
+                        <span aria-hidden="true">‹</span>
+                        {item.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Отчеты комитетов 3 созыва — список комитетов; при переходе в комитет: два раздела «Повестки» и «Отчеты»
+    if (title === "Отчеты комитетов 3 созыва") {
+      const committees3 = [
+        "Комитет по аграрной политике, земельным имущественным отношениям и экологии",
+        "Комитет по безопасности, правопорядку и приграничным вопросам",
+        "Комитет по бюджету, налогам, экономике и предпринимательству",
+        "Комитет по взаимодействию с федеральными органами власти, органами местного самоуправления, институтами гражданского общества и информационной политике",
+        "Комитет по здравоохранению и социальному развитию",
+        "Комитет по конституционно-правовой политике и государственному строительству",
+        "Комитет по образованию, культуре, молодежной политике и спорту",
+        "Комитет по энергетике, строительству, транспорту и жилищно-коммунальному хозяйству",
+      ];
+      const docText3 =
+        'Постановление Верховного Хурала (парламента) Республики Тыва "О комитетах и комиссии Верховного Хурала (парламента) Республики Тыва третьего созыва" (12752.3 КБ)';
+      const committeeIndex = parseInt(q.get("committee") ?? "", 10);
+      const hasCommittee = Number.isInteger(committeeIndex) && committeeIndex >= 0 && committeeIndex < committees3.length;
+      const baseHref = `/section?title=${encodeURIComponent("Отчеты комитетов 3 созыва")}`;
+
+      if (hasCommittee) {
+        const committeeName = committees3[committeeIndex];
+        const reportYears = [2023, 2022, 2021, 2020, 2019];
+        return (
+          <section className="section section-page">
+            <div className="container">
+              <div className="page-grid">
+                <div className="page-grid__main">
+                  <a href={baseHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                    ← Отчеты о деятельности комитетов 3 созыва
+                  </a>
+                  <h1 className="no-gold-underline">{committeeName}</h1>
+                  <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 32 }}>
+                    <div>
+                      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: 16 }}>Повестки</h2>
+                      <ul className="section-list" style={{ paddingLeft: 24, margin: 0 }}>
+                        {reportYears.map((y) => (
+                          <li key={y} style={{ marginBottom: 8 }}>
+                            {y} год
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: 16 }}>Отчеты</h2>
+                      <ul className="section-list" style={{ paddingLeft: 24, margin: 0 }}>
+                        {reportYears.map((y) => (
+                          <li key={y} style={{ marginBottom: 8 }}>
+                            {y} год
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <SideNav title="Разделы" />
+              </div>
+            </div>
+          </section>
+        );
+      }
+
+      return (
+        <section className="section section-page">
+          <div className="container">
+            <div className="page-grid">
+              <div className="page-grid__main">
+                <a
+                  href={`/section?title=${encodeURIComponent("Отчеты комитетов")}`}
+                  className="link"
+                  style={{ display: "inline-block", marginBottom: 16 }}
+                >
+                  ← Отчеты комитетов
+                </a>
+                <h1 className="no-gold-underline">Отчеты о деятельности комитетов 3 созыва</h1>
+                <ul className="section-list" style={{ marginTop: 20, paddingLeft: 24 }}>
+                  {committees3.map((name, i) => (
+                    <li key={i} style={{ marginBottom: 10 }}>
+                      <a href={`${baseHref}&committee=${i}`} className="link">
+                        {name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <p style={{ marginTop: 24, color: "#374151" }}>{docText3}</p>
+              </div>
+              <SideNav title="Разделы" />
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     // Special handling for "Отчеты всех Созывов" page
     if (title === "Отчеты всех Созывов") {
       return <ReportsAllConvocationsPage />;

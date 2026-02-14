@@ -53,6 +53,7 @@ export default function SideNav({
     { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
     { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
     { label: "Отчеты всех Созывов", href: "/section?title=" + encodeURIComponent("Отчеты всех Созывов") },
+    { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
     // Пользовательские страницы, созданные через админку
     // { label: "Страницы", href: "/pages" },
     {
@@ -79,33 +80,57 @@ export default function SideNav({
   const links = Array.isArray(overrideLinks) && overrideLinks.length ? overrideLinks : defaultLinks;
   const titleText = typeof title === "string" ? t(title) : title;
 
+  const renderLink = (l, idx, isChild = false) => {
+    const isActive =
+      l.isActive !== undefined && l.isActive !== null
+        ? Boolean(l.isActive)
+        : isRouteActive(pathname, search, l.href);
+    return (
+      <a
+        key={idx}
+        className={`tile link ${isActive ? "active" : ""} ${isChild ? "sidenav__sublink" : ""}`}
+        href={l.href}
+        aria-current={isActive ? "page" : undefined}
+        onClick={(e) => {
+          if (l.onClick) {
+            l.onClick(e);
+          }
+        }}
+      >
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <span aria-hidden="true">‹</span>
+          {typeof l.label === "string" ? t(l.label) : l.label}
+        </span>
+      </a>
+    );
+  };
+
   return (
     <aside className={`sidenav ${className || ""}`.trim()} aria-label="Ссылки раздела">
       <h3 style={{ marginTop: 0 }}>{titleText}</h3>
       <div className="sidenav__list">
         {links.map((l, i) => {
-          const isActive =
-            l.isActive !== undefined && l.isActive !== null
-              ? Boolean(l.isActive)
-              : isRouteActive(pathname, search, l.href);
-          return (
-            <a
-              key={i}
-              className={`tile link ${isActive ? "active" : ""}`}
-              href={l.href}
-              aria-current={isActive ? "page" : undefined}
-              onClick={(e) => {
-                if (l.onClick) {
-                  l.onClick(e);
-                }
-              }}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span aria-hidden="true">‹</span>
-                {typeof l.label === "string" ? t(l.label) : l.label}
-              </span>
-            </a>
-          );
+          if (Array.isArray(l.children) && l.children.length > 0) {
+            const parentActive = l.href && isRouteActive(pathname, search, l.href);
+            return (
+              <div key={i} className="sidenav__group">
+                {l.href ? (
+                  renderLink({ ...l, label: l.label }, `parent-${i}`)
+                ) : (
+                  <div className="tile sidenav__group-title" aria-hidden="true">
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                      <span aria-hidden="true">‹</span>
+                      {typeof l.label === "string" ? t(l.label) : l.label}
+                    </span>
+                  </div>
+                )}
+                <div className="sidenav__sublinks">
+                  {l.children.map((sub, j) => renderLink(sub, `sub-${i}-${j}`, true))}
+                </div>
+              </div>
+            );
+          }
+          return renderLink(l, i);
         })}
       </div>
     </aside>

@@ -1138,7 +1138,7 @@ export default function Committee() {
                       <div style={{ marginTop: 16, padding: 40, textAlign: "center", color: "#6b7280" }}>
                         Повестки пока не добавлены
                         <div style={{ marginTop: 16, fontSize: 14 }}>
-                          <a href="https://khural.rtyva.ru/activity/sessions/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Повестки и заседания сессий на официальном сайте →</a>
+                          Повестки и заседания сессий на официальном сайте
                         </div>
                       </div>
                     )}
@@ -1242,11 +1242,11 @@ export default function Committee() {
                         Отчеты пока не добавлены
                         <div style={{ marginTop: 16, fontSize: 14, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
                           Отчёты о деятельности комитетов по созывам — на официальном сайте:
-                          <ul style={{ listStyle: "none", paddingLeft: 0, marginTop: 8, textAlign: "left" }}>
-                            <li><a href="https://khural.rtyva.ru/activity/313/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Отчеты комитетов 3 созыва</a></li>
-                            <li><a href="https://khural.rtyva.ru/activity/320/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Отчеты комитетов (320)</a></li>
-                            <li><a href="https://khural.rtyva.ru/activity/445/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Отчет комитетов 4 созыва</a></li>
-                            <li><a href="https://khural.rtyva.ru/struct/committees/" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>Структура комитетов</a></li>
+                          <ul style={{ listStyle: "none", paddingLeft: 0, marginTop: 8, textAlign: "left", color: "#374151" }}>
+                            <li>Отчеты комитетов 3 созыва</li>
+                            <li>Отчеты комитетов (320)</li>
+                            <li>Отчет комитетов 4 созыва</li>
+                            <li>Структура комитетов</li>
                           </ul>
                         </div>
                       </div>
