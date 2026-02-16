@@ -1756,11 +1756,12 @@ export default function DataProvider({ children }) {
     let cancelled = false;
     markLoading("events", true);
     markError("events", null);
+    const listParams = eventsReloadSeq > 0 ? { _: String(Date.now()) } : {};
     (async () => {
       let apiEvents = null;
       for (let attempt = 0; attempt < 2 && !cancelled; attempt++) {
         try {
-          apiEvents = await EventsApi.list();
+          apiEvents = await EventsApi.list(listParams);
           break;
         } catch (e) {
           if (import.meta.env.DEV && attempt === 0) {
@@ -1828,6 +1829,15 @@ export default function DataProvider({ children }) {
     })();
     return () => { cancelled = true; };
   }, [reloadSeq, eventsReloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // При возврате на вкладку — обновить события с бэкенда, чтобы новые события были видны на всех устройствах
+  React.useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") setEventsReloadSeq((x) => x + 1);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   // Keep slider overrides in sync (admin writes them to localStorage and dispatches this event)
   React.useEffect(() => {

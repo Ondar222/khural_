@@ -42,6 +42,7 @@ export const CALENDAR_API_BASE_URL =
 // Логируем базовый URL для отладки (только в DEV)
 if (typeof window !== "undefined" && import.meta.env.DEV) {
   console.log("API_BASE_URL resolved to:", API_BASE_URL);
+  console.log("CALENDAR_API_BASE_URL (события):", CALENDAR_API_BASE_URL);
   console.log("VITE_API_BASE_URL from env:", import.meta.env.VITE_API_BASE_URL);
 }
 
@@ -1142,9 +1143,10 @@ const calendarFetch = (path, opts) =>
   apiFetch(path, { ...opts, baseUrl: CALENDAR_API_BASE_URL });
 
 export const EventsApi = {
-  async list(params) {
-    const qs = params ? "?" + new URLSearchParams(params).toString() : "";
-    return calendarFetch(`/calendar${qs}`, {
+  async list(params = {}) {
+    const qs = new URLSearchParams(params);
+    const queryString = qs.toString() ? `?${qs.toString()}` : "";
+    return calendarFetch(`/calendar${queryString}`, {
       method: "GET",
       auth: false,
       headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
