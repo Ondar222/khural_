@@ -1728,7 +1728,7 @@ export default function DataProvider({ children }) {
     let cancelled = false;
     markLoading("events", true);
     markError("events", null);
-    const listParams = eventsReloadSeq > 0 ? { _: String(Date.now()) } : {};
+    const listParams = { _: String(Date.now()) };
     (async () => {
       let apiEvents = null;
       for (let attempt = 0; attempt < 2 && !cancelled; attempt++) {
@@ -1756,15 +1756,22 @@ export default function DataProvider({ children }) {
                   : null
           : null;
       if (arr !== null) {
+        const toDateOnly = (val) => {
+          if (val === undefined || val === null) return "";
+          const s = String(val).trim();
+          if (!s) return "";
+          if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+          const dt = typeof val === "number" ? new Date(val) : new Date(s);
+          return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
+        };
         const mapped = arr.map((e) => ({
           id: String(e.id ?? e.externalId ?? Math.random().toString(36).slice(2)),
           date: (() => {
             const d = pick(e.date, e.date_of_event);
-            if (d) return String(d);
+            if (d != null && d !== "") return toDateOnly(d);
             const start = pick(e.startDate, e.start_date);
-            if (!start) return "";
-            const dt = new Date(Number(start));
-            return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
+            if (start == null || start === "") return "";
+            return toDateOnly(Number(start));
           })(),
           title: String(pick(e.title, e.event_title) || ""),
           time: (() => {
