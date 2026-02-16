@@ -84,9 +84,14 @@ function toDateKey(v) {
 function normalizeEvent(event) {
   const id = String(event?.id ?? "").trim();
   if (!id) return null;
+  let date = toDateKey(event?.date) || toText(event?.date);
+  if (!date && (event?.startDate != null || event?.start_date != null)) {
+    const ts = Number(event?.startDate ?? event?.start_date);
+    if (!Number.isNaN(ts)) date = toDateKey(ts) || new Date(ts).toISOString().slice(0, 10);
+  }
   return {
     id,
-    date: toDateKey(event?.date) || toText(event?.date),
+    date: date || "",
     title: toText(event?.title),
     time: toText(event?.time),
     place: toText(event?.place),
@@ -138,7 +143,9 @@ export function addDeletedEventId(id) {
   writeEventsOverrides({ created, updatedById, deletedIds: Array.from(deleted) });
 }
 
-/** Объединяет список событий с API с локальными правками: добавленные, обновлённые, удалённые. */
+/** Объединяет список событий с API с локальными правками: добавленные, обновлённые, удалённые.
+ *  Сначала добавляем created (локальные создания), потом список API — чтобы у созданных событий
+ *  была дата и они отображались в календаре даже если бэкенд вернул событие без даты. */
 export function mergeEventsWithOverrides(base, overrides) {
   const list = Array.isArray(base) ? base : [];
   const created = Array.isArray(overrides?.created) ? overrides.created : [];
@@ -147,7 +154,7 @@ export function mergeEventsWithOverrides(base, overrides) {
   const deleted = new Set((overrides?.deletedIds || []).map((x) => String(x)));
   const out = [];
   const seen = new Set();
-  for (const e of list) {
+  for (const e of created) {
     const id = String(e?.id ?? "").trim();
     if (!id) continue;
     if (deleted.has(id)) continue;
@@ -156,7 +163,7 @@ export function mergeEventsWithOverrides(base, overrides) {
     out.push(patch ? { ...e, ...patch, id } : e);
     seen.add(id);
   }
-  for (const e of created) {
+  for (const e of list) {
     const id = String(e?.id ?? "").trim();
     if (!id) continue;
     if (deleted.has(id)) continue;
