@@ -1886,34 +1886,40 @@ export default function SectionPage() {
                 <p style={{ marginTop: 0 }}>
                   Выберите фракцию, чтобы перейти к списку депутатов по этой фракции.
                 </p>
-                <div className="grid cols-2" style={{ marginTop: 12 }}>
-                  <a
-                    className="tile link"
-                    href={"/section?title=" + encodeURIComponent(factionsPageTitle)}
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                  >
-                    <span>{factionsPageTitle}</span>
-                    <span aria-hidden="true">→</span>
-                  </a>
-                  {mergedFactions.length
-                    ? mergedFactions.map((f) => (
-                        <a
-                          key={String(f)}
-                          className="tile link"
-                          href={`/deputies?faction=${encodeURIComponent(String(f))}`}
-                          style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                        >
-                          <span>{f}</span>
-                          <span aria-hidden="true">→</span>
-                        </a>
-                      ))
-                    : null}
-                </div>
-                {mergedFactions.length === 0 ? (
+                {mergedFactions.length ? (
+                  <div className="grid cols-2" style={{ marginTop: 12 }}>
+                    {mergedFactions.map((f) => (
+                      <a
+                        key={String(f)}
+                        className="tile link"
+                        href={`/deputies?faction=${encodeURIComponent(String(f))}`}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                      >
+                        <span>{f}</span>
+                        <span aria-hidden="true">→</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
                   <div className="tile" style={{ marginTop: 12 }}>
                     Список фракций пока пуст.
                   </div>
-                ) : null}
+                )}
+                <a
+                  className="tile link"
+                  href={"/section?title=" + encodeURIComponent(factionsPageTitle)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginTop: 12,
+                    width: "100%",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <span>{factionsPageTitle}</span>
+                  <span aria-hidden="true">→</span>
+                </a>
               </div>
               <SideNav title="Разделы" />
             </div>
