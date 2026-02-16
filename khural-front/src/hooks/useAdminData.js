@@ -19,7 +19,14 @@ import { addDeletedNewsId, readNewsOverrides } from "../utils/newsOverrides.js";
 import { addDeletedDocumentId, readDocumentsOverrides } from "../utils/documentsOverrides.js";
 import { readAdminTheme, writeAdminTheme } from "../pages/admin/adminTheme.js";
 import { toPersonsApiBody } from "../api/personsPayload.js";
-import { addCreatedEvent, updateEventOverride, addDeletedEventId } from "../utils/eventsOverrides.js";
+import {
+  addCreatedEvent,
+  updateEventOverride,
+  addDeletedEventId,
+  readEventsOverrides,
+  mergeEventsWithOverrides,
+  EVENTS_OVERRIDES_EVENT_NAME,
+} from "../utils/eventsOverrides.js";
 import { addCreatedSlide, updateSlideOverride, addDeletedSlideId, setSliderOrder } from "../utils/sliderOverrides.js";
 import {
   COMMITTEES_OVERRIDES_EVENT_NAME,
@@ -96,17 +103,33 @@ function toDocumentsFallback(items) {
   }));
 }
 
+function pick(obj, ...keys) {
+  for (const k of keys) {
+    if (obj != null && obj[k] !== undefined && obj[k] !== "") return obj[k];
+  }
+  return undefined;
+}
+
 function toEventRow(e) {
-  const start = e?.startDate ? new Date(Number(e.startDate)) : null;
-  const date = start && !isNaN(start.getTime()) ? start.toISOString().slice(0, 10) : e?.date || "";
-  const time = start && !isNaN(start.getTime()) ? start.toISOString().slice(11, 16) : e?.time || "";
+  const dateVal = pick(e, "date", "date_of_event");
+  const startVal = pick(e, "startDate", "start_date");
+  const start = startVal != null ? new Date(Number(startVal)) : null;
+  const date =
+    dateVal ? String(dateVal).trim().slice(0, 10)
+    : start && !isNaN(start.getTime()) ? start.toISOString().slice(0, 10)
+    : "";
+  const timeVal = pick(e, "time", "event_time");
+  const time =
+    timeVal ? String(timeVal).trim().slice(0, 5)
+    : start && !isNaN(start.getTime()) ? start.toISOString().slice(11, 16)
+    : "";
   return {
-    id: e?.id ?? Math.random().toString(36).slice(2),
+    id: String(e?.id ?? e?.externalId ?? Math.random().toString(36).slice(2)),
     date,
     time,
-    place: e?.location || e?.place || "",
-    title: e?.title || "",
-    desc: e?.description || e?.desc || "",
+    place: String(pick(e, "location", "place", "event_place") || ""),
+    title: String(pick(e, "title", "event_title") || ""),
+    desc: String(pick(e, "description", "desc", "event_description") || ""),
     __raw: e,
   };
 }
@@ -448,6 +471,9 @@ export function useAdminData() {
   const [persons, setPersons] = React.useState([]);
   const [documents, setDocuments] = React.useState([]);
   const [events, setEvents] = React.useState([]);
+  const [eventsOverrides, setEventsOverrides] = React.useState(() =>
+    typeof window !== "undefined" ? readEventsOverrides() : { created: [], updatedById: {}, deletedIds: [] }
+  );
   const [slider, setSlider] = React.useState([]);
   const [appeals, setAppeals] = React.useState([]);
   const [convocations, setConvocations] = React.useState([]);
@@ -597,8 +623,20 @@ export function useAdminData() {
         .map((s, i) => ({ ...toSliderRow(s), order: i + 1, isActive: true }));
       setSlider(fallback);
     }
-    const apiEvents = await EventsApi.list().catch(() => null);
-    setEvents(Array.isArray(apiEvents) ? apiEvents.map(toEventRow) : fb.events || []);
+    const apiEventsRaw = await EventsApi.list().catch(() => null);
+    const apiEventsArr =
+      apiEventsRaw === null
+        ? null
+        : Array.isArray(apiEventsRaw)
+          ? apiEventsRaw
+          : apiEventsRaw?.items && Array.isArray(apiEventsRaw.items)
+            ? apiEventsRaw.items
+            : apiEventsRaw?.data && Array.isArray(apiEventsRaw.data)
+              ? apiEventsRaw.data
+              : apiEventsRaw?.events && Array.isArray(apiEventsRaw.events)
+                ? apiEventsRaw.events
+                : null;
+    setEvents(apiEventsArr ? apiEventsArr.map(toEventRow) : fb.events || []);
     const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
     const apiAppeals = normalizeServerList(apiAppealsResponse);
     setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
@@ -735,6 +773,13 @@ export function useAdminData() {
       window.removeEventListener(CONVOCATIONS_OVERRIDES_EVENT_NAME, apply);
       window.removeEventListener("storage", onStorage);
     };
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onEventsOverrides = () => setEventsOverrides(readEventsOverrides());
+    window.addEventListener(EVENTS_OVERRIDES_EVENT_NAME, onEventsOverrides);
+    return () => window.removeEventListener(EVENTS_OVERRIDES_EVENT_NAME, onEventsOverrides);
   }, []);
 
   const toggleTheme = React.useCallback(() => {
@@ -1028,27 +1073,15 @@ export function useAdminData() {
           }
           return String(v);
         };
-        const newEvent = {
-          id: String(created.id ?? tempId),
-          date: (() => {
-            const d = payload.date;
-            if (d) return toText(d);
-            const start = created.startDate;
-            if (!start) return "";
-            const dt = new Date(Number(start));
-            return isNaN(dt.getTime()) ? "" : dt.toISOString().slice(0, 10);
-          })(),
-          title: toText(payload.title) || toText(created.title) || "",
-          time: payload.time || (() => {
-            const start = created.startDate;
-            if (!start) return "";
-            const dt = new Date(Number(start));
-            if (isNaN(dt.getTime())) return "";
-            return dt.toISOString().slice(11, 16);
-          })(),
-          place: toText(payload.place) || toText(created.location) || "",
-          desc: toText(payload.desc) || toText(created.description) || "",
-        };
+        const newEvent = toEventRow({
+          ...created,
+          id: created.id ?? tempId,
+          date: payload.date,
+          time: payload.time,
+          title: payload.title ?? created.title ?? created.event_title,
+          place: payload.place ?? created.location ?? created.event_place,
+          desc: payload.desc ?? created.description ?? created.event_description,
+        });
         setDataContextEvents([...dataContextEvents, newEvent]);
         addCreatedEvent(newEvent);
       }
@@ -1605,6 +1638,11 @@ export function useAdminData() {
     [message]
   );
 
+  const eventsForList = React.useMemo(
+    () => mergeEventsWithOverrides(events, eventsOverrides),
+    [events, eventsOverrides]
+  );
+
   const stats = React.useMemo(() => {
     const deletedNewsIds = new Set((readNewsOverrides()?.deletedIds || []).map(String));
     const visibleNews = (news || []).filter((n) => !deletedNewsIds.has(String(n?.id ?? n?._id ?? "")));
@@ -1613,14 +1651,14 @@ export function useAdminData() {
       pages: Array.isArray(pages) ? pages.length : 0,
       documents: Array.isArray(documents) ? documents.length : 0,
       news: visibleNews.length,
-      events: Array.isArray(events) ? events.length : 0,
+      events: Array.isArray(eventsForList) ? eventsForList.length : 0,
       slides: Array.isArray(slider) ? slider.length : 0,
       appeals: Array.isArray(appeals) ? appeals.length : 0,
       convocations: Array.isArray(convocations) ? convocations.length : 0,
       committees: countDeduplicatedCommittees(committees),
       commissions: Array.isArray(commissions) ? commissions.length : 0,
     };
-  }, [persons, pages, documents, news, events, slider, appeals, convocations, committees, commissions]);
+  }, [persons, pages, documents, news, eventsForList, slider, appeals, convocations, committees, commissions]);
 
   const handleLogin = React.useCallback(async () => {
     setLoginBusy(true);
@@ -1660,7 +1698,7 @@ export function useAdminData() {
     news,
     persons,
     documents,
-    events,
+    events: eventsForList,
     slider,
     appeals,
     convocations,

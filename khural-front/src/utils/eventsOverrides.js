@@ -138,6 +138,36 @@ export function addDeletedEventId(id) {
   writeEventsOverrides({ created, updatedById, deletedIds: Array.from(deleted) });
 }
 
+/** Объединяет список событий с API с локальными правками: добавленные, обновлённые, удалённые. */
+export function mergeEventsWithOverrides(base, overrides) {
+  const list = Array.isArray(base) ? base : [];
+  const created = Array.isArray(overrides?.created) ? overrides.created : [];
+  const updatedById =
+    overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
+  const deleted = new Set((overrides?.deletedIds || []).map((x) => String(x)));
+  const out = [];
+  const seen = new Set();
+  for (const e of list) {
+    const id = String(e?.id ?? "").trim();
+    if (!id) continue;
+    if (deleted.has(id)) continue;
+    if (seen.has(id)) continue;
+    const patch = updatedById[id];
+    out.push(patch ? { ...e, ...patch, id } : e);
+    seen.add(id);
+  }
+  for (const e of created) {
+    const id = String(e?.id ?? "").trim();
+    if (!id) continue;
+    if (deleted.has(id)) continue;
+    if (seen.has(id)) continue;
+    const patch = updatedById[id];
+    out.push(patch ? { ...e, ...patch, id } : e);
+    seen.add(id);
+  }
+  return out;
+}
+
 export const EVENTS_OVERRIDES_STORAGE_KEY = STORAGE_KEY;
 export const EVENTS_OVERRIDES_EVENT_NAME = EVENT_NAME;
 
