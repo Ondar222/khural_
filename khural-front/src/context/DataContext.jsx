@@ -1028,6 +1028,7 @@ export default function DataProvider({ children }) {
   });
   const [reloadSeq, setReloadSeq] = React.useState(0);
   const [eventsReloadSeq, setEventsReloadSeq] = React.useState(0);
+  const eventsRetryScheduledRef = React.useRef(false);
   const [deputiesOverrides, setDeputiesOverrides] = React.useState(() => readDeputiesOverrides());
   const [eventsOverrides, setEventsOverrides] = React.useState(() => readEventsOverrides());
   const [slidesOverrides, setSlidesOverrides] = React.useState(() => readSliderOverrides());
@@ -1753,7 +1754,9 @@ export default function DataProvider({ children }) {
                 ? apiEvents.data
                 : apiEvents?.events && Array.isArray(apiEvents.events)
                   ? apiEvents.events
-                  : null
+                  : apiEvents?.data?.events && Array.isArray(apiEvents.data.events)
+                    ? apiEvents.data.events
+                    : null
           : null;
       if (arr !== null) {
         const toDateOnly = (val) => {
@@ -1791,20 +1794,30 @@ export default function DataProvider({ children }) {
         }));
         setEvents(mergeEventsWithOverrides(mapped, readEventsOverrides()));
         markLoading("events", false);
+        eventsRetryScheduledRef.current = false;
         return;
       }
       if (import.meta.env.DEV) {
         console.warn("Calendar API недоступен, используем локальные данные. Проверьте VITE_API_BASE_URL.");
       }
+      const retryApiLater = () => {
+        if (cancelled || eventsRetryScheduledRef.current) return;
+        eventsRetryScheduledRef.current = true;
+        setTimeout(() => {
+          setEventsReloadSeq((x) => x + 1);
+        }, 2500);
+      };
       fetchJson("/data/events.json")
         .then((arr) => {
           if (!cancelled) setEvents(mergeEventsWithOverrides(Array.isArray(arr) ? arr : [], readEventsOverrides()));
+          retryApiLater();
         })
         .catch((e) => {
           if (!cancelled) {
             markError("events", e);
             setEvents(mergeEventsWithOverrides([], readEventsOverrides()));
           }
+          retryApiLater();
         })
         .finally(() => {
           if (!cancelled) markLoading("events", false);
