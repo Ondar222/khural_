@@ -637,9 +637,7 @@ export function useAdminData() {
                 ? apiEventsRaw.events
                 : null;
     setEvents(apiEventsArr ? apiEventsArr.map(toEventRow) : fb.events || []);
-    const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
-    const apiAppeals = normalizeServerList(apiAppealsResponse);
-    setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
+    // Обращения не загружаем при открытии дашборда — только при переходе на /admin/appeals (loadAppeals), чтобы не было ошибок в консоли при отсутствии API обращений
     const baseConv = Array.isArray(apiConvocations) ? apiConvocations : [];
     const fallbackConv = Array.isArray(fb.convocations) ? fb.convocations : [];
     const mergedConv = mergeConvocationsPreferApi(baseConv, fallbackConv);
@@ -1397,6 +1395,12 @@ export function useAdminData() {
     }
   }, [message, reload, reloadDataContext]);
 
+  const loadAppeals = React.useCallback(async () => {
+    const apiAppealsResponse = await AppealsApi.listAll().catch(() => null);
+    const apiAppeals = normalizeServerList(apiAppealsResponse);
+    setAppeals(Array.isArray(apiAppeals) ? apiAppeals.map(normalizeAppeal) : []);
+  }, []);
+
   const updateAppealStatus = React.useCallback(async (id, status, response) => {
     setBusy(true);
     try {
@@ -1737,6 +1741,7 @@ export function useAdminData() {
     reorderSlides,
     
     // CRUD Appeals
+    loadAppeals,
     updateAppealStatus,
     deleteAppeal,
     

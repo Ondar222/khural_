@@ -1,5 +1,5 @@
 import React from "react";
-import { message } from "antd";
+import { App } from "antd";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 
@@ -16,6 +16,7 @@ function isAdminUser(u) {
 }
 
 export default function RequireAdmin({ children }) {
+  const { message } = App.useApp();
   const { isAuthenticated, user } = useAuth();
   const { navigate } = useHashRoute();
   const warnedRef = React.useRef(false);
@@ -37,7 +38,7 @@ export default function RequireAdmin({ children }) {
       }
       navigate("/cabinet");
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, message]);
 
   if (!isAuthenticated) return null;
   if (!isAdminUser(user)) return null;

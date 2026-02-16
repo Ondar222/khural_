@@ -523,13 +523,15 @@ export const AppealsApi = {
     const qs = new URLSearchParams();
     qs.set("page", String(page));
     qs.set("limit", String(limit));
-    // Убрали параметр "all=true", так как он вызывает ошибку валидации
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    // Сначала пробуем админский endpoint, если не работает - используем обычный
     try {
       return await apiFetch(`/appeals/admin${suffix}`, { method: "GET", auth: true });
     } catch {
-      return apiFetch(`/appeals${suffix}`, { method: "GET", auth: true });
+      try {
+        return await apiFetch(`/appeals${suffix}`, { method: "GET", auth: true });
+      } catch {
+        return [];
+      }
     }
   },
   async getById(id) {

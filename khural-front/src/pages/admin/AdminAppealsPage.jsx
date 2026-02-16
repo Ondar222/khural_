@@ -8,6 +8,12 @@ export default function AdminAppealsPage() {
   const adminData = useAdminData();
   const { message } = App.useApp();
 
+  React.useEffect(() => {
+    if (adminData.isAuthenticated && typeof adminData.loadAppeals === "function") {
+      adminData.loadAppeals();
+    }
+  }, [adminData.isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loginCard = !adminData.isAuthenticated ? (
     <div className="admin-card" style={{ marginBottom: 16 }}>
       <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
