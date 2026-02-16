@@ -36,13 +36,16 @@ export default function AdminEventsPage() {
     <AdminShell
       activeKey="events"
       title="События"
-      subtitle={`API: ${adminData.apiBase || "—"} • ${adminData.canWrite ? "доступ на запись" : "только просмотр"}`}
       user={adminData.user}
       themeMode={adminData.themeMode}
       onToggleTheme={adminData.toggleTheme}
       onLogout={adminData.handleLogout}
     >
       {loginCard}
+      <div className="admin-card" style={{ marginBottom: 16, padding: 12, fontSize: 13, opacity: 0.9 }}>
+        Календарь на сайте и админка используют один API: <strong>{adminData.apiBase || "—"}</strong>
+        {adminData.canWrite ? " • запись разрешена" : " • только просмотр"}
+      </div>
       <AdminEventsList items={adminData.events} onDelete={adminData.deleteEvent} busy={adminData.busy} canWrite={adminData.canWrite} />
     </AdminShell>
   );

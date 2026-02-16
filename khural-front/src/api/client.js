@@ -35,15 +35,10 @@ function resolveApiBaseUrl() {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
-/** Базовый URL только для API календаря (события). Если VITE_CALENDAR_API_BASE_URL не задан — используем тот же бэкенд, что и для остального приложения (события будут видны на всех устройствах). */
-export const CALENDAR_API_BASE_URL =
-  normalizeBaseUrl(import.meta.env.VITE_CALENDAR_API_BASE_URL) || API_BASE_URL;
-
+// Календарь (события) использует тот же API, что и весь сайт — один бэкенд на всех устройствах и в админке
 // Логируем базовый URL для отладки (только в DEV)
 if (typeof window !== "undefined" && import.meta.env.DEV) {
-  console.log("API_BASE_URL resolved to:", API_BASE_URL);
-  console.log("CALENDAR_API_BASE_URL (события):", CALENDAR_API_BASE_URL);
-  console.log("VITE_API_BASE_URL from env:", import.meta.env.VITE_API_BASE_URL);
+  console.log("API_BASE_URL (календарь, админка, весь сайт):", API_BASE_URL);
 }
 
 // Константы для хранения токенов в sessionStorage
@@ -1138,9 +1133,9 @@ export const TranslationApi = {
   },
 };
 
-// Calendar (events) — API календаря (по умолчанию тот же бэкенд; для прода — задайте VITE_CALENDAR_API_BASE_URL, напр. https://someshit.yurta.site/api)
+// Calendar (events) — один API с основным бэкендом (API_BASE_URL): календарь на сайте и админка событий ходят в один и тот же URL
 const calendarFetch = (path, opts) =>
-  apiFetch(path, { ...opts, baseUrl: CALENDAR_API_BASE_URL });
+  apiFetch(path, { ...opts, baseUrl: API_BASE_URL });
 
 export const EventsApi = {
   async list(params = {}) {
