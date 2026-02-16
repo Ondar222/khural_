@@ -1777,7 +1777,11 @@ export default function DataProvider({ children }) {
             ? apiEvents
             : apiEvents?.items && Array.isArray(apiEvents.items)
               ? apiEvents.items
-              : null
+              : apiEvents?.data && Array.isArray(apiEvents.data)
+                ? apiEvents.data
+                : apiEvents?.events && Array.isArray(apiEvents.events)
+                  ? apiEvents.events
+                  : null
           : null;
       if (arr !== null) {
         const mapped = arr.map((e) => ({

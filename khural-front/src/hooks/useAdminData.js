@@ -231,18 +231,33 @@ function toCalendarDto(values) {
     return String(v);
   };
 
-  const date = safeString(values?.date);
-  const time = safeString(values?.time) || "00:00";
-  const [hh, mm] = time.split(":").map((x) => parseInt(x, 10));
-  const dt = new Date(`${date}T00:00:00.000Z`);
+  const dateStr = safeString(values?.date).trim() || new Date().toISOString().slice(0, 10);
+  const timeStr = safeString(values?.time).trim() || "00:00";
+  const [hh, mm] = timeStr.split(":").map((x) => parseInt(x, 10));
+  const dt = new Date(`${dateStr}T00:00:00.000Z`);
   if (!isNaN(hh)) dt.setUTCHours(hh);
   if (!isNaN(mm)) dt.setUTCMinutes(mm);
+  const title = safeString(values?.title);
+  const description = safeString(values?.desc);
+  const location = safeString(values?.place);
+  const startDate = dt.getTime();
+  // Отправляем и camelCase, и snake_case, и отдельные date/time — чтобы бэкенд принял любой формат и событие сохранялось и отображалось на всех устройствах
   return {
-    title: safeString(values?.title),
-    description: safeString(values?.desc),
-    location: safeString(values?.place),
-    startDate: dt.getTime(),
+    title,
+    description,
+    location,
+    startDate,
     isPublic: true,
+    date: dateStr,
+    time: timeStr,
+    place: location,
+    desc: description,
+    event_title: title,
+    event_description: description,
+    event_place: location,
+    date_of_event: dateStr,
+    event_time: timeStr,
+    start_date: startDate,
   };
 }
 
@@ -1042,12 +1057,18 @@ export function useAdminData() {
       if (typeof reloadDataContextEvents === "function") reloadDataContextEvents();
       await reload();
     } catch (e) {
-      // При недоступности API сохраняем только локально (видено только на этом устройстве)
+      // При недоступности или ошибке API сохраняем только локально (видено только на этом устройстве)
       addCreatedEvent(localEvent);
       setDataContextEvents((prev) => [...prev, localEvent]);
-      message.warning(
-        "Событие сохранено только на этом устройстве. Чтобы оно было видно всем, настройте API календаря (бэкенд) и проверьте подключение."
-      );
+      if (e?.status === 400) {
+        message.warning(
+          "Бэкенд отклонил запрос (400). Событие сохранено локально. Проверьте, что бэкенд принимает поля: title, description, location, startDate (или date_of_event, event_title и т.д.)."
+        );
+      } else {
+        message.warning(
+          "Событие сохранено только на этом устройстве. Чтобы оно было видно всем, настройте API календаря (бэкенд) и проверьте подключение."
+        );
+      }
     } finally {
       setBusy(false);
     }
