@@ -1744,20 +1744,18 @@ export default function DataProvider({ children }) {
         }
       }
       if (cancelled) return;
-      const arr =
-        apiEvents !== null
-          ? Array.isArray(apiEvents)
-            ? apiEvents
-            : apiEvents?.items && Array.isArray(apiEvents.items)
-              ? apiEvents.items
-              : apiEvents?.data && Array.isArray(apiEvents.data)
-                ? apiEvents.data
-                : apiEvents?.events && Array.isArray(apiEvents.events)
-                  ? apiEvents.events
-                  : apiEvents?.data?.events && Array.isArray(apiEvents.data.events)
-                    ? apiEvents.data.events
-                    : null
-          : null;
+      const arr = (() => {
+        if (apiEvents === null) return null;
+        if (Array.isArray(apiEvents)) return apiEvents;
+        if (apiEvents?.items && Array.isArray(apiEvents.items)) return apiEvents.items;
+        if (apiEvents?.data && Array.isArray(apiEvents.data)) return apiEvents.data;
+        if (apiEvents?.events && Array.isArray(apiEvents.events)) return apiEvents.events;
+        if (apiEvents?.data?.events && Array.isArray(apiEvents.data.events)) return apiEvents.data.events;
+        if (apiEvents && typeof apiEvents === "object" && (apiEvents.id != null || apiEvents.title != null || apiEvents.startDate != null)) {
+          return [apiEvents];
+        }
+        return null;
+      })();
       if (arr !== null) {
         const toDateOnly = (val) => {
           if (val === undefined || val === null) return "";
@@ -1774,7 +1772,7 @@ export default function DataProvider({ children }) {
             if (d != null && d !== "") return toDateOnly(d);
             const start = pick(e.startDate, e.start_date);
             if (start == null || start === "") return "";
-            return toDateOnly(Number(start));
+            return toDateOnly(typeof start === "string" ? start : Number(start));
           })(),
           title: String(pick(e.title, e.event_title) || ""),
           time: (() => {
@@ -1782,7 +1780,7 @@ export default function DataProvider({ children }) {
             if (t) return String(t);
             const start = pick(e.startDate, e.start_date);
             if (!start) return "";
-            const dt = new Date(Number(start));
+            const dt = typeof start === "string" ? new Date(start) : new Date(Number(start));
             if (isNaN(dt.getTime())) return "";
             return dt.toISOString().slice(11, 16);
           })(),
