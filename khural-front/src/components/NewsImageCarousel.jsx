@@ -1,18 +1,38 @@
 import React from "react";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
+// Интервал автопереключения (увеличен для экономии ресурсов)
+const AUTO_PLAY_INTERVAL = 8000;
+
 export default function NewsImageCarousel({ images = [] }) {
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isMobile, setIsMobile] = React.useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth <= 959;
   });
+  // Отслеживаем видимость вкладки для паузы анимации
+  const [isVisible, setIsVisible] = React.useState(() => {
+    if (typeof document === "undefined") return true;
+    return document.visibilityState === "visible";
+  });
+  // Предзагруженные изображения для плавного переключения
+  const [loadedImages, setLoadedImages] = React.useState(new Set());
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => setIsMobile(window.innerWidth <= 959);
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    
+    // Пауза анимации при переключении вкладки
+    const onVisibilityChange = () => {
+      setIsVisible(document.visibilityState === "visible");
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    
+    return () => {
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   // Filter out empty images and normalize URLs
@@ -36,6 +56,37 @@ export default function NewsImageCarousel({ images = [] }) {
       setActiveIndex(0);
     }
   }, [activeIndex, validImages.length]);
+
+  // Предзагрузка следующего и предыдущего изображений для плавного переключения
+  React.useEffect(() => {
+    if (!validImages.length) return;
+    
+    const preloadImage = (url) => {
+      if (!url || loadedImages.has(url)) return;
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        setLoadedImages(prev => new Set(prev).add(url));
+      };
+    };
+    
+    const nextIndex = (activeIndex + 1) % validImages.length;
+    const prevIndex = activeIndex === 0 ? validImages.length - 1 : activeIndex - 1;
+    
+    preloadImage(validImages[nextIndex]);
+    preloadImage(validImages[prevIndex]);
+  }, [activeIndex, validImages, loadedImages]);
+
+  // Автопереключение с паузой при невидимости
+  React.useEffect(() => {
+    if (validImages.length <= 1 || !isVisible) return;
+    
+    const id = setInterval(() => {
+      setActiveIndex((prev) => (prev === validImages.length - 1 ? 0 : prev + 1));
+    }, AUTO_PLAY_INTERVAL);
+    
+    return () => clearInterval(id);
+  }, [validImages.length, isVisible]);
 
   if (!validImages.length) return null;
 
@@ -64,33 +115,43 @@ export default function NewsImageCarousel({ images = [] }) {
     <div style={{ position: "relative", height: 340, overflow: "hidden", borderRadius: 12 }}>
       {/* Images */}
       <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        {validImages.map((imgUrl, index) => (
-          <div
-            key={index}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              opacity: index === activeIndex ? 1 : 0,
-              transition: "opacity 0.3s ease-in-out",
-              zIndex: index === activeIndex ? 1 : 0,
-            }}
-          >
-            <img
-              src={imgUrl}
-              alt={`Изображение ${index + 1}`}
-              loading={index === 0 ? "eager" : "lazy"}
-              decoding="async"
+        {validImages.map((imgUrl, index) => {
+          const isActive = index === activeIndex;
+          const isPreloaded = loadedImages.has(imgUrl);
+          
+          return (
+            <div
+              key={index}
               style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
                 width: "100%",
                 height: "100%",
-                objectFit: "cover",
+                opacity: isActive ? 1 : 0,
+                transition: "opacity 0.3s ease-in-out",
+                zIndex: isActive ? 1 : 0,
+                // Оптимизация: не рендерим img пока не нужно
+                willChange: isActive ? "auto" : "opacity",
               }}
-            />
-          </div>
-        ))}
+            >
+              <img
+                src={imgUrl}
+                alt={`Изображение ${index + 1}`}
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={index === 0 ? "high" : "low"}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  // Избегаем перерисовки неактивных изображений
+                  contentVisibility: isActive ? "auto" : "hidden",
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Navigation arrows (only show if more than 1 image) */}

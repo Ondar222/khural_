@@ -90,19 +90,31 @@ export default function Login() {
   };
 
   return (
-    <section className="section">
-      <div className="container" style={{ maxWidth: 520 }}>
-        <h1>Вход</h1>
-        {error ? <Alert type="error" message={error} style={{ marginBottom: 12 }} /> : null}
-        <Form layout="vertical" onFinish={onFinish}>
+    <section className="auth-page">
+      <div className="auth-glass-card">
+        <div className="auth-glass-card__header">
+          <div className="auth-glass-card__logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg" alt="Герб" />
+          </div>
+          <h1 className="auth-glass-card__title">Вход</h1>
+          <p className="auth-glass-card__subtitle">Войдите в свой аккаунт</p>
+        </div>
+        
+        {error ? <Alert type="error" message={error} showIcon={false} /> : null}
+        
+        <Form 
+          layout="vertical" 
+          onFinish={onFinish}
+          className="auth-glass-form"
+        >
           <Form.Item
             label="Email"
             name="email"
             rules={[
               { required: true, message: "Введите email" },
-              { 
-                type: "email", 
-                message: "Введите корректный email (например: user@example.com)" 
+              {
+                type: "email",
+                message: "Введите корректный email (например: user@example.com)"
               },
               {
                 validator: (_, value) => {
@@ -126,15 +138,21 @@ export default function Login() {
           >
             <Input.Password placeholder="••••••••" />
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading}>
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button type="primary" htmlType="submit" loading={loading} block>
               Войти
-            </Button>
-            <Button style={{ marginLeft: 12 }} onClick={() => navigate("/register")}>
-              Регистрация
             </Button>
           </Form.Item>
         </Form>
+
+        <div className="auth-glass-card__footer">
+          <p className="auth-glass-card__footer-text">
+            Нет аккаунта?{" "}
+            <a href="#/register" className="auth-glass-card__link" onClick={(e) => { e.preventDefault(); navigate("/register"); }}>
+              Зарегистрироваться
+            </a>
+          </p>
+        </div>
       </div>
     </section>
   );

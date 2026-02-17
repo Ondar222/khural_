@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
+    <!-- Оптимизация производительности -->
+    <meta name="description" content="Официальный сайт Верховного Хурала (парламента) Республики Тыва" />
+    <meta name="theme-color" content="#003366" />
+    <!-- Предзагрузка критических ресурсов -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://khural.rtyva.ru" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://khural.rtyva.ru" />
     <title>Верховный Хурал РТ</title>
     <!-- API и календарь: при сборке подставляется VITE_API_BASE_URL (напр. https://someshit.yurta.site/api), иначе запросы идут на /api текущего домена -->
     <meta name="api-base" content="%VITE_API_BASE_URL%" />
@@ -11,8 +20,6 @@
       rel="icon"
       href="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Merriweather:wght@700;900&display=swap"
       rel="stylesheet"
@@ -25,7 +32,7 @@
         // Проверяем наличие параметра special_version=Y в URL
         const urlParams = new URLSearchParams(window.location.search);
         const shouldActivate = urlParams.get('special_version') === 'Y';
-        
+
         if (shouldActivate) {
           // Загружаем плагин только если пользователь явно запросил версию для слабовидящих
           const script = document.createElement('script');

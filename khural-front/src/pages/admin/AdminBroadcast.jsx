@@ -18,7 +18,7 @@ export default function AdminBroadcast() {
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
-  const [broadcastLinks, setBroadcastLinks] = React.useState(() => [...(BROADCAST_LINKS || [])]);
+  const [broadcastLinks, setBroadcastLinks] = React.useState(() => [...BROADCAST_LINKS]);
   const [linksLoading, setLinksLoading] = React.useState(false);
   const [linksSaved, setLinksSaved] = React.useState(false);
   const [newLinkUrl, setNewLinkUrl] = React.useState("");
@@ -30,49 +30,45 @@ export default function AdminBroadcast() {
     const loadBroadcastSettings = async () => {
       if (!adminData.isAuthenticated) return;
       
-      let broadcast = null;
+    let broadcast = null;
       
       // Сначала проверяем localStorage (fallback)
-      try {
-        const local = localStorage.getItem("admin_settings_broadcast");
-        if (local) {
-          broadcast = JSON.parse(local);
-        }
-      } catch (e) {
-        // ignore
+    try {
+      const local = localStorage.getItem("admin_settings_broadcast");
+      if (local) {
+        broadcast = JSON.parse(local);
       }
-      
+    } catch (e) {
+      // ignore
+    }
+    
       // Загружаем из API через SettingsApi
       try {
         const { SettingsApi } = await import("../../api/client.js");
         const broadcastValue = await SettingsApi.getByKey("broadcast").catch(() => null);
       
         if (broadcastValue) {
-          // Проверяем разные форматы данных
+          // Может быть объект или строка JSON
           if (typeof broadcastValue === "string") {
             try {
               broadcast = JSON.parse(broadcastValue);
             } catch {
               broadcast = {};
             }
-          } else if (broadcastValue && typeof broadcastValue === "object") {
-            // Если это объект с полем broadcast
-            if (broadcastValue.broadcast) {
-              const value = broadcastValue.broadcast;
-              if (typeof value === "string") {
-                try {
-                  broadcast = JSON.parse(value);
-                } catch {
-                  broadcast = {};
-                }
-              } else if (value && typeof value === "object") {
-                broadcast = value;
-              }
-            } 
-            // Если это сам объект настроек
-            else if (broadcastValue.type || broadcastValue.title) {
-              broadcast = broadcastValue;
-            }
+          } else if (broadcastValue.broadcast) {
+            // Если API вернул объект с полем broadcast
+            const value = broadcastValue.broadcast;
+            if (typeof value === "string") {
+          try {
+                broadcast = JSON.parse(value);
+              } catch {
+            broadcast = {};
+          }
+            } else {
+              broadcast = value;
+        }
+          } else {
+            broadcast = broadcastValue;
           }
         }
       } catch (error) {
@@ -82,42 +78,37 @@ export default function AdminBroadcast() {
       // Fallback: используем settings из adminData
       if (!broadcast && adminData.settings) {
         const settings = adminData.settings;
-        if (settings && typeof settings === "object") {
-          // Проверяем разные структуры
-          if (settings.broadcast) {
-            const settingsBroadcast = settings.broadcast;
-            if (typeof settingsBroadcast === "string") {
-              try {
-                broadcast = JSON.parse(settingsBroadcast);
-              } catch {
-                broadcast = {};
-              }
-            } else {
-              broadcast = settingsBroadcast;
-            }
-          } else if (settings.type || settings.title) {
-            broadcast = settings;
+        if (typeof settings === "object" && settings.broadcast) {
+          const settingsBroadcast = settings.broadcast;
+        if (typeof settingsBroadcast === "string") {
+          try {
+            broadcast = JSON.parse(settingsBroadcast);
+            } catch {
+            broadcast = {};
           }
+        } else {
+          broadcast = settingsBroadcast;
         }
       }
-      
-      if (!broadcast || typeof broadcast !== "object") {
-        broadcast = {};
-      }
-      
-      form.setFieldsValue({
-        type: broadcast.type || broadcast.platform || "vk",
-        title: broadcast.title || broadcast.name || "",
-        description: broadcast.description || "",
-        vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key || "",
-        vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url || "",
-        obsRtmpUrl: broadcast.obs_rtmp_url || broadcast.obsRtmpUrl || broadcast.rtmp_url || "",
-        obsStreamKey: broadcast.obs_stream_key || broadcast.obsStreamKey || broadcast.obs_key || "",
-        youtubeVideoId: broadcast.youtube_video_id || broadcast.youtubeVideoId || "",
-        youtubeUrl: broadcast.youtube_url || broadcast.youtubeUrl || "",
-        embedUrl: broadcast.embed_url || broadcast.embedUrl || "",
-        isActive: broadcast.is_active !== false && broadcast.isActive !== false,
-      });
+    }
+    
+    if (!broadcast || typeof broadcast !== "object") {
+      broadcast = {};
+    }
+    
+    form.setFieldsValue({
+      type: broadcast.type || broadcast.platform || "vk",
+      title: broadcast.title || broadcast.name || "",
+      description: broadcast.description || "",
+      vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key || "",
+      vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url || "",
+      obsRtmpUrl: broadcast.obs_rtmp_url || broadcast.obsRtmpUrl || broadcast.rtmp_url || "",
+      obsStreamKey: broadcast.obs_stream_key || broadcast.obsStreamKey || broadcast.obs_key || "",
+      youtubeVideoId: broadcast.youtube_video_id || broadcast.youtubeVideoId || "",
+      youtubeUrl: broadcast.youtube_url || broadcast.youtubeUrl || "",
+      embedUrl: broadcast.embed_url || broadcast.embedUrl || "",
+      isActive: broadcast.is_active !== false && broadcast.isActive !== false,
+    });
     };
     
     loadBroadcastSettings();
@@ -130,11 +121,8 @@ export default function AdminBroadcast() {
       try {
         const { SettingsApi } = await import("../../api/client.js");
         const raw = await SettingsApi.getByKey("broadcast_links").catch(() => null);
-        
         if (raw == null) return;
-        
         let arr = [];
-        
         if (typeof raw === "string") {
           try {
             arr = JSON.parse(raw);
@@ -143,25 +131,20 @@ export default function AdminBroadcast() {
           }
         } else if (raw?.value != null) {
           const v = raw.value;
-          if (Array.isArray(v)) {
-            arr = v.filter((x) => typeof x === "string");
-          } else if (typeof v === "string") {
+          if (Array.isArray(v)) arr = v.filter((x) => typeof x === "string");
+          else if (typeof v === "string") {
             try {
               arr = JSON.parse(v);
             } catch {
               arr = [];
             }
           }
-        } else if (Array.isArray(raw)) {
-          arr = raw.filter((x) => typeof x === "string");
         }
-        
         if (Array.isArray(arr) && arr.length > 0) {
           setBroadcastLinks(arr);
         }
       } catch (e) {
-        console.warn("Failed to load broadcast links:", e);
-        // оставляем BROADCAST_LINKS
+        // ignore, оставляем BROADCAST_LINKS
       }
     };
     loadLinks();
@@ -197,7 +180,7 @@ export default function AdminBroadcast() {
       try {
         const { SettingsApi } = await import("../../api/client.js");
         await SettingsApi.update({
-          broadcast: JSON.stringify(broadcastData),
+            broadcast: JSON.stringify(broadcastData),
         });
         message.success("Настройки трансляции сохранены");
       } catch (apiError) {
@@ -207,6 +190,7 @@ export default function AdminBroadcast() {
       }
 
       setSaved(true);
+      message.success("Настройки трансляции сохранены");
       
       // Обновляем данные
       if (adminData.reload) {
@@ -474,3 +458,4 @@ export default function AdminBroadcast() {
     </div>
   );
 }
+

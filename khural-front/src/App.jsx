@@ -140,6 +140,7 @@ export default function App() {
       !isAdmin &&
       loading &&
       Object.values(loading).some(Boolean);
+    
     if (isBootLoading) {
       return (
         <div
@@ -148,12 +149,36 @@ export default function App() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#1e3a8a",
-            fontWeight: 700,
-            fontSize: 16,
+            flexDirection: "column",
+            gap: "16px",
           }}
         >
-          Загрузка...
+          {/* Простой CSS-спиннер без лишних зависимостей */}
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "4px solid #e5e7eb",
+              borderTop: "4px solid #003366",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          />
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+          <div
+            style={{
+              color: "#1e3a8a",
+              fontWeight: 700,
+              fontSize: 16,
+            }}
+          >
+            Загрузка...
+          </div>
         </div>
       );
     }

@@ -3,6 +3,9 @@ import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
+// Увеличенный интервал для экономии ресурсов (8 секунд вместо 6)
+const SLIDE_INTERVAL = 8000;
+
 export default function HeroCarousel() {
   const { slides: dataSlides } = useData();
   const { t, lang } = useI18n();
@@ -11,12 +14,27 @@ export default function HeroCarousel() {
     if (typeof window === "undefined") return false;
     return window.innerWidth <= 768;
   });
+  // Отслеживаем видимость вкладки для паузы анимации
+  const [isVisible, setIsVisible] = React.useState(() => {
+    if (typeof document === "undefined") return true;
+    return document.visibilityState === "visible";
+  });
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    
+    // Пауза анимации при переключении вкладки
+    const onVisibilityChange = () => {
+      setIsVisible(document.visibilityState === "visible");
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    
+    return () => {
+      window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   const truncateWords = React.useCallback((text, maxWords) => {
@@ -87,13 +105,14 @@ export default function HeroCarousel() {
   );
 
   React.useEffect(() => {
-    if (!slides.length) return;
+    // Пауза анимации когда вкладка не видима или слайдов нет
+    if (!slides.length || !isVisible) return;
     const len = slides.length || 1;
     const id = setInterval(() => {
       setActive((i) => (i + 1) % len);
-    }, 6000);
+    }, SLIDE_INTERVAL);
     return () => clearInterval(id);
-  }, [slides.length]);
+  }, [slides.length, isVisible]);
 
   React.useEffect(() => {
     // If slides length changed and active is out of bounds — reset.
@@ -126,7 +145,11 @@ export default function HeroCarousel() {
             <div
               key={i}
               className={`slide ${i === active ? "active" : ""}`}
-              style={{ backgroundImage: `url(${normalizeFilesUrl(s.image)})` }}
+              style={{ 
+                backgroundImage: i === active ? `url(${normalizeFilesUrl(s.image)})` : "none",
+                // Ленивая загрузка фона для неактивных слайдов
+                ...(i !== active && { willChange: "background-image" })
+              }}
             />
           ))}
           <div className="overlay" />

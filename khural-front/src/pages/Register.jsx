@@ -41,11 +41,24 @@ export default function Register() {
   };
 
   return (
-    <section className="section">
-      <div className="container" style={{ maxWidth: 640 }}>
-        <h1>Регистрация</h1>
-        {error ? <Alert type="error" message={error} style={{ marginBottom: 12 }} /> : null}
-        <Form layout="vertical" onFinish={onFinish} initialValues={{ role: "citizen" }}>
+    <section className="auth-page">
+      <div className="auth-glass-card">
+        <div className="auth-glass-card__header">
+          <div className="auth-glass-card__logo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg" alt="Герб" />
+          </div>
+          <h1 className="auth-glass-card__title">Регистрация</h1>
+          <p className="auth-glass-card__subtitle">Создайте аккаунт</p>
+        </div>
+        
+        {error ? <Alert type="error" message={error} showIcon={false} /> : null}
+        
+        <Form 
+          layout="vertical" 
+          onFinish={onFinish} 
+          initialValues={{ role: "citizen" }}
+          className="auth-glass-form"
+        >
           <Form.Item
             label="Фамилия"
             name="surname"
@@ -53,21 +66,21 @@ export default function Register() {
           >
             <Input placeholder="Иванов" />
           </Form.Item>
-          <Form.Item 
-            label="Имя" 
-            name="name" 
+          <Form.Item
+            label="Имя"
+            name="name"
             rules={[{ required: true, message: "Введите имя" }]}
           >
             <Input placeholder="Иван" />
           </Form.Item>
-          <Form.Item 
-            label="Телефон" 
+          <Form.Item
+            label="Телефон"
             name="phone"
             rules={[
               { required: true, message: "Введите номер телефона" },
-              { 
-                pattern: /^[\d\s\+\-\(\)]+$/, 
-                message: "Номер телефона может содержать только цифры, пробелы и символы + - ( )" 
+              {
+                pattern: /^[\d\s\+\-\(\)]+$/,
+                message: "Номер телефона может содержать только цифры, пробелы и символы + - ( )"
               },
               {
                 validator: (_, value) => {
@@ -89,9 +102,9 @@ export default function Register() {
             name="email"
             rules={[
               { required: true, message: "Введите email" },
-              { 
-                type: "email", 
-                message: "Введите корректный email (например: user@example.com)" 
+              {
+                type: "email",
+                message: "Введите корректный email (например: user@example.com)"
               },
               {
                 validator: (_, value) => {
@@ -117,35 +130,35 @@ export default function Register() {
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
-                  
+
                   const errors = [];
-                  
+
                   // Проверка на наличие заглавной буквы
                   if (!/[A-ZА-ЯЁ]/.test(value)) {
                     errors.push('минимум 1 заглавную букву');
                   }
-                  
+
                   // Проверка на наличие строчной буквы
                   if (!/[a-zа-яё]/.test(value)) {
                     errors.push('минимум 1 строчную букву');
                   }
-                  
+
                   // Проверка на наличие цифры
                   if (!/\d/.test(value)) {
                     errors.push('минимум 1 цифру');
                   }
-                  
+
                   // Проверка на наличие спецсимвола
                   if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)) {
                     errors.push('минимум 1 спецсимвол (!@#$%^&* и т.д.)');
                   }
-                  
+
                   if (errors.length > 0) {
                     return Promise.reject(
                       new Error(`Пароль должен содержать: ${errors.join(', ')}`)
                     );
                   }
-                  
+
                   return Promise.resolve();
                 }
               }
@@ -155,19 +168,23 @@ export default function Register() {
             <Input.Password placeholder="••••••••" />
           </Form.Item>
           <Form.Item name="role" hidden>
-            <Input />
+            <Input type="hidden" value="citizen" />
           </Form.Item>
-          <Form.Item>
-            <div className="container_submit">
-              <Button type="primary" htmlType="submit" loading={loading}>
-                Создать аккаунт
-              </Button>
-              <Button style={{ marginLeft: 12 }} onClick={() => navigate("/login")}>
-                Уже есть аккаунт
-              </Button>
-            </div>
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button type="primary" htmlType="submit" loading={loading} block>
+              Создать аккаунт
+            </Button>
           </Form.Item>
         </Form>
+
+        <div className="auth-glass-card__footer">
+          <p className="auth-glass-card__footer-text">
+            Уже есть аккаунт?{" "}
+            <a href="#/login" className="auth-glass-card__link" onClick={(e) => { e.preventDefault(); navigate("/login"); }}>
+              Войти
+            </a>
+          </p>
+        </div>
       </div>
     </section>
   );

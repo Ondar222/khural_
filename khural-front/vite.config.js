@@ -24,8 +24,55 @@ export default defineConfig({
       compress: {
         drop_console: true,
         drop_debugger: true,
+        // Дополнительные оптимизации
+        pure_funcs: ['console.log', 'console.info'],
+        passes: 2,
       },
     },
+    // Code splitting для лучшей производительности
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Выделяем vendor chunks отдельно
+          'react-vendor': ['react', 'react-dom'],
+          'antd-vendor': ['antd', '@ant-design/icons'],
+          'tinymce-vendor': ['@tinymce/tinymce-react', 'tinymce'],
+        },
+        // Разделяем чанки по размеру
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: ({ name }) => {
+          if (/\.(css)$/.test(name ?? '')) {
+            return 'assets/css/[name]-[hash].css';
+          }
+          if (/\.(png|jpg|jpeg|gif|svg|webp|ico)$/.test(name ?? '')) {
+            return 'assets/img/[name]-[hash].[ext]';
+          }
+          if (/\.(woff|woff2|eot|ttf|otf)$/.test(name ?? '')) {
+            return 'assets/fonts/[name]-[hash].[ext]';
+          }
+          return 'assets/[name]-[hash].[ext]';
+        },
+      },
+    },
+    // Ограничения на размер чанков
+    chunkSizeWarningLimit: 500,
+    // Включаем sourcemap только для production отладки (опционально)
+    sourcemap: false,
+    // Оптимизация для таргетирования современных браузеров
+    target: 'es2020',
+  },
+  // Оптимизация зависимостей
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'antd', '@ant-design/icons', 'axios'],
+    esbuildOptions: {
+      target: 'es2020',
+    },
+  },
+  // Улучшаем производительность dev сервера
+  esbuild: {
+    target: 'es2020',
+    legalComments: 'none',
   },
   server: {
     port: 5173,

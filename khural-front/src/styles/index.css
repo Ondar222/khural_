@@ -5239,6 +5239,527 @@ body.hc-yb .ant-btn {
   padding: 20px;
 }
 
+/* ============================================
+   Glass-style Authentication Pages
+   Login & Register with glassmorphism design
+   ============================================ */
+
+/* Auth page background - light neutral */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: #f5f6f8;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+/* Fix body scroll for auth pages - disable horizontal scroll completely */
+body:has(.auth-page) {
+  overflow-x: hidden !important;
+  overflow-y: auto;
+  max-width: 100vw;
+}
+
+/* Global horizontal scroll prevention for auth pages */
+.auth-page,
+.auth-page *,
+.auth-page *::before,
+.auth-page *::after {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+/* Decorative background circles for glass effect */
+.auth-page::before,
+.auth-page::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.auth-page::before {
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 231, 122, 0.3) 100%);
+  top: -40px;
+  right: -40px;
+  animation: auth-float 8s ease-in-out infinite;
+}
+
+.auth-page::after {
+  width: 150px;
+  height: 150px;
+  background: linear-gradient(135deg, rgba(10, 31, 68, 0.15) 0%, rgba(13, 75, 143, 0.1) 100%);
+  bottom: -30px;
+  left: -30px;
+  animation: auth-float 10s ease-in-out infinite reverse;
+}
+
+@keyframes auth-float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(30px, -30px) scale(1.05);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+  75% {
+    transform: translate(20px, 30px) scale(1.02);
+  }
+}
+
+/* Glass card container */
+.auth-glass-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 48px 40px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  z-index: 1;
+}
+
+/* Auth card header */
+.auth-glass-card__header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-glass-card__logo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.auth-glass-card__logo img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.auth-glass-card__title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.auth-glass-card__subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Glass form styles */
+.auth-glass-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: visible;
+}
+
+/* Override Ant Design inputs for glass style */
+.auth-glass-form .ant-form,
+.auth-glass-form .ant-form-item,
+.auth-glass-form .ant-form-item-control,
+.auth-glass-form .ant-form-item-control-input,
+.auth-glass-form .ant-form-item-control-input-content {
+  overflow: visible;
+}
+
+.auth-glass-form .ant-form-item-label > label {
+  color: #111827;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.auth-glass-form .ant-input {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.auth-glass-form .ant-input:hover {
+  border-color: rgba(255, 215, 0, 0.5);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.auth-glass-form .ant-input:focus,
+.auth-glass-form .ant-input-focused {
+  border-color: #ffd700;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 0 0 3px rgba(255, 215, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.auth-glass-form .ant-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* Password input specific styles */
+.auth-glass-form .ant-input-password {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.auth-glass-form .ant-input-password:hover {
+  border-color: rgba(255, 215, 0, 0.5);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.auth-glass-form .ant-input-password-focused,
+.auth-glass-form .ant-input-password:focus {
+  border-color: #ffd700;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+}
+
+/* Password visibility toggle */
+.auth-glass-form .ant-input-password-icon {
+  color: #6b7280;
+  transition: color 0.2s ease;
+}
+
+.auth-glass-form .ant-input-password-icon:hover {
+  color: #003366;
+}
+
+/* Form item help text */
+.auth-glass-form .ant-form-item-explain,
+.auth-glass-form .ant-form-item-extra {
+  color: #6b7280;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+/* Glass buttons */
+.auth-glass-form .btn,
+.auth-glass-form .ant-btn {
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: all 0.25s ease;
+  border: none;
+  cursor: pointer;
+}
+
+/* Primary glass button */
+.auth-glass-form .ant-btn-primary,
+.auth-glass-form .btn--primary {
+  background: linear-gradient(135deg, #ffd700 0%, #ffe77a 50%, #ffd700 100%);
+  color: #0a1f44;
+  box-shadow: 
+    0 4px 16px rgba(255, 215, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.auth-glass-form .ant-btn-primary:hover,
+.auth-glass-form .btn--primary:hover {
+  background: linear-gradient(135deg, #ffe77a 0%, #fff3a8 50%, #ffe77a 100%);
+  box-shadow: 
+    0 6px 24px rgba(255, 215, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.auth-glass-form .ant-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.25);
+}
+
+/* Secondary glass button */
+.auth-glass-form .ant-btn-default,
+.auth-glass-form .btn--default {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.auth-glass-form .ant-btn-default:hover,
+.auth-glass-form .btn--default:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(255, 255, 255, 0.8);
+  color: #111827;
+  transform: translateY(-1px);
+}
+
+/* Button container */
+.auth-glass-form .ant-form-item .ant-form-item-control-input-content {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Alert styles */
+.auth-glass-form .ant-alert {
+  background: rgba(239, 68, 68, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #111827;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.auth-glass-form .ant-alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.auth-glass-form .ant-alert-description {
+  color: #111827;
+  font-size: 14px;
+}
+
+/* Auth footer links */
+.auth-glass-card__footer {
+  margin-top: 24px;
+  text-align: center;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.auth-glass-card__footer-text {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+.auth-glass-card__link {
+  color: #003366;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.auth-glass-card__link:hover {
+  color: #0d4b8f;
+  text-decoration: underline;
+}
+
+.auth-glass-card__link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.auth-glass-card__link:hover::after {
+  opacity: 1;
+}
+
+/* Container override for auth pages */
+.auth-page .container {
+  max-width: 480px;
+  padding: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+/* Override section padding */
+.auth-page.section {
+  padding: 0;
+  max-width: 100%;
+  width: 100%;
+  overflow: visible;
+}
+
+/* Prevent overflow on auth pages */
+.auth-glass-card {
+  width: 100%;
+  max-width: 480px;
+}
+
+/* ============================================
+   Responsive: Tablet and Mobile
+   ============================================ */
+@media (max-width: 768px) {
+  .auth-page {
+    padding: 20px 14px;
+    align-items: center;
+  }
+
+  .auth-glass-card {
+    padding: 32px 20px;
+    max-width: 100%;
+    border-radius: 20px;
+  }
+
+  .auth-glass-card__header {
+    margin-bottom: 20px;
+  }
+
+  .auth-glass-card__logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    margin-bottom: 12px;
+  }
+
+  .auth-glass-card__logo img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .auth-glass-card__title {
+    font-size: 22px;
+  }
+
+  .auth-glass-card__subtitle {
+    font-size: 13px;
+  }
+
+  /* Decorative elements smaller on mobile */
+  .auth-page::before {
+    width: 150px;
+    height: 150px;
+    top: -30px;
+    right: -30px;
+  }
+
+  .auth-page::after {
+    width: 100px;
+    height: 100px;
+    bottom: -20px;
+    left: -20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: 16px 12px;
+  }
+
+  .auth-glass-card {
+    padding: 24px 16px;
+    max-width: 100%;
+    border-radius: 18px;
+  }
+
+  /* Hide decorative elements on small screens */
+  .auth-page::before,
+  .auth-page::after {
+    display: none;
+  }
+
+  .auth-glass-card__header {
+    margin-bottom: 16px;
+  }
+
+  .auth-glass-card__title {
+    font-size: 20px;
+  }
+
+  .auth-glass-card__subtitle {
+    font-size: 12px;
+  }
+
+  /* Form adjustments */
+  .auth-glass-form {
+    gap: 12px;
+  }
+
+  .auth-glass-form .ant-input {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .auth-glass-form .ant-form-item-label > label {
+    font-size: 13px;
+  }
+
+  .auth-glass-form .ant-btn,
+  .auth-glass-form .btn {
+    height: auto;
+    font-size: 14px;
+  }
+
+  /* Buttons stack on very small screens */
+  .auth-glass-form .ant-form-item .ant-form-item-control-input-content {
+    flex-direction: column;
+  }
+
+  .auth-glass-form .ant-btn,
+  .auth-glass-form .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .auth-glass-form .ant-btn + .ant-btn,
+  .auth-glass-form .btn + .btn {
+    margin-left: 0 !important;
+  }
+
+  .auth-glass-card__footer {
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .auth-page::before,
+  .auth-page::after {
+    animation: none;
+  }
+  
+  .auth-glass-form .ant-btn-primary:hover,
+  .auth-glass-form .ant-btn-default:hover,
+  .auth-glass-form .btn--primary:hover,
+  .auth-glass-form .btn--default:hover {
+    transform: none;
+  }
+}
+
 .modal__close {
   position: absolute;
   top: 12px;
