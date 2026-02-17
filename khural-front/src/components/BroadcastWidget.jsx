@@ -195,8 +195,7 @@ export default function BroadcastWidget() {
                   height: "100%",
                   border: "none",
                 }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 title={broadcastSettings.title || t("Трансляция")}
               />
             ) : streamType === "vk" || streamType === "vkontakte" ? (
@@ -269,8 +268,7 @@ export default function BroadcastWidget() {
                   height: "100%",
                   border: "none",
                 }}
-                allow="autoplay; encrypted-media"
-                allowFullScreen
+                allow="autoplay; encrypted-media; fullscreen"
                 title={broadcastSettings.title || t("Трансляция")}
               />
             ) : null}

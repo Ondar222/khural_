@@ -2,6 +2,8 @@ import React from "react";
 import GosWidget from "./GosWidget.jsx";
 import BroadcastWidget from "./BroadcastWidget.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
+import { getBroadcastUrls } from "../content/broadcasts.js";
 import {
   readPortalsOverrides,
   mergePortalsWithOverrides,
@@ -69,6 +71,7 @@ const DEFAULT_PORTALS = [
 
 export default function Resources() {
   const { t } = useI18n();
+  const { links: broadcastLinks } = useBroadcastLinks();
   const [portalsOpen, setPortalsOpen] = React.useState(false);
   const portalsId = "portals-list";
   const [portals, setPortals] = React.useState(() => {
@@ -139,10 +142,79 @@ export default function Resources() {
         
         {/* Раздел Трансляции */}
         <div style={{ marginTop: 48 }}>
-          <h2 className="portals-title" style={{ marginBottom: 24 }}>{t("Трансляции")}</h2>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+            <h2 className="portals-title" style={{ margin: 0 }}>{t("Трансляции")}</h2>
+            <a href="/broadcast" style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", color: "var(--link)" }}>
+              Все трансляции →
+            </a>
+          </div>
           <div style={{ marginTop: 16 }}>
             <BroadcastWidget />
           </div>
+          {/* Последние 4 трансляций из архива; остальные — на странице «Все трансляции» */}
+          {(() => {
+            const last4 = broadcastLinks.slice(-4);
+            if (last4.length === 0) return null;
+            return (
+              <div className="broadcasts-home" style={{ marginTop: 24 }}>
+                {last4.map((url, index) => {
+                  const { embedUrl, watchUrl } = getBroadcastUrls(url);
+                  const num = broadcastLinks.length - 4 + index + 1;
+                  return (
+                    <div key={url} className="broadcasts-home__item">
+                      <div className="broadcasts-home__video">
+                        {embedUrl ? (
+                          <iframe
+                            src={embedUrl}
+                            title={t("Трансляция") + ` ${num}`}
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              border: 0,
+                            }}
+                            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                          />
+                        ) : (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              textDecoration: "none",
+                              fontSize: 14,
+                            }}
+                          >
+                            {t("Трансляция")}
+                          </a>
+                        )}
+                      </div>
+                      <div className="broadcasts-home__link">
+                        <a
+                          href={watchUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {t("Трансляция")} {num} →
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </section>

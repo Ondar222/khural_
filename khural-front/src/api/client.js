@@ -1221,6 +1221,33 @@ export const SettingsApi = {
       auth: true,
     });
   },
+  /** Список ссылок на архив трансляций (публичный запрос, без auth). При 401/404 возвращает null. */
+  async getBroadcastLinksPublic() {
+    const raw = await tryApiFetch("/settings/broadcast_links", { method: "GET", auth: false });
+    if (raw == null) return null;
+    if (Array.isArray(raw)) return raw.every((x) => typeof x === "string") ? raw : null;
+    if (typeof raw === "string") {
+      try {
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) && arr.every((x) => typeof x === "string") ? arr : null;
+      } catch {
+        return null;
+      }
+    }
+    if (raw?.value != null) {
+      const v = raw.value;
+      if (Array.isArray(v) && v.every((x) => typeof x === "string")) return v;
+      if (typeof v === "string") {
+        try {
+          const arr = JSON.parse(v);
+          return Array.isArray(arr) && arr.every((x) => typeof x === "string") ? arr : null;
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  },
 };
 
 // Convocations (Созывы) endpoints

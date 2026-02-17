@@ -1,7 +1,9 @@
 import React from "react";
-import { App, Button, Form, Input, Select, Switch, Card, Space, Divider, Alert } from "antd";
+import { App, Button, Form, Input, Select, Switch, Card, Space, Divider, Alert, List } from "antd";
+import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
+import { BROADCAST_LINKS } from "../../content/broadcasts.js";
 
 const BROADCAST_TYPE_OPTIONS = [
   { value: "vk", label: "VK (ВКонтакте)" },
@@ -16,6 +18,10 @@ export default function AdminBroadcast() {
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [broadcastLinks, setBroadcastLinks] = React.useState(() => [...(BROADCAST_LINKS || [])]);
+  const [linksLoading, setLinksLoading] = React.useState(false);
+  const [linksSaved, setLinksSaved] = React.useState(false);
+  const [newLinkUrl, setNewLinkUrl] = React.useState("");
 
   const broadcastType = Form.useWatch("type", form);
 
@@ -24,45 +30,49 @@ export default function AdminBroadcast() {
     const loadBroadcastSettings = async () => {
       if (!adminData.isAuthenticated) return;
       
-    let broadcast = null;
+      let broadcast = null;
       
       // Сначала проверяем localStorage (fallback)
-    try {
-      const local = localStorage.getItem("admin_settings_broadcast");
-      if (local) {
-        broadcast = JSON.parse(local);
+      try {
+        const local = localStorage.getItem("admin_settings_broadcast");
+        if (local) {
+          broadcast = JSON.parse(local);
+        }
+      } catch (e) {
+        // ignore
       }
-    } catch (e) {
-      // ignore
-    }
-    
+      
       // Загружаем из API через SettingsApi
       try {
         const { SettingsApi } = await import("../../api/client.js");
         const broadcastValue = await SettingsApi.getByKey("broadcast").catch(() => null);
       
         if (broadcastValue) {
-          // Может быть объект или строка JSON
+          // Проверяем разные форматы данных
           if (typeof broadcastValue === "string") {
             try {
               broadcast = JSON.parse(broadcastValue);
             } catch {
               broadcast = {};
             }
-          } else if (broadcastValue.broadcast) {
-            // Если API вернул объект с полем broadcast
-            const value = broadcastValue.broadcast;
-            if (typeof value === "string") {
-          try {
-                broadcast = JSON.parse(value);
-              } catch {
-            broadcast = {};
-          }
-            } else {
-              broadcast = value;
-        }
-          } else {
-            broadcast = broadcastValue;
+          } else if (broadcastValue && typeof broadcastValue === "object") {
+            // Если это объект с полем broadcast
+            if (broadcastValue.broadcast) {
+              const value = broadcastValue.broadcast;
+              if (typeof value === "string") {
+                try {
+                  broadcast = JSON.parse(value);
+                } catch {
+                  broadcast = {};
+                }
+              } else if (value && typeof value === "object") {
+                broadcast = value;
+              }
+            } 
+            // Если это сам объект настроек
+            else if (broadcastValue.type || broadcastValue.title) {
+              broadcast = broadcastValue;
+            }
           }
         }
       } catch (error) {
@@ -72,41 +82,90 @@ export default function AdminBroadcast() {
       // Fallback: используем settings из adminData
       if (!broadcast && adminData.settings) {
         const settings = adminData.settings;
-        if (typeof settings === "object" && settings.broadcast) {
-          const settingsBroadcast = settings.broadcast;
-        if (typeof settingsBroadcast === "string") {
-          try {
-            broadcast = JSON.parse(settingsBroadcast);
-            } catch {
-            broadcast = {};
+        if (settings && typeof settings === "object") {
+          // Проверяем разные структуры
+          if (settings.broadcast) {
+            const settingsBroadcast = settings.broadcast;
+            if (typeof settingsBroadcast === "string") {
+              try {
+                broadcast = JSON.parse(settingsBroadcast);
+              } catch {
+                broadcast = {};
+              }
+            } else {
+              broadcast = settingsBroadcast;
+            }
+          } else if (settings.type || settings.title) {
+            broadcast = settings;
           }
-        } else {
-          broadcast = settingsBroadcast;
         }
       }
-    }
-    
-    if (!broadcast || typeof broadcast !== "object") {
-      broadcast = {};
-    }
-    
-    form.setFieldsValue({
-      type: broadcast.type || broadcast.platform || "vk",
-      title: broadcast.title || broadcast.name || "",
-      description: broadcast.description || "",
-      vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key || "",
-      vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url || "",
-      obsRtmpUrl: broadcast.obs_rtmp_url || broadcast.obsRtmpUrl || broadcast.rtmp_url || "",
-      obsStreamKey: broadcast.obs_stream_key || broadcast.obsStreamKey || broadcast.obs_key || "",
-      youtubeVideoId: broadcast.youtube_video_id || broadcast.youtubeVideoId || "",
-      youtubeUrl: broadcast.youtube_url || broadcast.youtubeUrl || "",
-      embedUrl: broadcast.embed_url || broadcast.embedUrl || "",
-      isActive: broadcast.is_active !== false && broadcast.isActive !== false,
-    });
+      
+      if (!broadcast || typeof broadcast !== "object") {
+        broadcast = {};
+      }
+      
+      form.setFieldsValue({
+        type: broadcast.type || broadcast.platform || "vk",
+        title: broadcast.title || broadcast.name || "",
+        description: broadcast.description || "",
+        vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key || "",
+        vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url || "",
+        obsRtmpUrl: broadcast.obs_rtmp_url || broadcast.obsRtmpUrl || broadcast.rtmp_url || "",
+        obsStreamKey: broadcast.obs_stream_key || broadcast.obsStreamKey || broadcast.obs_key || "",
+        youtubeVideoId: broadcast.youtube_video_id || broadcast.youtubeVideoId || "",
+        youtubeUrl: broadcast.youtube_url || broadcast.youtubeUrl || "",
+        embedUrl: broadcast.embed_url || broadcast.embedUrl || "",
+        isActive: broadcast.is_active !== false && broadcast.isActive !== false,
+      });
     };
     
     loadBroadcastSettings();
   }, [adminData.isAuthenticated, adminData.settings, form]);
+
+  // Загружаем список ссылок архива трансляций
+  React.useEffect(() => {
+    const loadLinks = async () => {
+      if (!adminData.isAuthenticated) return;
+      try {
+        const { SettingsApi } = await import("../../api/client.js");
+        const raw = await SettingsApi.getByKey("broadcast_links").catch(() => null);
+        
+        if (raw == null) return;
+        
+        let arr = [];
+        
+        if (typeof raw === "string") {
+          try {
+            arr = JSON.parse(raw);
+          } catch {
+            arr = [];
+          }
+        } else if (raw?.value != null) {
+          const v = raw.value;
+          if (Array.isArray(v)) {
+            arr = v.filter((x) => typeof x === "string");
+          } else if (typeof v === "string") {
+            try {
+              arr = JSON.parse(v);
+            } catch {
+              arr = [];
+            }
+          }
+        } else if (Array.isArray(raw)) {
+          arr = raw.filter((x) => typeof x === "string");
+        }
+        
+        if (Array.isArray(arr) && arr.length > 0) {
+          setBroadcastLinks(arr);
+        }
+      } catch (e) {
+        console.warn("Failed to load broadcast links:", e);
+        // оставляем BROADCAST_LINKS
+      }
+    };
+    loadLinks();
+  }, [adminData.isAuthenticated]);
 
   const handleSave = async () => {
     if (!adminData.canWrite) {
@@ -138,7 +197,7 @@ export default function AdminBroadcast() {
       try {
         const { SettingsApi } = await import("../../api/client.js");
         await SettingsApi.update({
-            broadcast: JSON.stringify(broadcastData),
+          broadcast: JSON.stringify(broadcastData),
         });
         message.success("Настройки трансляции сохранены");
       } catch (apiError) {
@@ -148,7 +207,6 @@ export default function AdminBroadcast() {
       }
 
       setSaved(true);
-      message.success("Настройки трансляции сохранены");
       
       // Обновляем данные
       if (adminData.reload) {
@@ -159,6 +217,45 @@ export default function AdminBroadcast() {
       message.error(error?.message || "Не удалось сохранить настройки");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const addBroadcastLink = () => {
+    const url = (newLinkUrl || "").trim();
+    if (!url) {
+      message.warning("Введите ссылку");
+      return;
+    }
+    if (broadcastLinks.includes(url)) {
+      message.info("Ссылка уже в списке");
+      return;
+    }
+    setBroadcastLinks((prev) => [...prev, url]);
+    setNewLinkUrl("");
+  };
+
+  const removeBroadcastLink = (url) => {
+    setBroadcastLinks((prev) => prev.filter((u) => u !== url));
+  };
+
+  const saveBroadcastLinks = async () => {
+    if (!adminData.canWrite) {
+      message.warning("Нет прав на запись");
+      return;
+    }
+    setLinksLoading(true);
+    setLinksSaved(false);
+    try {
+      const { SettingsApi } = await import("../../api/client.js");
+      await SettingsApi.update({
+        broadcast_links: JSON.stringify(broadcastLinks),
+      });
+      setLinksSaved(true);
+      message.success("Список трансляций сохранён");
+    } catch (e) {
+      message.error("Не удалось сохранить список");
+    } finally {
+      setLinksLoading(false);
     }
   };
 
@@ -314,7 +411,66 @@ export default function AdminBroadcast() {
           />
         )}
       </div>
+
+      <div className="admin-card" style={{ marginTop: 24 }}>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Архив трансляций</h2>
+          <p style={{ color: "#6b7280", fontSize: 14 }}>
+            Ссылки на архив трансляций (VK, YouTube). Они отображаются на главной и на странице «Все трансляции».
+          </p>
+        </div>
+        {linksSaved && (
+          <Alert
+            message="Список сохранён"
+            type="success"
+            closable
+            onClose={() => setLinksSaved(false)}
+            style={{ marginBottom: 16 }}
+          />
+        )}
+        <Space.Compact style={{ width: "100%", marginBottom: 16 }}>
+          <Input
+            placeholder="https://vkvideo.ru/video-... или https://youtu.be/..."
+            value={newLinkUrl}
+            onChange={(e) => setNewLinkUrl(e.target.value)}
+            onPressEnter={addBroadcastLink}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={addBroadcastLink}>
+            Добавить по ссылке
+          </Button>
+        </Space.Compact>
+        <List
+          size="small"
+          dataSource={broadcastLinks}
+          renderItem={(url) => (
+            <List.Item
+              actions={[
+                <Button
+                  type="text"
+                  danger
+                  key="remove"
+                  icon={<DeleteOutlined />}
+                  onClick={() => removeBroadcastLink(url)}
+                  disabled={!adminData.canWrite}
+                />,
+              ]}
+            >
+              <a href={url} target="_blank" rel="noopener noreferrer" style={{ wordBreak: "break-all" }}>
+                {url}
+              </a>
+            </List.Item>
+          )}
+          style={{ marginBottom: 16 }}
+        />
+        <Button
+          type="primary"
+          loading={linksLoading}
+          onClick={saveBroadcastLinks}
+          disabled={!adminData.canWrite}
+        >
+          Сохранить список трансляций
+        </Button>
+      </div>
     </div>
   );
 }
-
