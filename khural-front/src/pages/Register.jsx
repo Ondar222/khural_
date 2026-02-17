@@ -5,7 +5,7 @@ import { useHashRoute } from "../Router.jsx";
 import AccountInfo from "../components/AccountInfo.jsx";
 
 export default function Register() {
-  const { register, login } = useAuth();
+  const { register, login, isAuthenticated, user } = useAuth();
   const { navigate } = useHashRoute();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
