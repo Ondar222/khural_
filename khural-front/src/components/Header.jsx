@@ -392,7 +392,7 @@ export default function Header() {
               onMouseEnter={() => setOpenMenu("pages")}
               onMouseLeave={() => setOpenMenu(null)}
             >
-              <Link to="/pages">{t("Страницы") || "Страницы"} ▾</Link>
+              {/* <Link to="/pages">{t("Страницы") || "Страницы"} ▾</Link> */}
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("pages")}>
                 <a href="/pages">{t("Все страницы") || "Все страницы"}</a>
                 {Array.isArray(pagesTree) && pagesTree.length ? <hr /> : null}
