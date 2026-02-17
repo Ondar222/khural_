@@ -2,6 +2,7 @@ import React from "react";
 import { Form, Input, Button, Alert } from "antd";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
+import AccountInfo from "../components/AccountInfo.jsx";
 
 export default function Login() {
   const { login, isAuthenticated, user } = useAuth();
@@ -92,67 +93,79 @@ export default function Login() {
   return (
     <section className="auth-page">
       <div className="auth-glass-card">
-        <div className="auth-glass-card__header">
-          <div className="auth-glass-card__logo">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg" alt="Герб" />
-          </div>
-          <h1 className="auth-glass-card__title">Вход</h1>
-          <p className="auth-glass-card__subtitle">Войдите в свой аккаунт</p>
-        </div>
-        
-        {error ? <Alert type="error" message={error} showIcon={false} /> : null}
-        
-        <Form 
-          layout="vertical" 
-          onFinish={onFinish}
-          className="auth-glass-form"
-        >
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              { required: true, message: "Введите email" },
-              {
-                type: "email",
-                message: "Введите корректный email (например: user@example.com)"
-              },
-              {
-                validator: (_, value) => {
-                  if (!value) return Promise.resolve();
-                  // Дополнительная проверка на полный домен
-                  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                  if (!emailRegex.test(value)) {
-                    return Promise.reject(new Error('Email должен содержать полное доменное имя (например: user@mail.ru)'));
+        {isAuthenticated && user ? (
+          <>
+            <div className="auth-glass-card__header">
+              <h1 className="auth-glass-card__title">Информация об аккаунте</h1>
+              <p className="auth-glass-card__subtitle">Вы вошли в систему</p>
+            </div>
+            <AccountInfo />
+          </>
+        ) : (
+          <>
+            <div className="auth-glass-card__header">
+              <div className="auth-glass-card__logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg" alt="Герб" />
+              </div>
+              <h1 className="auth-glass-card__title">Вход</h1>
+              <p className="auth-glass-card__subtitle">Войдите в свой аккаунт</p>
+            </div>
+            
+            {error ? <Alert type="error" message={error} showIcon={false} /> : null}
+            
+            <Form 
+              layout="vertical" 
+              onFinish={onFinish}
+              className="auth-glass-form"
+            >
+              <Form.Item
+                label="Email"
+                name="email"
+                rules={[
+                  { required: true, message: "Введите email" },
+                  {
+                    type: "email",
+                    message: "Введите корректный email (например: user@example.com)"
+                  },
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.resolve();
+                      // Дополнительная проверка на полный домен
+                      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                      if (!emailRegex.test(value)) {
+                        return Promise.reject(new Error('Email должен содержать полное доменное имя (например: user@mail.ru)'));
+                      }
+                      return Promise.resolve();
+                    }
                   }
-                  return Promise.resolve();
-                }
-              }
-            ]}
-          >
-            <Input type="email" placeholder="you@example.org" />
-          </Form.Item>
-          <Form.Item
-            label="Пароль"
-            name="password"
-            rules={[{ required: true, message: "Введите пароль" }]}
-          >
-            <Input.Password placeholder="••••••••" />
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Button type="primary" htmlType="submit" loading={loading} block>
-              Войти
-            </Button>
-          </Form.Item>
-        </Form>
+                ]}
+              >
+                <Input type="email" placeholder="you@example.org" />
+              </Form.Item>
+              <Form.Item
+                label="Пароль"
+                name="password"
+                rules={[{ required: true, message: "Введите пароль" }]}
+              >
+                <Input.Password placeholder="••••••••" />
+              </Form.Item>
+              <Form.Item style={{ marginBottom: 0 }}>
+                <Button type="primary" htmlType="submit" loading={loading} block>
+                  Войти
+                </Button>
+              </Form.Item>
+            </Form>
 
-        <div className="auth-glass-card__footer">
-          <p className="auth-glass-card__footer-text">
-            Нет аккаунта?{" "}
-            <a href="#/register" className="auth-glass-card__link" onClick={(e) => { e.preventDefault(); navigate("/register"); }}>
-              Зарегистрироваться
-            </a>
-          </p>
-        </div>
+            <div className="auth-glass-card__footer">
+              <p className="auth-glass-card__footer-text">
+                Нет аккаунта?{" "}
+                <a href="#/register" className="auth-glass-card__link" onClick={(e) => { e.preventDefault(); navigate("/register"); }}>
+                  Зарегистрироваться
+                </a>
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

@@ -167,7 +167,7 @@ export default function Header() {
                 <span className="topbar-auth__name">
                   {user?.name || user?.email || t("login")}
                 </span>
-                <a href="/cabinet">{t("Личный кабинет") || "Личный кабинет"}</a>
+                <a href="/cabinet/account">{t("Личный кабинет") || "Личный кабинет"}</a>
                 {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
                   <a href="/admin">{t("Панель управления") || "Панель управления"}</a>
                 ) : null}

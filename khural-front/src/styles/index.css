@@ -5751,12 +5751,144 @@ body:has(.auth-page) {
   .auth-page::after {
     animation: none;
   }
-  
+
   .auth-glass-form .ant-btn-primary:hover,
   .auth-glass-form .ant-btn-default:hover,
   .auth-glass-form .btn--primary:hover,
   .auth-glass-form .btn--default:hover {
     transform: none;
+  }
+}
+
+/* ============================================
+   Account Info Component
+   ============================================ */
+.account-info {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.account-info__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.account-info__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #003366 0%, #0d4b8f 100%);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.account-info__name {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-info__fullname {
+  font-weight: 700;
+  font-size: 15px;
+  color: #111827;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-info__email {
+  font-size: 13px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-info__details {
+  margin-bottom: 16px;
+}
+
+.account-info__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+.account-info__label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.account-info__value {
+  color: #111827;
+  font-weight: 600;
+  text-align: right;
+}
+
+.account-info__actions {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.account-info__btn {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.account-info__btn--primary {
+  background: linear-gradient(135deg, #003366 0%, #0d4b8f 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.3);
+}
+
+.account-info__btn--primary:hover {
+  background: linear-gradient(135deg, #0d4b8f 0%, #1a5f9e 100%);
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.4);
+  transform: translateY(-1px);
+}
+
+.account-info__btn--outline {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 51, 102, 0.3);
+  color: #003366;
+}
+
+.account-info__btn--outline:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(0, 51, 102, 0.5);
+  transform: translateY(-1px);
+}
+
+@media (min-width: 480px) {
+  .account-info__actions {
+    flex-direction: row;
+  }
+
+  .account-info__btn {
+    flex: 1;
   }
 }
 

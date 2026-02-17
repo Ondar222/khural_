@@ -105,7 +105,7 @@ export default function CabinetAccount() {
   };
 
   return (
-    <CabinetShell active="account" title="Личный кабинет — Личный аккаунт">
+    <CabinetShell active="account" title="Личный кабинет">
       <Card title="Информация об аккаунте" style={{ marginBottom: 16 }}>
         <Descriptions column={1} bordered size="middle">
           <Descriptions.Item label="Имя">{user?.name || "—"}</Descriptions.Item>
