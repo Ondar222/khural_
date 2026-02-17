@@ -36,7 +36,7 @@ export default function RequireAdmin({ children }) {
         warnedRef.current = true;
         message.warning("Доступ в админ-панель разрешён только администратору.");
       }
-      navigate("/cabinet");
+      navigate("/cabinet/account");
     }
   }, [isAuthenticated, user, navigate, message]);
 

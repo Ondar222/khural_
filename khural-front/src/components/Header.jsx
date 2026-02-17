@@ -2,6 +2,7 @@ import React from "react";
 import { useA11y } from "../context/A11yContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useHashRoute } from "../Router.jsx";
 import Link from "./Link.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { RightOutlined } from "@ant-design/icons";
@@ -21,6 +22,7 @@ export default function Header() {
   const [openMenu, setOpenMenu] = React.useState(null); // 'vh' | 'news' | 'docs' | 'pages'
   const [mobileSection, setMobileSection] = React.useState(null);
   const { isAuthenticated, user, logout } = useAuth();
+  const { navigate } = useHashRoute();
 
 
   React.useEffect(() => {
@@ -167,9 +169,23 @@ export default function Header() {
                 <span className="topbar-auth__name">
                   {user?.name || user?.email || t("login")}
                 </span>
-                <a href="/cabinet/account">{t("Личный кабинет") || "Личный кабинет"}</a>
+                <button
+                  className="link-like"
+                  onClick={() => {
+                    navigate("/cabinet/account");
+                  }}
+                >
+                  {t("Личный кабинет") || "Личный кабинет"}
+                </button>
                 {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
-                  <a href="/admin">{t("Панель управления") || "Панель управления"}</a>
+                  <button
+                    className="link-like"
+                    onClick={() => {
+                      navigate("/admin");
+                    }}
+                  >
+                    {t("Панель управления") || "Панель управления"}
+                  </button>
                 ) : null}
                 <button
                   className="link-like"
@@ -182,12 +198,18 @@ export default function Header() {
               </>
             ) : (
               <>
-                <a href="/login" className="btn btn--primary">
+                <button
+                  className="btn btn--primary link-like"
+                  onClick={() => navigate("/login")}
+                >
                   {t("login")}
-                </a>
-                <a href="/register" className="btn">
+                </button>
+                <button
+                  className="btn link-like"
+                  onClick={() => navigate("/register")}
+                >
                   {t("register")}
-                </a>
+                </button>
               </>
             )}
           </span>
@@ -659,23 +681,27 @@ export default function Header() {
               {isAuthenticated ? (
                 <div className="mobile-auth__panel">
                   <div className="mobile-auth__name">{user?.name || user?.email}</div>
-                  <a
+                  <button
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
-                    href="/cabinet"
-                    onClick={() => setMobileOpen(false)}
+                    onClick={() => {
+                      navigate("/cabinet/account");
+                      setMobileOpen(false);
+                    }}
                     style={{ width: "80%" }}
                   >
                     {t("Личный кабинет") || "Личный кабинет"}
-                  </a>
+                  </button>
                   {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
-                    <a
+                    <button
                       className="btn mobile-auth__btn mobile-auth__btn--outline"
-                      href="/admin"
-                      onClick={() => setMobileOpen(false)}
+                      onClick={() => {
+                        navigate("/admin");
+                        setMobileOpen(false);
+                      }}
                       style={{ width: "80%" }}
                     >
                       {t("Панель управления") || "Панель управления"}
-                    </a>
+                    </button>
                   ) : null}
                   <button
                     className="btn mobile-auth__btn mobile-auth__btn--outline"
@@ -690,22 +716,26 @@ export default function Header() {
                 </div>
               ) : (
                 <div className="mobile-auth__panel">
-                  <a
+                  <button
                     className="btn mobile-auth__btn mobile-auth__btn--primary"
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
+                    onClick={() => {
+                      navigate("/login");
+                      setMobileOpen(false);
+                    }}
                     style={{ width: "80%" }}
                   >
                     {t("login")}
-                  </a>
-                  <a
+                  </button>
+                  <button
                     className="btn mobile-auth__btn mobile-auth__btn--outline"
-                    href="/register"
-                    onClick={() => setMobileOpen(false)}
+                    onClick={() => {
+                      navigate("/register");
+                      setMobileOpen(false);
+                    }}
                     style={{ width: "80%" }}
                   >
                     {t("register")}
-                  </a>
+                  </button>
                 </div>
               )}
             </div>

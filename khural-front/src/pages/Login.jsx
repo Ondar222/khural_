@@ -30,10 +30,10 @@ export default function Login() {
     const isAdmin = isAdminUser(u);
     // If explicit next is provided, honor it, except non-admins can't be sent to /admin.
     if (nextPath && nextPath !== "/") {
-      if (!isAdmin && nextPath.startsWith("/admin")) return "/cabinet";
+      if (!isAdmin && nextPath.startsWith("/admin")) return "/cabinet/account";
       return nextPath;
     }
-    return isAdmin ? "/admin" : "/cabinet";
+    return isAdmin ? "/admin" : "/cabinet/account";
   }, [nextPath, user, loginUser, isAdminUser]);
 
   const hasNavigatedRef = React.useRef(false);

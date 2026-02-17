@@ -32,7 +32,7 @@ export default function Register() {
           sessionStorage.getItem("auth_token") ||
           sessionStorage.getItem("jwt") ||
           "";
-        navigate(token ? "/cabinet" : "/login");
+        navigate(token ? "/cabinet/account" : "/login");
       }, 500);
     } catch (e) {
       setError(e?.message || "Ошибка регистрации");
