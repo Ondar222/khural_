@@ -594,10 +594,7 @@ export default function NewsArchive() {
                 label: "Свод заповедей матерей Тувы", 
                 href: "/p/mothers-commandments"
               },
-              { 
-                label: "Подписка на новости", 
-                href: "/p/news-subscription"
-              },
+            
               { 
                 label: "Для СМИ", 
                 href: "/p/for-media"

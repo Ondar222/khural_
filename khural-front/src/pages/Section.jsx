@@ -45,7 +45,7 @@ import {
 const SECTION_TITLE_TO_SLUG = {
   "Кодекс чести мужчины Тувы": "code-of-honor",
   "Свод заповедей матерей Тувы": "mothers-commandments",
-  "Подписка на новости": "news-subscription",
+
   "Для СМИ": "for-media",
 };
 

@@ -226,6 +226,9 @@ export async function apiFetch(
     if (timeoutId != null) clearTimeout(timeoutId);
   }
   
+  if (res.status === 204) {
+    return unwrapApiPayload(null);
+  }
   const isJson = (res.headers.get("content-type") || "").includes("application/json");
   const data = isJson ? await res.json().catch(() => null) : null;
   
@@ -409,12 +412,15 @@ export const PublicApi = {
   TRANSLATION_TIMEOUT_MS: 300000,
 
   async translate(text, from, to) {
-    // In this backend, translation endpoints require admin auth.
-    // We keep a safe fallback to avoid breaking the UI for guests.
     const opts = { method: "POST", body: { text, from, to }, auth: true, timeout: PublicApi.TRANSLATION_TIMEOUT_MS };
     try {
       const result = await apiFetch("/translation/translate", opts);
-      return result;
+      // 204 No Content или пустой ответ — бэкенд не вернул тело
+      if (result == null || (typeof result === "object" && result.translated === undefined && !("translated" in result))) {
+        return { original: text, translated: text, from, to };
+      }
+      const translated = result?.translated ?? text;
+      return { original: text, translated, from, to };
     } catch {
       try {
         const result = await apiFetch("/translation/translate-batch", {
@@ -424,7 +430,7 @@ export const PublicApi = {
           timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
         });
         const translated = Array.isArray(result?.translated) ? result.translated[0] : text;
-        return { original: text, translated, from, to };
+        return { original: text, translated: translated ?? text, from, to };
       } catch {
         return { original: text, translated: text, from, to };
       }
