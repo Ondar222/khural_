@@ -6553,6 +6553,16 @@ body:has(.auth-page) {
   overflow-y: auto;
   padding-right: 4px; /* leave room for scrollbar */
 }
+.sidenav__list::-webkit-scrollbar {
+  width: 8px;
+}
+.sidenav__list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+.sidenav__list::-webkit-scrollbar-track {
+  background: transparent;
+}
 .sidenav .tile.link {
   padding: 10px 12px;
   font-size: 14px;
@@ -7388,7 +7398,7 @@ body.admin-mode[data-admin-theme="light"] .admin-pillbtn--site:hover {
   width: 10px;
 }
 .admin-nav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.3);
   border: 3px solid transparent;
   background-clip: content-box;
   border-radius: 999px;
