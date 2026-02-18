@@ -6,6 +6,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
 import { getDocumentLinkedEntities } from "../../utils/documentMentions.js";
+import { Pagination } from "antd";
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
@@ -50,6 +51,8 @@ export default function DocsPage() {
   const [docs, setDocs] = React.useState([]);
   const [query, setQuery] = React.useState("");
   const [filterEntity, setFilterEntity] = React.useState(null); // { type: 'deputy'|'committee'|'convocation', id }
+  const [page, setPage] = React.useState(1);
+  const PAGE_SIZE = 10;
 
   const slug = React.useMemo(() => {
     const base = (route || "/").split("?")[0];
@@ -58,6 +61,11 @@ export default function DocsPage() {
   }, [route]);
 
   const cat = CATEGORIES.find((c) => c.slug === slug) || CATEGORIES[0];
+
+  // Reset page when query or filter changes
+  React.useEffect(() => {
+    setPage(1);
+  }, [query, filterEntity, slug]);
 
   React.useEffect(() => {
     // Фильтруем документы по типу из бекенда
@@ -148,6 +156,9 @@ export default function DocsPage() {
     return list;
   }, [docs, query, filterEntity, docLinkedMap]);
 
+  const totalPages = Math.ceil(visibleDocs.length / PAGE_SIZE);
+  const paginatedDocs = visibleDocs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <section className="section section--docs">
       <div className="container">
@@ -234,7 +245,7 @@ export default function DocsPage() {
               </select> */}
             </div>
             <div className="law-list docs-page__list">
-              {visibleDocs.map((d) => {
+              {paginatedDocs.map((d) => {
                 const key = d.id ?? d.url;
                 const linked = docLinkedMap.get(key) || { deputies: [], committees: [], convocations: [] };
                 const hasLinked = linked.deputies.length > 0 || linked.committees.length > 0 || linked.convocations.length > 0;
@@ -285,6 +296,18 @@ export default function DocsPage() {
                 );
               })}
             </div>
+            {totalPages > 1 && (
+              <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
+                <Pagination
+                  current={page}
+                  onChange={setPage}
+                  total={visibleDocs.length}
+                  pageSize={PAGE_SIZE}
+                  showSizeChanger={false}
+                  showTotal={(total) => `Всего: ${total}`}
+                />
+              </div>
+            )}
           </div>
           <SideNav
             title="Документы"

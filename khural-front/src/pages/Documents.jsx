@@ -1,6 +1,6 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
-import { Input, Select, Space, Switch } from "antd";
+import { Input, Select, Space, Switch, Pagination } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import ScrollToTop from "../components/ScrollToTop.jsx";
@@ -37,6 +37,8 @@ export default function Documents() {
   const [qNumber, setQNumber] = React.useState("");
   const [qDate, setQDate] = React.useState("");
   const [groupByCategory, setGroupByCategory] = React.useState(true);
+  const [page, setPage] = React.useState(1);
+  const PAGE_SIZE = 10;
 
   const cats = React.useMemo(
     () => ["Все", ...Array.from(new Set(documents.map((d) => d.category).filter(Boolean)))],
@@ -103,8 +105,34 @@ export default function Documents() {
     return entries;
   }, [filtered]);
 
+  // Reset page when filters change
+  React.useEffect(() => {
+    setPage(1);
+  }, [cat, year, q, qNumber, qDate, groupByCategory]);
+
+  // Pagination for flat list
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Pagination for grouped view
+  const groupedPaginated = React.useMemo(() => {
+    const allItems = grouped.flatMap(([, items]) => items);
+    const total = allItems.length;
+    const paginated = allItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    
+    // Re-group paginated items
+    const map = new Map();
+    for (const d of paginated) {
+      const key = d.category || "Без категории";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(d);
+    }
+    const entries = Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], "ru"));
+    return { entries, total };
+  }, [grouped, page]);
+
   return (
-    <section className="section">
+    <section className="section section--docs">
       <div className="container">
         <div className="page-grid">
           <div>
@@ -187,7 +215,7 @@ export default function Documents() {
               >
                 {groupByCategory ? (
                   <div style={{ display: "grid", gap: 10 }}>
-                    {grouped.map(([categoryName, items]) => (
+                    {groupedPaginated.entries.map(([categoryName, items]) => (
                       <details key={categoryName} open className="tile" style={{ margin: 0 }}>
                         <summary style={{ cursor: "pointer", fontWeight: 900 }}>
                           {categoryName} <span style={{ opacity: 0.7 }}>({items.length})</span>
@@ -228,38 +256,64 @@ export default function Documents() {
                     ))}
                   </div>
                 ) : (
-                  <div className="law-list">
-                    {filtered.map((d) => {
-                      const url = normalizeFilesUrl(d.url || d.file?.link || "");
-                      return (
-                        <div key={d.id || url || d.title} className="law-item card">
-                      <div className="law-left">
-                        <div className="law-ico">📄</div>
-                        <div>
-                          <div className="law-title">{d.title}</div>
-                              {renderDocDesc(d.desc)}
-                          <div className="card-subtitle">
-                            {d.number ? `${d.number} • ` : ""}
-                            {d.date || d.createdAt || ""}
-                            {d.category ? ` • ${d.category}` : ""}
+                  <>
+                    <div className="law-list">
+                      {paginatedItems.map((d) => {
+                        const url = normalizeFilesUrl(d.url || d.file?.link || "");
+                        return (
+                          <div key={d.id || url || d.title} className="law-item card">
+                            <div className="law-left">
+                              <div className="law-ico">📄</div>
+                              <div>
+                                <div className="law-title">{d.title}</div>
+                                {renderDocDesc(d.desc)}
+                                <div className="card-subtitle">
+                                  {d.number ? `${d.number} • ` : ""}
+                                  {d.date || d.createdAt || ""}
+                                  {d.category ? ` • ${d.category}` : ""}
+                                </div>
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+                              <a
+                                className="btn btn--primary"
+                                href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                download={url && !url.includes(".pdf") ? true : undefined}
+                              >
+                                Открыть ↗
+                              </a>
+                            </div>
                           </div>
-                        </div>
+                        );
+                      })}
+                    </div>
+                    {totalPages > 1 && (
+                      <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
+                        <Pagination
+                          current={page}
+                          onChange={setPage}
+                          total={filtered.length}
+                          pageSize={PAGE_SIZE}
+                          showSizeChanger={false}
+                          showTotal={(total) => `Всего: ${total}`}
+                        />
                       </div>
-                          <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
-                            <a
-                              className="btn btn--primary"
-                              href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              download={url && !url.includes(".pdf") ? true : undefined}
-                            >
-                              Открыть ↗
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+                    )}
+                  </>
+                )}
+                {groupByCategory && groupedPaginated.total > PAGE_SIZE && (
+                  <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
+                    <Pagination
+                      current={page}
+                      onChange={setPage}
+                      total={groupedPaginated.total}
+                      pageSize={PAGE_SIZE}
+                      showSizeChanger={false}
+                      showTotal={(total) => `Всего: ${total}`}
+                    />
+                  </div>
                 )}
               </DataState>
             </DataState>

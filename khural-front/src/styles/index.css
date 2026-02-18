@@ -3283,6 +3283,73 @@ a.btn.btn--primary:focus-visible {
   line-height: 1.35;
   word-break: break-word;
 }
+/* Pagination for documents page - Desktop */
+.section--docs .ant-pagination {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.section--docs .ant-pagination-item {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+.section--docs .ant-pagination-item:hover {
+  border-color: #003366;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.15);
+}
+.section--docs .ant-pagination-item-active {
+  background: #003366 !important;
+  border-color: #003366 !important;
+}
+.section--docs .ant-pagination-item-active a {
+  color: #fff !important;
+}
+.section--docs .ant-pagination-item a {
+  color: #003366;
+  transition: color 0.2s ease;
+}
+.section--docs .ant-pagination-item:hover a {
+  color: #003366;
+}
+.section--docs .ant-pagination-prev,
+.section--docs .ant-pagination-next {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+.section--docs .ant-pagination-prev:hover,
+.section--docs .ant-pagination-next:hover {
+  border-color: #003366;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.15);
+}
+.section--docs .ant-pagination-prev .ant-pagination-item-link,
+.section--docs .ant-pagination-next .ant-pagination-item-link {
+  color: #003366;
+  font-weight: 600;
+}
+.section--docs .ant-pagination-jump-prev,
+.section--docs .ant-pagination-jump-next {
+  border-radius: 8px;
+}
+.section--docs .ant-pagination-jump-prev:hover,
+.section--docs .ant-pagination-jump-next:hover {
+  transform: translateY(-1px);
+}
+.section--docs .ant-pagination-total-text {
+  color: #6b7280;
+  font-size: 14px;
+  margin-right: 16px;
+}
+
+/* Mobile pagination */
 @media (max-width: 959px) {
   .section--docs .page-grid {
     gap: 24px;
@@ -3309,6 +3376,51 @@ a.btn.btn--primary:focus-visible {
   }
   .section--docs .law-title {
     font-size: 15px;
+  }
+  /* Mobile pagination - compact and touch-friendly */
+  .section--docs .ant-pagination {
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+  }
+  .section--docs .ant-pagination-item {
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+  .section--docs .ant-pagination-prev,
+  .section--docs .ant-pagination-next {
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+    border-radius: 6px;
+  }
+  .section--docs .ant-pagination-prev .ant-pagination-item-link,
+  .section--docs .ant-pagination-next .ant-pagination-item-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .section--docs .ant-pagination-options {
+    display: none;
+  }
+  .section--docs .ant-pagination-total-text {
+    width: auto;
+    text-align: center;
+    margin-right: 12px;
+    margin-bottom: 0;
+    font-size: 12px;
+    display: inline-block;
+  }
+  .section--docs .ant-pagination-jump-prev,
+  .section--docs .ant-pagination-jump-next {
+    display: none;
   }
 }
 @media (max-width: 559px) {
