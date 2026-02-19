@@ -309,6 +309,7 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
             pageSize: 8,
             showSizeChanger: !isTablet,
             showQuickJumper: !isTablet,
+            showTotal: (total, range) => `${range[0]}–${range[1]} из ${total}`,
             size: isTablet ? "small" : "default",
           }}
           scroll={isTablet ? { x: "max-content" } : undefined}

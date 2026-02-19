@@ -1,4 +1,5 @@
 import React from "react";
+import { Pagination } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { Select } from "antd";
@@ -14,6 +15,8 @@ import {
   buildDistrictOptions,
 } from "../utils/deputyFilterOptions.js";
 import { formatConvocationLabelWithYears, CANONICAL_CONVOCATIONS } from "../utils/convocationLabels.js";
+
+const DEPUTIES_PAGE_SIZE = 12;
 
 function deputyMatchesFaction(deputy, factionName) {
   if (!factionName || factionName === "Все") return true;
@@ -52,6 +55,20 @@ export default function Deputies() {
   const [committeeId, setCommitteeId] = React.useState("Все");
   const [faction, setFaction] = React.useState("Все");
   const [district, setDistrict] = React.useState("Все");
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+
+  // Track window resize for responsive pagination
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
 
   // Если выбранный созыв не встречается среди депутатов (данные ещё не загружены или нет таких) — сброс в «Все»
   React.useEffect(() => {
@@ -126,6 +143,46 @@ export default function Deputies() {
     });
   }, [deputies, convocation, faction, district, committeeMatcher]);
 
+  // Paginated deputies
+  const paginatedDeputies = React.useMemo(() => {
+    const start = (currentPage - 1) * DEPUTIES_PAGE_SIZE;
+    const end = start + DEPUTIES_PAGE_SIZE;
+    return filtered.slice(start, end);
+  }, [filtered, currentPage]);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [convocation, faction, district, committeeId]);
+
+  // Handle page change with URL update
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    const sp = new URLSearchParams(window.location.search || "");
+    if (page > 1) {
+      sp.set("page", String(page));
+    } else {
+      sp.delete("page");
+    }
+    const qs = sp.toString();
+    const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+    window.history.replaceState(null, "", newUrl);
+    // Scroll to top of deputies section
+    const deputiesEl = document.querySelector(".deputies-page");
+    if (deputiesEl) {
+      deputiesEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // Get initial page from URL
+  React.useEffect(() => {
+    const pageParam = new URLSearchParams(window.location.search || "").get("page");
+    const p = parseInt(pageParam, 10);
+    if (Number.isFinite(p) && p >= 1) {
+      setCurrentPage(p);
+    }
+  }, []);
+
   // Обновить URL при смене фильтров, чтобы при popstate/navigate не перезаписывать выбор
   const updateFiltersUrl = React.useCallback((updates) => {
     const sp = new URLSearchParams(window.location.search || "");
@@ -175,7 +232,7 @@ export default function Deputies() {
   }, []);
 
   return (
-    <section className="section">
+    <section className="section deputies-page">
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
@@ -253,11 +310,11 @@ export default function Deputies() {
               <DataState
                 loading={false}
                 error={null}
-                empty={filtered.length === 0}
+                empty={paginatedDeputies.length === 0}
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
                 <div className="grid cols-3">
-                  {filtered.map((d) => {
+                  {paginatedDeputies.map((d) => {
                     // Фото уже нормализовано в DataContext через normalizePhotoUrl
                     // Но на всякий случай проверяем и нормализуем еще раз, если нужно
                     let photo = d.photo || "";
@@ -437,6 +494,21 @@ export default function Deputies() {
                     );
                   })}
                 </div>
+
+                {/* Pagination */}
+                {filtered.length > 0 && (
+                  <div className="deputies-page__pagination" style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
+                    <Pagination
+                      current={currentPage}
+                      total={filtered.length}
+                      pageSize={DEPUTIES_PAGE_SIZE}
+                      showSizeChanger={false}
+                      showTotal={(total, range) => `${range[0]}–${range[1]} из ${total}`}
+                      onChange={handlePageChange}
+                      responsive={true}
+                    />
+                  </div>
+                )}
               </DataState>
             </DataState>
           </div>

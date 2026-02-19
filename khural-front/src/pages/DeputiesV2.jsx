@@ -1,7 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-import { Select } from "antd";
+import { Select, Pagination } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import ScrollToTop from "../components/ScrollToTop.jsx";
@@ -341,6 +341,8 @@ export default function DeputiesV2() {
   const [apiConvocations, setApiConvocations] = React.useState([]);
   const [apiCommittees, setApiCommittees] = React.useState([]);
   const [filtersLoading, setFiltersLoading] = React.useState(false);
+  const [page, setPage] = React.useState(1);
+  const DEPUTIES_PAGE_SIZE = 12;
 
   // Load filters from API
   React.useEffect(() => {
@@ -501,6 +503,11 @@ export default function DeputiesV2() {
   // Public default: hide ended/deceased deputies (they are available in /deputies/ended)
   const [status, setStatus] = React.useState("active");
 
+  // Reset page when filters change
+  React.useEffect(() => {
+    setPage(1);
+  }, [convocation, status, committeeId, faction, district]);
+
   const districts = React.useMemo(() => {
     const toStr = (item) => {
       if (typeof item === "string") return item.trim();
@@ -628,6 +635,13 @@ export default function DeputiesV2() {
     });
   }, [filtered, convocation, getDeputyConvocations]);
 
+  // Pagination
+  const totalPages = Math.ceil(filteredByConvocation.length / DEPUTIES_PAGE_SIZE);
+  const paginatedDeputies = React.useMemo(
+    () => filteredByConvocation.slice((page - 1) * DEPUTIES_PAGE_SIZE, page * DEPUTIES_PAGE_SIZE),
+    [filteredByConvocation, page]
+  );
+
   // URL списка депутатов с текущими фильтрами — для ссылки «Назад» со страницы депутата
   const deputiesListUrlWithFilters = React.useMemo(() => {
     const sp = new URLSearchParams();
@@ -683,7 +697,7 @@ export default function DeputiesV2() {
   }, [convocation, status, committeeId, faction, district]);
 
   return (
-    <section className="section">
+    <section className="section deputies-page">
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
@@ -775,7 +789,7 @@ export default function DeputiesV2() {
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
                 <div className="grid cols-3">
-                  {filteredByConvocation.map((d) => {
+                  {paginatedDeputies.map((d) => {
                     const photoRaw =
                       typeof d.photo === "string"
                         ? d.photo
@@ -787,17 +801,17 @@ export default function DeputiesV2() {
                       <div key={d.id} className="gov-card">
                         <div className="gov-card__top">
                           {photo ? (
-                            <img 
-                              className="gov-card__avatar" 
-                              src={photo} 
-                              alt="" 
-                              loading="lazy" 
+                            <img
+                              className="gov-card__avatar"
+                              src={photo}
+                              alt=""
+                              loading="lazy"
                               decoding="async"
                               onError={(e) => {
                                 // Если фото не загрузилось, заменяем на placeholder
                                 const img = e.target;
                                 const currentSrc = img.src || photo;
-                                
+
                                 // Если это URL с khural.rtyva.ru и мы еще не пробовали прокси
                                 if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
                                   img.dataset.proxyTried = "true";
@@ -846,6 +860,18 @@ export default function DeputiesV2() {
                     );
                   })}
                 </div>
+                {totalPages > 1 && (
+                  <div style={{ display: "flex", justifyContent: "center", marginTop: 32 }}>
+                    <Pagination
+                      current={page}
+                      onChange={setPage}
+                      total={filteredByConvocation.length}
+                      pageSize={DEPUTIES_PAGE_SIZE}
+                      showSizeChanger={false}
+                      showTotal={(total) => `Всего: ${total}`}
+                    />
+                  </div>
+                )}
               </DataState>
             </DataState>
           </div>

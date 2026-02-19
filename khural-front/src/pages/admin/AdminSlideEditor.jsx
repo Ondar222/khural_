@@ -208,6 +208,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
             name="description"
             tooltip="Используйте редактор для форматирования текста"
             getValueFromEvent={(value) => value}
+            getValueProps={(value) => ({ value })}
           >
             <TinyMCEEditor
               height={400}
@@ -236,6 +237,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
               name="descriptionTy"
               tooltip="Описание слайда на тувинском языке"
               getValueFromEvent={(value) => value}
+              getValueProps={(value) => ({ value })}
             >
               <TinyMCEEditor
                 height={300}

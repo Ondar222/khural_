@@ -15,13 +15,23 @@ export default function TinyMCEEditor({ value, onChange, placeholder, height = 4
   const [useFallback, setUseFallback] = useState(false);
   const timeoutRef = useRef(null);
   const loadedRef = useRef(false);
+  const editorRef = useRef(null);
+
+  // Sync external value changes to editor
+  useEffect(() => {
+    if (editorRef.current && value !== editorRef.current.getContent()) {
+      editorRef.current.setContent(value ?? '');
+    }
+  }, [value]);
 
   const handleEditorChange = useCallback((content, editor) => {
+    editorRef.current = editor;
     if (onChange) onChange(content);
   }, [onChange]);
 
-  const handleInit = useCallback(() => {
+  const handleInit = useCallback((_, editor) => {
     loadedRef.current = true;
+    editorRef.current = editor;
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;

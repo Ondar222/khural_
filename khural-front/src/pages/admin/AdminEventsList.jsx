@@ -139,6 +139,7 @@ export default function AdminEventsList({ items, onDelete, busy, canWrite }) {
             pageSize: 10,
             showSizeChanger: !isTablet,
             showQuickJumper: !isTablet,
+            showTotal: (total, range) => `${range[0]}–${range[1]} из ${total}`,
             size: isTablet ? "small" : "default",
           }}
           scroll={isTablet ? { x: "max-content" } : undefined}

@@ -6891,6 +6891,70 @@ body:has(.auth-page) {
     transform: translateY(-1px);
   }
 }
+/* Pagination for deputies page */
+.deputies-page .ant-pagination {
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+.deputies-page .ant-pagination-item {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+.deputies-page .ant-pagination-item:hover {
+  border-color: #003366;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.15);
+}
+.deputies-page .ant-pagination-item-active {
+  background: #003366 !important;
+  border-color: #003366 !important;
+}
+.deputies-page .ant-pagination-item-active a {
+  color: #fff !important;
+}
+.deputies-page .ant-pagination-prev,
+.deputies-page .ant-pagination-next {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+.deputies-page .ant-pagination-prev:hover,
+.deputies-page .ant-pagination-next:hover {
+  border-color: #003366;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.15);
+}
+@media (max-width: 959px) {
+  .deputies-page .ant-pagination {
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  .deputies-page .ant-pagination-item {
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 13px;
+  }
+  .deputies-page .ant-pagination-prev,
+  .deputies-page .ant-pagination-next {
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+  }
+  .deputies-page .ant-pagination-total-text {
+    width: auto;
+    margin-right: 12px;
+    font-size: 12px;
+  }
+  .deputies-page .ant-pagination-jump-prev,
+  .deputies-page .ant-pagination-jump-next {
+    display: none;
+  }
+}
+
 @media (max-width: 959px) {
   .gov-card__top {
     height: 160px;
@@ -9544,49 +9608,119 @@ body.admin-mode[data-admin-theme="dark"] .ant-upload-text,
 body.admin-mode[data-admin-theme="dark"] .ant-upload-hint {
   color: rgba(241, 245, 249, 0.92) !important;
 }
+/* ============================================
+   Beautiful Pagination - Dark Mode
+   Enhanced styling for admin dark theme
+   ============================================ */
+
 /* Pagination items in dark mode - light background */
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-item {
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-item {
   background: rgba(255, 255, 255, 0.12) !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-item a {
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-item a {
   color: rgba(241, 245, 249, 0.92) !important;
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-item:hover {
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-item:hover {
   background: rgba(255, 255, 255, 0.18) !important;
   border-color: rgba(255, 215, 0, 0.5) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2) !important;
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-item:hover a {
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-item:hover a {
   color: var(--gold) !important;
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-item-active {
-  background: rgba(255, 215, 0, 0.2) !important;
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-item-active {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.15) 100%) !important;
   border-color: var(--gold) !important;
+  box-shadow: 0 4px 14px rgba(255, 215, 0, 0.35) !important;
+  transform: translateY(-2px);
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-item-active a {
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-item-active a {
   color: var(--gold) !important;
+  font-weight: 700;
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-prev,
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-next {
+
+/* Previous/Next buttons in dark mode */
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-prev,
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-next {
   background: rgba(255, 255, 255, 0.12) !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-prev:hover,
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-next:hover {
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-prev:hover,
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-next:hover {
   background: rgba(255, 255, 255, 0.18) !important;
   border-color: rgba(255, 215, 0, 0.5) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2) !important;
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-prev:hover .ant-pagination-item-link,
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-next:hover .ant-pagination-item-link {
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-prev:hover .ant-pagination-item-link,
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-next:hover .ant-pagination-item-link {
   color: var(--gold) !important;
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-jump-prev,
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-jump-next {
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-prev .ant-pagination-item-link,
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-next .ant-pagination-item-link {
+  color: rgba(241, 245, 249, 0.92) !important;
+  font-weight: 700;
+}
+
+/* Jump buttons in dark mode */
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-jump-prev,
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-jump-next {
   color: rgba(241, 245, 249, 0.92) !important;
 }
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-jump-prev:hover,
-body.admin-mode[data-admin-theme="dark"] .ant-pagination-jump-next:hover {
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-jump-prev:hover,
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-jump-next:hover {
   color: var(--gold) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.15) !important;
+}
+
+/* Total text in dark mode */
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-total-text {
+  color: rgba(241, 245, 249, 0.65) !important;
+}
+
+/* Options in dark mode */
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-options-size-changer {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: rgba(241, 245, 249, 0.92) !important;
+}
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-options-size-changer:hover {
+  border-color: rgba(255, 215, 0, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15) !important;
+}
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-options-quick-jumper {
+  color: rgba(241, 245, 249, 0.65) !important;
+}
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-options-quick-jumper input {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: rgba(241, 245, 249, 0.92) !important;
+}
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-options-quick-jumper input:hover {
+  border-color: rgba(255, 215, 0, 0.5) !important;
+}
+
+body.admin-mode[data-admin-theme="dark"] .admin-card .ant-pagination-options-quick-jumper input:focus {
+  border-color: rgba(255, 215, 0, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15) !important;
 }
 /* Сдвигаем селектор размера страницы немного влево и добавляем отступ справа */
 body.admin-mode .admin-table .ant-pagination {
@@ -9599,6 +9733,549 @@ body.admin-mode .ant-pagination-options {
 }
 body.admin-mode .ant-pagination-options-size-changer {
   margin-right: 0;
+}
+
+/* ============================================
+   Beautiful Pagination Styling for Admin Pages
+   Desktop & Mobile Responsive
+   ============================================ */
+
+/* Admin pagination container styling */
+.admin-card .ant-pagination {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Pagination item (page number) styling */
+.admin-card .ant-pagination-item {
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 36px;
+  height: 36px;
+  line-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.admin-card .ant-pagination-item:hover {
+  border-color: #003366;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2);
+}
+
+.admin-card .ant-pagination-item a {
+  color: #003366;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.admin-card .ant-pagination-item:hover a {
+  color: #003366;
+}
+
+/* Active page item */
+.admin-card .ant-pagination-item-active {
+  background: linear-gradient(135deg, #003366 0%, #0a1f44 100%) !important;
+  border-color: #003366 !important;
+  box-shadow: 0 4px 14px rgba(0, 51, 102, 0.35) !important;
+  transform: translateY(-2px);
+}
+
+.admin-card .ant-pagination-item-active a {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* Previous/Next buttons */
+.admin-card .ant-pagination-prev,
+.admin-card .ant-pagination-next {
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.admin-card .ant-pagination-prev:hover,
+.admin-card .ant-pagination-next:hover {
+  border-color: #003366;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2);
+}
+
+.admin-card .ant-pagination-prev .ant-pagination-item-link,
+.admin-card .ant-pagination-next .ant-pagination-item-link {
+  color: #003366;
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.admin-card .ant-pagination-prev:hover .ant-pagination-item-link,
+.admin-card .ant-pagination-next:hover .ant-pagination-item-link {
+  color: #003366;
+}
+
+/* Jump buttons (jump to prev/next 5) */
+.admin-card .ant-pagination-jump-prev,
+.admin-card .ant-pagination-jump-next {
+  border-radius: 10px;
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-card .ant-pagination-jump-prev:hover,
+.admin-card .ant-pagination-jump-next:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.15);
+}
+
+.admin-card .ant-pagination-jump-prev .ant-pagination-item-link,
+.admin-card .ant-pagination-jump-next .ant-pagination-item-link {
+  color: #003366;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Total text */
+.admin-card .ant-pagination-total-text {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: 12px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Options (page size changer) */
+.admin-card .ant-pagination-options {
+  margin-left: 12px;
+}
+
+.admin-card .ant-pagination-options-size-changer {
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.admin-card .ant-pagination-options-size-changer:hover {
+  border-color: #003366;
+  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.15);
+}
+
+/* Quick jumper */
+.admin-card .ant-pagination-options-quick-jumper {
+  margin-left: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.admin-card .ant-pagination-options-quick-jumper input {
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  width: 50px;
+  text-align: center;
+}
+
+.admin-card .ant-pagination-options-quick-jumper input:hover {
+  border-color: #003366;
+}
+
+.admin-card .ant-pagination-options-quick-jumper input:focus {
+  border-color: #003366;
+  box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+  outline: none;
+}
+
+/* ============================================
+   Mobile Pagination (≤768px)
+   Compact, touch-friendly, optimized
+   ============================================ */
+@media (max-width: 768px) {
+  .admin-card .ant-pagination {
+    gap: 6px;
+    margin-top: 16px;
+    margin-bottom: 4px;
+    justify-content: center;
+    flex-wrap: nowrap;
+  }
+
+  .admin-card .ant-pagination-item {
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .admin-card .ant-pagination-prev,
+  .admin-card .ant-pagination-next {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .admin-card .ant-pagination-prev .ant-pagination-item-link,
+  .admin-card .ant-pagination-next .ant-pagination-item-link {
+    font-size: 14px;
+  }
+
+  /* Hide jump buttons on mobile to save space */
+  .admin-card .ant-pagination-jump-prev,
+  .admin-card .ant-pagination-jump-next {
+    display: none;
+  }
+
+  /* Simplify options on mobile */
+  .admin-card .ant-pagination-options {
+    display: none;
+  }
+
+  /* Compact total text */
+  .admin-card .ant-pagination-total-text {
+    font-size: 12px;
+    margin-right: 8px;
+  }
+
+  /* Hide quick jumper on mobile */
+  .admin-card .ant-pagination-options-quick-jumper {
+    display: none;
+  }
+}
+
+/* ============================================
+   Extra Small Mobile (≤480px)
+   Ultra-compact pagination
+   ============================================ */
+@media (max-width: 480px) {
+  .admin-card .ant-pagination {
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .admin-card .ant-pagination-item {
+    min-width: 28px;
+    height: 28px;
+    line-height: 28px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .admin-card .ant-pagination-prev,
+  .admin-card .ant-pagination-next {
+    min-width: 28px;
+    height: 28px;
+    border-radius: 6px;
+  }
+
+  .admin-card .ant-pagination-prev .ant-pagination-item-link,
+  .admin-card .ant-pagination-next .ant-pagination-item-link {
+    font-size: 12px;
+  }
+
+  .admin-card .ant-pagination-total-text {
+    font-size: 11px;
+    margin-right: 4px;
+  }
+
+  .admin-card .ant-pagination-item-active {
+    transform: none;
+  }
+
+  .admin-card .ant-pagination-item:hover,
+  .admin-card .ant-pagination-prev:hover,
+  .admin-card .ant-pagination-next:hover {
+    transform: none;
+  }
+}
+
+/* ============================================
+   Tablet Pagination (769px - 1024px)
+   Balanced sizing
+   ============================================ */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .admin-card .ant-pagination-item {
+    min-width: 34px;
+    height: 34px;
+    line-height: 34px;
+    font-size: 13px;
+    border-radius: 9px;
+  }
+
+  .admin-card .ant-pagination-prev,
+  .admin-card .ant-pagination-next {
+    min-width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+}
+
+/* ============================================
+   News & Deputies Pages Pagination
+   Public-facing pages styling
+   ============================================ */
+
+.news-page .ant-pagination,
+.deputies-page .ant-pagination {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.news-page .ant-pagination-item,
+.deputies-page .ant-pagination-item {
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 36px;
+  height: 36px;
+  line-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.news-page .ant-pagination-item:hover,
+.deputies-page .ant-pagination-item:hover {
+  border-color: #003366;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2);
+}
+
+.news-page .ant-pagination-item a,
+.deputies-page .ant-pagination-item a {
+  color: #003366;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.news-page .ant-pagination-item:hover a,
+.deputies-page .ant-pagination-item:hover a {
+  color: #003366;
+}
+
+.news-page .ant-pagination-item-active,
+.deputies-page .ant-pagination-item-active {
+  background: linear-gradient(135deg, #003366 0%, #0a1f44 100%) !important;
+  border-color: #003366 !important;
+  box-shadow: 0 4px 14px rgba(0, 51, 102, 0.35) !important;
+  transform: translateY(-2px);
+}
+
+.news-page .ant-pagination-item-active a,
+.deputies-page .ant-pagination-item-active a {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.news-page .ant-pagination-prev,
+.news-page .ant-pagination-next,
+.deputies-page .ant-pagination-prev,
+.deputies-page .ant-pagination-next {
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  background: #ffffff;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.news-page .ant-pagination-prev:hover,
+.news-page .ant-pagination-next:hover,
+.deputies-page .ant-pagination-prev:hover,
+.deputies-page .ant-pagination-next:hover {
+  border-color: #003366;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2);
+}
+
+.news-page .ant-pagination-prev .ant-pagination-item-link,
+.news-page .ant-pagination-next .ant-pagination-item-link,
+.deputies-page .ant-pagination-prev .ant-pagination-item-link,
+.deputies-page .ant-pagination-next .ant-pagination-item-link {
+  color: #003366;
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.news-page .ant-pagination-total-text,
+.deputies-page .ant-pagination-total-text {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: 12px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Mobile pagination for news and deputies pages */
+@media (max-width: 768px) {
+  .news-page .ant-pagination,
+  .deputies-page .ant-pagination {
+    gap: 6px;
+    margin-top: 16px;
+    margin-bottom: 4px;
+    justify-content: center;
+    flex-wrap: nowrap;
+  }
+
+  .news-page .ant-pagination-item,
+  .deputies-page .ant-pagination-item {
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .news-page .ant-pagination-prev,
+  .news-page .ant-pagination-next,
+  .deputies-page .ant-pagination-prev,
+  .deputies-page .ant-pagination-next {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .news-page .ant-pagination-prev .ant-pagination-item-link,
+  .news-page .ant-pagination-next .ant-pagination-item-link,
+  .deputies-page .ant-pagination-prev .ant-pagination-item-link,
+  .deputies-page .ant-pagination-next .ant-pagination-item-link {
+    font-size: 14px;
+  }
+
+  .news-page .ant-pagination-jump-prev,
+  .news-page .ant-pagination-jump-next,
+  .deputies-page .ant-pagination-jump-prev,
+  .deputies-page .ant-pagination-jump-next {
+    display: none;
+  }
+
+  .news-page .ant-pagination-options,
+  .deputies-page .ant-pagination-options {
+    display: none;
+  }
+
+  .news-page .ant-pagination-total-text,
+  .deputies-page .ant-pagination-total-text {
+    font-size: 12px;
+    margin-right: 8px;
+  }
+
+  .news-page .ant-pagination-options-quick-jumper,
+  .deputies-page .ant-pagination-options-quick-jumper {
+    display: none;
+  }
+}
+
+/* Extra small mobile */
+@media (max-width: 480px) {
+  .news-page .ant-pagination,
+  .deputies-page .ant-pagination {
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .news-page .ant-pagination-item,
+  .deputies-page .ant-pagination-item {
+    min-width: 28px;
+    height: 28px;
+    line-height: 28px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .news-page .ant-pagination-prev,
+  .news-page .ant-pagination-next,
+  .deputies-page .ant-pagination-prev,
+  .deputies-page .ant-pagination-next {
+    min-width: 28px;
+    height: 28px;
+    border-radius: 6px;
+  }
+
+  .news-page .ant-pagination-prev .ant-pagination-item-link,
+  .news-page .ant-pagination-next .ant-pagination-item-link,
+  .deputies-page .ant-pagination-prev .ant-pagination-item-link,
+  .deputies-page .ant-pagination-next .ant-pagination-item-link {
+    font-size: 12px;
+  }
+
+  .news-page .ant-pagination-total-text,
+  .deputies-page .ant-pagination-total-text {
+    font-size: 11px;
+    margin-right: 4px;
+  }
+
+  .news-page .ant-pagination-item-active,
+  .deputies-page .ant-pagination-item-active {
+    transform: none;
+  }
+
+  .news-page .ant-pagination-item:hover,
+  .news-page .ant-pagination-prev:hover,
+  .news-page .ant-pagination-next:hover,
+  .deputies-page .ant-pagination-item:hover,
+  .deputies-page .ant-pagination-prev:hover,
+  .deputies-page .ant-pagination-next:hover {
+    transform: none;
+  }
 }
 body.admin-mode[data-admin-theme="dark"] .ant-table-container {
   border: 1px solid rgba(255, 255, 255, 0.1);
