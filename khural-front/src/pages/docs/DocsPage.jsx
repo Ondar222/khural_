@@ -67,6 +67,13 @@ export default function DocsPage() {
     setPage(1);
   }, [query, filterEntity, slug]);
 
+  // Auto scroll to top when page changes
+  React.useEffect(() => {
+    if (page > 1) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page]);
+
   React.useEffect(() => {
     // Фильтруем документы по типу из бекенда
     const fromApi = (documents || []).filter((d) => {

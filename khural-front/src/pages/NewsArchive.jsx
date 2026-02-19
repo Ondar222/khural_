@@ -136,6 +136,13 @@ export default function NewsArchive() {
     [filtered, safePage]
   );
 
+  // Auto scroll to top when page changes
+  React.useEffect(() => {
+    if (currentPage > 1) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [currentPage]);
+
   const setPageAndUrl = React.useCallback((page) => {
     const h = window.location.pathname;
     const params = new URLSearchParams(window.location.search || "");

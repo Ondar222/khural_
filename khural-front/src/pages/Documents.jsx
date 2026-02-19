@@ -110,6 +110,13 @@ export default function Documents() {
     setPage(1);
   }, [cat, year, q, qNumber, qDate, groupByCategory]);
 
+  // Auto scroll to top when page changes
+  React.useEffect(() => {
+    if (page > 1) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page]);
+
   // Pagination for flat list
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginatedItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

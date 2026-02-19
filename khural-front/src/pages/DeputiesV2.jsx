@@ -642,6 +642,13 @@ export default function DeputiesV2() {
     [filteredByConvocation, page]
   );
 
+  // Auto scroll to top when page changes
+  React.useEffect(() => {
+    if (page > 1) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page]);
+
   // URL списка депутатов с текущими фильтрами — для ссылки «Назад» со страницы депутата
   const deputiesListUrlWithFilters = React.useMemo(() => {
     const sp = new URLSearchParams();
