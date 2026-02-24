@@ -31,6 +31,7 @@ export default function About() {
   // NOTE: government is used to link Chairman in the structure diagram.
   const { t } = useI18n();
   const [activeTab, setActiveTab] = React.useState("general"); // general | structure
+  const isMountedRef = React.useRef(false);
 
   const scrollToBlock = React.useCallback((id) => {
     const el = document.getElementById(id);
@@ -43,25 +44,41 @@ export default function About() {
     const tab = sp.get("tab");
     const focus = sp.get("focus");
     if (tab === "structure") {
-      requestAnimationFrame(() =>
-        scrollToBlock(focus ? `focus-${String(focus)}` : "about-structure")
-      );
+      // Delay scroll to ensure DOM is ready
+      setTimeout(() => {
+        requestAnimationFrame(() =>
+          scrollToBlock(focus ? `focus-${String(focus)}` : "about-structure")
+        );
+      }, 100);
     }
   }, [scrollToBlock]);
 
-  // Highlight active tab while scrolling
+  // Highlight active tab while scrolling - only after initial mount
   React.useEffect(() => {
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      // Skip observer on first mount to avoid flickering
+      return;
+    }
+
     const ids = ["about-general", "about-structure"];
     const elements = ids.map((id) => document.getElementById(id)).filter(Boolean);
     if (!elements.length) return;
+
+    let ticking = false;
     const observer = new IntersectionObserver(
       (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        const top = visible[0]?.target?.id;
-        if (top === "about-structure") setActiveTab("structure");
-        else if (top === "about-general") setActiveTab("general");
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          const visible = entries
+            .filter((e) => e.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          const top = visible[0]?.target?.id;
+          if (top === "about-structure") setActiveTab("structure");
+          else if (top === "about-general") setActiveTab("general");
+          ticking = false;
+        });
       },
       {
         root: null,
@@ -70,7 +87,10 @@ export default function About() {
       }
     );
     elements.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      ticking = false;
+    };
   }, []);
 
   // NOTE: About structure diagram below is intentionally kept identical to `/section`

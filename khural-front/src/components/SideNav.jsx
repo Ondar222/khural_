@@ -75,8 +75,17 @@ const defaultLinks = [
 ];
 
 // Отдельный мемоизированный компонент ссылки
-const LinkItem = React.memo(function LinkItem({ href, label, isActive, isChild, onClick, t }) {
-  const active = isActive !== undefined && isActive !== null ? Boolean(isActive) : isActive;
+const LinkItem = React.memo(function LinkItem({
+  href,
+  label,
+  pathname,
+  search,
+  isChild,
+  onClick,
+  t,
+}) {
+  // Вычисляем isActive внутри компонента на основе пропсов
+  const active = href && pathname != null ? isRouteActive(pathname, search, href) : false;
   const className = `tile link ${active ? "active" : ""} ${isChild ? "sidenav__sublink" : ""}`;
 
   return (
@@ -91,6 +100,17 @@ const LinkItem = React.memo(function LinkItem({ href, label, isActive, isChild, 
         {typeof label === "string" ? t(label) : label}
       </span>
     </a>
+  );
+}, (prev, next) => {
+  // Кастомная функция сравнения для.memo
+  return (
+    prev.href === next.href &&
+    prev.label === next.label &&
+    prev.pathname === next.pathname &&
+    prev.search === next.search &&
+    prev.isChild === next.isChild &&
+    prev.onClick === next.onClick &&
+    prev.t === next.t
   );
 });
 
@@ -138,7 +158,8 @@ export default function SideNav({
                     key={`parent-${i}`}
                     href={l.href}
                     label={l.label}
-                    isActive={isRouteActive(pathname, search, l.href)}
+                    pathname={pathname}
+                    search={search}
                     onClick={(e) => handleLinkClick(e, l.onClick)}
                     t={t}
                   />
@@ -156,7 +177,8 @@ export default function SideNav({
                       key={`sub-${i}-${j}`}
                       href={sub.href}
                       label={sub.label}
-                      isActive={isRouteActive(pathname, search, sub.href)}
+                      pathname={pathname}
+                      search={search}
                       isChild
                       onClick={(e) => handleLinkClick(e, sub.onClick)}
                       t={t}
@@ -171,7 +193,8 @@ export default function SideNav({
               key={i}
               href={l.href}
               label={l.label}
-              isActive={isRouteActive(pathname, search, l.href)}
+              pathname={pathname}
+              search={search}
               onClick={(e) => handleLinkClick(e, l.onClick)}
               t={t}
             />
