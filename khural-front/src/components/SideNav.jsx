@@ -2,6 +2,9 @@ import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 
+// Кэшируем URL для ссылок, чтобы не создавать их каждый раз
+const hrefCache = new Map();
+
 // Нормализует pathname + search для сравнения (одинаковый порядок и кодировка параметров)
 function normalizeRoute(pathname, search) {
   const path = (pathname || "/").replace(/\/+$/, "") || "/";
@@ -11,19 +14,85 @@ function normalizeRoute(pathname, search) {
   return qs ? `${path}?${qs}` : path;
 }
 
-// Проверяет, совпадает ли текущий маршрут с href ссылки
+// Проверяет, совпадает ли текущий маршрут с href ссылки (с кэшированием)
 function isRouteActive(currentPathname, currentSearch, href) {
   if (!href || typeof href !== "string") return false;
   const current = normalizeRoute(currentPathname, currentSearch);
+
+  // Проверяем кэш
+  const cacheKey = `${href}__${current}`;
+  if (hrefCache.has(cacheKey)) {
+    return hrefCache.get(cacheKey);
+  }
+
+  let result = false;
   try {
     const base = typeof window !== "undefined" ? window.location.origin : "http://localhost";
     const u = new URL(href, base + "/");
     const link = normalizeRoute(u.pathname, u.search);
-    return current === link;
+    result = current === link;
   } catch {
-    return current === href;
+    result = current === href;
   }
+
+  // Ограничиваем размер кэша
+  if (hrefCache.size > 100) {
+    const firstKey = hrefCache.keys().next().value;
+    hrefCache.delete(firstKey);
+  }
+  hrefCache.set(cacheKey, result);
+  return result;
 }
+
+// Мемоизируем дефолтные ссылки (они не меняются)
+const defaultLinks = [
+  { label: "Общие сведения", href: "/about" },
+  { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
+  { label: "Руководство", href: "/government" },
+  { label: "Депутаты", href: "/deputies?convocation=VIII" },
+  { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
+  { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
+  { label: "Отчеты всех Созывов", href: "/section?title=" + encodeURIComponent("Отчеты всех Созывов") },
+  { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
+  {
+    label: "Представительство в Совете Федерации",
+    href: "/section?title=" + encodeURIComponent("Представительство в Совете Федерации"),
+  },
+  { label: "Депутатские фракции", href: "/section?title=" + encodeURIComponent("Депутатские фракции") },
+  { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
+  { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
+  {
+    label: "Совет по взаимодействию с представительными органами муниципальных образований",
+    href:
+      "/section?title=" +
+      encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
+  },
+  { label: "Структура Аппарата", href: "/section?title=" + encodeURIComponent("Структура Аппарата") },
+  {
+    label: "Молодежный Хурал",
+    href: "/section?title=" + encodeURIComponent("Молодежный Хурал"),
+  },
+];
+
+// Отдельный мемоизированный компонент ссылки
+const LinkItem = React.memo(function LinkItem({ href, label, isActive, isChild, onClick, t }) {
+  const active = isActive !== undefined && isActive !== null ? Boolean(isActive) : isActive;
+  const className = `tile link ${active ? "active" : ""} ${isChild ? "sidenav__sublink" : ""}`;
+
+  return (
+    <a
+      className={className}
+      href={href}
+      aria-current={active ? "page" : undefined}
+      onClick={onClick}
+    >
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+        <span aria-hidden="true">‹</span>
+        {typeof label === "string" ? t(label) : label}
+      </span>
+    </a>
+  );
+});
 
 // Reusable right-side navigation with links to key subpages
 export default function SideNav({
@@ -33,6 +102,8 @@ export default function SideNav({
 }) {
   const { t } = useI18n();
   const { route } = useHashRoute();
+
+  // Мемоизируем pathname и search
   const [pathname, search] = React.useMemo(() => {
     const r = route || "/";
     const q = r.indexOf("?");
@@ -40,70 +111,19 @@ export default function SideNav({
     return [r.slice(0, q) || "/", "?" + r.slice(q + 1)];
   }, [route]);
 
-  const defaultLinks = [
-    { label: "Общие сведения", href: "/about" },
-    { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-    { label: "Руководство", href: "/government" },
-    // {
-    //   label: "Руководство парламента",
-    //   href: "/section?title=" + encodeURIComponent("Руководство парламента"),
-    // },
-    // "Депутаты" — по умолчанию показываем текущий созыв (если есть в данных)
-    { label: "Депутаты", href: "/deputies?convocation=VIII" },
-    { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
-    { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
-    { label: "Отчеты всех Созывов", href: "/section?title=" + encodeURIComponent("Отчеты всех Созывов") },
-    { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
-    // Пользовательские страницы, созданные через админку
-    // { label: "Страницы", href: "/pages" },
-    {
-      label: "Представительство в Совете Федерации",
-      href: "/section?title=" + encodeURIComponent("Представительство в Совете Федерации"),
-    },
-    { label: "Депутатские фракции", href: "/section?title=" + encodeURIComponent("Депутатские фракции") },
-    { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
-    { label: "Созывы", href: "/convocations" },
-    { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
-    {
-      label: "Совет по взаимодействию с представительными органами муниципальных образований",
-      href:
-        "/section?title=" +
-        encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
-    },
-    { label: "Структура Аппарата", href: "/section?title=" + encodeURIComponent("Структура Аппарата") },
-    {
-      label: "Молодежный Хурал",
-      href: "/section?title=" + encodeURIComponent("Молодежный Хурал"),
-    },
-  ];
+  // Мемоизируем ссылки
+  const links = React.useMemo(() => {
+    return Array.isArray(overrideLinks) && overrideLinks.length ? overrideLinks : defaultLinks;
+  }, [overrideLinks]);
 
-  const links = Array.isArray(overrideLinks) && overrideLinks.length ? overrideLinks : defaultLinks;
   const titleText = typeof title === "string" ? t(title) : title;
 
-  const renderLink = (l, idx, isChild = false) => {
-    const isActive =
-      l.isActive !== undefined && l.isActive !== null
-        ? Boolean(l.isActive)
-        : isRouteActive(pathname, search, l.href);
-    return (
-      <a
-        key={idx}
-        className={`tile link ${isActive ? "active" : ""} ${isChild ? "sidenav__sublink" : ""}`}
-        href={l.href}
-        aria-current={isActive ? "page" : undefined}
-        onClick={(e) => {
-          if (l.onClick) {
-            l.onClick(e);
-          }
-        }}
-      >
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <span aria-hidden="true">‹</span>
-          {typeof l.label === "string" ? t(l.label) : l.label}
-        </span>
-      </a>
-    );
-  };
+  // Обработчик клика без создания новой функции на каждый рендер
+  const handleLinkClick = React.useCallback((e, onClick) => {
+    if (onClick) {
+      onClick(e);
+    }
+  }, []);
 
   return (
     <aside className={`sidenav ${className || ""}`.trim()} aria-label="Ссылки раздела">
@@ -111,11 +131,17 @@ export default function SideNav({
       <div className="sidenav__list">
         {links.map((l, i) => {
           if (Array.isArray(l.children) && l.children.length > 0) {
-            const parentActive = l.href && isRouteActive(pathname, search, l.href);
             return (
               <div key={i} className="sidenav__group">
                 {l.href ? (
-                  renderLink({ ...l, label: l.label }, `parent-${i}`)
+                  <LinkItem
+                    key={`parent-${i}`}
+                    href={l.href}
+                    label={l.label}
+                    isActive={isRouteActive(pathname, search, l.href)}
+                    onClick={(e) => handleLinkClick(e, l.onClick)}
+                    t={t}
+                  />
                 ) : (
                   <div className="tile sidenav__group-title" aria-hidden="true">
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -125,12 +151,31 @@ export default function SideNav({
                   </div>
                 )}
                 <div className="sidenav__sublinks">
-                  {l.children.map((sub, j) => renderLink(sub, `sub-${i}-${j}`, true))}
+                  {l.children.map((sub, j) => (
+                    <LinkItem
+                      key={`sub-${i}-${j}`}
+                      href={sub.href}
+                      label={sub.label}
+                      isActive={isRouteActive(pathname, search, sub.href)}
+                      isChild
+                      onClick={(e) => handleLinkClick(e, sub.onClick)}
+                      t={t}
+                    />
+                  ))}
                 </div>
               </div>
             );
           }
-          return renderLink(l, i);
+          return (
+            <LinkItem
+              key={i}
+              href={l.href}
+              label={l.label}
+              isActive={isRouteActive(pathname, search, l.href)}
+              onClick={(e) => handleLinkClick(e, l.onClick)}
+              t={t}
+            />
+          );
         })}
       </div>
     </aside>

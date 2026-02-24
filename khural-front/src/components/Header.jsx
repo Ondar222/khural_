@@ -129,7 +129,7 @@ export default function Header() {
 
   React.useEffect(() => {
     let alive = true;
-    (async () => {
+    const loadPagesTree = async () => {
       try {
         const res = await AboutApi.listPagesTree({ publishedOnly: true }).catch(() => []);
         const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
@@ -139,9 +139,17 @@ export default function Header() {
         if (!alive) return;
         setPagesTree([]);
       }
-    })();
+    };
+    
+    loadPagesTree();
+    
+    // Listen for page reload events from admin
+    const onPagesReload = () => loadPagesTree();
+    window.addEventListener("khural:pages-reload", onPagesReload);
+    
     return () => {
       alive = false;
+      window.removeEventListener("khural:pages-reload", onPagesReload);
     };
   }, [lang]);
 
@@ -290,7 +298,7 @@ export default function Header() {
                 <a href="/about">{t("aboutVH")}</a>
                 <a href="/section">{t("structure")}</a>
                 <a href="/committee">{t("committees")}</a>
-                <a href="/convocations">{t("convocations") || "Созывы"}</a>
+                {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
                 <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
                 <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
                   {t("factions")}
@@ -528,7 +536,7 @@ export default function Header() {
             <a href="/about">{t("aboutVH")}</a>
             <a href="/section">{t("structure")}</a>
             <a href="/committee">{t("committees")}</a>
-            <a href="/convocations">{t("convocations") || "Созывы"}</a>
+            {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
             <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
             <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
               {t("factions")}

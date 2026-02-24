@@ -33,6 +33,20 @@ const SYSTEM_ROUTE_DEFS = [
   { route: "/about", title: "О Хурале", adminLinks: [{ label: "Структура", href: "/admin/committees" }] },
 ];
 
+// Static sections that can have subpages
+const STATIC_SECTIONS = [
+  { slug: "news", title: "Новости" },
+  { slug: "deputies", title: "Депутаты" },
+  { slug: "documents", title: "Документы" },
+  { slug: "about", title: "О Хурале" },
+  { slug: "committees", title: "Комитеты" },
+  { slug: "commissions", title: "Комиссии" },
+  { slug: "activity", title: "Деятельность" },
+  { slug: "contacts", title: "Контакты" },
+  { slug: "appeals", title: "Обращения" },
+  { slug: "broadcast", title: "Трансляция" },
+];
+
 async function listPagesWithFallback({ locale, authPreferred } = {}) {
   try {
     // Пробуем с авторизацией сначала (админский список всех страниц)
@@ -98,6 +112,9 @@ export default function AdminPagesV2List({
       // чтобы страница не была пустой, если токен/права не настроены.
       const res = await listPagesWithFallback({ locale: localeMode === "all" ? undefined : localeMode, authPreferred: false });
       const arr = Array.isArray(res) ? res : [];
+      
+      console.log('[AdminPagesV2List] Loaded pages:', arr.length, arr.map(p => ({ slug: p.slug, title: p.title, id: p.id })));
+      
       // dedupe by slug
       const bySlug = new Map();
       for (const p of arr) {
@@ -105,8 +122,10 @@ export default function AdminPagesV2List({
         if (!slug) continue;
         if (!bySlug.has(slug)) bySlug.set(slug, p);
       }
+      console.log('[AdminPagesV2List] After dedup:', bySlug.size, Array.from(bySlug.keys()));
       setItems(Array.from(bySlug.values()));
     } catch (e) {
+      console.error('[AdminPagesV2List] Error loading pages:', e);
       onMessage?.("error", e?.message || "Не удалось загрузить страницы");
       setItems([]);
     } finally {
@@ -126,20 +145,28 @@ export default function AdminPagesV2List({
       return {
         id: `system:${d.route}`,
         title: d.title,
-        slug: d.route,
+        slug: d.route.replace(/^\/+|\/+$/g, ""),
         __isSystem: true,
         __href: d.route,
         __adminLinks: Array.isArray(d.adminLinks) ? d.adminLinks : [],
       };
     });
 
-    const base = (Array.isArray(items) ? items : []).concat(systemRows);
+    // Add static sections as potential parents
+    const staticSectionRows = STATIC_SECTIONS.map((s) => ({
+      id: `static:${s.slug}`,
+      title: s.title,
+      slug: s.slug,
+      __isStatic: true,
+    }));
+
+    const base = (Array.isArray(items) ? items : []).concat(systemRows).concat(staticSectionRows);
 
     const byLocale =
       localeMode === "all"
         ? base
         : base.filter((p) => {
-            if (p?.__isSystem) {
+            if (p?.__isSystem || p?.__isStatic) {
               return true;
             }
             const c = p?.content;
@@ -152,24 +179,42 @@ export default function AdminPagesV2List({
       ? byLocale
       : byLocale.filter((p) => {
           const title = String(
-            (p?.__isSystem ? p?.title : p?.title) || p?.name || ""
+            (p?.__isSystem || p?.__isStatic ? p?.title : p?.title) || p?.name || ""
           ).toLowerCase();
           const slug = String(p.slug || "").toLowerCase();
           return title.includes(qq) || slug.includes(qq);
         });
 
-    return list
-      .map((p) => {
-        const slug = String(p.slug || "");
-        const parts = slug.split("/").filter(Boolean);
-        const depth = Math.max(0, parts.length - 1);
-        const parentSlug = parts.slice(0, -1).join("/");
-        return { ...p, __depth: depth, __parentSlug: parentSlug };
-      })
+    // Build hierarchy-aware list
+    const slugMap = new Map();
+    list.forEach((p) => {
+      const slug = String(p.slug || "").replace(/^\/+|\/+$/g, "");
+      if (slug) slugMap.set(slug, p);
+    });
+
+    const withHierarchy = list.map((p) => {
+      const slug = String(p.slug || "").replace(/^\/+|\/+$/g, "");
+      const parts = slug.split("/").filter(Boolean);
+      const depth = Math.max(0, parts.length - 1);
+      const parentSlug = parts.length > 1 ? parts.slice(0, -1).join("/") : "";
+      const hasChildren = Array.from(slugMap.keys()).some((s) => s.startsWith(slug + "/"));
+      return { 
+        ...p, 
+        __depth: depth, 
+        __parentSlug: parentSlug,
+        __hasChildren: hasChildren,
+      };
+    });
+
+    return withHierarchy
       .sort((a, b) => {
         const as = Boolean(a?.__isSystem);
         const bs = Boolean(b?.__isSystem);
         if (as !== bs) return as ? 1 : -1; // CMS first, system routes last
+        // Sort by slug hierarchy (parents before children)
+        const aDepth = a.__depth || 0;
+        const bDepth = b.__depth || 0;
+        if (aDepth !== bDepth) return aDepth - bDepth;
         return String(a.slug || "").localeCompare(String(b.slug || ""));
       });
   }, [items, q, localeMode]);
@@ -226,7 +271,20 @@ export default function AdminPagesV2List({
         <div className="admin-pages-list__titlecell">
           <div className="admin-pages-list__titleline">
             {row.__depth ? <span className="admin-pages-list__indent">{"— ".repeat(row.__depth)}</span> : null}
-            <span className="admin-pages-list__title">{row.title || row.name || "—"}</span>
+            <span className="admin-pages-list__title">
+              {row.__isStatic ? "📁 " : ""}
+              {row.title || row.name || "—"}
+            </span>
+            {row.__hasChildren && (
+              <Tag color="green" style={{ marginLeft: 8 }}>
+                📁 Есть подстраницы
+              </Tag>
+            )}
+            {row.__isStatic && (
+              <Tag color="cyan" style={{ marginLeft: 8 }}>
+                Раздел
+              </Tag>
+            )}
           </div>
           <div className="admin-pages-list__metarow">
             <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
@@ -292,6 +350,34 @@ export default function AdminPagesV2List({
                   {l.label}
                 </Button>
               ))}
+              {/* Allow creating subpages for system routes */}
+              <Button
+                size={isTablet ? "small" : "middle"}
+                onClick={() => onCreate?.(row.slug, row.title)}
+                disabled={!canWrite || !row.slug}
+              >
+                + Подстраница
+              </Button>
+            </>
+          ) : row?.__isStatic ? (
+            <>
+              {/* Static sections can have subpages */}
+              <Button
+                size={isTablet ? "small" : "middle"}
+                onClick={() => onCreate?.(row.slug, row.title)}
+                disabled={!canWrite || !row.slug}
+              >
+                + Подстраница
+              </Button>
+              <Button
+                size={isTablet ? "small" : "middle"}
+                onClick={() => {
+                  // Navigate to list filtered by this section
+                  setQ(row.slug);
+                }}
+              >
+                📋 Подстраницы
+              </Button>
             </>
           ) : (
             <>
@@ -300,12 +386,12 @@ export default function AdminPagesV2List({
               </Button>
               <Button
                 size={isTablet ? "small" : "middle"}
-                onClick={() => onCreate?.(row.slug)}
+                onClick={() => onCreate?.(row.slug, row.title)}
                 disabled={!canWrite || !row.slug}
               >
                 + Подстраница
               </Button>
-              <Button size={isTablet ? "small" : "middle"} onClick={() => onEdit?.(row.id)} disabled={!canWrite}>
+              <Button size={isTablet ? "small" : "middle"} onClick={() => onEdit?.(row.id)} disabled={!canWrite || !row.id}>
                 Редактировать
               </Button>
               <Popconfirm
@@ -314,9 +400,9 @@ export default function AdminPagesV2List({
                 okText="Удалить"
                 cancelText="Отмена"
                 onConfirm={() => deletePage(row.id)}
-                disabled={!canWrite}
+                disabled={!canWrite || !row.id}
               >
-                <Button size={isTablet ? "small" : "middle"} danger disabled={!canWrite}>
+                <Button size={isTablet ? "small" : "middle"} danger disabled={!canWrite || !row.id}>
                   Удалить
                 </Button>
               </Popconfirm>

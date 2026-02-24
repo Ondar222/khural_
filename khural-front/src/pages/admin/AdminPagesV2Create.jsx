@@ -3,15 +3,28 @@ import { Button, Form, Input, Select, Space, Card, Switch, message as antdMessag
 import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import { AboutApi, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
-import { upsertPageOverride } from "../../utils/pagesOverrides.js";
+import { upsertPageOverride, PAGES_OVERRIDES_EVENT_NAME } from "../../utils/pagesOverrides.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 function slugify(input) {
+  if (!input) return "";
+  
+  const translitMap = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+    'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+    'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts',
+    'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu',
+    'я': 'ya'
+  };
+  
   return String(input || "")
     .trim()
     .toLowerCase()
+    .split('')
+    .map(char => translitMap[char] || char)
+    .join('')
     .replace(/[\s_]+/g, "-")
-    .replace(/[^a-z0-9\-а-яё]+/gi, "")
+    .replace(/[^a-z0-9\-]+/gi, "")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
@@ -78,10 +91,52 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       const all = []
         .concat(Array.isArray(ru) ? ru : Array.isArray(ru?.items) ? ru.items : [])
         .concat(Array.isArray(tyv) ? tyv : Array.isArray(tyv?.items) ? tyv.items : []);
-      const slugs = Array.from(
-        new Set(all.map((p) => String(p.slug || "")).filter((s) => s))
-      ).sort();
-      if (alive) setParents(slugs);
+
+      // Deduplicate by slug and create parent options
+      const slugMap = new Map();
+      all.forEach((p) => {
+        const slug = String(p.slug || "").replace(/^\/+|\/+$/g, "");
+        if (!slug || !p?.title) return;
+        // Keep the first occurrence (prefer RU title if available)
+        if (!slugMap.has(slug)) {
+          slugMap.set(slug, p);
+        }
+      });
+
+      // Static options for main site sections
+      const staticOptions = [
+        { value: "", label: "— Главная страница —", isGroup: true },
+        { value: "header", label: "📍 Header (Главное меню)", isStatic: true },
+        { value: "footer", label: "📍 Footer (Подвал сайта)", isStatic: true },
+        { value: "news", label: "📰 Новости", isStatic: true },
+        { value: "deputies", label: "👥 Депутаты", isStatic: true },
+        { value: "documents", label: "📄 Документы", isStatic: true },
+        { value: "about", label: "ℹ️ О Хурале", isStatic: true },
+        { value: "committees", label: "🏛️ Комитеты", isStatic: true },
+        { value: "commissions", label: "⚖️ Комиссии", isStatic: true },
+        { value: "activity", label: "📊 Деятельность", isStatic: true },
+        { value: "contacts", label: "📞 Контакты", isStatic: true },
+        { value: "appeals", label: "✉️ Обращения", isStatic: true },
+        { value: "broadcast", label: "📺 Трансляция", isStatic: true },
+      ];
+
+      // Dynamic options from existing pages
+      const dynamicOptions = Array.from(slugMap.values())
+        .map((p) => ({
+          value: String(p.slug).replace(/^\/+|\/+$/g, ""),
+          label: `📄 ${p.title} (${p.slug})`,
+          isStatic: false,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label, "ru"));
+
+      // Combine static and dynamic options
+      const parentOptions = [
+        ...staticOptions,
+        { value: "divider", label: "─────────────────────", isDivider: true, disabled: true },
+        ...dynamicOptions,
+      ];
+
+      if (alive) setParents(parentOptions);
     })();
     return () => {
       alive = false;
@@ -100,9 +155,41 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
     setBusy(true);
     try {
       const values = await form.validateFields();
-      const parentSlug = String(values.parentSlug || "").trim().replace(/^\/+|\/+$/g, "");
+      let parentSlug = String(values.parentSlug || "").trim().replace(/^\/+|\/+$/g, "");
       const leaf = String(values.slugLeaf || "").trim().replace(/^\/+|\/+$/g, "");
+      
+      // Map static section slugs to actual paths
+      const staticSectionMap = {
+        "header": "",  // Root level for header pages
+        "footer": "",  // Root level for footer pages
+        "news": "news",
+        "deputies": "deputies",
+        "documents": "documents",
+        "about": "about",
+        "committees": "committees",
+        "commissions": "commissions",
+        "activity": "activity",
+        "contacts": "contacts",
+        "appeals": "appeals",
+        "broadcast": "broadcast",
+      };
+      
+      if (staticSectionMap.hasOwnProperty(parentSlug)) {
+        const mappedSlug = staticSectionMap[parentSlug];
+        // For static sections, use the mapped slug as parent
+        parentSlug = mappedSlug;
+      }
+      
+      // Build full slug: parent/leaf or just leaf
       const fullSlug = parentSlug ? `${parentSlug}/${leaf}` : leaf;
+      
+      console.log('[AdminPagesV2Create] Creating page:', {
+        parentSlug: values.parentSlug,
+        mappedParentSlug: parentSlug,
+        leaf,
+        fullSlug,
+        title: values.title,
+      });
 
       // Формируем блоки контента
       const contentBlocks = (values.blocks || []).map((block, index) => ({
@@ -139,6 +226,13 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       });
       antdMessage.success("Страница создана");
       reload();
+
+      // Force reload pages tree in Header
+      window.dispatchEvent(new CustomEvent(PAGES_OVERRIDES_EVENT_NAME));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("khural:pages-reload"));
+      }
+
       onDone?.();
     } catch (error) {
       console.error("Failed to create page:", error);
@@ -235,11 +329,31 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
             <Select
               allowClear
               showSearch
-              placeholder="Без родителя"
-              options={parents.map((s) => ({ value: s, label: s }))}
+              placeholder="Выберите раздел для размещения страницы"
+              options={parents}
               filterOption={(input, option) =>
-                String(option?.value || "").toLowerCase().includes(String(input || "").toLowerCase())
+                String(option?.label || "").toLowerCase().includes(String(input || "").toLowerCase())
               }
+              optionRender={(option) => {
+                if (option.data.isDivider) {
+                  return <div style={{ borderTop: "1px solid #d9d9d9", margin: "4px 0" }} />;
+                }
+                if (option.data.isGroup) {
+                  return (
+                    <div style={{ fontWeight: 700, color: "#666", fontSize: 12 }}>
+                      {option.label}
+                    </div>
+                  );
+                }
+                return (
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{option.label.split(' (')[0]}</div>
+                    {option.data.isStatic ? null : (
+                      <div style={{ fontSize: 12, opacity: 0.7 }}>{option.data.value}</div>
+                    )}
+                  </div>
+                );
+              }}
             />
           </Form.Item>
           <Form.Item

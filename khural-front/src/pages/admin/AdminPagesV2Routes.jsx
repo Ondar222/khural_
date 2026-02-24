@@ -61,10 +61,10 @@ export default function AdminPagesV2Routes() {
     return (
       <AdminPagesV2List
         canWrite={adminData.canWrite}
-        onCreate={(parentSlug) =>
+        onCreate={(parentSlug, parentTitle) =>
           navigate(
             parentSlug
-              ? `/admin/pages/create?parent=${encodeURIComponent(parentSlug)}`
+              ? `/admin/pages/create?parent=${encodeURIComponent(parentSlug)}&title=${encodeURIComponent(parentTitle || "")}`
               : "/admin/pages/create"
           )
         }

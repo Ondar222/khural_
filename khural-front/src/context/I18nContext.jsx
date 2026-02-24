@@ -418,13 +418,19 @@ export default function I18nProvider({ children }) {
     }
   }, [lang, isAuthenticated]);
 
+  // Мемоизируем функцию перевода с использованием ref для apiTranslations
+  // чтобы избежать пересоздания функции при каждом обновлении переводов
+  const apiTranslationsRef = React.useRef(apiTranslations);
+  apiTranslationsRef.current = apiTranslations;
+
   const t = React.useCallback(
     (key) => {
+      const currentApiTranslations = apiTranslationsRef.current;
       // Если язык тувинский
       if (lang === "ty") {
         // Сначала проверяем переводы через API
-        if (apiTranslations[key]) {
-          return apiTranslations[key];
+        if (currentApiTranslations[key]) {
+          return currentApiTranslations[key];
         }
         // Затем статический словарь
         if (dict.ty && dict.ty[key]) {
@@ -442,7 +448,7 @@ export default function I18nProvider({ children }) {
       // Fallback на русский или ключ
       return dict.ru && dict.ru[key] ? dict.ru[key] : key;
     },
-    [lang, apiTranslations]
+    [lang]
   );
 
   const value = React.useMemo(() => ({ lang, setLang, t }), [lang, t]);
