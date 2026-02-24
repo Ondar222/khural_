@@ -123,6 +123,14 @@ export default function SideNav({
   const { t } = useI18n();
   const { route } = useHashRoute();
 
+  // Force re-render on resize to fix display issues on some devices
+  const [, setForceUpdate] = React.useState(0);
+  React.useEffect(() => {
+    const handleResize = () => setForceUpdate(n => n + 1);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Мемоизируем pathname и search
   const [pathname, search] = React.useMemo(() => {
     const r = route || "/";

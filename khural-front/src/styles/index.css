@@ -6608,12 +6608,15 @@ body:has(.auth-page) {
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 .sidenav--card .sidenav__list,
 .sidenav--about .sidenav__list {
-  max-height: calc(100vh - 210px);
+  max-height: min(calc(100vh - 210px), 600px);
   padding-right: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 200px;
 }
 .sidenav--card .tile.link,
 .sidenav--about .tile.link {
@@ -6706,7 +6709,7 @@ body:has(.auth-page) {
   .sidenav--card,
   .sidenav--about {
     padding: 10px;
-    overflow: hidden;
+    overflow: visible;
   }
   .sidenav h3 {
     font-size: 12px;
@@ -6744,8 +6747,8 @@ body:has(.auth-page) {
     font-size: 14px;
   }
   .sidenav__list {
-    max-height: none;
-    overflow: visible;
+    max-height: min(calc(100vh - 180px), 500px);
+    overflow-y: auto;
   }
   .sidenav .tile.link {
     padding: 9px 11px;
