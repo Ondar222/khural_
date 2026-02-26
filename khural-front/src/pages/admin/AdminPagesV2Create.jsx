@@ -31,8 +31,12 @@ function slugify(input) {
 
 const BLOCK_TYPES = [
   { value: "text", label: "Текст" },
-  { value: "link", label: "Ссылка" },
+  { value: "image", label: "Изображение" },
+  { value: "gallery", label: "Галерея" },
   { value: "file", label: "Документ" },
+  { value: "link", label: "Ссылка" },
+  { value: "quote", label: "Цитата" },
+  { value: "video", label: "Видео" },
 ];
 
 export default function AdminPagesV2Create({ canWrite, onDone }) {
@@ -438,20 +442,67 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
                           </>
                         )}
 
-                        {blockType === "link" && (
+                        {blockType === "image" && (
                           <>
-                            <Form.Item name={[field.name, "content"]} label="URL ссылки" rules={[{ required: true }]}>
-                              <Input placeholder="https://example.com" />
+                            <Form.Item name={[field.name, "fileId"]} label="Изображение" rules={[{ required: true }]}>
+                              <Select
+                                placeholder="Выберите изображение"
+                                loading={loadingDocs}
+                                showSearch
+                                allowClear
+                                filterOption={(input, option) =>
+                                  String(option?.label || "")
+                                    .toLowerCase()
+                                    .includes(String(input || "").toLowerCase())
+                                }
+                                options={documents
+                                  .filter((doc) => (doc.type || "").includes("image"))
+                                  .map((doc) => ({
+                                    value: doc.id,
+                                    label: `${doc.title || doc.name || "Изображение"}`,
+                                  }))}
+                              />
                             </Form.Item>
-                            <Form.Item name={[field.name, "caption"]} label="Текст ссылки">
-                              <Input placeholder="Текст ссылки" />
+                            <Form.Item name={[field.name, "alt"]} label="Альтернативный текст">
+                              <Input placeholder="Описание изображения" />
+                            </Form.Item>
+                            <Form.Item name={[field.name, "caption"]} label="Подпись">
+                              <Input placeholder="Подпись к изображению" />
+                            </Form.Item>
+                          </>
+                        )}
+
+                        {blockType === "gallery" && (
+                          <>
+                            <Form.Item name={[field.name, "fileIds"]} label="Изображения" rules={[{ required: true }]}>
+                              <Select
+                                mode="multiple"
+                                placeholder="Выберите изображения для галереи"
+                                loading={loadingDocs}
+                                showSearch
+                                allowClear
+                                filterOption={(input, option) =>
+                                  String(option?.label || "")
+                                    .toLowerCase()
+                                    .includes(String(input || "").toLowerCase())
+                                }
+                                options={documents
+                                  .filter((doc) => (doc.type || "").includes("image"))
+                                  .map((doc) => ({
+                                    value: doc.id,
+                                    label: `${doc.title || doc.name || "Изображение"}`,
+                                  }))}
+                              />
+                            </Form.Item>
+                            <Form.Item name={[field.name, "caption"]} label="Подпись к галерее">
+                              <Input placeholder="Подпись к галерее" />
                             </Form.Item>
                           </>
                         )}
 
                         {blockType === "file" && (
                           <>
-                            <Form.Item name={[field.name, "fileId"]} label="Документ">
+                            <Form.Item name={[field.name, "fileId"]} label="Документ" rules={[{ required: true }]}>
                               <Select
                                 placeholder="Выберите документ"
                                 loading={loadingDocs}
@@ -470,6 +521,42 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
                             </Form.Item>
                             <Form.Item name={[field.name, "caption"]} label="Подпись к документу">
                               <Input placeholder="Подпись к документу" />
+                            </Form.Item>
+                          </>
+                        )}
+
+                        {blockType === "link" && (
+                          <>
+                            <Form.Item name={[field.name, "content"]} label="URL ссылки" rules={[{ required: true }]}>
+                              <Input placeholder="https://example.com" />
+                            </Form.Item>
+                            <Form.Item name={[field.name, "caption"]} label="Текст ссылки">
+                              <Input placeholder="Текст ссылки" />
+                            </Form.Item>
+                          </>
+                        )}
+
+                        {blockType === "quote" && (
+                          <>
+                            <Form.Item name={[field.name, "content"]} label="Текст цитаты" rules={[{ required: true }]}>
+                              <Input.TextArea
+                                autoSize={{ minRows: 3, maxRows: 8 }}
+                                placeholder="Текст цитаты..."
+                              />
+                            </Form.Item>
+                            <Form.Item name={[field.name, "caption"]} label="Автор цитаты">
+                              <Input placeholder="Имя автора" />
+                            </Form.Item>
+                          </>
+                        )}
+
+                        {blockType === "video" && (
+                          <>
+                            <Form.Item name={[field.name, "content"]} label="URL видео" rules={[{ required: true }]}>
+                              <Input placeholder="https://www.youtube.com/embed/..." />
+                            </Form.Item>
+                            <Form.Item name={[field.name, "caption"]} label="Подпись к видео">
+                              <Input placeholder="Подпись к видео" />
                             </Form.Item>
                           </>
                         )}

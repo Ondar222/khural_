@@ -1,6 +1,6 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
-import { AboutApi, ConvocationsApi, CommitteesApi } from "../api/client.js";
+import { AboutApi, ConvocationsApi, CommitteesApi, apiFetch } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import PersonDetail from "../components/PersonDetail.jsx";
@@ -76,8 +76,19 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
       setLoadingPage(true);
       try {
         const locale = getPreferredLocaleToken(lang);
-        const page = await AboutApi.getPageBySlug(cmsSlug, { locale }).catch(() => null);
-        if (alive) setPageFromAdmin(page);
+        // Timeout 10 seconds for page fetch
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        try {
+          const page = await apiFetch(`/pages/slug/${encodeURIComponent(cmsSlug)}`, {
+            method: 'GET',
+            auth: false,
+            signal: controller.signal
+          }).catch(() => null);
+          if (alive) setPageFromAdmin(page);
+        } finally {
+          clearTimeout(timeoutId);
+        }
       } catch {
         if (alive) setPageFromAdmin(null);
       } finally {

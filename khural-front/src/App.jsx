@@ -111,8 +111,8 @@ export default function App() {
   const { route } = useHashRoute();
   const base = (route || "/").split("?")[0];
   const isAdmin = base === "/admin" || base.startsWith("/admin/");
-
-
+  const searchParams = new URLSearchParams((route || "").split("?")[1] || "");
+  const isSectionWithDetail = base === "/section" && searchParams.has("title");
 
   const AdminProtected = React.useCallback((Component) => {
     const ProtectedComponent = () => (
@@ -138,9 +138,10 @@ export default function App() {
     const { loading } = useData();
     const isBootLoading =
       !isAdmin &&
+      !isSectionWithDetail &&
       loading &&
       Object.values(loading).some(Boolean);
-    
+
     if (isBootLoading) {
       return (
         <div
