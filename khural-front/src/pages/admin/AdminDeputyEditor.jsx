@@ -205,7 +205,8 @@ function normalizeInitial(d) {
 export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
-  const { reload, deputies, factions, districts, committees, setFactions, setCommittees } = useData();
+  const { reload, deputies, factions, districts, committees, convocations, setFactions, setCommittees, setConvocations } = useData();
+  console.log("[AdminDeputyEditor] DataContext convocations:", convocations);
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(mode === "edit");
   const [saving, setSaving] = React.useState(false);
@@ -240,7 +241,9 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
 
   const deputyIdNum = React.useMemo(() => {
     const n = Number(deputyId);
-    return Number.isFinite(n) && n > 0 ? n : null;
+    const result = Number.isFinite(n) && n > 0 ? n : null;
+    console.log("[AdminDeputyEditor] deputyIdNum:", { deputyId, n, result });
+    return result;
   }, [deputyId]);
 
   const [committeesOverridesSeq, setCommitteesOverridesSeq] = React.useState(0);
@@ -291,7 +294,9 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const committeesMerged = React.useMemo(() => {
     void committeesOverridesSeq;
     const base = Array.isArray(committees) ? committees : [];
-    return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
+    const overrides = readCommitteesOverrides();
+    const result = mergeCommitteesWithOverrides(base, overrides);
+    return result;
   }, [committees, committeesOverridesSeq, mergeCommitteesWithOverrides]);
 
   const [participationConvocationId, setParticipationConvocationId] = React.useState("all");
@@ -301,21 +306,19 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const deputyConvocationIds = Form.useWatch("convocationIds", form);
 
   const convocationsForParticipation = React.useMemo(() => {
-    const ids = Array.isArray(deputyConvocationIds) ? deputyConvocationIds.map(String) : [];
-    const all = Array.isArray(convocationEntities) ? convocationEntities : [];
-    const filtered = ids.length ? all.filter((c) => ids.includes(String(c?.id))) : all;
-    return filtered;
-  }, [convocationEntities, deputyConvocationIds]);
+    // Используем созывы из DataContext (они загружаются при инициализации приложения)
+    const all = Array.isArray(convocations) ? convocations : [];
+    console.log("[AdminDeputyEditor] convocationsForParticipation (from DataContext):", all);
+    return all;
+  }, [convocations]);
 
   const committeesForSelectedConvocation = React.useMemo(() => {
     const list = Array.isArray(committeesMerged) ? committeesMerged : [];
-    if (!participationConvocationId || participationConvocationId === "all") return list;
-    return list.filter(
-      (c) =>
-        String(c?.convocation?.id || c?.convocationId || "") ===
-        String(participationConvocationId)
-    );
-  }, [committeesMerged, participationConvocationId]);
+    // Показываем ВСЕ комитеты независимо от выбранного созыва
+    // Выбранный созыв будет использоваться только для добавления участия
+    console.log("[AdminDeputyEditor] committeesForSelectedConvocation:", list.length);
+    return list;
+  }, [committeesMerged]);
 
   const myCommitteeMemberships = React.useMemo(() => {
     if (!deputyIdNum) return [];
@@ -326,22 +329,61 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       const found = members.find((m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum);
       if (found) out.push({ committee: c, member: found });
     }
+    
+    // Также проверяем комитеты из localStorage overrides (если они не вошли в committeesMerged)
+    try {
+      const ov = readCommitteesOverrides();
+      const updatedById = ov?.updatedById || {};
+      for (const [cid, override] of Object.entries(updatedById)) {
+        // Проверяем, есть ли уже этот комитет в результате
+        if (out.some(({ committee: c }) => String(c?.id ?? "") === cid)) continue;
+        
+        const members = Array.isArray(override?.members) ? override.members : [];
+        const found = members.find((m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum);
+        if (found) {
+          // Находим комитет в базовом списке или создаем заглушку
+          const baseCommittee = list.find((c) => String(c?.id ?? "") === cid) || { id: cid, name: `Комитет ${cid}` };
+          out.push({ committee: baseCommittee, member: found });
+        }
+      }
+    } catch (e) {
+      console.error("[AdminDeputyEditor] Error reading localStorage overrides:", e);
+    }
+    
     return out;
   }, [committeesMerged, deputyIdNum]);
 
   const upsertMembershipLocal = React.useCallback(async () => {
-    if (!canWrite) return;
+    console.log("[AdminDeputyEditor] upsertMembershipLocal called", {
+      canWrite,
+      deputyIdNum,
+      participationCommitteeId,
+      participationRole,
+      participationConvocationId,
+      committeesMergedCount: committeesMerged.length,
+    });
+    if (!canWrite) {
+      message.error("Нет прав доступа");
+      return;
+    }
     if (!deputyIdNum) {
       message.error("Для участия нужен сохранённый депутат (ID)");
       return;
     }
     const cid = String(participationCommitteeId || "");
-    if (!cid) return;
+    if (!cid) {
+      message.error("Выберите комитет");
+      return;
+    }
     const role = String(participationRole || "").trim() || "Член комитета";
     const c = (Array.isArray(committeesMerged) ? committeesMerged : []).find(
       (x) => String(x?.id ?? "") === cid
     );
-    if (!c) return;
+    console.log("[AdminDeputyEditor] Found committee:", c);
+    if (!c) {
+      message.error("Комитет не найден");
+      return;
+    }
 
     // Ensure deputy has this convocation selected
     const convIdFromCommittee = c?.convocation?.id || c?.convocationId || participationConvocationId;
@@ -366,9 +408,27 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     if (looksServerId) {
       try {
         await CommitteesApi.addMembers(cid, [{ personId: deputyIdNum, role, order: nextMember.order }]);
+        // Also save to local overrides for immediate UI update
+        const ov = readCommitteesOverrides();
+        const updatedById =
+          ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
+        writeCommitteesOverrides({
+          ...ov,
+          updatedById: { ...updatedById, [cid]: { ...(updatedById[cid] || {}), members } },
+        });
+        setCommitteesOverridesSeq((s) => s + 1);
         message.success("Участие добавлено");
+        // Update committeeIds in form to include this committee
+        const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
+          ? form.getFieldValue("committeeIds").map(String)
+          : [];
+        if (!currentCommitteeIds.includes(cid)) {
+          form.setFieldValue("committeeIds", [...currentCommitteeIds, cid]);
+        }
         return;
-      } catch {
+      } catch (err) {
+        console.warn("[AdminDeputyEditor] Failed to add member via API:", err);
+        message.warning("Не удалось сохранить на сервере, сохраняю локально");
         // fall back to local override below
       }
     }
@@ -380,7 +440,16 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       ...ov,
       updatedById: { ...updatedById, [cid]: { ...(updatedById[cid] || {}), members } },
     });
-    message.warning("Сервер недоступен. Участие сохранено локально.");
+    // Trigger re-render to show updated membership
+    setCommitteesOverridesSeq((s) => s + 1);
+    message.success("Участие сохранено");
+    // Update committeeIds in form to include this committee
+    const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
+      ? form.getFieldValue("committeeIds").map(String)
+      : [];
+    if (!currentCommitteeIds.includes(cid)) {
+      form.setFieldValue("committeeIds", [...currentCommitteeIds, cid]);
+    }
   }, [canWrite, committeesMerged, deputyIdNum, message, participationCommitteeId, participationRole, form, participationConvocationId]);
 
   const removeMembershipLocal = React.useCallback(async (committeeIdToUpdate) => {
@@ -406,6 +475,11 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         await CommitteesApi.removeMember(cid, String(memberToRemove.id));
         setCommitteesOverridesSeq((s) => s + 1);
         message.success("Участие в комитете удалено.");
+        // Remove committeeIds from form if no longer a member
+        const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
+          ? form.getFieldValue("committeeIds").map(String)
+          : [];
+        form.setFieldValue("committeeIds", currentCommitteeIds.filter(id => id !== cid));
         return;
       } catch (err) {
         message.warning("Не удалось удалить на сервере, сохраняю локально.");
@@ -421,7 +495,12 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     });
     setCommitteesOverridesSeq((s) => s + 1);
     message.success("Участие удалено (локально). Обновите страницу на сайте, чтобы изменения отобразились везде.");
-  }, [canWrite, committeesMerged, deputyIdNum, message]);
+    // Remove committeeIds from form if no longer a member
+    const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
+      ? form.getFieldValue("committeeIds").map(String)
+      : [];
+    form.setFieldValue("committeeIds", currentCommitteeIds.filter(id => id !== cid));
+  }, [canWrite, committeesMerged, deputyIdNum, message, form]);
 
   const refreshLookups = React.useCallback(async () => {
     setLookupBusy(true);
@@ -431,6 +510,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         PersonsApi.listDistrictsAll().catch(() => []),
         PersonsApi.listConvocationsAll().catch(() => []),
       ]);
+      console.log("[AdminDeputyEditor] Convocations loaded:", cs);
       setFactionEntities(Array.isArray(fs) ? fs : []);
       setDistrictEntities(Array.isArray(ds) ? ds : []);
       setConvocationEntities(Array.isArray(cs) ? cs : []);
@@ -563,6 +643,13 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         const fromLocal = getLocalDeputyById(deputies, id);
         const ov = readDeputiesOverrides();
         const patch = ov?.updatedById && typeof ov.updatedById === "object" ? ov.updatedById[String(id)] : null;
+        console.log("[AdminDeputyEditor] Load debug:", { 
+          id, 
+          hasPatch: !!patch, 
+          patchConvocationIds: patch?.convocationIds,
+          apiConvocationIds: fromApi?.convocationIds,
+          localConvocationIds: fromLocal?.convocationIds 
+        });
         // База — локальный список (биография, контакты из DataContext); поверх — непустые поля из API, затем patch
         let base = fromLocal && typeof fromLocal === "object" ? { ...fromLocal } : (fromApi || fromLocal || patch);
         if (fromApi && typeof fromApi === "object") {
@@ -624,6 +711,21 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           if (!alive) return;
         }
         if (!alive) return;
+        
+        // 4) Применяем localStorage overrides ПОСЛЕ всех enrichment шагов для критичных полей
+        if (patch && typeof patch === "object") {
+          // Сохраняем convocationIds из overrides (пользовательские изменения)
+          if (Array.isArray(patch.convocationIds)) {
+            src.convocationIds = patch.convocationIds;
+          }
+          // Сохраняем другие важные поля из overrides
+          if (patch.faction !== undefined) src.faction = patch.faction;
+          if (patch.electoralDistrict !== undefined) src.electoralDistrict = patch.electoralDistrict;
+          if (Array.isArray(patch.committeeIds)) {
+            src.committeeIds = patch.committeeIds;
+          }
+        }
+
         const normalized = normalizeInitial(src);
         form.setFieldsValue(normalized);
         initialStatusRef.current = {
@@ -653,6 +755,15 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       alive = false;
     };
   }, [mode, deputyId, deputies, form]);
+
+  // Загружаем committeeIds из текущего участия в комитетах после загрузки данных
+  React.useEffect(() => {
+    if (mode !== "edit" || !deputyIdNum) return;
+    const committeeIdsFromMemberships = myCommitteeMemberships.map(({ committee: c }) => String(c?.id ?? ""));
+    if (committeeIdsFromMemberships.length > 0) {
+      form.setFieldValue("committeeIds", committeeIdsFromMemberships);
+    }
+  }, [mode, deputyIdNum, myCommitteeMemberships, form]);
 
   React.useEffect(() => {
     if (!structureType) return;
@@ -700,6 +811,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     setSaving(true);
     try {
       const values = await form.validateFields();
+      console.log("[AdminDeputyEditor] Save debug - Form convocationIds:", values.convocationIds);
       const bodyRaw = {
         ...values,
         // Для API отправляем description, локально храним biography
@@ -707,6 +819,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         bio: undefined,
       };
       const body = await enrichRelations(bodyRaw);
+      console.log("[AdminDeputyEditor] Save debug - Body convocationIds:", body.convocationIds);
 
       if (mode === "create") {
         try {
@@ -773,6 +886,14 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           Boolean(prev.isDeceased) !== Boolean(statusPatch.isDeceased) ||
           Boolean(prev.isActive) !== Boolean(statusPatch.isActive);
         if (changed) saveOverridesStatus(id, statusPatch);
+        // IMPORTANT: Also save full body to overrides to preserve fields that backend might ignore
+        // (e.g., convocationIds, committeeIds if backend doesn't support them yet)
+        saveOverridesUpdate(id, { ...body, id });
+        console.log("[AdminDeputyEditor] Save debug - Saved to localStorage:", { 
+          id, 
+          convocationIds: body.convocationIds,
+          saved: readDeputiesOverrides()?.updatedById?.[id]?.convocationIds 
+        });
         message.success("Депутат обновлён");
         reload();
         navigate("/admin/deputies");
@@ -829,6 +950,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           structureType: undefined,
           role: undefined,
           convocationIds: [],
+          committeeIds: [],
           mandateEnded: false,
           isDeceased: false,
           isActive: true,
@@ -895,6 +1017,20 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                 <div style={{ opacity: 0.75, fontSize: 13, lineHeight: 1.45 }}>
                   Выберите созыв → комитет → роль, чтобы добавить участие депутата.
                 </div>
+                
+                {/* Проверка: есть ли комитеты */}
+                {committeesMerged.length === 0 ? (
+                  <div style={{ 
+                    padding: 12, 
+                    background: "#fff7e6", 
+                    border: "1px solid #ffd591",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    color: "#d46b08"
+                  }}>
+                    ⚠️ Комитеты не загружены. Проверьте, существует ли файл /data/committees.json или доступен ли API комитетов.
+                  </div>
+                ) : null}
 
                 <div className="admin-split">
                   <div style={{ display: "grid", gap: 8 }}>
@@ -905,10 +1041,18 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                       disabled={saving || loading}
                       options={[
                         { value: "all", label: "Все созывы" },
-                        ...(Array.isArray(convocationsForParticipation) ? convocationsForParticipation : []).map((c) => ({
-                          value: String(c?.id),
-                          label: String(c?.name || `Созыв ${c?.id}`),
-                        })),
+                        ...(Array.isArray(convocations) ? convocations : []).map((c) => {
+                          // Поддерживаем оба формата: строки и объекты
+                          if (typeof c === "string") {
+                            return { value: c, label: c };
+                          }
+                          if (c && typeof c === "object") {
+                            const id = String(c.id ?? c.name ?? "");
+                            const name = String(c.name || c.title || `Созыв ${c.id}`);
+                            return { value: id, label: name };
+                          }
+                          return null;
+                        }).filter((c) => c && c.value),
                       ]}
                     />
                   </div>
@@ -947,7 +1091,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
 
                 <Button
                   type="primary"
-                  disabled={!canWrite || !participationCommitteeId}
+                  disabled={!canWrite}
                   onClick={upsertMembershipLocal}
                   style={{ color: "#fff" }}
                 >
@@ -1005,10 +1149,28 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                   allowClear
                   showSearch
                   optionFilterProp="label"
-                  options={(Array.isArray(convocationEntities) ? convocationEntities : [])
-                    .filter((c) => c && c.id)
-                    .map((c) => ({ value: String(c.id), label: String(c.name || `Созыв ${c.id}`) }))}
+                  options={(Array.isArray(convocations) ? convocations : [])
+                    .map((c) => {
+                      // Поддерживаем оба формата: строки и объекты
+                      if (typeof c === "string") {
+                        return { value: c, label: c };
+                      }
+                      if (c && typeof c === "object") {
+                        const id = String(c.id ?? c.name ?? "");
+                        const name = String(c.name || c.title || `Созыв ${c.id}`);
+                        return { value: id, label: name };
+                      }
+                      return null;
+                    })
+                    .filter((c) => c && c.value)}
+                  onChange={(values) => {
+                    console.log("[AdminDeputyEditor] Select convocationIds changed:", values);
+                  }}
                 />
+              </Form.Item>
+              {/* Скрытое поле для хранения ID комитетов, в которых участвует депутат */}
+              <Form.Item name="committeeIds" style={{ display: 'none' }}>
+                <Input />
               </Form.Item>
               <Form.Item label="Тип структуры" name="structureType">
                 <Select disabled={loading || saving} placeholder="Выберите тип структуры" allowClear>
@@ -1291,7 +1453,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           setNewCommitteeOpen(false);
           setNewCommitteeName("");
         }}
-        okText="Добавить"
+        okText="Добав��ть"
         cancelText="Отмена"
         okButtonProps={{ disabled: !canWrite || !String(newCommitteeName || "").trim() }}
         onOk={async () => {
@@ -1307,7 +1469,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             // Обновим список комитетов в контексте
             setCommittees((prev) => {
               const arr = Array.isArray(prev) ? prev : [];
-              // Проверяем, не существует ли уже такой комитет
+              // Пр��веряем, не существует ли уже такой комитет
               const exists = arr.some(
                 (c) =>
                   String(c?.id || "") === String(newCommittee.id) ||
@@ -1337,7 +1499,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           }}
         />
         <div className="admin-hint" style={{ marginTop: 8 }}>
-          Комитет будет добавлен в список и появится в выпадающем списке.
+          Комитет будет добавлен в список и п��явится в выпадающем списке.
         </div>
       </Modal>
     </div>
