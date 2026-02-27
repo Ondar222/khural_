@@ -91,28 +91,38 @@ export default function AdminConvocationsEditor({
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [convocationId]);
 
+  const convIdStr = React.useMemo(() => {
+    return String(convocationId || "");
+  }, [convocationId]);
+
   const committeesForThisConvocation = React.useMemo(() => {
-    if (!convIdNum) return [];
+    if (!convIdStr) return [];
     const list = Array.isArray(committees) ? committees : [];
-    return list.filter((c) => String(c?.convocation?.id || c?.convocationId || "") === String(convIdNum));
-  }, [committees, convIdNum]);
+    return list.filter((c) => {
+      const committeeConvId = String(c?.convocation?.id || c?.convocationId || "");
+      return committeeConvId === convIdStr;
+    });
+  }, [committees, convIdStr]);
 
   const availableToAttach = React.useMemo(() => {
-    if (!convIdNum) return [];
+    if (!convIdStr) return [];
     const list = Array.isArray(committees) ? committees : [];
-    return list.filter((c) => String(c?.convocation?.id || c?.convocationId || "") !== String(convIdNum));
-  }, [committees, convIdNum]);
+    return list.filter((c) => {
+      const committeeConvId = String(c?.convocation?.id || c?.convocationId || "");
+      return committeeConvId !== convIdStr;
+    });
+  }, [committees, convIdStr]);
 
   const [attachCommitteeId, setAttachCommitteeId] = React.useState(null);
 
   const attachExisting = React.useCallback(async () => {
     if (!canWrite) return;
-    if (!convIdNum) return;
+    if (!convIdStr) return;
     const id = attachCommitteeId ? String(attachCommitteeId) : "";
     if (!id) return;
-    await onUpdateCommittee?.(id, { convocationId: convIdNum });
+    await onUpdateCommittee?.(id, { convocationId: convIdStr });
     setAttachCommitteeId(null);
-  }, [attachCommitteeId, canWrite, convIdNum, onUpdateCommittee]);
+  }, [attachCommitteeId, canWrite, convIdStr, onUpdateCommittee]);
 
   const detach = React.useCallback(async (committeeIdToDetach) => {
     if (!canWrite) return;
@@ -190,7 +200,7 @@ export default function AdminConvocationsEditor({
         </Form>
       </div>
 
-      {mode === "edit" && convIdNum ? (
+      {mode === "edit" && convIdStr ? (
         <div className="admin-card" style={{ marginTop: 16 }}>
           <div className="admin-events-editor__section-title">Комитеты созыва</div>
           <div style={{ display: "grid", gap: 12 }}>
@@ -198,7 +208,7 @@ export default function AdminConvocationsEditor({
               <Button
                 type="primary"
                 disabled={!canWrite}
-                onClick={() => navigate(`/admin/committees/create?convocationId=${encodeURIComponent(String(convIdNum))}`)}
+                onClick={() => navigate(`/admin/committees/create?convocationId=${encodeURIComponent(convIdStr)}`)}
               >
                 + Создать комитет в этом созыве
               </Button>

@@ -638,9 +638,28 @@ export function useAdminData() {
                 : null;
     setEvents(apiEventsArr ? apiEventsArr.map(toEventRow) : fb.events || []);
     // Обращения не загружаем при открытии дашборда — только при переходе на /admin/appeals (loadAppeals), чтобы не было ошибок в консоли при отсутствии API обращений
-    const baseConv = Array.isArray(apiConvocations) ? apiConvocations : [];
-    const fallbackConv = Array.isArray(fb.convocations) ? fb.convocations : [];
-    const mergedConv = mergeConvocationsPreferApi(baseConv, fallbackConv);
+    
+    // Загружаем созывы: API -> /data/convocations.json -> fallback из DataContext
+    const apiConvocationsList = Array.isArray(apiConvocations) && apiConvocations.length > 0 ? apiConvocations : [];
+    let fallbackConv = Array.isArray(fb.convocations) ? fb.convocations : [];
+    
+    // Если ни API, ни DataContext не вернули данные, загружаем из /data/convocations.json
+    if (apiConvocationsList.length === 0 && fallbackConv.length === 0) {
+      try {
+        const staticConv = await fetch("/data/convocations.json").then((r) => (r.ok ? r.json() : [])).catch(() => []);
+        if (Array.isArray(staticConv) && staticConv.length > 0) {
+          fallbackConv = staticConv;
+        }
+      } catch (e) {
+        if (import.meta.env.DEV) {
+          console.warn("Failed to load convocations from /data/convocations.json:", e);
+        }
+      }
+    }
+    
+    const mergedConv = apiConvocationsList.length > 0
+      ? mergeConvocationsPreferApi(apiConvocationsList, fallbackConv)
+      : fallbackConv;
     const convocationsList = mergeConvocationsWithOverrides(mergedConv, readConvocationsOverrides());
     setConvocations(convocationsList);
     const apiCommitteesList = Array.isArray(apiCommittees) ? apiCommittees : [];

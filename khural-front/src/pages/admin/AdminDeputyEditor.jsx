@@ -327,9 +327,17 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     for (const c of list) {
       const members = Array.isArray(c?.members) ? c.members : [];
       const found = members.find((m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum);
-      if (found) out.push({ committee: c, member: found });
+      if (found) {
+        // Обогащаем комитет данными из overrides (включая созыв)
+        const ov = readCommitteesOverrides();
+        const override = ov?.updatedById?.[c?.id ?? ""] || null;
+        const committeeWithData = override
+          ? { ...c, ...override, convocationId: override.convocationId || c.convocationId, convocation: override.convocation || c.convocation }
+          : c;
+        out.push({ committee: committeeWithData, member: found });
+      }
     }
-    
+
     // Также проверяем комитеты из localStorage overrides (если они не вошли в committeesMerged)
     try {
       const ov = readCommitteesOverrides();
@@ -337,19 +345,26 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       for (const [cid, override] of Object.entries(updatedById)) {
         // Проверяем, есть ли уже этот комитет в результате
         if (out.some(({ committee: c }) => String(c?.id ?? "") === cid)) continue;
-        
+
         const members = Array.isArray(override?.members) ? override.members : [];
         const found = members.find((m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum);
         if (found) {
           // Находим комитет в базовом списке или создаем заглушку
           const baseCommittee = list.find((c) => String(c?.id ?? "") === cid) || { id: cid, name: `Комитет ${cid}` };
-          out.push({ committee: baseCommittee, member: found });
+          // Обогащаем данными из overrides включая созыв
+          const committeeWithData = {
+            ...baseCommittee,
+            ...override,
+            convocationId: override.convocationId || baseCommittee.convocationId,
+            convocation: override.convocation || baseCommittee.convocation,
+          };
+          out.push({ committee: committeeWithData, member: found });
         }
       }
     } catch (e) {
       console.error("[AdminDeputyEditor] Error reading localStorage overrides:", e);
     }
-    
+
     return out;
   }, [committeesMerged, deputyIdNum]);
 
@@ -385,14 +400,19 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       return;
     }
 
+    // Определяем созыв для комитета: используем выбранный в фильтре, если у комитета нет своего
+    const existingConvId = c?.convocation?.id || c?.convocationId;
+    const convIdToSet = (participationConvocationId && participationConvocationId !== "all")
+      ? participationConvocationId
+      : existingConvId;
+
     // Ensure deputy has this convocation selected
-    const convIdFromCommittee = c?.convocation?.id || c?.convocationId || participationConvocationId;
-    if (convIdFromCommittee && convIdFromCommittee !== "all") {
+    if (convIdToSet && convIdToSet !== "all") {
       const nextIds = Array.isArray(form.getFieldValue("convocationIds"))
         ? form.getFieldValue("convocationIds").map(String)
         : [];
-      if (!nextIds.includes(String(convIdFromCommittee))) {
-        form.setFieldValue("convocationIds", [...nextIds, String(convIdFromCommittee)]);
+      if (!nextIds.includes(String(convIdToSet))) {
+        form.setFieldValue("convocationIds", [...nextIds, String(convIdToSet)]);
       }
     }
     const members = Array.isArray(c.members) ? c.members.slice() : [];
@@ -408,13 +428,22 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     if (looksServerId) {
       try {
         await CommitteesApi.addMembers(cid, [{ personId: deputyIdNum, role, order: nextMember.order }]);
-        // Also save to local overrides for immediate UI update
+        // Also save to local overrides for immediate UI update, including convocationId
         const ov = readCommitteesOverrides();
         const updatedById =
           ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
+        const existingOverride = updatedById[cid] || {};
         writeCommitteesOverrides({
           ...ov,
-          updatedById: { ...updatedById, [cid]: { ...(updatedById[cid] || {}), members } },
+          updatedById: {
+            ...updatedById,
+            [cid]: {
+              ...existingOverride,
+              members,
+              // Сохраняем созыв для комитета, если он выбран
+              ...(convIdToSet && !existingConvId ? { convocationId: convIdToSet, convocation: { id: convIdToSet } } : {}),
+            },
+          },
         });
         setCommitteesOverridesSeq((s) => s + 1);
         message.success("Участие добавлено");
@@ -436,9 +465,18 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     const ov = readCommitteesOverrides();
     const updatedById =
       ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
+    const existingOverride = updatedById[cid] || {};
     writeCommitteesOverrides({
       ...ov,
-      updatedById: { ...updatedById, [cid]: { ...(updatedById[cid] || {}), members } },
+      updatedById: {
+        ...updatedById,
+        [cid]: {
+          ...existingOverride,
+          members,
+          // Сохраняем созыв для комитета, если он выбран
+          ...(convIdToSet && !existingConvId ? { convocationId: convIdToSet, convocation: { id: convIdToSet } } : {}),
+        },
+      },
     });
     // Trigger re-render to show updated membership
     setCommitteesOverridesSeq((s) => s + 1);
@@ -1101,31 +1139,40 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                 <div style={{ marginTop: 6, fontWeight: 800 }}>Текущее участие</div>
                 {myCommitteeMemberships.length ? (
                   <div style={{ display: "grid", gap: 10 }}>
-                    {myCommitteeMemberships.map(({ committee: c, member: m }) => (
-                      <div
-                        key={String(c?.id)}
-                        style={{
-                          border: "1px solid rgba(10, 31, 68, 0.08)",
-                          borderRadius: 12,
-                          padding: 12,
-                          background: "rgba(255,255,255,0.55)",
-                          display: "grid",
-                          gap: 8,
-                        }}
-                      >
-                        <div style={{ fontWeight: 900 }}>{c?.name || c?.title || "Комитет"}</div>
-                        <div style={{ opacity: 0.8 }}>
-                          <strong>Роль:</strong> {String(m?.role || "—")}
-                        </div>
-                        <Button
-                          danger
-                          disabled={!canWrite}
-                          onClick={() => removeMembershipLocal(String(c?.id))}
+                    {myCommitteeMemberships.map(({ committee: c, member: m }) => {
+                      const convocationId = c?.convocationId || c?.convocation?.id;
+                      const convocationName = convocations?.find(cv => String(cv?.id) === String(convocationId))?.name || convocationId;
+                      return (
+                        <div
+                          key={String(c?.id)}
+                          style={{
+                            border: "1px solid rgba(10, 31, 68, 0.08)",
+                            borderRadius: 12,
+                            padding: 12,
+                            background: "rgba(255,255,255,0.55)",
+                            display: "grid",
+                            gap: 8,
+                          }}
                         >
-                          Удалить из комитета
-                        </Button>
-                      </div>
-                    ))}
+                          <div style={{ fontWeight: 900 }}>{c?.name || c?.title || "Комитет"}</div>
+                          <div style={{ opacity: 0.8 }}>
+                            <strong>Роль:</strong> {String(m?.role || "—")}
+                          </div>
+                          {convocationName && (
+                            <div style={{ opacity: 0.8 }}>
+                              <strong>Созыв:</strong> {convocationName}
+                            </div>
+                          )}
+                          <Button
+                            danger
+                            disabled={!canWrite}
+                            onClick={() => removeMembershipLocal(String(c?.id))}
+                          >
+                            Удалить из комитета
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div style={{ opacity: 0.65 }}>Пока не добавлено</div>
