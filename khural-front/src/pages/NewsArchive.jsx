@@ -45,12 +45,6 @@ export default function NewsArchive() {
     return categoryParam || "Все";
   };
   const [category, setCategory] = React.useState(getInitialCategory);
-  
-  // Определяем, показываем ли новости председателя
-  const isSpeakerNews = React.useMemo(() => {
-    const sp = new URLSearchParams(window.location.search || "");
-    return sp.get("speaker") === "true" || category === "Председатель";
-  }, [category]);
 
   const getInitialDate = () => {
     const dateParam = new URLSearchParams(window.location.search || "").get("date");
@@ -92,9 +86,24 @@ export default function NewsArchive() {
 
   const categories = React.useMemo(
     () => {
-      const cats = ["Все", "Председатель", ...Array.from(new Set((news || []).map((n) => n.category).filter(Boolean)))];
-      // Убираем дубликаты
-      return Array.from(new Set(cats));
+      // Собираем все категории из новостей
+      const rawCategories = Array.from(new Set((news || []).map((n) => n.category).filter(Boolean)));
+      
+      // Нормализуем названия категорий (объединяем похожие)
+      const normalizedCategories = rawCategories.map((cat) => {
+        const lowerCat = String(cat).toLowerCase();
+        // Объединяем варианты "Председатель", "Новости Председателя", "Председатель ВХ РТ" и т.д.
+        if (lowerCat.includes("председатель") || lowerCat.includes("speaker") || lowerCat.includes("chairman")) {
+          return "Председатель";
+        }
+        return cat;
+      });
+      
+      // Убираем дубликаты после нормализации
+      const uniqueCategories = Array.from(new Set(normalizedCategories));
+      
+      // "Все" всегда первая, остальные по алфавиту
+      return ["Все", ...uniqueCategories.filter((c) => c !== "Все").sort()];
     },
     [news]
   );
@@ -102,30 +111,39 @@ export default function NewsArchive() {
   const filtered = React.useMemo(
     () => {
       let result = news || [];
-      
+
       // Фильтр по новостям председателя
-      if (isSpeakerNews) {
+      if (category === "Председатель") {
         const speakerKeywords = ["председатель", "председателя", "председателю", "speaker", "chairman"];
         result = result.filter((n) => {
           const title = String(n?.title || "").toLowerCase();
           const category = String(n?.category || "").toLowerCase();
           // Ищем только в заголовке и категории, НЕ в содержимом
-          return speakerKeywords.some((keyword) => 
+          return speakerKeywords.some((keyword) =>
             title.includes(keyword) || category.includes(keyword)
           );
         });
       } else if (category !== "Все") {
-        result = result.filter((n) => n.category === category);
+        // Для других категорий - точное совпадение
+        result = result.filter((n) => {
+          const newsCat = String(n.category || "");
+          // Нормализуем категорию новости для сравнения
+          const lowerNewsCat = newsCat.toLowerCase();
+          if (lowerNewsCat.includes("председатель") || lowerNewsCat.includes("speaker") || lowerNewsCat.includes("chairman")) {
+            return false; // Это новости председателя, они фильтруются отдельно
+          }
+          return newsCat === category;
+        });
       }
-      
+
       // Фильтр по дате
       if (date) {
         result = result.filter((n) => String(n.date || "").slice(0, 10) === date);
       }
-      
+
       return result;
     },
-    [news, category, date, isSpeakerNews]
+    [news, category, date]
   );
 
   const totalNews = filtered.length;
@@ -147,8 +165,16 @@ export default function NewsArchive() {
     const h = window.location.pathname;
     const params = new URLSearchParams(window.location.search || "");
     if (category && category !== "Все") {
-      if (category === "Председатель") params.set("speaker", "true");
-      else params.set("category", category);
+      if (category === "Председатель") {
+        params.set("speaker", "true");
+        params.delete("category");
+      } else {
+        params.set("category", category);
+        params.delete("speaker");
+      }
+    } else {
+      params.delete("category");
+      params.delete("speaker");
     }
     if (date) params.set("date", date);
     if (page > 1) params.set("page", String(page));
@@ -571,43 +597,43 @@ export default function NewsArchive() {
           <SideNav
             title="Новости"
             links={[
-              { 
-                label: "Новости", 
+              {
+                label: "Новости",
                 href: "/news",
-                active: !isSpeakerNews && category === "Все"
+                active: category === "Все"
               },
               {
                 label: "Главные события недели",
                 href: "/news/week",
               },
-              { 
-                label: "Новости Председателя", 
+              {
+                label: "Новости Председателя",
                 href: "/news?speaker=true",
-                active: isSpeakerNews
+                active: category === "Председатель"
               },
-              { 
-                label: "Фотографии", 
+              {
+                label: "Фотографии",
                 href: "/news?category=Фотографии"
               },
-              { 
-                label: "Видеозаписи", 
+              {
+                label: "Видеозаписи",
                 href: "/news?category=Видеозаписи"
               },
-              { 
-                label: "Кодекс чести мужчины Тувы", 
+              {
+                label: "Кодекс чести мужчины Тувы",
                 href: "/p/code-of-honor"
               },
-              { 
-                label: "Свод заповедей матерей Тувы", 
+              {
+                label: "Свод заповедей матерей Тувы",
                 href: "/p/mothers-commandments"
               },
-            
-              { 
-                label: "Для СМИ", 
+
+              {
+                label: "Для СМИ",
                 href: "/p/for-media"
               },
-              { 
-                label: t("Трансляции"), 
+              {
+                label: t("Трансляции"),
                 href: "/broadcast"
               },
             ]}
