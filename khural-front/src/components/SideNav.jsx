@@ -1,6 +1,9 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useHashRoute } from "../Router.jsx";
+import { AboutApi } from "../api/client.js";
+import { getPreferredLocaleToken } from "../utils/pages.js";
+import { pickMenuLabel, applyPagesOverridesToTree } from "../utils/pagesOverrides.js";
 
 // Кэшируем URL для ссылок, чтобы не создавать их каждый раз
 const hrefCache = new Map();
@@ -74,6 +77,24 @@ const defaultLinks = [
   },
 ];
 
+// Стандартные ссылки для раздела "Обращения" (как в Header)
+const defaultLinksAppeals = [
+  { label: "Обращения граждан", href: "/appeals" },
+  { label: "Письменное обращение", href: "/appeals/letter" },
+  { label: "Электронная приемная", href: "/appeals/online" },
+  { label: "Проверить статус обращения", href: "/appeals/status" },
+  { label: "Порядок рассмотрения обращений", href: "/appeals/review" },
+  { label: "Порядок обжалования", href: "/appeals/complaints" },
+  { label: "Обзор обращений граждан", href: "/appeals/overview" },
+  { 
+    label: "Ответы на обращения, затрагивающие интересы неопределенного круга лиц", 
+    href: "/appeals/public-interests" 
+  },
+  { label: "Правовое регулирование", href: "/appeals/legal" },
+  { label: "График приема граждан", href: "/appeals/schedule" },
+  { label: "Минюст России", href: "/appeals/minyust" },
+];
+
 // Отдельный мемоизированный компонент ссылки
 const LinkItem = React.memo(function LinkItem({
   href,
@@ -114,14 +135,140 @@ const LinkItem = React.memo(function LinkItem({
   );
 });
 
+// Преобразует дерево страниц в формат ссылок для SideNav
+function pagesToLinks(pages, locale) {
+  return pages.map((p) => {
+    const slug = String(p.slug || "");
+    const segs = slug.split("/").filter(Boolean).map((s) => encodeURIComponent(s));
+    
+    // Генерируем URL: для страниц раздела news используем /news/..., а не /p/news/...
+    const href = segs.length > 0 ? `/${segs.join("/")}` : `/p/${segs.join("/")}`;
+    
+    const label = pickMenuLabel(p, locale, { prefer: "menu" }) || p.slug;
+    const children = Array.isArray(p.children) && p.children.length > 0
+      ? p.children.map((c) => {
+          const childSlug = String(c.slug || "");
+          const childSegs = childSlug.split("/").filter(Boolean).map((s) => encodeURIComponent(s));
+          const childHref = childSegs.length > 0 ? `/${childSegs.join("/")}` : `/p/${childSegs.join("/")}`;
+          const childLabel = pickMenuLabel(c, locale, { prefer: "submenu" }) || c.slug;
+          return { href: childHref, label: childLabel };
+        })
+      : [];
+    return { href, label, children };
+  });
+}
+
+// Фильтрует страницы по разделу (section)
+function filterPagesBySection(pages, section) {
+  if (!section) return pages;
+  
+  // Фильтруем страницы, которые принадлежат этому разделу
+  // Страницы могут быть как плоским списком, так и деревом
+  const filterRecursive = (items) => {
+    return items.filter((p) => {
+      const slug = String(p.slug || "").replace(/^\/+|\/+$/g, "");
+      // Проверяем, начинается ли slug с раздела
+      const belongsToSection = slug === section || slug.startsWith(section + "/");
+      
+      // Если у страницы есть дети, фильтруем их тоже
+      if (belongsToSection && Array.isArray(p.children)) {
+        p.children = filterRecursive(p.children);
+      }
+      
+      return belongsToSection;
+    });
+  };
+  
+  return filterRecursive(pages);
+}
+
 // Reusable right-side navigation with links to key subpages
 export default function SideNav({
   title = "Разделы",
   links: overrideLinks,
   className = "sidenav--card",
+  loadPages = false, // Новый проп: если true, загружать страницы из админки
+  section, // Раздел для фильтрации страниц (например, "news", "deputies")
+  autoSection = true, // По умолчанию автоматически определять раздел из URL
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { route } = useHashRoute();
+  const locale = getPreferredLocaleToken(lang);
+  const [pagesLinks, setPagesLinks] = React.useState([]);
+
+  // Автоматически определяем раздел из URL
+  const detectedSection = React.useMemo(() => {
+    if (!autoSection) return section;
+    if (section) return section; // Явно указанный section имеет приоритет
+    
+    const pathname = route?.split("?")[0] || "";
+    
+    // Сопоставляем пути с разделами
+    const sectionMap = {
+      "^/news$": "news",
+      "^/news/": "news",
+      "^/deputies$": "deputies",
+      "^/deputies/": "deputies",
+      "^/documents$": "documents",
+      "^/docs/": "documents",
+      "^/about$": "about",
+      "^/section$": "about",
+      "^/committee": "committees",
+      "^/commission": "commissions",
+      "^/activity": "activity",
+      "^/contacts$": "contacts",
+      "^/appeals": "appeals",
+      "^/broadcast": "broadcast",
+    };
+    
+    for (const [pattern, sectionName] of Object.entries(sectionMap)) {
+      if (new RegExp(pattern).test(pathname)) {
+        return sectionName;
+      }
+    }
+    
+    return null;
+  }, [autoSection, section, route]);
+
+  // Загружаем страницы из админки, если loadPages = true
+  React.useEffect(() => {
+    if (!loadPages) return;
+    let alive = true;
+    const fetchPages = async () => {
+      try {
+        const res = await AboutApi.listPagesTree({ publishedOnly: true }).catch(() => []);
+        const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+        
+        console.log('[SideNav] Все страницы:', arr.map(p => ({ slug: p.slug, title: p.title })));
+        console.log('[SideNav] Раздел:', detectedSection);
+        
+        if (alive) {
+          // Фильтруем страницы по разделу, если указан
+          const filtered = detectedSection ? filterPagesBySection(arr, detectedSection) : arr;
+          console.log('[SideNav] Отфильтрованные страницы:', filtered.map(p => ({ slug: p.slug, title: p.title })));
+          
+          const links = pagesToLinks(applyPagesOverridesToTree(filtered), locale);
+          console.log('[SideNav] Ссылки:', links);
+          setPagesLinks(links);
+        }
+      } catch (err) {
+        console.error('[SideNav] Error loading pages:', err);
+        if (alive) setPagesLinks([]);
+      }
+    };
+    fetchPages();
+    
+    // Слушаем событие перезагрузки страниц
+    const onPagesReload = () => {
+      fetchPages();
+    };
+    window.addEventListener("khural:pages-reload", onPagesReload);
+    
+    return () => { 
+      alive = false;
+      window.removeEventListener("khural:pages-reload", onPagesReload);
+    };
+  }, [loadPages, lang, locale, detectedSection]);
 
   // Force re-render on resize to fix display issues on some devices
   const [, setForceUpdate] = React.useState(0);
@@ -139,10 +286,23 @@ export default function SideNav({
     return [r.slice(0, q) || "/", "?" + r.slice(q + 1)];
   }, [route]);
 
-  // Мемоизируем ссылки
+  // Мемоизируем ссылки: приоритет - overrideLinks, затем загруженные страницы + defaultLinks, затем defaultLinks
   const links = React.useMemo(() => {
-    return Array.isArray(overrideLinks) && overrideLinks.length ? overrideLinks : defaultLinks;
-  }, [overrideLinks]);
+    // Если переданы свои ссылки вручную, используем их
+    if (Array.isArray(overrideLinks) && overrideLinks.length) return overrideLinks;
+    
+    // Определяем стандартные ссылки для текущего раздела
+    const sectionDefaultLinks = detectedSection === 'appeals' ? defaultLinksAppeals : defaultLinks;
+    
+    // Если загружаем страницы, добавляем их к стандартным ссылкам
+    if (loadPages && pagesLinks.length > 0) {
+      // Добавляем загруженные страницы в начало списка
+      return [...pagesLinks, ...sectionDefaultLinks];
+    }
+    
+    // Иначе используем стандартные ссылки раздела
+    return sectionDefaultLinks;
+  }, [overrideLinks, loadPages, pagesLinks, detectedSection]);
 
   const titleText = typeof title === "string" ? t(title) : title;
 

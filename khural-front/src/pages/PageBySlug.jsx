@@ -102,7 +102,20 @@ const MOTHERS_COMMANDMENTS_HTML = `
 
 function getSlugFromPath() {
   const path = typeof window !== "undefined" ? window.location.pathname || "" : "";
-  if (path.startsWith("/p/")) return decodeURIComponent(path.slice(3));
+  
+  // Поддерживаем оба формата: /p/:slug и /:section/:slug
+  if (path.startsWith("/p/")) {
+    return decodeURIComponent(path.slice(3));
+  }
+  
+  // Для маршрутов типа /news/:slug, /deputies/:slug и т.д.
+  // Извлекаем весь путь после первого сегмента
+  const segments = path.split("/").filter(Boolean);
+  if (segments.length >= 2) {
+    // Возвращаем slug как section/slug (например, news/test-page)
+    return decodeURIComponent(segments.join("/"));
+  }
+  
   return "";
 }
 

@@ -158,6 +158,8 @@ export default function Broadcast() {
           </div>
           <SideNav
             title={t("Трансляции")}
+            loadPages={true}
+            autoSection={true}
             links={[
               { label: t("Трансляция"), href: "/broadcast" },
             ]}

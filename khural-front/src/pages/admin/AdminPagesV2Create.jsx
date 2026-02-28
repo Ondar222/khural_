@@ -368,7 +368,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
             <Input placeholder="information" />
           </Form.Item>
           <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 10 }}>
-            Итоговый URL: <code>{`/p/${fullSlugPreview || "..."}`}</code>
+            Итоговый URL: <code>{fullSlugPreview ? `/${fullSlugPreview}` : "..."}</code>
           </div>
           <Form.Item label="Язык" name="locale">
             <Select

@@ -372,7 +372,7 @@ export default function About() {
               {/* NOTE: ниже ничего не рендерим — схема должна совпадать с /section */}
             </div>
           </div>
-          <SideNav className="sidenav--about" title={t("О Верховном Хурале")} />
+          <SideNav className="sidenav--about" title={t("О Верховном Хурале")} loadPages={true} autoSection={true} />
         </div>
       </div>
     </section>

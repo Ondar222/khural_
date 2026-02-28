@@ -45,7 +45,8 @@ export default function PagesIndex() {
               {(items || []).map((p) => {
                 const slug = String(p.slug || "");
                 const segs = slug.split("/").filter(Boolean).map((s) => encodeURIComponent(s));
-                const href = `/p/${segs.join("/")}`;
+                // Для страниц с разделом используем /section/slug, для остальных /p/slug
+                const href = segs.length >= 2 ? `/${segs.join("/")}` : `/p/${segs.join("/")}`;
                 return (
                   <a
                     key={String(p.id || p.slug || Math.random())}

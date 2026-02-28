@@ -124,6 +124,12 @@ export default function Header() {
       .split("/")
       .filter(Boolean)
       .map((s) => encodeURIComponent(s));
+    
+    // Для страниц с разделом (например, news/test-page) используем /news/test-page
+    // Для остальных используем /p/test-page
+    if (segs.length >= 2) {
+      return `/${segs.join("/")}`;
+    }
     return `/p/${segs.join("/")}`;
   }, []);
 

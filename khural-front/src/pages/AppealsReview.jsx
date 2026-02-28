@@ -1,5 +1,6 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
+import SideNav from "../components/SideNav.jsx";
 
 export default function AppealsReview() {
   const { t } = useI18n();
@@ -7,7 +8,9 @@ export default function AppealsReview() {
   return (
     <section className="section">
       <div className="container">
-        <h1 className="h1-compact">{t("Порядок рассмотрения обращений")}</h1>
+        <div className="page-grid">
+          <div className="page-grid__main">
+            <h1 className="h1-compact">{t("Порядок рассмотрения обращений")}</h1>
 
         <div className="tile" style={{ marginBottom: 24 }}>
           <p style={{ fontSize: 16, lineHeight: 1.6, marginBottom: 16 }}>
@@ -241,6 +244,9 @@ export default function AppealsReview() {
           <a href="/appeals/legal" className="link" style={{ fontSize: 15, alignSelf: "center" }}>
             Правовое регулирование
           </a>
+        </div>
+          </div>
+          <SideNav title="Разделы" loadPages={true} autoSection={true} />
         </div>
       </div>
     </section>

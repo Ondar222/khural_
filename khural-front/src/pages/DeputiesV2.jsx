@@ -882,7 +882,7 @@ export default function DeputiesV2() {
               </DataState>
             </DataState>
           </div>
-          <SideNav />
+          <SideNav title="Разделы" loadPages={true} autoSection={true} />
         </div>
       </div>
       <ScrollToTop />

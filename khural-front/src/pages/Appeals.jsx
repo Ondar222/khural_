@@ -1,5 +1,6 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
+import SideNav from "../components/SideNav.jsx";
 import GosuslugiWidget from "../components/GosuslugiWidget.jsx";
 
 export default function Appeals() {
@@ -8,8 +9,10 @@ export default function Appeals() {
 
   return (
     <section className="section appeals-page">
-      <div className="container appeals-page__container">
-        <h1 className="h1-compact appeals-page__title">{t("Обращения граждан и юридических лиц")}</h1>
+      <div className="container">
+        <div className="page-grid">
+          <div className="page-grid__main">
+            <h1 className="h1-compact appeals-page__title">{t("Обращения граждан и юридических лиц")}</h1>
 
         <div className="tile appeals-page__tile">
           <p className="appeals-page__intro">
@@ -102,34 +105,37 @@ export default function Appeals() {
             <a href="/appeals/minyust" className="appeals-page__nav-link">→ Минюст России</a>
           </nav>
         </div>
-      </div>
 
-      {/* Модальное окно с виджетом Госуслуг */}
-      {showGosuslugiModal && (
-        <div 
-          className="modal-overlay" 
-          onClick={() => setShowGosuslugiModal(false)}
-          style={{ zIndex: 9999 }}
-        >
-          <div 
-            className="modal" 
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: "900px", maxHeight: "90vh", overflow: "auto" }}
+        {/* Модальное окно с виджетом Госуслуг */}
+        {showGosuslugiModal && (
+          <div
+            className="modal-overlay"
+            onClick={() => setShowGosuslugiModal(false)}
+            style={{ zIndex: 9999 }}
           >
-            <button 
-              className="modal__close icon-btn" 
-              onClick={() => setShowGosuslugiModal(false)}
-              aria-label="Закрыть"
+            <div
+              className="modal"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: "900px", maxHeight: "90vh", overflow: "auto" }}
             >
-              ✕
-            </button>
-            <div className="modal__content">
-              <h3 style={{ marginTop: 0, marginBottom: 20 }}>Отправить обращение через Госуслуги</h3>
-              <GosuslugiWidget />
+              <button
+                className="modal__close icon-btn"
+                onClick={() => setShowGosuslugiModal(false)}
+                aria-label="Закрыть"
+              >
+                ✕
+              </button>
+              <div className="modal__content">
+                <h3 style={{ marginTop: 0, marginBottom: 20 }}>Отправить обращение через Госуслуги</h3>
+                <GosuslugiWidget />
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </section>
+        )}
+      </div>
+      <SideNav title="Разделы" loadPages={true} autoSection={true} />
+    </div>
+  </div>
+</section>
   );
 }

@@ -1,5 +1,6 @@
 import React from "react";
 import { Pagination } from "antd";
+import SideNav from "../components/SideNav.jsx";
 
 const NEWS_PAGE_SIZE = 12;
 
@@ -37,19 +38,24 @@ export default function News() {
   return (
     <section className="section news-page">
       <div className="container">
-        <h1>Новости</h1>
-        <p>Здесь будет лента новостей и фильтры по темам.</p>
-        
-        {/* Pagination placeholder - will be implemented with real news data */}
-        <div style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
-          <Pagination
-            current={currentPage}
-            total={0}
-            pageSize={NEWS_PAGE_SIZE}
-            showSizeChanger={false}
-            showTotal={(total, range) => `${range[0]}–${range[1]} из ${total}`}
-            onChange={handlePageChange}
-          />
+        <div className="page-grid">
+          <div>
+            <h1>Новости</h1>
+            <p>Здесь будет лента новостей и фильтры по темам.</p>
+
+            {/* Pagination placeholder - will be implemented with real news data */}
+            <div style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
+              <Pagination
+                current={currentPage}
+                total={0}
+                pageSize={NEWS_PAGE_SIZE}
+                showSizeChanger={false}
+                showTotal={(total, range) => `${range[0]}–${range[1]} из ${total}`}
+                onChange={handlePageChange}
+              />
+            </div>
+          </div>
+          <SideNav title="Разделы" loadPages={true} autoSection={true} />
         </div>
       </div>
     </section>

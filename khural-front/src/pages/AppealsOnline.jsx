@@ -5,6 +5,7 @@ import { FileOutlined, DownloadOutlined } from "@ant-design/icons";
 import { useAuth } from "../context/AuthContext.jsx";
 import { AppealsApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
+import SideNav from "../components/SideNav.jsx";
 import GosWidget from "../components/GosWidget.jsx";
 
 function storageKey(user) {
@@ -613,7 +614,9 @@ export default function AppealsOnline() {
   return (
     <section className="section">
       <div className="container">
-        <h1 className="h1-compact">{t("Электронная приемная")}</h1>
+        <div className="page-grid">
+          <div className="page-grid__main">
+            <h1 className="h1-compact">{t("Электронная приемная")}</h1>
 
         {!isAuthenticated ? (
           <Alert
@@ -956,6 +959,9 @@ export default function AppealsOnline() {
 
         <div style={{ marginTop: 12 }}>
           <a href="/appeals">&larr; Назад к способам подачи обращений</a>
+        </div>
+          </div>
+          <SideNav title="Разделы" loadPages={true} autoSection={true} />
         </div>
       </div>
 

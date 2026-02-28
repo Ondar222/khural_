@@ -327,6 +327,8 @@ export default function Documents() {
           </div>
           <SideNav
             title="Документы"
+            loadPages={true}
+            autoSection={true}
             links={[
               { label: "Законы Республики Тыва", href: "/docs/laws" },
               { label: "Постановления ВХ РТ", href: "/docs/resolutions" },
