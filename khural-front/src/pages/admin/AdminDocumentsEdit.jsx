@@ -12,6 +12,8 @@ const TYPE_OPTIONS = [
   { value: "bills", label: "Законопроекты" },
   { value: "civic", label: "Обращения" },
   { value: "constitution", label: "Конституция" },
+  { value: "constitution-fed", label: "Конституция - Федеральное" },
+  { value: "constitution-reg", label: "Конституция - Региональное" },
   { value: "other", label: "Другое" },
 ];
 
