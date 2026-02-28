@@ -52,6 +52,7 @@ export default function DocsPage() {
   const [query, setQuery] = React.useState("");
   const [filterEntity, setFilterEntity] = React.useState(null); // { type: 'deputy'|'committee'|'convocation', id }
   const [page, setPage] = React.useState(1);
+  const [subCategory, setSubCategory] = React.useState("all"); // Для раздела constitution: 'all', 'federal', 'regional'
   const PAGE_SIZE = 10;
 
   const slug = React.useMemo(() => {
@@ -62,10 +63,16 @@ export default function DocsPage() {
 
   const cat = CATEGORIES.find((c) => c.slug === slug) || CATEGORIES[0];
 
+  // Reset page and subcategory when slug changes
+  React.useEffect(() => {
+    setPage(1);
+    setSubCategory("all");
+  }, [slug]);
+
   // Reset page when query or filter changes
   React.useEffect(() => {
     setPage(1);
-  }, [query, filterEntity, slug]);
+  }, [query, filterEntity, subCategory, slug]);
 
   // Auto scroll to top when page changes
   React.useEffect(() => {
@@ -75,6 +82,8 @@ export default function DocsPage() {
   }, [page]);
 
   React.useEffect(() => {
+    let alive = true;
+    
     // Фильтруем документы по типу из бекенда
     const fromApi = (documents || []).filter((d) => {
       // Маппинг типов фронтенда на типы бекенда
@@ -86,9 +95,9 @@ export default function DocsPage() {
         civic: "other",
         constitution: "other",
       };
-      
+
       const expectedType = typeMap[slug] || slug;
-      
+
       // Для constitution и civic оба используют тип "other" в бекенде
       // Различаем их по category или metadata
       const catStr =
@@ -107,25 +116,80 @@ export default function DocsPage() {
         const lowerTitle = titleStr.toLowerCase();
         return d?.type === "other" && (lowerCat.includes("гражданами") || lowerCat.includes("civic") || lowerTitle.includes("гражданами"));
       }
-      
+
       return d?.type === expectedType;
     });
-    
-    setDocs(
-      fromApi.map((d) => ({
-        id: d.id,
-        title: typeof d.title === "string" ? d.title : d?.title?.name || d?.title?.title || String(d.title || ""),
-        desc: (() => {
-          const raw = d.desc || d.description || "";
-          if (typeof raw === "string") return raw;
-          if (Array.isArray(raw)) return raw.join(" ");
-          return raw ? String(raw) : "";
-        })(),
-        number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
-        url: normalizeFilesUrl(typeof d.url === "string" ? d.url : d.url ? String(d.url) : ""),
-      }))
-    );
-  }, [documents, slug]);
+
+    // Если из API не хватило документов, загружаем из статических файлов
+    const loadStaticDocs = async () => {
+      const staticFileMap = {
+        laws: "/data/docs_laws.json",
+        resolutions: "/data/docs_resolutions.json",
+        initiatives: "/data/docs_initiatives.json",
+        civic: "/data/docs_civic.json",
+        constitution: "/data/docs_constitution.json",
+        bills: "/data/docs_bills.json",
+      };
+      
+      const staticFile = staticFileMap[slug];
+      if (!staticFile) return [];
+      
+      try {
+        const response = await fetch(staticFile, { cache: "no-cache" });
+        if (!response.ok) return [];
+        const staticDocs = await response.json();
+        return Array.isArray(staticDocs) ? staticDocs : [];
+      } catch (e) {
+        if (import.meta.env.DEV) {
+          console.warn(`Failed to load static docs from ${staticFile}:`, e);
+        }
+        return [];
+      }
+    };
+
+    (async () => {
+      let allDocs = fromApi.slice();
+
+      // Для разделов initiatives, civic, constitution, bills загружаем из статических файлов
+      if (["initiatives", "civic", "constitution", "bills"].includes(slug)) {
+        const staticDocs = await loadStaticDocs();
+        // Объединяем с API документами, избегая дубликатов по ID
+        const existingIds = new Set(allDocs.map(d => String(d.id)));
+        for (const doc of staticDocs) {
+          if (!existingIds.has(String(doc.id))) {
+            allDocs.push(doc);
+          }
+        }
+      }
+
+      // Для раздела constitution фильтруем по подкатегории (federal/regional)
+      if (slug === "constitution" && subCategory !== "all") {
+        allDocs = allDocs.filter(d => d.category === subCategory);
+      }
+
+      if (alive) {
+        setDocs(
+          allDocs.map((d) => ({
+            id: d.id,
+            title: typeof d.title === "string" ? d.title : d?.title?.name || d?.title?.title || String(d.title || ""),
+            desc: (() => {
+              const raw = d.desc || d.description || "";
+              if (typeof raw === "string") return raw;
+              if (Array.isArray(raw)) return raw.join(" ");
+              return raw ? String(raw) : "";
+            })(),
+            number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
+            url: normalizeFilesUrl(typeof d.url === "string" ? d.url : d.url ? String(d.url) : ""),
+            category: d.category || "federal",
+          }))
+        );
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [documents, slug, subCategory]);
 
   const docLinkedMap = React.useMemo(() => {
     const map = new Map();
@@ -172,6 +236,64 @@ export default function DocsPage() {
         <div className="page-grid">
           <div className="docs-page__main">
             <h1 className="docs-page__title">{cat.title}</h1>
+            
+            {/* Подкатегории для раздела Конституции */}
+            {slug === "constitution" && (
+              <div style={{ marginBottom: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={() => setSubCategory("all")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 8,
+                    border: subCategory === "all" ? "2px solid #003366" : "1px solid #dfe3eb",
+                    background: subCategory === "all" ? "#003366" : "#fff",
+                    color: subCategory === "all" ? "#fff" : "#374151",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  Все документы
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSubCategory("federal")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 8,
+                    border: subCategory === "federal" ? "2px solid #003366" : "1px solid #dfe3eb",
+                    background: subCategory === "federal" ? "#003366" : "#fff",
+                    color: subCategory === "federal" ? "#fff" : "#374151",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  Федеральное законодательство
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSubCategory("regional")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 8,
+                    border: subCategory === "regional" ? "2px solid #003366" : "1px solid #dfe3eb",
+                    background: subCategory === "regional" ? "#003366" : "#fff",
+                    color: subCategory === "regional" ? "#fff" : "#374151",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  Региональное законодательство
+                </button>
+              </div>
+            )}
+            
             <div className="docs-search-wrap">
               <input
                 type="text"
