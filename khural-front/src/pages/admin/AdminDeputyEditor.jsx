@@ -1141,7 +1141,10 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                   <div style={{ display: "grid", gap: 10 }}>
                     {myCommitteeMemberships.map(({ committee: c, member: m }) => {
                       const convocationId = c?.convocationId || c?.convocation?.id;
-                      const convocationName = convocations?.find(cv => String(cv?.id) === String(convocationId))?.name || convocationId;
+                      // Находим созыв в списке convocations по ID
+                      const convocationObj = convocations?.find(cv => String(cv?.id) === String(convocationId));
+                      // Показываем только если нашли созыв в списке (не показываем "VII" и другие несуществующие)
+                      const convocationName = convocationObj?.name || null;
                       return (
                         <div
                           key={String(c?.id)}

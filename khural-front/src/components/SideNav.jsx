@@ -95,6 +95,14 @@ const defaultLinksAppeals = [
   { label: "Минюст России", href: "/appeals/minyust" },
 ];
 
+// Стандартные ссылки для раздела "Новости"
+const defaultLinksNews = [
+  { label: "Главные события недели", href: "/news/week" },
+  { label: "Актуальные новости", href: "/news" },
+  { label: "Все новости", href: "/news" },
+  { label: "Медиа", href: "/news" },
+];
+
 // Отдельный мемоизированный компонент ссылки
 const LinkItem = React.memo(function LinkItem({
   href,
@@ -239,16 +247,20 @@ export default function SideNav({
         const res = await AboutApi.listPagesTree({ publishedOnly: true }).catch(() => []);
         const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
         
-        console.log('[SideNav] Все страницы:', arr.map(p => ({ slug: p.slug, title: p.title })));
-        console.log('[SideNav] Раздел:', detectedSection);
+        console.log('[SideNav] === ЗАГРУЗКА СТРАНИЦ ===');
+        console.log('[SideNav] Все страницы:', arr.map(p => ({ slug: p.slug, title: p.title, children: p.children?.length || 0 })));
+        console.log('[SideNav] Текущий route:', route);
+        console.log('[SideNav] pathname:', route?.split('?')[0]);
+        console.log('[SideNav] Раздел (detectedSection):', detectedSection);
         
         if (alive) {
           // Фильтруем страницы по разделу, если указан
           const filtered = detectedSection ? filterPagesBySection(arr, detectedSection) : arr;
-          console.log('[SideNav] Отфильтрованные страницы:', filtered.map(p => ({ slug: p.slug, title: p.title })));
+          console.log('[SideNav] Отфильтрованные страницы (раздел=' + detectedSection + '):', filtered.map(p => ({ slug: p.slug, title: p.title })));
           
           const links = pagesToLinks(applyPagesOverridesToTree(filtered), locale);
-          console.log('[SideNav] Ссылки:', links);
+          console.log('[SideNav] Ссылки для меню:', links);
+          console.log('[SideNav] =========================');
           setPagesLinks(links);
         }
       } catch (err) {
@@ -260,6 +272,7 @@ export default function SideNav({
     
     // Слушаем событие перезагрузки страниц
     const onPagesReload = () => {
+      console.log('[SideNav] Получено событие khural:pages-reload');
       fetchPages();
     };
     window.addEventListener("khural:pages-reload", onPagesReload);
@@ -292,7 +305,12 @@ export default function SideNav({
     if (Array.isArray(overrideLinks) && overrideLinks.length) return overrideLinks;
     
     // Определяем стандартные ссылки для текущего раздела
-    const sectionDefaultLinks = detectedSection === 'appeals' ? defaultLinksAppeals : defaultLinks;
+    let sectionDefaultLinks = defaultLinks;
+    if (detectedSection === 'appeals') {
+      sectionDefaultLinks = defaultLinksAppeals;
+    } else if (detectedSection === 'news') {
+      sectionDefaultLinks = defaultLinksNews;
+    }
     
     // Если загружаем страницы, добавляем их к стандартным ссылкам
     if (loadPages && pagesLinks.length > 0) {

@@ -127,6 +127,34 @@ export default function AdminCommitteesEditor({
     return null;
   }, [convocations, convocationIdValue]);
 
+  // Filter persons (deputies) by the selected convocation
+  const personsForConvocation = React.useMemo(() => {
+    const personsList = Array.isArray(persons) ? persons : [];
+    if (!selectedConvocation) return personsList;
+    
+    const convId = String(selectedConvocation.id || selectedConvocation.name || "").trim();
+    return personsList.filter((p) => {
+      // Check if person has convocationIds array
+      const convocationIds = Array.isArray(p.convocationIds) 
+        ? p.convocationIds 
+        : Array.isArray(p.convocation_ids)
+          ? p.convocation_ids
+          : [];
+      
+      // Also check single convocation field
+      const singleConv = p.convocation || p.convocationNumber || p.convocation_number || "";
+      
+      // Check if any convocation matches
+      const hasMatch = convocationIds.some((cid) => String(cid) === convId);
+      const hasSingleMatch = singleConv && String(singleConv) === convId;
+      
+      // If person has no convocation info, show them anyway (might be manual entry)
+      if (convocationIds.length === 0 && !singleConv) return true;
+      
+      return hasMatch || hasSingleMatch;
+    });
+  }, [persons, selectedConvocation]);
+
   // Prefill convocationId when coming from convocation page
   React.useEffect(() => {
     if (mode !== "create") return;
@@ -612,24 +640,56 @@ export default function AdminCommitteesEditor({
                       </div>
 
                       <div style={{ display: "grid", gap: 10 }}>
+                        <div style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 10,
+                          marginBottom: 4
+                        }}>
+                          <span style={{ fontWeight: 600, fontSize: 14 }}>Депутат</span>
+                          {selectedConvocation && (
+                            <span style={{ fontSize: 12, color: personsForConvocation.length > 0 ? "#52c41a" : "#faad14", fontWeight: 600 }}>
+                              {personsForConvocation.length > 0 
+                                ? `✓ Доступно депутатов: ${personsForConvocation.length} (созыв ${formatConvocationLabel(selectedConvocation)})`
+                                : `⚠ Нет депутатов для созыва "${formatConvocationLabel(selectedConvocation)}"`
+                              }
+                            </span>
+                          )}
+                        </div>
                         <Form.Item
                           {...field}
-                          label="Депутат"
                           name={[field.name, "personId"]}
                           style={{ marginBottom: 0 }}
                         >
                           <Select
-                            placeholder="Выберите депутата (или оставьте пустым и заполните имя)"
-                            disabled={loading || saving}
+                            placeholder={selectedConvocation 
+                              ? `Выберите депутата из созыва ${formatConvocationLabel(selectedConvocation)}`
+                              : "Сначала выберите созыв комитета"
+                            }
+                            disabled={loading || saving || !selectedConvocation}
                             showSearch
                             allowClear
                             optionFilterProp="label"
-                            options={(Array.isArray(persons) ? persons : []).map((p) => ({
-                              value: String(p?.id),
-                              label: String(p?.fullName || p?.name || `ID ${p?.id}`),
-                            }))}
+                            options={personsForConvocation.map((p) => {
+                              // Normalize person name: try fullName, name, or fallback to "Депутат"
+                              const personName = String(p?.fullName || p?.name || "").trim();
+                              const displayName = personName || `Депутат #${p?.id || "?"}`;
+                              return {
+                                value: p?.id != null ? String(p.id) : "",
+                                label: displayName,
+                              };
+                            }).filter((opt) => opt.value !== "")}
+                            filterOption={(input, option) =>
+                              (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                            }
                           />
                         </Form.Item>
+                        {!selectedConvocation && (
+                          <div style={{ fontSize: 12, color: "#faad14", padding: "4px 8px", background: "rgba(250, 173, 20, 0.1)", borderRadius: 6 }}>
+                            ⚠️ Выберите созыв комитета, чтобы выбрать депутата из соответствующего созыва
+                          </div>
+                        )}
 
                         <Form.Item
                           {...field}

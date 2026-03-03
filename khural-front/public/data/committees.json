@@ -3,8 +3,8 @@
     "id": "agro",
     "title": "Комитет по аграрной политике, земельным отношениям, природопользованию, экологии и делам коренных малочисленных народов",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,
@@ -92,8 +92,8 @@
     "id": "infra",
     "title": "Комитет по развитию инфраструктуры и промышленной политике",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,
@@ -176,8 +176,8 @@
     "id": "youth",
     "title": "Комитет по молодежной, информационной политике, физической культуре и спорту, развитию институтов гражданского общества",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,
@@ -260,8 +260,8 @@
     "id": "security",
     "title": "Комитет по безопасности и правопорядку",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,
@@ -349,8 +349,8 @@
     "id": "health",
     "title": "Комитет по охране здоровья, занятости населения и социальной политике",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,
@@ -433,8 +433,8 @@
     "id": "const",
     "title": "Комитет по конституционно‑правовой политике и местному самоуправлению",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,
@@ -517,8 +517,8 @@
     "id": "econ",
     "title": "Комитет по экономической, финансово‑бюджетной и налоговой политике, предпринимательству, туризму и государственной собственности",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,
@@ -601,8 +601,8 @@
     "id": "edu",
     "title": "Комитет по образованию, культуре, науке и национальной политике",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,
@@ -690,8 +690,8 @@
     "id": "smi-obshestvo",
     "title": "Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,
@@ -740,8 +740,8 @@
     "id": "mezhregionalnye-svyazi",
     "title": "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным и международным связям",
     "convocation": {
-      "id": "VII",
-      "name": "VII",
+      "id": "IV",
+      "name": "IV",
       "isActive": true
     },
     "isActive": true,

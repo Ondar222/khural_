@@ -92,16 +92,26 @@ function mergeCommitteesPreferApi(apiList, fallbackList) {
 function resolveConvocationName(list, convId) {
   if (!convId) return "";
   const items = Array.isArray(list) ? list : [];
+  const convIdStr = String(convId).trim();
+  
   for (const it of items) {
     if (it == null) continue;
     if (typeof it === "string") {
-      if (String(it) === String(convId)) return it;
+      if (String(it) === convIdStr) return it;
       continue;
     }
     const id = it?.id ?? it?.value;
     const name = it?.name ?? it?.number ?? it?.title;
-    if (id != null && String(id) === String(convId)) return String(name || id);
-    if (name != null && String(name) === String(convId)) return String(name);
+    
+    // Сначала пробуем найти по точному совпадению ID
+    if (id != null && String(id) === convIdStr) {
+      // Возвращаем name (например, "IV"), а не number (например, "2019-2024")
+      return String(name || id);
+    }
+    // Если ID не совпал, пробуем найти по name (вдруг там номер созыва)
+    if (name != null && String(name) === convIdStr) {
+      return String(name);
+    }
   }
   return "";
 }
@@ -717,18 +727,25 @@ export default function Committee() {
                           {title}
                         </div>
                         {(() => {
+                          // Получаем ID созыва комитета из разных возможных полей
                           const convId = c?.convocation?.id || c?.convocationId || c?.convocation;
                           let convName = null;
-                          
+
+                          // Сначала пробуем найти созыв по ID в списке созывов
                           if (convId && Array.isArray(convocations)) {
                             convName = resolveConvocationName(convocations, convId) || null;
                           }
-                          if (!convName && c?.convocation?.name) {
-                            convName = c.convocation.name;
-                          } else if (!convName && c?.convocation?.number) {
-                            convName = c.convocation.number;
-                          }
                           
+                          // Если не нашли по ID, но есть объект convocation с name — используем его
+                          if (!convName && c?.convocation && typeof c.convocation === "object") {
+                            // Приоритет: name (например, "IV") > number (например, "2019-2024")
+                            if (c.convocation.name && String(c.convocation.name).trim()) {
+                              convName = String(c.convocation.name).trim();
+                            } else if (c.convocation.number && String(c.convocation.number).trim()) {
+                              convName = String(c.convocation.number).trim();
+                            }
+                          }
+
                           return convName ? (
                             <div style={{ color: "#1e40af", fontSize: 13, marginTop: 8, fontWeight: 600 }}>
                               Созыв: {convName}
@@ -775,20 +792,24 @@ export default function Committee() {
             {(() => {
               const convId = committee?.convocation?.id || committee?.convocationId || committee?.convocation;
               let convName = null;
-              
+
               if (convId) {
-                // Пробуем найти созыв в списке созывов
+                // Сначала пробуем найти созыв по ID в списке созывов
                 if (Array.isArray(convocations)) {
                   convName = resolveConvocationName(convocations, convId) || null;
                 }
-                // Если не нашли в списке, используем значение из комитета
-                if (!convName && committee?.convocation?.name) {
-                  convName = committee.convocation.name;
-                } else if (!convName && committee?.convocation?.number) {
-                  convName = committee.convocation.number;
+                
+                // Если не нашли по ID, но есть объект convocation — используем его
+                if (!convName && committee?.convocation && typeof committee.convocation === "object") {
+                  // Приоритет: name (например, "IV") > number (например, "2019-2024")
+                  if (committee.convocation.name && String(committee.convocation.name).trim()) {
+                    convName = String(committee.convocation.name).trim();
+                  } else if (committee.convocation.number && String(committee.convocation.number).trim()) {
+                    convName = String(committee.convocation.number).trim();
+                  }
                 }
               }
-              
+
               if (convName) {
                 return (
                   <div style={{ marginTop: 16, padding: 16, background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}>
