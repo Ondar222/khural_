@@ -1146,28 +1146,18 @@ const calendarFetch = (path, opts) =>
   apiFetch(path, { ...opts, baseUrl: API_BASE_URL });
 
 export const EventsApi = {
+  // Не добавляем Cache-Control/Pragma: при cross-origin запросе сервер должен разрешить их в
+  // Access-Control-Allow-Headers, иначе preflight падает с CORS. Простой GET без кастомных заголовков проходит.
   async list(params = {}) {
     const qs = new URLSearchParams(params);
     const queryString = qs.toString() ? `?${qs.toString()}` : "";
-    return calendarFetch(`/calendar${queryString}`, {
-      method: "GET",
-      auth: false,
-      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
-    });
+    return calendarFetch(`/calendar${queryString}`, { method: "GET", auth: false });
   },
   async getByMonth(year, month) {
-    return calendarFetch(`/calendar/month/${year}/${month}`, {
-      method: "GET",
-      auth: false,
-      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
-    });
+    return calendarFetch(`/calendar/month/${year}/${month}`, { method: "GET", auth: false });
   },
   async getByYear(year) {
-    return calendarFetch(`/calendar/year/${year}`, {
-      method: "GET",
-      auth: false,
-      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
-    });
+    return calendarFetch(`/calendar/year/${year}`, { method: "GET", auth: false });
   },
   async getById(id) {
     return calendarFetch(`/calendar/${id}`, { method: "GET", auth: false });

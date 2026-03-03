@@ -1,4 +1,49 @@
-# Разбор багов: 403 stats.vk-portal.net и non-passive listener
+# Разбор багов: консольные ошибки и производительность
+
+## Ошибки в консоли (сводка)
+
+| Ошибка | Где исправлять | Статус |
+|--------|----------------|--------|
+| `chrome-extension://invalid/` net::ERR_FAILED | Не в приложении — расширение браузера | Игнорировать |
+| `someshit.yurta.site/settings/broadcast_links` 401 | Бэкенд: разрешить GET без auth | См. раздел ниже |
+| CORS: `cache-control` not allowed | Фронт: убраны заголовки у calendar fetch | **Исправлено** |
+| `stats.vk-portal.net` 403 | Внешний скрипт / VK Portal | См. BUG-3 ниже |
+
+---
+
+## 401 Unauthorized на GET /settings/broadcast_links
+
+### В чём ошибка
+
+Запрос к `.../settings/broadcast_links` с фронта (страница «Трансляции») возвращает **401 Unauthorized**. Фронт вызывает `SettingsApi.getBroadcastLinksPublic()` с `auth: false` — список ссылок на архив трансляций должен быть доступен без входа.
+
+### Что сделать
+
+**На бэкенде (someshit.yurta.site):** разрешить **GET /settings/broadcast_links** без авторизации (публичный доступ). Либо завести отдельный публичный endpoint (например `GET /public/broadcast-links`), если не хотите открывать весь префикс `/settings/`.
+
+Пока бэкенд не поправлен, в консоли будет «Failed to load resource: 401»; приложение при этом не падает — `tryApiFetch` возвращает `null`, страница трансляций работает без списка архивных ссылок.
+
+---
+
+## CORS и календарь (calendar)
+
+### Было
+
+Запросы к `someshit.yurta.site/calendar` с `https://khural.yurta.site` блокировались CORS: в preflight ответе сервера не было заголовка `Access-Control-Allow-Headers: cache-control`, хотя фронт отправлял `Cache-Control: no-cache`.
+
+### Исправление (фронт)
+
+В `src/api/client.js` у вызовов **EventsApi.list**, **getByMonth**, **getByYear** убраны заголовки `Cache-Control` и `Pragma`. Запрос к календарю стал «простым» (GET без кастомных заголовков), preflight не требует разрешения этих полей — CORS для calendar больше не должен падать.
+
+Если позже понадобится кэширование — на бэкенде нужно добавить в CORS заголовок `Access-Control-Allow-Headers` значение `Cache-Control` (и при необходимости `Pragma`).
+
+---
+
+## chrome-extension://invalid/
+
+Сообщение `Failed to load resource: net::ERR_FAILED` для `chrome-extension://invalid/` идёт **не от сайта**, а от расширения Chrome (например блокировщик рекламы, DevTools и т.п.). Исправлять в коде приложения не нужно, можно игнорировать.
+
+---
 
 ## BUG-3: 403 Forbidden на https://stats.vk-portal.net/
 
