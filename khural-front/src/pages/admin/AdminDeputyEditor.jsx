@@ -400,7 +400,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       return;
     }
 
-    // Определяем созыв для комитета: используем выбранный в фильтре, если у комитета нет своего
+    // Определяем созыв для комитета: используем выбранный в фильтре (приоритет) или существующий у комитета
     const existingConvId = c?.convocation?.id || c?.convocationId;
     const convIdToSet = (participationConvocationId && participationConvocationId !== "all")
       ? participationConvocationId
@@ -440,8 +440,11 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             [cid]: {
               ...existingOverride,
               members,
-              // Сохраняем созыв для комитета, если он выбран
-              ...(convIdToSet && !existingConvId ? { convocationId: convIdToSet, convocation: { id: convIdToSet } } : {}),
+              // Всегда сохраняем созыв для комитета (из фильтра или существующий)
+              ...(convIdToSet && convIdToSet !== "all" ? { 
+                convocationId: convIdToSet, 
+                convocation: { id: convIdToSet, name: convIdToSet } 
+              } : {}),
             },
           },
         });
@@ -473,8 +476,11 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         [cid]: {
           ...existingOverride,
           members,
-          // Сохраняем созыв для комитета, если он выбран
-          ...(convIdToSet && !existingConvId ? { convocationId: convIdToSet, convocation: { id: convIdToSet } } : {}),
+          // Всегда сохраняем созыв для комитета (из фильтра или существующий)
+          ...(convIdToSet && convIdToSet !== "all" ? { 
+            convocationId: convIdToSet, 
+            convocation: { id: convIdToSet, name: convIdToSet } 
+          } : {}),
         },
       },
     });
