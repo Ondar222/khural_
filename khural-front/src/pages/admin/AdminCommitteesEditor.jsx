@@ -298,9 +298,22 @@ export default function AdminCommitteesEditor({
       
       if (convocationId != null && convocationId !== "") {
         payload.convocationId = convocationId;
+        // Бэкенд может требовать snake_case
+        payload.convocation_id = convocationId;
+      } else if (convocationId === null || convocationId === "") {
+        // Если созыв был сброшен, явно передаём null
+        payload.convocationId = null;
+        payload.convocation_id = null;
       }
 
-      // Members (deputies)
+      console.log("[AdminCommitteesEditor] Saving committee:", {
+        id: committeeId,
+        convocationId,
+        convocationIdValue,
+        payload,
+      });
+
+      // Members (deputies) - сохраняем и personId, и name для каждого участника
       const rawMembers = Array.isArray(values.members) ? values.members : [];
       const normalizedMembers = rawMembers
         .map((m, idx) => {
@@ -311,7 +324,16 @@ export default function AdminCommitteesEditor({
               ? null
               : Number(m.personId);
           const name = String(m?.name || "").trim();
-          if (pid && Number.isFinite(pid) && pid > 0) return { personId: pid, role, order };
+          
+          // Сохраняем и personId, и name (если есть personId, берем имя из формы)
+          if (pid && Number.isFinite(pid) && pid > 0) {
+            return { 
+              personId: pid, 
+              name: name || null, // Сохраняем имя, даже если есть personId
+              role, 
+              order 
+            };
+          }
           if (name) return { name, role, order };
           return null;
         })
