@@ -726,32 +726,6 @@ export default function Committee() {
                         <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14, color: "#003366", lineHeight: 1.3 }}>
                           {title}
                         </div>
-                        {(() => {
-                          // Получаем ID созыва комитета из разных возможных полей
-                          const convId = c?.convocation?.id || c?.convocationId || c?.convocation;
-                          let convName = null;
-
-                          // Сначала пробуем найти созыв по ID в списке созывов
-                          if (convId && Array.isArray(convocations)) {
-                            convName = resolveConvocationName(convocations, convId) || null;
-                          }
-                          
-                          // Если не нашли по ID, но есть объект convocation с name — используем его
-                          if (!convName && c?.convocation && typeof c.convocation === "object") {
-                            // Приоритет: name (например, "IV") > number (например, "2019-2024")
-                            if (c.convocation.name && String(c.convocation.name).trim()) {
-                              convName = String(c.convocation.name).trim();
-                            } else if (c.convocation.number && String(c.convocation.number).trim()) {
-                              convName = String(c.convocation.number).trim();
-                            }
-                          }
-
-                          return convName ? (
-                            <div style={{ color: "#1e40af", fontSize: 13, marginTop: 8, fontWeight: 600 }}>
-                              Созыв: {convName}
-                            </div>
-                          ) : null;
-                        })()}
                         {chairman && typeof chairman === "string" && (
                           <div style={{ color: "#6b7280", fontSize: 14, marginTop: 10, lineHeight: 1.5 }}>
                             <strong style={{ color: "#374151" }}>Председатель:</strong> {chairman}
@@ -798,7 +772,7 @@ export default function Committee() {
                 if (Array.isArray(convocations)) {
                   convName = resolveConvocationName(convocations, convId) || null;
                 }
-                
+
                 // Если не нашли по ID, но есть объект convocation — используем его
                 if (!convName && committee?.convocation && typeof committee.convocation === "object") {
                   // Приоритет: name (например, "IV") > number (например, "2019-2024")

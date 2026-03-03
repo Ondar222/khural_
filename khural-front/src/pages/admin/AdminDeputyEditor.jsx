@@ -1146,21 +1146,6 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                 {myCommitteeMemberships.length ? (
                   <div style={{ display: "grid", gap: 10 }}>
                     {myCommitteeMemberships.map(({ committee: c, member: m }) => {
-                      const convocationId = c?.convocationId || c?.convocation?.id;
-                      // Сначала пробуем найти созыв в списке convocations
-                      const convocationObj = convocations?.find(cv => String(cv?.id) === String(convocationId));
-                      // Если нашли в списке — используем name оттуда
-                      let convocationName = convocationObj?.name || null;
-                      
-                      // Если не нашли в списке, но есть в данных комитета — используем оттуда
-                      if (!convocationName && c?.convocation?.name) {
-                        const committeeConvName = String(c.convocation.name).trim();
-                        // Проверяем, что это адекватный номер созыва (римская цифра I-X)
-                        if (/^(I|II|III|IV|V|VI|VI{2,3}|IX|X)$/.test(committeeConvName)) {
-                          convocationName = committeeConvName;
-                        }
-                      }
-                      
                       return (
                         <div
                           key={String(c?.id)}
@@ -1177,11 +1162,6 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                           <div style={{ opacity: 0.8 }}>
                             <strong>Роль:</strong> {String(m?.role || "—")}
                           </div>
-                          {convocationName && (
-                            <div style={{ opacity: 0.8 }}>
-                              <strong>Созыв:</strong> {convocationName}
-                            </div>
-                          )}
                           <Button
                             danger
                             disabled={!canWrite}
