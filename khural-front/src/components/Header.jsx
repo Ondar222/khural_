@@ -14,6 +14,11 @@ import {
   PAGES_OVERRIDES_EVENT_NAME,
   PAGES_OVERRIDES_STORAGE_KEY,
 } from "../utils/pagesOverrides.js";
+import {
+  getNewsCategoriesFromNews,
+  NEWS_EXTRA_LINKS,
+  NEWS_MENU_FIRST,
+} from "../utils/newsMenuLinks.js";
 // removed unused UI icon libs
 
 export default function Header() {
@@ -104,17 +109,8 @@ export default function Header() {
 
   const { news } = useData();
   const newsCategories = React.useMemo(() => {
-    const cats = Array.from(
-      new Set(
-        (news || []).map((n) => {
-          const c = n?.category;
-          if (typeof c === "string") return c;
-          if (!c) return "";
-          return c.name || c.title || String(c);
-        })
-      )
-    ).filter((c) => typeof c === "string" && c.trim() !== "");
-    return ["Актуальные новости", "Все новости", "Медиа", "—", ...cats];
+    const cats = getNewsCategoriesFromNews(news);
+    return [...NEWS_MENU_FIRST, "—", ...cats];
   }, [news]);
 
   const [pagesTree, setPagesTree] = React.useState([]);
@@ -379,6 +375,12 @@ export default function Header() {
                     </a>
                   )
                 )}
+                <hr />
+                {NEWS_EXTRA_LINKS.map((item) => (
+                  <a key={item.href} href={item.href}>
+                    {item.labelKey ? t(item.labelKey) : item.labelRu}
+                  </a>
+                ))}
               </div>
             </div>
             <div
@@ -585,6 +587,11 @@ export default function Header() {
                     : c}
                 </a>
               ))}
+            {NEWS_EXTRA_LINKS.map((item) => (
+              <a key={item.href} href={item.href}>
+                {item.labelKey ? t(item.labelKey) : item.labelRu}
+              </a>
+            ))}
           </div>
           <div className="sheet-col">
             <h3>{t("documents")}</h3>
@@ -993,6 +1000,19 @@ export default function Header() {
                   </span>
                 </a>
               ))}
+            {NEWS_EXTRA_LINKS.map((item) => (
+              <a
+                key={item.href}
+                className="tile link"
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {item.labelKey ? t(item.labelKey) : item.labelRu}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
           </>
         )}
         {mobileSection === "gov" && (

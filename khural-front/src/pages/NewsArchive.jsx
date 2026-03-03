@@ -9,6 +9,11 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import NewsImageCarousel from "../components/NewsImageCarousel.jsx";
 import { formatNewsDateTime } from "../utils/dateFormat.js";
 import dayjs from "dayjs";
+import {
+  getNewsCategoriesFromNews,
+  NEWS_EXTRA_LINKS,
+  NEWS_MENU_FIRST,
+} from "../utils/newsMenuLinks.js";
 
 const NEWS_PAGE_SIZE = 12;
 
@@ -107,6 +112,28 @@ export default function NewsArchive() {
     },
     [news]
   );
+
+  // Пункты бокового меню «Новости» — те же, что в выпадающем меню шапки (единый источник)
+  const newsMenuLinks = React.useMemo(() => {
+    const cats = getNewsCategoriesFromNews(news);
+    const first = [
+      { label: "Главные события недели", href: "/news/week" },
+      ...NEWS_MENU_FIRST.map((label) => ({ label, href: "/news" })),
+    ];
+    const categoryLinks = cats.map((c) => {
+      const isChairman =
+        /председатель|speaker|chairman/i.test(String(c));
+      return {
+        label: c,
+        href: isChairman ? "/news?speaker=true" : `/news?category=${encodeURIComponent(c)}`,
+      };
+    });
+    const extra = NEWS_EXTRA_LINKS.map((item) => ({
+      label: item.labelKey ? t(item.labelKey) : item.labelRu,
+      href: item.href,
+    }));
+    return [...first, ...categoryLinks, ...extra];
+  }, [news, t]);
 
   const filtered = React.useMemo(
     () => {
@@ -594,50 +621,7 @@ export default function NewsArchive() {
             </DataState>
           </div>
 
-          <SideNav
-            title="Новости"
-            links={[
-              {
-                label: "Новости",
-                href: "/news",
-                active: category === "Все"
-              },
-              {
-                label: "Главные события недели",
-                href: "/news/week",
-              },
-              {
-                label: "Новости Председателя",
-                href: "/news?speaker=true",
-                active: category === "Председатель"
-              },
-              {
-                label: "Фотографии",
-                href: "/news?category=Фотографии"
-              },
-              {
-                label: "Видеозаписи",
-                href: "/news?category=Видеозаписи"
-              },
-              {
-                label: "Кодекс чести мужчины Тувы",
-                href: "/p/code-of-honor"
-              },
-              {
-                label: "Свод заповедей матерей Тувы",
-                href: "/p/mothers-commandments"
-              },
-
-              {
-                label: "Для СМИ",
-                href: "/p/for-media"
-              },
-              {
-                label: t("Трансляции"),
-                href: "/broadcast"
-              },
-            ]}
-          />
+          <SideNav title="Новости" links={newsMenuLinks} />
         </div>
       </div>
       <ScrollToTop />
