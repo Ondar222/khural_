@@ -235,8 +235,20 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
   const filtered = React.useMemo(() => {
     const itemsArray = Array.isArray(items) ? items : [];
     const qq = q.trim().toLowerCase();
-    if (!qq) return itemsArray;
-    return itemsArray.filter(
+    
+    // Разрешённые созывы: только I, II, III, IV
+    const ALLOWED_CONVOCATIONS = ["I", "II", "III", "IV"];
+    
+    // Фильтруем по разрешённым созывам
+    const allowedItems = itemsArray.filter((e) => {
+      const name = String(e.name || e.number || "").trim().toUpperCase();
+      // Проверяем, является ли название созыва разрешённой римской цифрой
+      return ALLOWED_CONVOCATIONS.includes(name);
+    });
+    
+    // Если есть поиск, фильтруем по нему
+    if (!qq) return allowedItems;
+    return allowedItems.filter(
       (e) =>
         String(e.name || e.number || "").toLowerCase().includes(qq) ||
         String(e.description || "").toLowerCase().includes(qq)
