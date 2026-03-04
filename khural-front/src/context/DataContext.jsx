@@ -150,6 +150,21 @@ function mergeDeputiesWithOverrides(base, overrides) {
       if (!override.image && it.image) {
         merged.image = it.image;
       }
+      // Созывы из админки (override.convocationIds): в overrides могут быть "I"/"II"/"III"/"IV" или числа 1–4
+      const rawIds = Array.isArray(override.convocationIds) ? override.convocationIds : [];
+      if (rawIds.length > 0) {
+        const canonical = (cid) => {
+          const s = String(cid).trim().toUpperCase();
+          if (["I", "II", "III", "IV"].includes(s)) return s;
+          return mapOldSiteConvocationIdToCanonical(cid);
+        };
+        const resolved = [...new Set(rawIds.map(canonical).filter(Boolean))];
+        if (resolved.length > 0) {
+          merged.convocation = primaryConvocation(resolved);
+          merged.convocationNumber = merged.convocation;
+          merged.convocations = resolved;
+        }
+      }
       out.push(merged);
     } else {
       out.push(it);
@@ -437,9 +452,10 @@ function normalizeDeputyItem(d) {
       ? photoSources[0]
       : (d.photo || (d.image && d.image.link) || "");
   const photo = normalizePhotoUrl(photoRaw);
-  
+
+  const { _convocationFromApi, ...rest } = d;
   return {
-    ...d,
+    ...rest,
     id: String(d.id ?? d._id ?? d.personId ?? ""),
     photo: photo, // Гарантируем нормализованное фото
     faction: toText(d.faction),
@@ -746,16 +762,30 @@ function buildConvocationByNormalizedName(mapping) {
   return map;
 }
 
-/** Подставляет созывы из канонического списка (deputy_convocation_mapping) по имени. */
+/** Подставляет созывы из канонического списка (deputy_convocation_mapping) по имени.
+ * Не перезаписывает созыв, если он уже пришёл из API (сохранён в админке). */
 function applyConvocationMapping(deputies, convocationByNormalizedName) {
-  if (!convocationByNormalizedName || !convocationByNormalizedName.size) return deputies;
+  if (!convocationByNormalizedName || !convocationByNormalizedName.size) {
+    return deputies.map((d) => {
+      const { _convocationFromApi, ...rest } = d;
+      return rest;
+    });
+  }
   return deputies.map((d) => {
+    if (d._convocationFromApi) {
+      const { _convocationFromApi, ...rest } = d;
+      return rest;
+    }
     const key = normalizePersonName(d?.name ?? "");
     const convocations = key ? convocationByNormalizedName.get(key) : null;
-    if (!convocations || !convocations.length) return d;
+    if (!convocations || !convocations.length) {
+      const { _convocationFromApi, ...rest } = d;
+      return rest;
+    }
     const primary = primaryConvocation(convocations);
+    const { _convocationFromApi, ...rest } = d;
     return {
-      ...d,
+      ...rest,
       convocation: primary,
       convocationNumber: primary,
       convocations: [...convocations],
@@ -919,24 +949,26 @@ function enrichDeputyWithPersonInfo(dep, info) {
     out.contacts = { ...out.contacts, email: info.email };
   }
   
-  // Созыв только из persons_info (как на старом сайте 83/84/223/442), перезаписываем API
-  const hasConvList = Array.isArray(info.convocations) && info.convocations.length > 0;
-  const primaryConv = info.convocation && String(info.convocation).trim();
-  if (hasConvList || primaryConv) {
-    const canonList = hasConvList
-      ? info.convocations.map((c) => normalizeConvocationToCanonical(normalizeConvocationText(c)) || c).filter(Boolean)
-      : [];
-    const list = canonList.length ? canonList : (primaryConv ? [normalizeConvocationToCanonical(normalizeConvocationText(primaryConv)) || primaryConv] : []);
-    if (list.length) {
-      out.convocations = list;
-      const primary = list.includes("IV") ? "IV" : list.includes("III") ? "III" : list.includes("II") ? "II" : list[0];
-      out.convocation = primary;
-      out.convocationNumber = primary;
-    } else if (primaryConv) {
-      const canon = normalizeConvocationToCanonical(normalizeConvocationText(primaryConv)) || primaryConv;
-      out.convocation = canon;
-      out.convocationNumber = canon;
-      out.convocations = [canon];
+  // Созыв: не перезаписываем, если депутат уже пришёл с созывом из API (сохранён в админке)
+  if (!dep._convocationFromApi) {
+    const hasConvList = Array.isArray(info.convocations) && info.convocations.length > 0;
+    const primaryConv = info.convocation && String(info.convocation).trim();
+    if (hasConvList || primaryConv) {
+      const canonList = hasConvList
+        ? info.convocations.map((c) => normalizeConvocationToCanonical(normalizeConvocationText(c)) || c).filter(Boolean)
+        : [];
+      const list = canonList.length ? canonList : (primaryConv ? [normalizeConvocationToCanonical(normalizeConvocationText(primaryConv)) || primaryConv] : []);
+      if (list.length) {
+        out.convocations = list;
+        const primary = list.includes("IV") ? "IV" : list.includes("III") ? "III" : list.includes("II") ? "II" : list[0];
+        out.convocation = primary;
+        out.convocationNumber = primary;
+      } else if (primaryConv) {
+        const canon = normalizeConvocationToCanonical(normalizeConvocationText(primaryConv)) || primaryConv;
+        out.convocation = canon;
+        out.convocationNumber = canon;
+        out.convocations = [canon];
+      }
     }
   }
   if (!out.district && info.position) out.district = info.position;
@@ -1398,12 +1430,18 @@ export default function DataProvider({ children }) {
           const localByNameMatch =
             !local && apiNameRaw ? localByName.get(normalizePersonName(apiNameRaw)) : null;
           const localResolved = local || localByNameMatch || null;
-          // Созыв только из persons_info (deputaty.json, deputaty_vseh_sozyvov.json), не из API
+          // Созыв: приоритет у API (сохранённый в админке), затем persons_info, затем локальные данные
           const personInfo = externalKey ? personInfoById.get(externalKey) : null
             || (apiNameRaw ? personInfoByName.get(normalizePersonName(apiNameRaw)) : null);
           const convocationFromPersonInfo = personInfo?.convocation
             ? normalizeConvocationToCanonical(normalizeConvocationText(personInfo.convocation)) || String(personInfo.convocation).trim()
             : "";
+          const apiConvocationIds = Array.isArray(p.convocationIds) ? p.convocationIds : (Array.isArray(p.convocation_ids) ? p.convocation_ids : []);
+          const resolvedFromApi = (apiConvocationIds.length > 0)
+            ? [...new Set(apiConvocationIds.map((cid) => mapOldSiteConvocationIdToCanonical(cid)).filter(Boolean))]
+            : [];
+          const convocationFromApi = resolvedFromApi.length > 0 ? primaryConvocation(resolvedFromApi) : "";
+          const hasConvocationFromApi = convocationFromApi !== "";
 
           // IMPORTANT: keep id as STRING to match URLSearchParams id (Government.jsx uses ===)
           const id = String(p.id ?? p.personId ?? Math.random().toString(36).slice(2));
@@ -1443,20 +1481,21 @@ export default function DataProvider({ children }) {
               const s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
               return String(s || "").trim();
             })(),
-            // Созыв только из persons_info (как на старом сайте), API не используем
-            convocation: convocationFromPersonInfo || (() => {
+            // Созыв: сначала из API (админка), иначе из persons_info / локальных данных
+            convocation: convocationFromApi || convocationFromPersonInfo || (() => {
               const val = localResolved?.convocation || "";
               const s = typeof val === "string" ? val : String(val || "").trim();
               if (!s) return "";
               return normalizeConvocationToCanonical(normalizeConvocationText(s) || s) || s;
             })(),
-            convocationNumber: convocationFromPersonInfo || (() => {
+            convocationNumber: convocationFromApi || convocationFromPersonInfo || (() => {
               const val = localResolved?.convocationNumber || localResolved?.convocation || "";
               const str = typeof val === "string" ? val : String(val || "").trim();
               if (!str) return "";
               return normalizeConvocationToCanonical(normalizeConvocationText(str) || str) || str;
             })(),
-            convocations: convocationFromPersonInfo ? [convocationFromPersonInfo] : undefined,
+            convocations: hasConvocationFromApi ? resolvedFromApi : (convocationFromPersonInfo ? [convocationFromPersonInfo] : undefined),
+            _convocationFromApi: hasConvocationFromApi || undefined,
             reception: (() => {
               const raw =
                 localResolved?.reception || pick(p.receptionSchedule, p.reception_schedule) || "";
