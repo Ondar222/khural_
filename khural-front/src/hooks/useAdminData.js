@@ -540,7 +540,7 @@ export function useAdminData() {
 
   const loadAll = React.useCallback(async () => {
     const fb = fallbackRef.current || {};
-    const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations, apiCommittees, apiPages, personsDocJson] = await Promise.all([
+    const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations, apiCommittees, apiPages, personsDocJson, convocationMappingRaw] = await Promise.all([
       NewsApi.list().catch(() => null),
       PersonsApi.list().catch(() => null),
       DocumentsApi.listAll().catch(() => null),
@@ -553,6 +553,7 @@ export function useAdminData() {
         fetch("/persons_doc/zakony2.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
         fetch("/persons_doc/postamovleniya_VH.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]),
+      fetch("/data/deputy_convocation_mapping.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
     ]);
     const [zakonyData, zakony2Data, postamovleniyaData] = Array.isArray(personsDocJson) ? personsDocJson : [[], [], []];
     const deletedNewsIds = new Set((readNewsOverrides()?.deletedIds || []).map(String));
@@ -574,7 +575,36 @@ export function useAdminData() {
         !existingIds.has(String(g.id)) &&
         !existingNames.has((g.name || "").toLowerCase().replace(/\s+/g, " ").trim())
     );
-    setPersons(fromGov.length ? [...basePersons, ...toPersonsFallback(fromGov)] : basePersons);
+    const personsList = fromGov.length ? [...basePersons, ...toPersonsFallback(fromGov)] : basePersons;
+    // Обогащаем депутатов созывами из deputy_convocation_mapping.json (как на сайте I–IV)
+    const mapping = convocationMappingRaw && typeof convocationMappingRaw === "object" ? convocationMappingRaw : {};
+    const convOrder = ["I", "II", "III", "IV"];
+    const convByNormalizedName = new Map();
+    for (const conv of convOrder) {
+      const names = Array.isArray(mapping[conv]) ? mapping[conv] : [];
+      for (const n of names) {
+        const key = String(n ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+        if (!key) continue;
+        if (!convByNormalizedName.has(key)) convByNormalizedName.set(key, []);
+        const arr = convByNormalizedName.get(key);
+        if (!arr.includes(conv)) arr.push(conv);
+      }
+    }
+    for (const arr of convByNormalizedName.values()) {
+      arr.sort((a, b) => convOrder.indexOf(a) - convOrder.indexOf(b));
+    }
+    const primaryConv = (convs) => {
+      for (const c of convOrder) if (convs.includes(c)) return c;
+      return convs[0] || "";
+    };
+    const personsEnriched = personsList.map((p) => {
+      const name = p?.fullName ?? p?.full_name ?? p?.name ?? "";
+      const key = String(name).replace(/\s+/g, " ").trim().toLowerCase();
+      const convocations = convByNormalizedName.get(key);
+      if (!convocations || !convocations.length) return p;
+      return { ...p, convocation: primaryConv(convocations), convocations };
+    });
+    setPersons(personsEnriched);
     const apiDocs = apiDocsResponse?.items || (Array.isArray(apiDocsResponse) ? apiDocsResponse : []);
     const deletedDocs = new Set((readDocumentsOverrides()?.deletedIds || []).map(String));
     const parseZakony = (row) => {

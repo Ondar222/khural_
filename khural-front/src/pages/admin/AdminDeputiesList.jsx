@@ -695,6 +695,17 @@ export default function AdminDeputiesList({ items, busy, canWrite }) {
       render: (_, row) => row.fullName || row.full_name || row.name || "—",
     },
     {
+      title: "Созыв",
+      dataIndex: "convocation",
+      width: 100,
+      render: (_, row) => {
+        const convs = Array.isArray(row.convocations) && row.convocations.length
+          ? row.convocations.join(", ")
+          : row.convocation || row.convocationNumber || "—";
+        return convs || "—";
+      },
+    },
+    {
       title: "Фракция",
       dataIndex: "faction",
       width: 180,

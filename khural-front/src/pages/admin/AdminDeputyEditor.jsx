@@ -772,6 +772,50 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
 
         const normalized = normalizeInitial(src);
         form.setFieldsValue(normalized);
+        // Если созывы не заданы в API/overrides — подставляем из deputy_convocation_mapping.json по ФИО
+        if (
+          (!Array.isArray(normalized.convocationIds) || normalized.convocationIds.length === 0) &&
+          normalized.fullName &&
+          String(normalized.fullName).trim()
+        ) {
+          const convList = Array.isArray(convocations) ? convocations : [];
+          if (convList.length > 0) {
+            try {
+              const mapping = await fetch("/data/deputy_convocation_mapping.json")
+                .then((r) => (r.ok ? r.json() : {}))
+                .catch(() => ({}));
+              const order = ["I", "II", "III", "IV"];
+              const byName = new Map();
+              for (const conv of order) {
+                const names = Array.isArray(mapping[conv]) ? mapping[conv] : [];
+                for (const n of names) {
+                  const key = String(n ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+                  if (!key) continue;
+                  if (!byName.has(key)) byName.set(key, []);
+                  const arr = byName.get(key);
+                  if (!arr.includes(conv)) arr.push(conv);
+                }
+              }
+              const key = String(normalized.fullName).replace(/\s+/g, " ").trim().toLowerCase();
+              const convTokens = byName.get(key);
+              if (convTokens && convTokens.length > 0) {
+                const resolvedIds = [];
+                for (const token of convTokens) {
+                  const c = convList.find(
+                    (it) =>
+                      String(it?.number ?? it?.name ?? "").trim().toUpperCase() === String(token).toUpperCase() ||
+                      (it?.name && String(it.name).toLowerCase().includes("первый") && token === "I") ||
+                      (it?.name && String(it.name).toLowerCase().includes("второй") && token === "II") ||
+                      (it?.name && String(it.name).toLowerCase().includes("третий") && token === "III") ||
+                      (it?.name && String(it.name).toLowerCase().includes("четвертый") && token === "IV")
+                  );
+                  if (c && c.id) resolvedIds.push(String(c.id));
+                }
+                if (resolvedIds.length > 0 && alive) form.setFieldValue("convocationIds", resolvedIds);
+              }
+            } catch (_) {}
+          }
+        }
         initialStatusRef.current = {
           mandateEnded: Boolean(normalized?.mandateEnded),
           isDeceased: Boolean(normalized?.isDeceased),
@@ -798,7 +842,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     return () => {
       alive = false;
     };
-  }, [mode, deputyId, deputies, form]);
+  }, [mode, deputyId, deputies, convocations, form]);
 
   // Загружаем committeeIds из текущего участия в комитетах после загрузки данных
   React.useEffect(() => {
