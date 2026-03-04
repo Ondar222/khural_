@@ -67,6 +67,46 @@ export function getConvocationYears(token) {
 export const CANONICAL_CONVOCATIONS = ["I", "II", "III", "IV"];
 
 /**
+ * ID созывов на старом сайте khural.rtyva.ru (URL /struct/deputies_history/:id/).
+ * Используется для приведения API convocationId к каноническому токену (I, II, III, IV).
+ */
+export const OLD_SITE_CONVOCATION_IDS = {
+  83: "I",
+  84: "II",
+  223: "III",
+  442: "IV",
+};
+
+/**
+ * Числовые ID созывов (1–4), которые часто возвращает API/БД.
+ * Чтобы все депутаты попадали в нужный созыв как на старом сайте.
+ */
+export const NUMERIC_CONVOCATION_IDS = {
+  1: "I",
+  2: "II",
+  3: "III",
+  4: "IV",
+};
+
+/** Все варианты convocationId → канонический токен (I, II, III, IV). */
+const CONVOCATION_ID_TO_CANONICAL = { ...OLD_SITE_CONVOCATION_IDS, ...NUMERIC_CONVOCATION_IDS };
+
+/**
+ * Преобразует ID созыва из API или со старого сайта в канонический токен I, II, III, IV.
+ * Поддерживает: 83, 84, 223, 442 (старый сайт); 1, 2, 3, 4 (числовые в API).
+ * @param {string|number} id - convocationId из API или число со старого сайта
+ * @returns {string|null} "I" | "II" | "III" | "IV" или null
+ */
+export function mapOldSiteConvocationIdToCanonical(id) {
+  if (id == null || id === "") return null;
+  const key = String(id).trim();
+  const num = parseInt(key, 10);
+  if (CONVOCATION_ID_TO_CANONICAL[num] != null) return CONVOCATION_ID_TO_CANONICAL[num];
+  if (CONVOCATION_ID_TO_CANONICAL[key] != null) return CONVOCATION_ID_TO_CANONICAL[key];
+  return null;
+}
+
+/**
  * Приводит значение созыва к каноническому (I, II, III, IV).
  * «11 созыв», «2014 год», «2020» и т.п. объединяются с II/III, чтобы в фильтре не было дублей.
  * @param {string} raw - сырое значение (11, 2014 год, 2020, II и т.д.)

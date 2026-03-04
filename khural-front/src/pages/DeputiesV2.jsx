@@ -16,26 +16,42 @@ import {
   buildFactionOptions,
   buildDistrictOptions,
 } from "../utils/deputyFilterOptions.js";
-import { formatConvocationLabelWithYears, normalizeConvocationToCanonical, CANONICAL_CONVOCATIONS } from "../utils/convocationLabels.js";
+import { formatConvocationLabelWithYears, normalizeConvocationToCanonical, CANONICAL_CONVOCATIONS, mapOldSiteConvocationIdToCanonical } from "../utils/convocationLabels.js";
 
 function deputyMatchesFaction(deputy, factionName) {
   if (!factionName || factionName === "Все") return true;
   const key = normalizeFactionKey(factionName);
   const dFaction = String(deputy?.faction || "").trim();
-  if (dFaction && normalizeFactionKey(dFaction) === key) return true;
+  if (dFaction) {
+    const dKey = normalizeFactionKey(dFaction);
+    if (dKey === key) return true;
+    if (key.length >= 3 && (dKey.includes(key) || key.includes(dKey))) return true;
+  }
   const bio = deputy?.biography || deputy?.bio || deputy?.description || "";
   const fromBio = getFactionsFromBio(bio);
-  return fromBio.some((f) => normalizeFactionKey(f) === key);
+  if (fromBio.some((f) => normalizeFactionKey(f) === key)) return true;
+  return fromBio.some((f) => {
+    const fKey = normalizeFactionKey(f);
+    return key.length >= 3 && (fKey.includes(key) || key.includes(fKey));
+  });
 }
 
 function deputyMatchesDistrict(deputy, districtName) {
   if (!districtName || districtName === "Все") return true;
   const key = normalizeDistrictKey(districtName);
   const dDistrict = String(deputy?.district || deputy?.electoralDistrict || "").trim();
-  if (dDistrict && normalizeDistrictKey(dDistrict) === key) return true;
+  if (dDistrict) {
+    const dKey = normalizeDistrictKey(dDistrict);
+    if (dKey === key) return true;
+    if (key.length >= 2 && (dKey.includes(key) || key.includes(dKey))) return true;
+  }
   const bio = deputy?.biography || deputy?.bio || deputy?.description || "";
   const fromBio = getDistrictsFromBio(bio);
-  return fromBio.some((d) => normalizeDistrictKey(d) === key);
+  if (fromBio.some((d) => normalizeDistrictKey(d) === key)) return true;
+  return fromBio.some((d) => {
+    const dKey = normalizeDistrictKey(d);
+    return key.length >= 2 && (dKey.includes(key) || key.includes(dKey));
+  });
 }
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
@@ -281,13 +297,11 @@ function mergeByIdPreferApi(baseDeputies, apiDeputies) {
     if (apiD && !hasValue(apiD.photo) && hasValue(d.photo)) {
       merged.photo = d.photo;
     }
-    // Не затирать созыв из DataContext, если API вернул пустое (только convocationId)
-    if (apiD && !hasValue(merged.convocation) && hasValue(d.convocation)) {
+    // Созыв только из persons_info (DataContext), API не используем — как на старом сайте
+    if (hasValue(d.convocation)) {
       merged.convocation = d.convocation;
       merged.convocationNumber = d.convocationNumber ?? d.convocation;
-    }
-    if (apiD && (!Array.isArray(merged.convocations) || merged.convocations.length === 0) && Array.isArray(d.convocations) && d.convocations.length > 0) {
-      merged.convocations = d.convocations;
+      merged.convocations = Array.isArray(d.convocations) && d.convocations.length ? d.convocations : [d.convocation];
     }
     // Не затирать контакты из DataContext/person info, если API не вернул телефон/почту
     if (apiD && d?.contacts) {
@@ -422,26 +436,35 @@ export default function DeputiesV2() {
         ]);
         const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
         const list = Array.isArray(convocationsList) ? convocationsList : [];
-        const resolveConvocation = (p) => {
-          const cid = p?.convocationId ?? p?.convocation_id ?? p?.convocation?.id ?? (Array.isArray(p?.convocationIds) && p.convocationIds?.[0]) ?? (Array.isArray(p?.convocation_ids) && p.convocation_ids?.[0]);
+        const resolveOneConvocationId = (cid) => {
           if (cid == null || cid === "") return "";
           const idStr = String(cid);
+          const oldMapped = mapOldSiteConvocationIdToCanonical(cid);
+          if (oldMapped) return oldMapped;
           const found = list.find((c) => String(c?.id) === idStr || String(c?.number) === idStr);
           if (!found) return "";
           const name = found?.name ?? found?.number ?? "";
           return normalizeConvocationToken(name) || String(name).trim();
         };
+        const resolveConvocation = (p) => {
+          const cid = p?.convocationId ?? p?.convocation_id ?? p?.convocation?.id ?? (Array.isArray(p?.convocationIds) && p.convocationIds?.[0]) ?? (Array.isArray(p?.convocation_ids) && p.convocation_ids?.[0]);
+          return resolveOneConvocationId(cid);
+        };
         const mapped = arr
           .map((p) => {
             const normalized = normalizeApiDeputy(p);
-            if (!normalized.convocation && (p?.convocationId ?? p?.convocation_id ?? p?.convocation?.id ?? (Array.isArray(p?.convocationIds) && p.convocationIds?.[0]))) {
-              const resolved = resolveConvocation(p);
-              if (resolved) {
-                normalized.convocation = resolved;
-                normalized.convocationNumber = resolved;
-                if (!Array.isArray(normalized.convocations) || normalized.convocations.length === 0) {
-                  normalized.convocations = [resolved];
-                }
+            const rawIds = Array.isArray(p?.convocationIds) ? p.convocationIds : Array.isArray(p?.convocation_ids) ? p.convocation_ids : [];
+            const singleCid = p?.convocationId ?? p?.convocation_id ?? p?.convocation?.id ?? rawIds[0];
+            const resolvedTokens = rawIds.length
+              ? [...new Set(rawIds.map(resolveOneConvocationId).filter(Boolean))]
+              : singleCid != null && singleCid !== ""
+                ? [resolveOneConvocationId(singleCid)].filter(Boolean)
+                : [];
+            if (resolvedTokens.length > 0) {
+              if (!normalized.convocation) normalized.convocation = resolvedTokens[0];
+              normalized.convocationNumber = normalized.convocation;
+              if (!Array.isArray(normalized.convocations) || normalized.convocations.length === 0) {
+                normalized.convocations = resolvedTokens;
               }
             }
             return normalized;
@@ -555,28 +578,31 @@ export default function DeputiesV2() {
   }, [apiFactions, structureFactions, deputies]);
 
   const committeeOptions = React.useMemo(() => {
-    // Prefer API data, fallback to structure data
     const apiItems = Array.isArray(apiCommittees) && apiCommittees.length > 0 ? apiCommittees : [];
     const structureItems = Array.isArray(committees) ? committees : [];
     const items = apiItems.length > 0 ? apiItems : structureItems;
-    return ["Все", ...items.map((c) => c.id)];
+    return ["Все", ...items.map((c) => (c != null && c.id != null ? String(c.id) : "")).filter(Boolean)];
   }, [apiCommittees, committees]);
 
   const committeeMatcher = React.useMemo(() => {
-    if (committeeId === "Все") return null;
-    // Use API committees if available, otherwise fallback to structure committees
+    if (committeeId === "Все" || !committeeId) return null;
     const apiItems = Array.isArray(apiCommittees) && apiCommittees.length > 0 ? apiCommittees : [];
     const structureItems = Array.isArray(committees) ? committees : [];
-    const allCommittees = apiItems.length > 0 ? apiItems : structureItems;
-    
-    const c = allCommittees.find((x) => x.id === committeeId);
+    const allCommittees = apiItems.length > 0 ? apiCommittees : structureItems;
+    const idNorm = String(committeeId).trim();
+    const c = allCommittees.find((x) => x != null && String(x.id) === idNorm);
     if (!c) return null;
     const ids = new Set();
     const names = new Set();
     (c.members || []).forEach((m) => {
       if (!m) return;
-      if (m.id) ids.add(m.id);
-      if (m.name) names.add(m.name);
+      const mid = m.id ?? m.personId ?? m.deputyId ?? m.person_id;
+      if (mid != null && mid !== "") ids.add(String(mid));
+      const mn = [m.name, m.fullName, m.full_name].filter(Boolean);
+      mn.forEach((n) => {
+        const s = String(n).trim();
+        if (s) names.add(s);
+      });
     });
     return { ids, names };
   }, [committeeId, apiCommittees, committees]);
@@ -591,8 +617,13 @@ export default function DeputiesV2() {
       if (faction !== "Все" && !deputyMatchesFaction(d, faction)) return false;
       if (district !== "Все" && !deputyMatchesDistrict(d, district)) return false;
       if (committeeMatcher) {
-        if (committeeMatcher.ids.has(d.id)) return true;
-        if (committeeMatcher.names.has(d.name)) return true;
+        const did = d?.id != null ? String(d.id) : "";
+        if (did && committeeMatcher.ids.has(did)) return true;
+        const dName = String(d?.name ?? "").trim();
+        const dFull = String(d?.fullName ?? d?.name ?? "").trim();
+        if (dName && committeeMatcher.names.has(dName)) return true;
+        if (dFull && committeeMatcher.names.has(dFull)) return true;
+        if (dName !== dFull && dFull && committeeMatcher.names.has(dName)) return true;
         return false;
       }
       return true;
@@ -758,7 +789,7 @@ export default function DeputiesV2() {
                     const apiItems = Array.isArray(apiCommittees) && apiCommittees.length > 0 ? apiCommittees : [];
                     const structureItems = Array.isArray(committees) ? committees : [];
                     const allCommittees = apiItems.length > 0 ? apiItems : structureItems;
-                    const committee = allCommittees.find((c) => c.id === id);
+                    const committee = allCommittees.find((c) => c != null && String(c.id) === String(id));
                     return {
                       value: id,
                       label: `По комитетам: ` + (committee?.title || committee?.name || id),

@@ -5,9 +5,9 @@
     "number": "I",
     "years": "2010-2014",
     "isActive": false,
-    "description": "34 депутатов. Принято 2 законов и 0 постановлений.",
+    "description": "32 депутата. Принято 2 законов и 0 постановлений.",
     "stats": {
-      "deputies": 34,
+      "deputies": 32,
       "laws": 2,
       "resolutions": 0
     }
@@ -31,9 +31,9 @@
     "number": "III",
     "years": "2019-2024",
     "isActive": false,
-    "description": "36 депутатов. Принято 502 законов и 2506 постановлений.",
+    "description": "30 депутатов. Принято 502 законов и 2506 постановлений.",
     "stats": {
-      "deputies": 36,
+      "deputies": 30,
       "laws": 502,
       "resolutions": 2506
     }
@@ -44,9 +44,9 @@
     "number": "IV",
     "years": "2024-н.в.",
     "isActive": false,
-    "description": "33 депутатов. Принято 148 законов и 688 постановлений.",
+    "description": "31 депутат. Принято 148 законов и 688 постановлений.",
     "stats": {
-      "deputies": 33,
+      "deputies": 31,
       "laws": 148,
       "resolutions": 688
     }

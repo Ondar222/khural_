@@ -29,7 +29,7 @@ import {
   DEFAULT_COMMISSIONS_LIST,
 } from "../utils/commissionsOverrides.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
-import { normalizeConvocationToCanonical } from "../utils/convocationLabels.js";
+import { normalizeConvocationToCanonical, mapOldSiteConvocationIdToCanonical } from "../utils/convocationLabels.js";
 import { buildFactionOptions, buildDistrictOptions } from "../utils/deputyFilterOptions.js";
 
 const DataContext = React.createContext({
@@ -716,15 +716,82 @@ function parsePersonInfoRow(row) {
   };
 }
 
-/** Строит Map(нормализованное имя -> { photo, bio, ... }) из массива записей */
+/** Выбирает «главный» созыв для депутата: IV > III > II > I (текущий приоритетнее). */
+function primaryConvocation(convocations) {
+  const order = ["IV", "III", "II", "I"];
+  for (const c of order) {
+    if (convocations.includes(c)) return c;
+  }
+  return convocations[0] || "";
+}
+
+/** Строит Map(нормализованное имя -> массив созывов ["I","II",...]) из deputy_convocation_mapping.json. */
+function buildConvocationByNormalizedName(mapping) {
+  const map = new Map();
+  if (!mapping || typeof mapping !== "object") return map;
+  const order = ["I", "II", "III", "IV"];
+  for (const conv of order) {
+    const names = Array.isArray(mapping[conv]) ? mapping[conv] : [];
+    for (const name of names) {
+      const key = normalizePersonName(name);
+      if (!key) continue;
+      if (!map.has(key)) map.set(key, []);
+      const arr = map.get(key);
+      if (!arr.includes(conv)) arr.push(conv);
+    }
+  }
+  for (const arr of map.values()) {
+    arr.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  }
+  return map;
+}
+
+/** Подставляет созывы из канонического списка (deputy_convocation_mapping) по имени. */
+function applyConvocationMapping(deputies, convocationByNormalizedName) {
+  if (!convocationByNormalizedName || !convocationByNormalizedName.size) return deputies;
+  return deputies.map((d) => {
+    const key = normalizePersonName(d?.name ?? "");
+    const convocations = key ? convocationByNormalizedName.get(key) : null;
+    if (!convocations || !convocations.length) return d;
+    const primary = primaryConvocation(convocations);
+    return {
+      ...d,
+      convocation: primary,
+      convocationNumber: primary,
+      convocations: [...convocations],
+    };
+  });
+}
+
+/** Строит Map(нормализованное имя -> { photo, bio, convocation, convocations, ... }) из массива записей.
+ * Для каждого человека собираются все созывы из всех строк (IC_GROUP0, IP_PROP15), как на старом сайте 83/84/223/442. */
 function buildPersonInfoMap(raw) {
   const arr = Array.isArray(raw) ? raw : [];
-  const byId = new Map();
+  const byIdRows = new Map();
   for (const row of arr) {
     const v = parsePersonInfoRow(row);
     if (!v) continue;
-    if (byId.has(v.ieId)) continue;
-    byId.set(v.ieId, v);
+    if (!byIdRows.has(v.ieId)) byIdRows.set(v.ieId, []);
+    byIdRows.get(v.ieId).push(v);
+  }
+  const byId = new Map();
+  for (const [ieId, list] of byIdRows) {
+    const base = list[0];
+    const allConv = list
+      .map((x) => x.convocation)
+      .filter(Boolean);
+    const canonical = [...new Set(
+      allConv
+        .map((c) => normalizeConvocationToCanonical(normalizeConvocationText(c)) || c)
+        .filter(Boolean)
+    )];
+    const convocations = canonical.length ? canonical : (base.convocation ? [normalizeConvocationToCanonical(normalizeConvocationText(base.convocation)) || base.convocation] : []);
+    const merged = {
+      ...base,
+      convocation: primaryConvocation(convocations) || base.convocation,
+      convocations: convocations.length ? convocations : (base.convocation ? [base.convocation] : []),
+    };
+    byId.set(ieId, merged);
   }
   const byName = new Map();
   for (const v of byId.values()) {
@@ -751,6 +818,11 @@ function mergePersonInfoMaps(base, overlay) {
     if (!merged.phone && ov.phone) merged.phone = ov.phone;
     if (!merged.email && ov.email) merged.email = ov.email;
     if (!merged.convocation && ov.convocation) merged.convocation = ov.convocation;
+    if (Array.isArray(ov.convocations) && ov.convocations.length) {
+      const combined = [...new Set([...(merged.convocations || []), ...ov.convocations])];
+      merged.convocations = combined;
+      if (!merged.convocation && ov.convocation) merged.convocation = ov.convocation;
+    }
     if (!merged.position && ov.position) merged.position = ov.position;
     byName.set(n, merged);
   }
@@ -847,7 +919,26 @@ function enrichDeputyWithPersonInfo(dep, info) {
     out.contacts = { ...out.contacts, email: info.email };
   }
   
-  if (!out.convocation && info.convocation) out.convocation = info.convocation;
+  // Созыв только из persons_info (как на старом сайте 83/84/223/442), перезаписываем API
+  const hasConvList = Array.isArray(info.convocations) && info.convocations.length > 0;
+  const primaryConv = info.convocation && String(info.convocation).trim();
+  if (hasConvList || primaryConv) {
+    const canonList = hasConvList
+      ? info.convocations.map((c) => normalizeConvocationToCanonical(normalizeConvocationText(c)) || c).filter(Boolean)
+      : [];
+    const list = canonList.length ? canonList : (primaryConv ? [normalizeConvocationToCanonical(normalizeConvocationText(primaryConv)) || primaryConv] : []);
+    if (list.length) {
+      out.convocations = list;
+      const primary = list.includes("IV") ? "IV" : list.includes("III") ? "III" : list.includes("II") ? "II" : list[0];
+      out.convocation = primary;
+      out.convocationNumber = primary;
+    } else if (primaryConv) {
+      const canon = normalizeConvocationToCanonical(normalizeConvocationText(primaryConv)) || primaryConv;
+      out.convocation = canon;
+      out.convocationNumber = canon;
+      out.convocations = [canon];
+    }
+  }
   if (!out.district && info.position) out.district = info.position;
   if (!out.position && info.position) out.position = info.position;
   
@@ -1254,13 +1345,15 @@ export default function DataProvider({ children }) {
     (async () => {
       markLoading("deputies", true);
       markError("deputies", null);
-      const [personInfoVseh, personInfoDeputaty] = await Promise.all([
+      const [personInfoVseh, personInfoDeputaty, convocationMappingRaw] = await Promise.all([
         fetchJson("/persons_info/deputaty_vseh_sozyvov.json").catch(() => []),
         fetchJson("/persons_info/deputaty.json").catch(() => []),
+        fetchJson("/data/deputy_convocation_mapping.json").catch(() => ({})),
       ]);
       const mapVseh = buildPersonInfoMap(personInfoVseh);
       const mapDep = buildPersonInfoMap(personInfoDeputaty);
       const personInfoMap = mergePersonInfoMaps(mapDep, mapVseh);
+      const convocationByNormalizedName = buildConvocationByNormalizedName(convocationMappingRaw);
 
       // Список созывов для подстановки названия по convocationId (фильтр по созывам должен находить всех депутатов)
       const convocationsList = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
@@ -1273,6 +1366,8 @@ export default function DataProvider({ children }) {
           (Array.isArray(p?.convocation_ids) && p.convocation_ids?.[0]);
         if (cid == null || cid === "") return "";
         const idStr = String(cid);
+        const oldMapped = mapOldSiteConvocationIdToCanonical(cid);
+        if (oldMapped) return oldMapped;
         const found = (list || []).find(
           (c) => String(c?.id) === idStr || String(c?.number) === idStr
         );
@@ -1294,6 +1389,8 @@ export default function DataProvider({ children }) {
           if (!localByName.has(key)) localByName.set(key, d);
         });
 
+        const personInfoById = personInfoMap.byId || new Map();
+        const personInfoByName = personInfoMap.byName || new Map();
         const mapped = apiPersons.map((p) => {
           const externalKey = p?.externalId ? String(p.externalId) : "";
           const apiNameRaw = pick(p.fullName, p.full_name, p.name) || "";
@@ -1301,6 +1398,12 @@ export default function DataProvider({ children }) {
           const localByNameMatch =
             !local && apiNameRaw ? localByName.get(normalizePersonName(apiNameRaw)) : null;
           const localResolved = local || localByNameMatch || null;
+          // Созыв только из persons_info (deputaty.json, deputaty_vseh_sozyvov.json), не из API
+          const personInfo = externalKey ? personInfoById.get(externalKey) : null
+            || (apiNameRaw ? personInfoByName.get(normalizePersonName(apiNameRaw)) : null);
+          const convocationFromPersonInfo = personInfo?.convocation
+            ? normalizeConvocationToCanonical(normalizeConvocationText(personInfo.convocation)) || String(personInfo.convocation).trim()
+            : "";
 
           // IMPORTANT: keep id as STRING to match URLSearchParams id (Government.jsx uses ===)
           const id = String(p.id ?? p.personId ?? Math.random().toString(36).slice(2));
@@ -1340,30 +1443,20 @@ export default function DataProvider({ children }) {
               const s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
               return String(s || "").trim();
             })(),
-            convocation: (() => {
-              const apiVal =
-                pick(p.convocationNumber, p.convocation, p.convocation_number) ||
-                (Array.isArray(p.convocations) && p.convocations[0]?.name) ||
-                "";
-              const val = apiVal || localResolved?.convocation || "";
-              let s = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
-              s = String(s || "").trim();
-              if (!s) s = resolveConvocationFromId(p, convocationsList);
-              // Нормализуем к каноническому виду (I, II, III, IV); «11», «2014 год», «2020» → II/III
-              const normalized = normalizeConvocationText(s) || s;
-              return normalizeConvocationToCanonical(normalized) || normalized;
+            // Созыв только из persons_info (как на старом сайте), API не используем
+            convocation: convocationFromPersonInfo || (() => {
+              const val = localResolved?.convocation || "";
+              const s = typeof val === "string" ? val : String(val || "").trim();
+              if (!s) return "";
+              return normalizeConvocationToCanonical(normalizeConvocationText(s) || s) || s;
             })(),
-            convocationNumber: (() => {
-              const val =
-                pick(p.convocationNumber, p.convocation, p.convocation_number) ||
-                localResolved?.convocationNumber ||
-                localResolved?.convocation ||
-                "";
-              let str = typeof val === "string" ? val : String(val || "");
-              if (!str) str = resolveConvocationFromId(p, convocationsList);
-              str = normalizeConvocationToCanonical(normalizeConvocationText(str) || str) || str;
-              return str;
+            convocationNumber: convocationFromPersonInfo || (() => {
+              const val = localResolved?.convocationNumber || localResolved?.convocation || "";
+              const str = typeof val === "string" ? val : String(val || "").trim();
+              if (!str) return "";
+              return normalizeConvocationToCanonical(normalizeConvocationText(str) || str) || str;
             })(),
+            convocations: convocationFromPersonInfo ? [convocationFromPersonInfo] : undefined,
             reception: (() => {
               const raw =
                 localResolved?.reception || pick(p.receptionSchedule, p.reception_schedule) || "";
@@ -1524,7 +1617,9 @@ export default function DataProvider({ children }) {
           return enrichedDep;
         });
         const withMissing = addMissingDeputiesFromPersonInfo(enriched, personInfoMap);
-          setDeputiesBase(withMissing.map(normalizeDeputyItem));
+          const withConvocation = applyConvocationMapping(withMissing, convocationByNormalizedName);
+          const next = withConvocation.map(normalizeDeputyItem);
+          setDeputiesBase((prev) => (next.length > 0 ? next : prev));
           markLoading("deputies", false);
         } else {
           // API вернул пустой массив или невалидные данные - используем локальные данные
@@ -1542,7 +1637,9 @@ export default function DataProvider({ children }) {
             return enrichDeputyWithPersonInfo(d, info);
           });
           const withMissing = addMissingDeputiesFromPersonInfo(enriched, personInfoMap);
-          setDeputiesBase(withMissing.map(normalizeDeputyItem));
+          const withConvocation = applyConvocationMapping(withMissing, convocationByNormalizedName);
+          const next = withConvocation.map(normalizeDeputyItem);
+          setDeputiesBase((prev) => (next.length > 0 ? next : prev));
           markLoading("deputies", false);
         }
       } catch (e) {
@@ -1564,7 +1661,9 @@ export default function DataProvider({ children }) {
           return enrichDeputyWithPersonInfo(d, info);
         });
         const withMissing = addMissingDeputiesFromPersonInfo(enriched, personInfoMap);
-        setDeputiesBase(withMissing.map(normalizeDeputyItem));
+        const withConvocation = applyConvocationMapping(withMissing, convocationByNormalizedName);
+        const next = withConvocation.map(normalizeDeputyItem);
+        setDeputiesBase((prev) => (next.length > 0 ? next : prev));
         markLoading("deputies", false);
       }
 
