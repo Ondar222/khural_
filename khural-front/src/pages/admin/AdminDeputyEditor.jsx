@@ -1098,7 +1098,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             </div>
           </div>
 
-          {mode === "edit" ? (
+          {false && mode === "edit" ? (
             <div className="admin-card">
               <div className="admin-deputy-editor__section-title">Участие в комитетах</div>
               <div style={{ display: "grid", gap: 12 }}>
