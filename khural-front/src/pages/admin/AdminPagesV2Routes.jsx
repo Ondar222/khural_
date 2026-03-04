@@ -68,6 +68,11 @@ export default function AdminPagesV2Routes() {
               : "/admin/pages/create"
           )
         }
+        onCreateFixedPage={(slug, title) =>
+          navigate(
+            `/admin/pages/create?slug=${encodeURIComponent(slug || "")}&title=${encodeURIComponent(title || "")}`
+          )
+        }
         onEdit={(id) => navigate(`/admin/pages/edit/${encodeURIComponent(id)}`)}
         onPreview={(slug) => {
           const segs = String(slug || "")

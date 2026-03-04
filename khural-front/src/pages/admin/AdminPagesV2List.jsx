@@ -47,6 +47,12 @@ const STATIC_SECTIONS = [
   { slug: "broadcast", title: "Трансляция" },
 ];
 
+// Фиксированные контентные страницы (отображаются в списке даже если ещё не созданы в API)
+const FIXED_CONTENT_PAGES = [
+  { slug: "code-of-honor", title: "Кодекс чести мужчины Тувы" },
+  { slug: "mothers-commandments", title: "Свод заповедей матерей Тувы" },
+];
+
 async function listPagesWithFallback({ locale, authPreferred } = {}) {
   try {
     // Пробуем с авторизацией сначала (админский список всех страниц)
@@ -69,6 +75,7 @@ async function listPagesWithFallback({ locale, authPreferred } = {}) {
 export default function AdminPagesV2List({
   canWrite,
   onCreate,
+  onCreateFixedPage,
   onEdit,
   onPreview,
   onMessage,
@@ -160,13 +167,25 @@ export default function AdminPagesV2List({
       __isStatic: true,
     }));
 
-    const base = (Array.isArray(items) ? items : []).concat(systemRows).concat(staticSectionRows);
+    // Фиксированные страницы: показываем только если такой slug ещё нет в API
+    const existingSlugs = new Set((Array.isArray(items) ? items : []).map((p) => String(p?.slug || "").replace(/^\/+|\/+$/g, "")));
+    const fixedContentRows = FIXED_CONTENT_PAGES.filter((p) => !existingSlugs.has(p.slug)).map((p) => ({
+      id: `fixed:${p.slug}`,
+      title: p.title,
+      slug: p.slug,
+      __isFixed: true,
+    }));
+
+    const base = (Array.isArray(items) ? items : [])
+      .concat(systemRows)
+      .concat(staticSectionRows)
+      .concat(fixedContentRows);
 
     const byLocale =
       localeMode === "all"
         ? base
         : base.filter((p) => {
-            if (p?.__isSystem || p?.__isStatic) {
+            if (p?.__isSystem || p?.__isStatic || p?.__isFixed) {
               return true;
             }
             const c = p?.content;
@@ -179,7 +198,7 @@ export default function AdminPagesV2List({
       ? byLocale
       : byLocale.filter((p) => {
           const title = String(
-            (p?.__isSystem || p?.__isStatic ? p?.title : p?.title) || p?.name || ""
+            (p?.__isSystem || p?.__isStatic || p?.__isFixed ? p?.title : p?.title) || p?.name || ""
           ).toLowerCase();
           const slug = String(p.slug || "").toLowerCase();
           return title.includes(qq) || slug.includes(qq);
@@ -285,10 +304,19 @@ export default function AdminPagesV2List({
                 Раздел
               </Tag>
             )}
+            {row.__isFixed && (
+              <Tag color="orange" style={{ marginLeft: 8 }}>
+                Контент
+              </Tag>
+            )}
           </div>
           <div className="admin-pages-list__metarow">
             <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
-            {row?.__isSystem ? (
+            {row?.__isFixed ? (
+              <Tag className="admin-pages-list__tag" color="orange">
+                Нет в API
+              </Tag>
+            ) : row?.__isSystem ? (
               <Tag className="admin-pages-list__tag" color="gold">
                 ROUTE
               </Tag>
@@ -333,7 +361,24 @@ export default function AdminPagesV2List({
       width: isTablet ? 380 : 460,
       render: (_, row) => (
         <Space wrap className="admin-pages-list__actions">
-          {row?.__isSystem ? (
+          {row?.__isFixed ? (
+            <>
+              <Button
+                size={isTablet ? "small" : "middle"}
+                type="primary"
+                onClick={() => onCreateFixedPage?.(row.slug, row.title)}
+                disabled={!canWrite}
+              >
+                Создать страницу
+              </Button>
+              <Button
+                size={isTablet ? "small" : "middle"}
+                onClick={() => onPreview?.(row.slug)}
+              >
+                Открыть на сайте
+              </Button>
+            </>
+          ) : row?.__isSystem ? (
             <>
               <Button
                 size={isTablet ? "small" : "middle"}
@@ -486,7 +531,11 @@ export default function AdminPagesV2List({
                   </div>
                   <div className="admin-pages-list__metarow">
                     <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
-                    {row?.__isSystem ? (
+                    {row?.__isFixed ? (
+                      <Tag className="admin-pages-list__tag" color="orange">
+                        Нет в API
+                      </Tag>
+                    ) : row?.__isSystem ? (
                       <Tag className="admin-pages-list__tag" color="gold">
                         ROUTE
                       </Tag>
@@ -505,7 +554,21 @@ export default function AdminPagesV2List({
                 </div>
 
                 <div className="admin-pages-list__card-actions">
-                  {row?.__isSystem ? (
+                  {row?.__isFixed ? (
+                    <>
+                      <Button
+                        type="primary"
+                        onClick={() => onCreateFixedPage?.(row.slug, row.title)}
+                        disabled={!canWrite}
+                        block
+                      >
+                        Создать страницу
+                      </Button>
+                      <Button onClick={() => onPreview?.(row.slug)} block>
+                        Открыть на сайте
+                      </Button>
+                    </>
+                  ) : row?.__isSystem ? (
                     <>
                       <Button onClick={() => window.open(row.__href || row.slug || "/", "_blank")} block>
                         Открыть

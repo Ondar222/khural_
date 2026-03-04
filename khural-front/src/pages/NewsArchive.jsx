@@ -9,11 +9,7 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import NewsImageCarousel from "../components/NewsImageCarousel.jsx";
 import { formatNewsDateTime } from "../utils/dateFormat.js";
 import dayjs from "dayjs";
-import {
-  getNewsCategoriesFromNews,
-  NEWS_EXTRA_LINKS,
-  NEWS_MENU_FIRST,
-} from "../utils/newsMenuLinks.js";
+import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
 
 const NEWS_PAGE_SIZE = 12;
 
@@ -113,27 +109,20 @@ export default function NewsArchive() {
     [news]
   );
 
-  // Пункты бокового меню «Новости» — те же, что в выпадающем меню шапки (единый источник)
-  const newsMenuLinks = React.useMemo(() => {
-    const cats = getNewsCategoriesFromNews(news);
-    const first = [
+  // Пункты бокового меню «Новости» — только фиксированные и доп. ссылки, без категорий (История, Сессия и т.д.)
+  const newsMenuLinks = React.useMemo(
+    () => [
       { label: "Главные события недели", href: "/news/week" },
-      ...NEWS_MENU_FIRST.map((label) => ({ label, href: "/news" })),
-    ];
-    const categoryLinks = cats.map((c) => {
-      const isChairman =
-        /председатель|speaker|chairman/i.test(String(c));
-      return {
-        label: c,
-        href: isChairman ? "/news?speaker=true" : `/news?category=${encodeURIComponent(c)}`,
-      };
-    });
-    const extra = NEWS_EXTRA_LINKS.map((item) => ({
-      label: item.labelKey ? t(item.labelKey) : item.labelRu,
-      href: item.href,
-    }));
-    return [...first, ...categoryLinks, ...extra];
-  }, [news, t]);
+      { label: "Актуальные новости", href: "/news" },
+      { label: "Все новости", href: "/news" },
+      { label: "Медиа", href: "/news" },
+      ...NEWS_EXTRA_LINKS.map((item) => ({
+        label: item.labelKey ? t(item.labelKey) : item.labelRu,
+        href: item.href,
+      })),
+    ],
+    [t]
+  );
 
   const filtered = React.useMemo(
     () => {
@@ -618,9 +607,8 @@ export default function NewsArchive() {
                   </div>
                 )}
               </DataState>
-            </DataState>
+              </DataState>
           </div>
-
           <SideNav title="Новости" links={newsMenuLinks} />
         </div>
       </div>

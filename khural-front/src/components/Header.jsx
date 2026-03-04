@@ -4,8 +4,8 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 import Link from "./Link.jsx";
-import { useData } from "../context/DataContext.jsx";
 import { RightOutlined } from "@ant-design/icons";
+import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
 import { AboutApi } from "../api/client.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import {
@@ -14,11 +14,6 @@ import {
   PAGES_OVERRIDES_EVENT_NAME,
   PAGES_OVERRIDES_STORAGE_KEY,
 } from "../utils/pagesOverrides.js";
-import {
-  getNewsCategoriesFromNews,
-  NEWS_EXTRA_LINKS,
-  NEWS_MENU_FIRST,
-} from "../utils/newsMenuLinks.js";
 // removed unused UI icon libs
 
 export default function Header() {
@@ -106,12 +101,6 @@ export default function Header() {
       document.body.style.overflow = prev || "";
     };
   }, [mobileOpen, sheetOpen]);
-
-  const { news } = useData();
-  const newsCategories = React.useMemo(() => {
-    const cats = getNewsCategoriesFromNews(news);
-    return [...NEWS_MENU_FIRST, "—", ...cats];
-  }, [news]);
 
   const [pagesTree, setPagesTree] = React.useState([]);
 
@@ -348,33 +337,9 @@ export default function Header() {
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("news")}>
                 <a href="/news/week">Главные события недели</a>
                 <hr />
-                {newsCategories.map((c, i) =>
-                  c === "—" ? (
-                    <hr key={`hr-${i}`} />
-                  ) : (
-                    <a
-                      key={c}
-                      href={
-                        c === "Актуальные новости" || c === "Все новости" || c === "Медиа"
-                          ? "/news"
-                          : `/news?category=${encodeURIComponent(c)}`
-                      }
-                    >
-                      {lang === "ty"
-                        ? {
-                            "Актуальные новости": t("hotNews"),
-                            "Все новости": t("allNews"),
-                            Медиа: t("media"),
-                            Сессии: t("sessions"),
-                            Законодательство: t("legislation"),
-                            "Общественные мероприятия": t("publicEvents"),
-                            Комитеты: t("committees"),
-                            "Работа с гражданами": t("workWithCitizens"),
-                          }[c] || c
-                        : c}
-                    </a>
-                  )
-                )}
+                <a href="/news">{lang === "ty" ? t("hotNews") : "Актуальные новости"}</a>
+                <a href="/news">{lang === "ty" ? t("allNews") : "Все новости"}</a>
+                <a href="/news">{lang === "ty" ? t("media") : "Медиа"}</a>
                 <hr />
                 {NEWS_EXTRA_LINKS.map((item) => (
                   <a key={item.href} href={item.href}>
@@ -569,24 +534,6 @@ export default function Header() {
             <a href="/news">{t("hotNews")}</a>
             <a href="/news">{t("allNews")}</a>
             <a href="/news">{t("media")}</a>
-            {newsCategories
-              .filter(
-                (c) =>
-                  c !== "—" && c !== "Актуальные новости" && c !== "Все новости" && c !== "Медиа"
-              )
-              .map((c) => (
-                <a key={c} href={`/news?category=${encodeURIComponent(c)}`}>
-                  {lang === "ty"
-                    ? {
-                        Сессии: t("sessions"),
-                        Законодательство: t("legislation"),
-                        "Общественные мероприятия": t("publicEvents"),
-                        Комитеты: t("committees"),
-                        "Работа с гражданами": t("workWithCitizens"),
-                      }[c] || c
-                    : c}
-                </a>
-              ))}
             {NEWS_EXTRA_LINKS.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.labelKey ? t(item.labelKey) : item.labelRu}
@@ -944,77 +891,6 @@ export default function Header() {
             </a>
           </>
         )}
-        {mobileSection === "news" && (
-          <>
-            <button className="btn" onClick={() => setMobileSection(null)}>
-              {t("back")}
-            </button>
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("news")}</div>
-            <a className="tile link" href="/news/week" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                Главные события недели
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("hotNews")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("allNews")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("media")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            {newsCategories
-              .filter(
-                (c) =>
-                  c !== "—" && c !== "Актуальные новости" && c !== "Все новости" && c !== "Медиа"
-              )
-              .map((c) => (
-                <a
-                  key={c}
-                  className="tile link"
-                  href={`/news?category=${encodeURIComponent(c)}`}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <span className="mobile-menu-link-content">
-                    {lang === "ty"
-                      ? {
-                          Сессии: t("sessions"),
-                          Законодательство: t("legislation"),
-                          "Общественные мероприятия": t("publicEvents"),
-                          Комитеты: t("committees"),
-                          "Работа с гражданами": t("workWithCitizens"),
-                        }[c] || c
-                      : c}
-                    <RightOutlined aria-hidden="true" />
-                  </span>
-                </a>
-              ))}
-            {NEWS_EXTRA_LINKS.map((item) => (
-              <a
-                key={item.href}
-                className="tile link"
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-              >
-                <span className="mobile-menu-link-content">
-                  {item.labelKey ? t(item.labelKey) : item.labelRu}
-                  <RightOutlined aria-hidden="true" />
-                </span>
-              </a>
-            ))}
-          </>
-        )}
         {mobileSection === "gov" && (
           <>
             <button className="btn" onClick={() => setMobileSection(null)}>
@@ -1115,6 +991,51 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
+          </>
+        )}
+        {mobileSection === "news" && (
+          <>
+            <button className="btn" onClick={() => setMobileSection(null)}>
+              {t("back")}
+            </button>
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("news")}</div>
+            <a className="tile link" href="/news/week" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Главные события недели
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("hotNews")}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("allNews")}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("media")}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            {NEWS_EXTRA_LINKS.map((item) => (
+              <a
+                key={item.href}
+                className="tile link"
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {item.labelKey ? t(item.labelKey) : item.labelRu}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
           </>
         )}
         {mobileSection === "appeals" && (
