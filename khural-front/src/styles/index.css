@@ -1587,6 +1587,94 @@ a {
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
+
+/* Federation Council representative page (/struct/council) */
+.federation-council {
+  display: grid;
+  gap: 16px;
+}
+.federation-council__header {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+.federation-council__photo {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 999px;
+  border: 1px solid rgba(10, 31, 68, 0.12);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.federation-council__titles {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.federation-council__title {
+  font-weight: 900;
+  color: #0a1f44;
+  font-size: 20px;
+  line-height: 1.25;
+}
+.federation-council__name {
+  display: grid;
+  gap: 2px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0a1f44;
+  line-height: 1.05;
+  font-size: 26px;
+}
+.federation-council__bio {
+  display: grid;
+  gap: 10px;
+  color: #0f172a;
+  line-height: 1.7;
+  font-size: 15px;
+}
+.federation-council__bio p {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .federation-council__header {
+    grid-template-columns: 132px 1fr;
+    gap: 14px;
+  }
+  .federation-council__photo {
+    width: 132px;
+    height: 132px;
+  }
+  .federation-council__name {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 600px) {
+  .federation-council__header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .federation-council__photo {
+    width: 140px;
+    height: 140px;
+  }
+  .federation-council__title {
+    font-size: 18px;
+  }
+  .federation-council__name {
+    font-size: 22px;
+  }
+  .federation-council__bio {
+    font-size: 14.5px;
+    line-height: 1.75;
+  }
+}
 .council-chart__header {
   display: flex;
   justify-content: space-between;

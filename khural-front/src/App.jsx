@@ -241,6 +241,7 @@ export default function App() {
                           "/commission": Commission,
                           "/apparatus": Apparatus,
                           "/section": SectionPage,
+                          "/struct/:slug": PageBySlug,
                           // "/convocations": Convocations, // Скрыто временно
                           "/deputies": Deputies,
                           "/deputies/ended": DeputiesEnded,

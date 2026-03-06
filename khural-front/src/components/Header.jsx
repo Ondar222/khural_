@@ -295,9 +295,7 @@ export default function Header() {
                   {t("factions")}
                 </a>
                 <a
-                  href={
-                    "/section?title=" + encodeURIComponent("Представительство в Совете Федерации")
-                  }
+                  href="/struct/council"
                 >
                   {t("senateRep")}
                 </a>
@@ -514,9 +512,7 @@ export default function Header() {
             <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
               {t("factions")}
             </a>
-            <a
-              href={"/section?title=" + encodeURIComponent("Представительство в Совете Федерации")}
-            >
+            <a href="/struct/council">
               {t("senateRep")}
             </a>
             <a href="/apparatus">{t("apparatus")}</a>
@@ -790,7 +786,7 @@ export default function Header() {
             </a>
             <a
               className="tile link"
-              href={"/section?title=" + encodeURIComponent("Представительство в Совете Федерации")}
+              href="/struct/council"
               onClick={() => setMobileOpen(false)}
             >
               <span className="mobile-menu-link-content">

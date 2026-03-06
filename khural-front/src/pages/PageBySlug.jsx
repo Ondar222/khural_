@@ -100,6 +100,37 @@ const MOTHERS_COMMANDMENTS_HTML = `
 </ol>
 `;
 
+/** Статический контент страницы «Представительство в Совете Федерации» (источник: khural.rtyva.ru). */
+const FEDERATION_COUNCIL_SLUG = "struct/council";
+const FEDERATION_COUNCIL_TITLE = "Представительство в Совете Федерации";
+const FEDERATION_COUNCIL_HTML = `
+<div class="federation-council">
+  <div class="federation-council__header">
+    <img
+      class="federation-council__photo"
+      src="https://khural.rtyva.ru/docs/%D0%9A%D1%83%D0%B6%D1%83%D0%B3%D0%B5%D1%82.jfif"
+      alt="Кужугет Шолбан Артемович"
+      loading="lazy"
+    />
+    <div class="federation-council__titles">
+      <div class="federation-council__title">${FEDERATION_COUNCIL_TITLE}</div>
+      <div class="federation-council__name">
+        <span>КУЖУГЕТ</span>
+        <span>ШОЛБАН</span>
+        <span>АРТЕМОВИЧ</span>
+      </div>
+    </div>
+  </div>
+  <div class="federation-council__bio">
+    <p>Родился 20 февраля 1987 году в г. Чадан Дзун-Хемчикского района в семье рабочих.</p>
+    <p>В 2011 году окончил Кемеровскую медицинскую академию по специальности «Лечебное дело».</p>
+    <p>Трудовой путь в медицине начал с 2013 года после окончания клинической ординатуры ГБОУ ВПО «Кемеровская государственная медицинская академия» по специальности «хирургия» в должности врача-хирурга ГБУЗ РТ «Республиканская больница № 1». В 2015 году назначен заведующим приемного отделения Республиканской больницы №1, в 2019 году назначен заместителем главного врача по организационно-методической работе. В 2021 году назначен главным врачом ГБУЗ РТ «Республиканская больница № 2», в 2023 году назначен на должность директора Территориального фонда обязательного медицинского страхования.</p>
+    <p>Является членом политической партии «Единая Россия».</p>
+    <p>Постановлением Верховного Хурала (парламента) Республики Тыва от 21 мая 2025 года наделен полномочиями сенатора Российской Федерации - представителя от Верховного Хурала (парламента) Республики Тыва. Является членом Комитета Совета Федерации по социальной политике.</p>
+  </div>
+</div>
+`;
+
 function getSlugFromPath() {
   const path = typeof window !== "undefined" ? window.location.pathname || "" : "";
   
@@ -164,13 +195,16 @@ export default function PageBySlug() {
   const isCodeOfHonor = slug === CODE_OF_HONOR_SLUG;
   const isMothersCommandments = slug === MOTHERS_COMMANDMENTS_SLUG;
   const isForMedia = slug === FOR_MEDIA_SLUG;
-  const isStaticPage = isCodeOfHonor || isMothersCommandments || isForMedia;
+  const isFederationCouncil = slug === FEDERATION_COUNCIL_SLUG;
+  const isStaticPage = isCodeOfHonor || isMothersCommandments || isForMedia || isFederationCouncil;
   const title = isCodeOfHonor
     ? CODE_OF_HONOR_TITLE
     : isMothersCommandments
       ? MOTHERS_COMMANDMENTS_TITLE
       : isForMedia
         ? FOR_MEDIA_TITLE
+        : isFederationCouncil
+          ? FEDERATION_COUNCIL_TITLE
         : extractPageTitle(page, locale, slug);
   const html = isCodeOfHonor
     ? CODE_OF_HONOR_HTML
@@ -178,6 +212,8 @@ export default function PageBySlug() {
       ? MOTHERS_COMMANDMENTS_HTML
       : isForMedia
         ? FOR_MEDIA_HTML
+        : isFederationCouncil
+          ? FEDERATION_COUNCIL_HTML
         : extractPageHtml(page, locale);
 
   return (

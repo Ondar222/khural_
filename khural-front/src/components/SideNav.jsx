@@ -59,7 +59,7 @@ const defaultLinks = [
   { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
   {
     label: "Представительство в Совете Федерации",
-    href: "/section?title=" + encodeURIComponent("Представительство в Совете Федерации"),
+    href: "/struct/council",
   },
   { label: "Депутатские фракции", href: "/section?title=" + encodeURIComponent("Депутатские фракции") },
   { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
