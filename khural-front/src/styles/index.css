@@ -350,6 +350,7 @@ a {
   padding: 8px 12px;
   text-decoration: none;
   color: #111827;
+  font-size: 13px;
 }
 .dropdown__menu a:hover {
   background: #f8fafc;
