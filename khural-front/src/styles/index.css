@@ -1675,6 +1675,102 @@ a {
     line-height: 1.75;
   }
 }
+
+/* Ombudsman pages (/info/upoln-*) */
+.ombudsman-page {
+  display: grid;
+  gap: 16px;
+}
+.ombudsman-page__header {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+.ombudsman-page__photo {
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(10, 31, 68, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.6);
+}
+.ombudsman-page__titles {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.ombudsman-page__title {
+  font-weight: 900;
+  color: #0a1f44;
+  font-size: 18px;
+  line-height: 1.25;
+}
+.ombudsman-page__name {
+  font-weight: 900;
+  color: #0a1f44;
+  font-size: 20px;
+  line-height: 1.2;
+}
+.ombudsman-page__subtitle {
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.ombudsman-page__content {
+  display: grid;
+  gap: 12px;
+  color: #0f172a;
+  line-height: 1.7;
+  font-size: 15px;
+}
+.ombudsman-page__content p {
+  margin: 0;
+}
+.ombudsman-page__block {
+  padding: 12px 12px;
+  border: 1px solid rgba(10, 31, 68, 0.10);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.ombudsman-page__block-title {
+  font-weight: 900;
+  margin-bottom: 8px;
+  color: #0a1f44;
+}
+.ombudsman-page__block ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+.ombudsman-page__kv {
+  display: grid;
+  gap: 6px;
+}
+
+@media (max-width: 700px) {
+  .ombudsman-page__header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .ombudsman-page__photo {
+    width: 132px;
+    height: 132px;
+  }
+  .ombudsman-page__title {
+    font-size: 16px;
+  }
+  .ombudsman-page__name {
+    font-size: 19px;
+  }
+  .ombudsman-page__content {
+    font-size: 14.5px;
+    line-height: 1.75;
+  }
+}
 .council-chart__header {
   display: flex;
   justify-content: space-between;

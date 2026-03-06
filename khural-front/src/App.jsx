@@ -242,6 +242,9 @@ export default function App() {
                           "/apparatus": Apparatus,
                           "/section": SectionPage,
                           "/struct/:slug": PageBySlug,
+                          "/info": PageBySlug,
+                          "/info/:slug": PageBySlug,
+                          "/opendata": PageBySlug,
                           // "/convocations": Convocations, // Скрыто временно
                           "/deputies": Deputies,
                           "/deputies/ended": DeputiesEnded,

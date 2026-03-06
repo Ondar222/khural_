@@ -294,6 +294,15 @@ export default function Header() {
                 <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
                   {t("factions")}
                 </a>
+                <hr />
+                <a href="/info/finansy">Финансы</a>
+                <a href="/info/iokrug">Избирательные округа</a>
+                <a href="/info/zakon-karta">Законодательная карта сайта</a>
+                <a href="/opendata">Открытые данные</a>
+                <a href="/info/upoln-po-prav">Уполномоченный по правам человека</a>
+                <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
+                <a href="/info/personnel">Кадровое обеспечение</a>
+                <hr />
                 <a
                   href="/struct/council"
                 >
@@ -512,6 +521,15 @@ export default function Header() {
             <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
               {t("factions")}
             </a>
+            <hr />
+            <a href="/info/finansy">Финансы</a>
+            <a href="/info/iokrug">Избирательные округа</a>
+            <a href="/info/zakon-karta">Законодательная карта сайта</a>
+            <a href="/opendata">Открытые данные</a>
+            <a href="/info/upoln-po-prav">Уполномоченный по правам человека</a>
+            <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
+            <a href="/info/personnel">Кадровое обеспечение</a>
+            <hr />
             <a href="/struct/council">
               {t("senateRep")}
             </a>
@@ -781,6 +799,50 @@ export default function Header() {
             >
               <span className="mobile-menu-link-content">
                 {t("factions")}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <div style={{ height: 8 }} />
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>Общие сведения</div>
+            <a className="tile link" href="/info/finansy" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Финансы
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/iokrug" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Избирательные округа
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/zakon-karta" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Законодательная карта сайта
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/opendata" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Открытые данные
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/upoln-po-prav" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Уполномоченный по правам человека
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/upoln-po-reb" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Уполномоченный по правам ребенка
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/personnel" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Кадровое обеспечение
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
