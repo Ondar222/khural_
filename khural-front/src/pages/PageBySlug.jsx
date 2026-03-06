@@ -157,12 +157,12 @@ const INFO_FINANCE_HTML = `
   <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
     <li><a href="/info/finansy/rezultaty-proverok">Результаты проверок</a></li>
     <li><a href="/info/finansy/goszakupki">Государственные закупки</a></li>
-    <li><a href="https://khural.rtyva.ru/info/finansy/73/" target="_blank" rel="noreferrer">Отчеты</a></li>
+    <li><a href="/info/finansy/otcheti">Отчеты</a></li>
     <li><a href="https://khural.rtyva.ru/info/finansy/108/" target="_blank" rel="noreferrer">Бюджет</a></li>
   </ul>
   <p style="margin:0; line-height:1.7;">
     С 1 января 2011 г. информация о процедурах государственных закупок размещается на едином официальном сайте РФ:
-    <a href="http://zakupki.gov.ru/epz/order/extendedsearch/results.html?customerInn=1701009892" target="_blank" rel="noreferrer">zakupki.gov.ru</a>.
+    <a style="color: #003366;  href="http://zakupki.gov.ru/epz/order/extendedsearch/results.html?customerInn=1701009892" target="_blank" rel="noreferrer">zakupki.gov.ru</a>.
   </p>
   <p style="margin:0; line-height:1.7;">
     Информацию по действующим и завершенным процедурам государственных закупок можно получить по телефону 8(39422) 2-32-24.
@@ -262,6 +262,412 @@ const INFO_FINANCE_PROCUREMENT_HTML = `
   </div>
   <div style="margin-top: 16px;">
     <a href="/info/finansy" style="color: #003366; text-decoration: none;">← Назад к финансам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_SLUG = "info/finansy/otcheti";
+const INFO_FINANCE_REPORTS_TITLE = "Отчеты";
+const INFO_FINANCE_REPORTS_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчеты об использовании бюджетных средств</h2>
+    <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+      <li><a href="/info/finansy/otcheti/2015" style="color: #003366;">Отчет за 2015 год</a></li>
+      <li><a href="/info/finansy/otcheti/2016" style="color: #003366;">Отчет за 2016 год</a></li>
+      <li><a href="/info/finansy/otcheti/2017" style="color: #003366;">Отчет за 2017 год</a></li>
+      <li><a href="/info/finansy/otcheti/2018" style="color: #003366;">Отчет за 2018 год</a></li>
+      <li><a href="/info/finansy/otcheti/2019" style="color: #003366;">Отчет за 2019 год</a></li>
+      <li><a href="/info/finansy/otcheti/2020" style="color: #003366;">Отчет за 2020 год</a></li>
+      <li><a href="/info/finansy/otcheti/2021" style="color: #003366;">Отчет за 2021 год</a></li>
+      <li><a href="/info/finansy/otcheti/2022" style="color: #003366;">Отчет за 2022 год</a></li>
+      <li><a href="/info/finansy/otcheti/2023" style="color: #003366;">Отчет за 2023 год</a></li>
+    </ul>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy" style="color: #003366; text-decoration: none;">← Назад к финансам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_2015_SLUG = "info/finansy/otcheti/2015";
+const INFO_FINANCE_REPORTS_2015_TITLE = "Отчет за 2015 год";
+const INFO_FINANCE_REPORTS_2015_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2015 год</h2>
+    <p style="margin:0 0 16px 0; color: #6b7280; font-size: 14px;">Приложение 6 к Закону Республики Тыва "Об исполнении республиканского бюджета Республики Тыва за 2015 год"</p>
+    
+    <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">ВЕДОМСТВЕННАЯ СТРУКТУРА РАСХОДОВ РЕСПУБЛИКАНСКОГО БЮДЖЕТА РЕСПУБЛИКИ ТЫВА ЗА 2015 ГОД</h3>
+    <p style="margin:0 0 16px 0; color: #6b7280; font-size: 13px;">(тыс. рублей)</p>
+    
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <thead>
+          <tr style="background: #f3f4f6;">
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: left; font-weight: 600; color: #111827;">Наименование</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Утверждено</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Исполнено</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">% исполнения</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px;">Функционирование законодательных (представительных) органов государственной власти и представительных органов муниципальных образований</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">93492,9</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">93349,5</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">99,8</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Аппарат Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">71474,9</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">71331,6</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">99,8</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Председатель Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">4544,6</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">4544,6</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">100,0</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Депутаты Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">17473,4</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">17473,3</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">100,0</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Фонд оплаты труда государственных (муниципальных) органов и взносы по обязательному социальному страхованию</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">146,1</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">146,1</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">100,0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_2016_SLUG = "info/finansy/otcheti/2016";
+const INFO_FINANCE_REPORTS_2016_TITLE = "Отчет за 2016 год";
+const INFO_FINANCE_REPORTS_2016_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2016 год</h2>
+    
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="background: #f3f4f6;">
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: left; font-weight: 600; color: #111827;">Наименование показателя</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: center; font-weight: 600; color: #111827;">Код расхода по бюджетной классификации</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Утверждено</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Исполнено</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Процент исполнения</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; font-weight: 600;">Расходы бюджета - всего, в том числе:</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">х</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">104022,9</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">101266,1</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">97,3</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Аппарат Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900 0103 7910000000 000</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">78129,2</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">75977,4</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">97,2</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Председатель Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900 0103 7920000000 000</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">4644,3</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">4457,6</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">96</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Депутаты Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900 0103 7930000000 000</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">19895,3</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">19526,9</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">98</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Фонд оплаты труда государственных (муниципальных) органов и взносы по обязательному социальному страхованию</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900 0103 7930000110 121</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">13019,7</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">12752</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">98</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_2017_SLUG = "info/finansy/otcheti/2017";
+const INFO_FINANCE_REPORTS_2017_TITLE = "Отчет за 2017 год";
+const INFO_FINANCE_REPORTS_2017_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2017 год</h2>
+    <p style="margin:0 0 16px 0; color: #6b7280; font-size: 13px;">(тыс. руб.)</p>
+    
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="background: #f3f4f6;">
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: left; font-weight: 600; color: #111827;">Наименование показателя</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: center; font-weight: 600; color: #111827;">Код расхода по бюджетной классификации</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Утверждено</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Исполнено</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Процент исполнения</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; font-weight: 600;">Расходы бюджета - всего, в том числе:</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center;">х</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">101226</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">99419,7</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">98,2</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Аппарат Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900 0103 7910000000 000</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">77037,1</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">75269,7</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">97,7</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Председатель Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900 0103 7920000000 000</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">4824,1</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">4823</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">99,9</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Депутаты Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900 0103 7930000000 000</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">19364,8</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">19327</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">99,8</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_2018_SLUG = "info/finansy/otcheti/2018";
+const INFO_FINANCE_REPORTS_2018_TITLE = "Отчет за 2018 год";
+const INFO_FINANCE_REPORTS_2018_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2018 год</h2>
+    <p style="margin:0 0 16px 0; color: #6b7280; font-size: 13px;">(тыс. руб.)</p>
+    
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="background: #f3f4f6;">
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: left; font-weight: 600; color: #111827;">Наименование показателя</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: center; font-weight: 600; color: #111827;">Код расхода по бюджетной классификации</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Утверждено</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Исполнено</th>
+            <th style="border: 1px solid #d1d5db; padding: 10px 8px; text-align: right; font-weight: 600; color: #111827;">Процент исполнения</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; font-weight: 600;">Обеспечение деятельности Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900.0103.7900000</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">107180</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">107180</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">100%</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Председатель Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900.0103.79200000.111</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">2818,50</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">2818,30</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">100%</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Депутаты Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900.0103.79200000.112</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">16832,70</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">16832,70</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">100%</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Аппарат Верховного Хурала (парламента) Республики Тыва</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900.0103.79200000.113</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">55844,00</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">55786,00</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">100%</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #d1d5db; padding: 8px; padding-left: 16px;">Иные межбюджетные трансферты на обеспечение членов Совета Федерации и их помощников в субъектах РФ</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: center; font-family: monospace;">900.0103.9990051420</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">617,20</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">617,10</td>
+            <td style="border: 1px solid #d1d5db; padding: 8px; text-align: right;">100%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_2019_SLUG = "info/finansy/otcheti/2019";
+const INFO_FINANCE_REPORTS_2019_TITLE = "Отчет за 2019 год";
+const INFO_FINANCE_REPORTS_2019_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2019 год</h2>
+    
+    <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <span style="font-size: 24px;">📄</span>
+        <div style="flex: 1; min-width: 200px;">
+          <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
+            <a href="https://khural.rtyva.ru/upload/iblock/178/ix4d70jwylfahx5ibn11bie0yutb17n0/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202019%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+              Отчетность за 2019 год
+            </a>
+        
+      </div>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_2020_SLUG = "info/finansy/otcheti/2020";
+const INFO_FINANCE_REPORTS_2020_TITLE = "Отчет за 2020 год";
+const INFO_FINANCE_REPORTS_2020_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств, выделенных на функционирование Верховного Хурала (парламента) Республики Тыва за 2020 г.</h2>
+
+    <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <span style="font-size: 24px;">📄</span>
+        <div style="flex: 1; min-width: 200px;">
+          <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
+            <a href="https://khural.rtyva.ru/upload/iblock/cde/xascukpwi7wd04xxgi9p8znj1np0qoax/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202020%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+              Отчетность за 2020 год
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_2021_SLUG = "info/finansy/otcheti/2021";
+const INFO_FINANCE_REPORTS_2021_TITLE = "Отчет за 2021 год";
+const INFO_FINANCE_REPORTS_2021_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств, выделенных на функционирование Верховного Хурала (парламента) Республики Тыва за 2021 г.</h2>
+
+    <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <span style="font-size: 24px;">📄</span>
+        <div style="flex: 1; min-width: 200px;">
+          <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
+            <a href="https://khural.rtyva.ru/upload/iblock/443/za4cch1k67p410j47y1fo7do1x8xp8bg/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202021%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+              Отчетность за 2021 год
+            </a>
+          </div>
+    
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_2022_SLUG = "info/finansy/otcheti/2022";
+const INFO_FINANCE_REPORTS_2022_TITLE = "Отчет за 2022 год";
+const INFO_FINANCE_REPORTS_2022_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств, выделенных на функционирование Верховного Хурала (парламента) Республики Тыва за 2022 г.</h2>
+
+    <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <span style="font-size: 24px;">📄</span>
+        <div style="flex: 1; min-width: 200px;">
+          <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
+            <a href="https://khural.rtyva.ru/upload/iblock/fc5/bzgwyoh85eb6w2igz5utd915zp5lu5k8/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202022%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+              Отчетность за 2022 год
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_REPORTS_2023_SLUG = "info/finansy/otcheti/2023";
+const INFO_FINANCE_REPORTS_2023_TITLE = "Отчет за 2023 год";
+const INFO_FINANCE_REPORTS_2023_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств, выделенных на функционирование Верховного Хурала (парламента) Республики Тыва за 2023 г.</h2>
+
+    <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <span style="font-size: 24px;">📄</span>
+        <div style="flex: 1; min-width: 200px;">
+          <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
+            <a href="https://khural.rtyva.ru/upload/iblock/1b9/o51ka03fkpt5rsf6ozzgxl55vcvjv9vu/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202023%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+              Отчетность за 2023 год
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
   </div>
 </div>
 `;
@@ -371,8 +777,8 @@ const INFO_OMBUDSMAN_HUMAN_HTML = `
       <ul>
         <li>1985 – 2003 г. служба в органах прокуратуры Тувинской АССР, Томской и Новосибирской области.</li>
         <li>2003 - 2004 заместитель руководителя Межрегионального территориального органа в Сибирском федеральном округе федеральной службы РФ по финансовому оздоровлению и банкротству.</li>
-        <li>С 2004 - 2004г. начальник службы экономического развития в ЗАО группа «Февраль».</li>
-        <li>2005 – 2006 г. директор Новосибирского филиала некоммерческого партнерства «Сибирская межрегиональная саморегулируемая организация арбитражных управляющих».</li>
+        <li>С 2004 - 2004г. начальник службы экономическ����������го развития в ЗАО группа «Февраль».</li>
+        <li>2005 – 2006 г. д��ректор Новосибирского филиала некоммерческого партнерства «Сибирская межрегиональная саморегулируемая организация арбитражных управляющих».</li>
         <li>2007 – 2007 г. начальник отдела юридического и кадрового обеспечения управления Росприроднадзора по Новосибирской области Федеральной службы по надзору в сфере природопользования РФ.</li>
         <li>2007 – 2009 г. заместитель руководителя аппарата Правительства Республики Тыва - начальник управления правовой экспертизы и систематизации законодательства.</li>
         <li>2009 – 2017 г. руководитель управления Росприроднадзора по Республике Тыва Федеральной службы по надзору в сфере природопользования РФ.</li>
@@ -380,10 +786,10 @@ const INFO_OMBUDSMAN_HUMAN_HTML = `
     </div>
 
     <div class="ombudsman-page__block">
-      <div class="ombudsman-page__block-title">Контакты и адреса</div>
+      <div class="ombudsman-page__block-title">Кон��акты и адреса</div>
       <div class="ombudsman-page__kv">
         <div><strong>Телефон:</strong> +7(394-22)-2-63-08</div>
-        <div><strong>Адрес:</strong> 667010, Республика Тыва, г. Кызыл, ул. Красноармейская д.100, каб. 402</div>
+        <div><strong>Адрес:</strong> 667010, Республика Тыва, г. Кызыл, ул. Красноарм��йская д.100, каб. 402</div>
         <div><strong>E-mail:</strong> <a href="mailto:ombudsman@rtyva.ru">ombudsman@rtyva.ru</a></div>
       </div>
     </div>
@@ -424,7 +830,7 @@ const INFO_OMBUDSMAN_CHILD_HTML = `
   <div style="display:grid; gap:6px;">
     <div style="font-weight:800;">Документы</div>
     <ul>
-      <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A0%20%D0%B7%D0%B0%202024%20%D0%B3.,%20%D0%BE%D0%BA%D0%BE%D0%BD%D1%87..docx" target="_blank" rel="noreferrer">Доклад за 2024 год (DOCX)</a></li>
+      <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A0%20%D0%B7%D0%B0%202024%20%D0%B3.,%20%D0%BE%D0%BA%D0%BE%D0%BD%D1%87..docx" target="_blank" rel="noreferrer">Доклад за 2024 го�� (DOCX)</a></li>
     </ul>
   </div>
   <p style="margin:0;">
@@ -524,6 +930,16 @@ export default function PageBySlug() {
   const isInfoFinanceChecks2019 = slug === INFO_FINANCE_CHECKS_2019_SLUG;
   const isInfoFinanceChecks2020 = slug === INFO_FINANCE_CHECKS_2020_SLUG;
   const isInfoFinanceProcurement = slug === INFO_FINANCE_PROCUREMENT_SLUG;
+  const isInfoFinanceReports = slug === INFO_FINANCE_REPORTS_SLUG;
+  const isInfoFinanceReports2015 = slug === INFO_FINANCE_REPORTS_2015_SLUG;
+  const isInfoFinanceReports2016 = slug === INFO_FINANCE_REPORTS_2016_SLUG;
+  const isInfoFinanceReports2017 = slug === INFO_FINANCE_REPORTS_2017_SLUG;
+  const isInfoFinanceReports2018 = slug === INFO_FINANCE_REPORTS_2018_SLUG;
+  const isInfoFinanceReports2019 = slug === INFO_FINANCE_REPORTS_2019_SLUG;
+  const isInfoFinanceReports2020 = slug === INFO_FINANCE_REPORTS_2020_SLUG;
+  const isInfoFinanceReports2021 = slug === INFO_FINANCE_REPORTS_2021_SLUG;
+  const isInfoFinanceReports2022 = slug === INFO_FINANCE_REPORTS_2022_SLUG;
+  const isInfoFinanceReports2023 = slug === INFO_FINANCE_REPORTS_2023_SLUG;
   const isInfoDistricts = slug === INFO_DISTRICTS_SLUG;
   const isInfoLawmap = slug === INFO_LAWMAP_SLUG;
   const isOpenData = slug === OPENDATA_SLUG;
@@ -542,6 +958,16 @@ export default function PageBySlug() {
       isInfoFinanceChecks2019 ||
       isInfoFinanceChecks2020 ||
       isInfoFinanceProcurement ||
+      isInfoFinanceReports ||
+      isInfoFinanceReports2015 ||
+      isInfoFinanceReports2016 ||
+      isInfoFinanceReports2017 ||
+      isInfoFinanceReports2018 ||
+      isInfoFinanceReports2019 ||
+      isInfoFinanceReports2020 ||
+      isInfoFinanceReports2021 ||
+      isInfoFinanceReports2022 ||
+      isInfoFinanceReports2023 ||
       isInfoDistricts ||
       isInfoLawmap ||
       isOpenData ||
@@ -582,7 +1008,27 @@ export default function PageBySlug() {
                           ? t(INFO_FINANCE_CHECKS_2020_TITLE) || INFO_FINANCE_CHECKS_2020_TITLE
                           : isInfoFinanceProcurement
                             ? t(INFO_FINANCE_PROCUREMENT_TITLE) || INFO_FINANCE_PROCUREMENT_TITLE
-                            : isInfoDistricts
+                            : isInfoFinanceReports
+                              ? t(INFO_FINANCE_REPORTS_TITLE) || INFO_FINANCE_REPORTS_TITLE
+                              : isInfoFinanceReports2015
+                                ? t(INFO_FINANCE_REPORTS_2015_TITLE) || INFO_FINANCE_REPORTS_2015_TITLE
+                                : isInfoFinanceReports2016
+                                  ? t(INFO_FINANCE_REPORTS_2016_TITLE) || INFO_FINANCE_REPORTS_2016_TITLE
+                                  : isInfoFinanceReports2017
+                                    ? t(INFO_FINANCE_REPORTS_2017_TITLE) || INFO_FINANCE_REPORTS_2017_TITLE
+                                    : isInfoFinanceReports2018
+                                      ? t(INFO_FINANCE_REPORTS_2018_TITLE) || INFO_FINANCE_REPORTS_2018_TITLE
+                                      : isInfoFinanceReports2019
+                                        ? t(INFO_FINANCE_REPORTS_2019_TITLE) || INFO_FINANCE_REPORTS_2019_TITLE
+                                        : isInfoFinanceReports2020
+                                          ? t(INFO_FINANCE_REPORTS_2020_TITLE) || INFO_FINANCE_REPORTS_2020_TITLE
+                                          : isInfoFinanceReports2021
+                                            ? t(INFO_FINANCE_REPORTS_2021_TITLE) || INFO_FINANCE_REPORTS_2021_TITLE
+                                            : isInfoFinanceReports2022
+                                              ? t(INFO_FINANCE_REPORTS_2022_TITLE) || INFO_FINANCE_REPORTS_2022_TITLE
+                                              : isInfoFinanceReports2023
+                                                ? t(INFO_FINANCE_REPORTS_2023_TITLE) || INFO_FINANCE_REPORTS_2023_TITLE
+                                                : isInfoDistricts
                             ? t(INFO_DISTRICTS_TITLE) || INFO_DISTRICTS_TITLE
                             : isInfoLawmap
                               ? t(INFO_LAWMAP_TITLE) || INFO_LAWMAP_TITLE
@@ -621,7 +1067,27 @@ export default function PageBySlug() {
                           ? INFO_FINANCE_CHECKS_2020_HTML
                           : isInfoFinanceProcurement
                             ? INFO_FINANCE_PROCUREMENT_HTML
-                            : isInfoDistricts
+                            : isInfoFinanceReports
+                              ? INFO_FINANCE_REPORTS_HTML
+                              : isInfoFinanceReports2015
+                                ? INFO_FINANCE_REPORTS_2015_HTML
+                                : isInfoFinanceReports2016
+                                  ? INFO_FINANCE_REPORTS_2016_HTML
+                                  : isInfoFinanceReports2017
+                                    ? INFO_FINANCE_REPORTS_2017_HTML
+                                    : isInfoFinanceReports2018
+                                      ? INFO_FINANCE_REPORTS_2018_HTML
+                                      : isInfoFinanceReports2019
+                                        ? INFO_FINANCE_REPORTS_2019_HTML
+                                        : isInfoFinanceReports2020
+                                          ? INFO_FINANCE_REPORTS_2020_HTML
+                                          : isInfoFinanceReports2021
+                                            ? INFO_FINANCE_REPORTS_2021_HTML
+                                            : isInfoFinanceReports2022
+                                              ? INFO_FINANCE_REPORTS_2022_HTML
+                                              : isInfoFinanceReports2023
+                                                ? INFO_FINANCE_REPORTS_2023_HTML
+                                                : isInfoDistricts
                             ? INFO_DISTRICTS_HTML
                             : isInfoLawmap
                               ? INFO_LAWMAP_HTML
