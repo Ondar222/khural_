@@ -295,13 +295,13 @@ export default function Header() {
                   {t("factions")}
                 </a>
                 <hr />
-                <a href="/info/finansy">Финансы</a>
-                <a href="/info/iokrug">Избирательные округа</a>
-                <a href="/info/zakon-karta">Законодательная карта сайта</a>
-                <a href="/opendata">Открытые данные</a>
-                <a href="/info/upoln-po-prav">Уполномоченный по правам человека</a>
-                <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
-                <a href="/info/personnel">Кадровое обеспечение</a>
+                <a href="/info/finansy">{t("Финансы") || "Финансы"}</a>
+                <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
+                <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
+                <a href="/opendata">{t("Открытые данные") || "Открытые данные"}</a>
+                <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
+                <a href="/info/upoln-po-reb">{t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}</a>
+                <a href="/info/personnel">{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
                 <hr />
                 <a
                   href="/struct/council"
@@ -342,15 +342,15 @@ export default function Header() {
             >
               <Link to="/news">{t("news")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("news")}>
-                <a href="/news/week">Главные события недели</a>
+                <a href="/news/week">{t("Главные события недели") || "Главные события недели"}</a>
                 <hr />
-                <a href="/news">{lang === "ty" ? t("hotNews") : "Актуальные новости"}</a>
-                <a href="/news">{lang === "ty" ? t("allNews") : "Все новости"}</a>
-                <a href="/news">{lang === "ty" ? t("media") : "Медиа"}</a>
+                <a href="/news">{lang === "ty" ? t("hotNews") : t("Актуальные новости") || "Актуальные новости"}</a>
+                <a href="/news">{lang === "ty" ? t("allNews") : t("Все новости") || "Все новости"}</a>
+                <a href="/news">{lang === "ty" ? t("media") : t("Медиа") || "Медиа"}</a>
                 <hr />
                 {NEWS_EXTRA_LINKS.map((item) => (
                   <a key={item.href} href={item.href}>
-                    {item.labelKey ? t(item.labelKey) : item.labelRu}
+                    {item.labelKey ? t(item.labelKey) : t(item.labelRu) || item.labelRu}
                   </a>
                 ))}
               </div>
@@ -362,17 +362,17 @@ export default function Header() {
             >
               <Link to="/appeals">{t("appeals")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("appeals")}>
-                <a href="/appeals">Обращения граждан</a>
-                <a href="/appeals/letter">Письменное обращение</a>
-                <a href="/appeals/online">Электронная приемная</a>
-                <a href="/appeals/status">Проверить статус обращения</a>
-                <a href="/appeals/review">Порядок рассмотрения обращений</a>
-                <a href="/appeals/complaints">Порядок обжалования</a>
-                <a href="/appeals/overview">Обзор обращений граждан</a>
-                <a href="/appeals/public-interests">Ответы на обращения, затрагивающие интересы неопределенного круга лиц</a>
-                <a href="/appeals/legal">Правовое регулирование</a>
-                <a href="/appeals/schedule">График приема граждан</a>
-                <a href="/appeals/minyust">Минюст России</a>
+                <a href="/appeals">{t("Обращения граждан") || "Обращения граждан"}</a>
+                <a href="/appeals/letter">{t("Письменное обращение") || "Письменное обращение"}</a>
+                <a href="/appeals/online">{t("Электронная приемная") || "Электронная приемная"}</a>
+                <a href="/appeals/status">{t("Проверить статус обращения") || "Проверить статус обращения"}</a>
+                <a href="/appeals/review">{t("Порядок рассмотрения обращений") || "Порядок рассмотрения обращений"}</a>
+                <a href="/appeals/complaints">{t("Порядок обжалования") || "Порядок обжалования"}</a>
+                <a href="/appeals/overview">{t("Обзор обращений граждан") || "Обзор обращений граждан"}</a>
+                <a href="/appeals/public-interests">{t("Ответы на обращения, затрагивающие интересы неопределенного круга лиц") || "Ответы на обращения, затрагивающие интересы неопределенного круга лиц"}</a>
+                <a href="/appeals/legal">{t("Правовое регулирование") || "Правовое регулирование"}</a>
+                <a href="/appeals/schedule">{t("График приема граждан") || "График приема граждан"}</a>
+                <a href="/appeals/minyust">{t("Минюст России") || "Минюст России"}</a>
               </div>
             </div>
             <div
@@ -522,13 +522,13 @@ export default function Header() {
               {t("factions")}
             </a>
             <hr />
-            <a href="/info/finansy">Финансы</a>
-            <a href="/info/iokrug">Избирательные округа</a>
-            <a href="/info/zakon-karta">Законодательная карта сайта</a>
-            <a href="/opendata">Открытые данные</a>
-            <a href="/info/upoln-po-prav">Уполномоченный по правам человека</a>
-            <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
-            <a href="/info/personnel">Кадровое обеспечение</a>
+            <a href="/info/finansy">{t("Финансы") || "Финансы"}</a>
+            <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
+            <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
+            <a href="/opendata">{t("Открытые данные") || "Открытые данные"}</a>
+            <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
+            <a href="/info/upoln-po-reb">{t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}</a>
+            <a href="/info/personnel">{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
             <hr />
             <a href="/struct/council">
               {t("senateRep")}
@@ -544,13 +544,13 @@ export default function Header() {
           </div>
           <div className="sheet-col">
             <h3>{t("news")}</h3>
-            <a href="/news/week">Главные события недели</a>
+            <a href="/news/week">{t("Главные события недели") || "Главные события недели"}</a>
             <a href="/news">{t("hotNews")}</a>
             <a href="/news">{t("allNews")}</a>
             <a href="/news">{t("media")}</a>
             {NEWS_EXTRA_LINKS.map((item) => (
               <a key={item.href} href={item.href}>
-                {item.labelKey ? t(item.labelKey) : item.labelRu}
+                {item.labelKey ? t(item.labelKey) : t(item.labelRu) || item.labelRu}
               </a>
             ))}
           </div>
@@ -806,43 +806,43 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>Общие сведения</div>
             <a className="tile link" href="/info/finansy" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Финансы
+                {t("Финансы") || "Финансы"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/info/iokrug" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Избирательные округа
+                {t("Избирательные округа") || "Избирательные округа"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/info/zakon-karta" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Законодательная карта сайта
+                {t("Законодательная карта сайта") || "Законодательная карта сайта"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/opendata" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Открытые данные
+                {t("Открытые данные") || "Открытые данные"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/info/upoln-po-prav" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Уполномоченный по правам человека
+                {t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/info/upoln-po-reb" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Уполномоченный по правам ребенка
+                {t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/info/personnel" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Кадровое обеспечение
+                {t("Кадровое обеспечение") || "Кадровое обеспечение"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
@@ -1044,7 +1044,7 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("news")}</div>
             <a className="tile link" href="/news/week" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Главные события недели
+                {t("Главные события недели") || "Главные события недели"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
@@ -1074,7 +1074,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
               >
                 <span className="mobile-menu-link-content">
-                  {item.labelKey ? t(item.labelKey) : item.labelRu}
+                  {item.labelKey ? t(item.labelKey) : t(item.labelRu) || item.labelRu}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </a>
@@ -1089,67 +1089,67 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("appeals")}</div>
             <a className="tile link" href="/appeals" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Обращения граждан
+                {t("Обращения граждан") || "Обращения граждан"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/letter" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Письменное обращение
+                {t("Письменное обращение") || "Письменное обращение"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/online" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Электронная приемная
+                {t("Электронная приемная") || "Электронная приемная"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/status" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Проверить статус обращения
+                {t("Проверить статус обращения") || "Проверить статус обращения"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/review" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Порядок рассмотрения обращений
+                {t("Порядок рассмотрения обращений") || "Порядок рассмотрения обращений"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/complaints" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Порядок обжалования
+                {t("Порядок обжалования") || "Порядок обжалования"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/overview" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Обзор обращений граждан
+                {t("Обзор обращений граждан") || "Обзор обращений граждан"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/public-interests" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Ответы на обращения, затрагивающие интересы неопределенного круга лиц
+                {t("Ответы на обращения, затрагивающие интересы неопределенного круга лиц") || "Ответы на обращения, затрагивающие интересы неопределенного круга лиц"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/legal" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Правовое регулирование
+                {t("Правовое регулирование") || "Правовое регулирование"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/schedule" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                График приема граждан
+                {t("График приема граждан") || "График приема граждан"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/appeals/minyust" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Минюст России
+                {t("Минюст России") || "Минюст России"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
