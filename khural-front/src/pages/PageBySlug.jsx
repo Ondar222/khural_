@@ -154,10 +154,10 @@ const INFO_FINANCE_SLUG = "info/finansy";
 const INFO_FINANCE_TITLE = "Финансы";
 const INFO_FINANCE_HTML = `
 <div style="display:grid; gap:10px;">
-  <ul>
-    <li><a href="https://khural.rtyva.ru/info/finansy/160/" target="_blank" rel="noreferrer">Результаты проверок</a></li>
+  <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+    <li><a href="/info/finansy/rezultaty-proverok">Результаты проверок</a></li>
+    <li><a href="/info/finansy/goszakupki">Государственные закупки</a></li>
     <li><a href="https://khural.rtyva.ru/info/finansy/73/" target="_blank" rel="noreferrer">Отчеты</a></li>
-    <li><a href="https://khural.rtyva.ru/info/finansy/107/" target="_blank" rel="noreferrer">Госзакупки</a></li>
     <li><a href="https://khural.rtyva.ru/info/finansy/108/" target="_blank" rel="noreferrer">Бюджет</a></li>
   </ul>
   <p style="margin:0; line-height:1.7;">
@@ -167,6 +167,102 @@ const INFO_FINANCE_HTML = `
   <p style="margin:0; line-height:1.7;">
     Информацию по действующим и завершенным процедурам государственных закупок можно получить по телефону 8(39422) 2-32-24.
   </p>
+</div>
+`;
+
+const INFO_FINANCE_CHECKS_SLUG = "info/finansy/rezultaty-proverok";
+const INFO_FINANCE_CHECKS_TITLE = "Результаты проверок";
+const INFO_FINANCE_CHECKS_HTML = `
+<div style="display:grid; gap:16px;">
+  <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+    <li><a href="/info/finansy/rezultaty-proverok/2016">Результаты проверок за 2016 год</a></li>
+    <li><a href="/info/finansy/rezultaty-proverok/2018">Результаты проверок за 2018 год</a></li>
+    <li><a href="/info/finansy/rezultaty-proverok/2019">Результаты проверок за 2019 год</a></li>
+    <li><a href="/info/finansy/rezultaty-proverok/2020">Результаты проверок за 2020 год</a></li>
+  </ul>
+</div>
+`;
+
+const INFO_FINANCE_CHECKS_2016_SLUG = "info/finansy/rezultaty-proverok/2016";
+const INFO_FINANCE_CHECKS_2016_TITLE = "Результаты проверок за 2016 год";
+const INFO_FINANCE_CHECKS_2016_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px; background: #f9fafb;">
+    <div style="line-height: 1.7; color: #374151;">
+      <p style="margin:0 0 12px 0;">В 2016 году были проведены 2 проверки: ГУ – региональным отделением Фонда социального страхования РФ по Республике Тыва на основании решения о проведении документальной выездной проверки № 15 от 2 февраля 2016 года и ГУ – управлением пенсионного фонда России по Республике Тыва в г.Кызыле на основании решения о проведении выездной проверки № 018VO2160000002 от 10 февраля 2016 года, проверяемые периоды - 2013-2015 годы.</p>
+      <p style="margin:0 0 12px 0;">ГУ – региональным отделением Фонда социального страхования РФ по Республике Тыва по результатам проверки доначислено всего 35934,28 рублей, в том числе начислены пени на сумму 14,77 рублей.</p>
+      <p style="margin:0 0 12px 0;">ГУ – управлением пенсионного фонда России по Республике Тыва в г.Кызыле по результатам проверки доначислено всего 28030,94 рублей, в т.ч. начислены пени на общую сумму 3565,01 рублей и штрафных санкций на сумму 4077,65 рублей. Доначисление по страховым взносам составило: по страховой части 16868,02 рублей, по накопительной части 600 рублей и в фонд обязательного медицинского страхования 2920,26 рублей.</p>
+      <p style="margin:0;">Все доначисленные по результатам проверок суммы уплачены в установленные сроки во внебюджетные фонды.</p>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/rezultaty-proverok" style="color: #003366; text-decoration: none;">← Назад к результатам проверок</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_CHECKS_2018_SLUG = "info/finansy/rezultaty-proverok/2018";
+const INFO_FINANCE_CHECKS_2018_TITLE = "Результаты проверок за 2018 год";
+const INFO_FINANCE_CHECKS_2018_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px; background: #f9fafb;">
+    <div style="line-height: 1.7; color: #374151;">
+      <p style="margin:0;">В 2019 году проведена проверка целевого и эффективного использования средств республиканского бюджета Республики Тыва, выделенных в 2018 году Верховному Хуралу (парламенту) Республики Тыва. Проверка проведена Счетной палатой Республики Тыва, о чем составлен акт от 15 февраля 2019 года. По результатам проведенной проверки нарушений не выявлено.</p>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/rezultaty-proverok" style="color: #003366; text-decoration: none;">← Назад к результатам проверок</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_CHECKS_2019_SLUG = "info/finansy/rezultaty-proverok/2019";
+const INFO_FINANCE_CHECKS_2019_TITLE = "Результаты проверок за 2019 год";
+const INFO_FINANCE_CHECKS_2019_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px; background: #f9fafb;">
+    <div style="line-height: 1.7; color: #374151;">
+      <p style="margin:0;">В 2020 году проведена проверка целевого и эффективного использования средств республиканского бюджета Республики Тыва, выделенных в 2019 году Верховному Хуралу (парламенту) Республики Тыва. Проверка проведена Счетной палатой Республики Тыва, о чем составлен акт от 2 октября 2020 года. По результатам проведенной проверки нарушений и недостатков не выявлено.</p>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/rezultaty-proverok" style="color: #003366; text-decoration: none;">← Назад к результатам проверок</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_CHECKS_2020_SLUG = "info/finansy/rezultaty-proverok/2020";
+const INFO_FINANCE_CHECKS_2020_TITLE = "Результаты проверок за 2020 год";
+const INFO_FINANCE_CHECKS_2020_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px; background: #f9fafb;">
+    <div style="line-height: 1.7; color: #374151;">
+      <p style="margin:0 0 12px 0;">В 2021 году проведена проверка целевого и эффективного использования средств республиканского бюджета Республики Тыва, выделенных в 2020 году Верховному Хуралу (парламенту) Республики Тыва. Проверка проведена Счетной палатой Республики Тыва, о чем составлен акт от 6 апреля 2021 года. По результатам проведенной проверки нарушений и недостатков не выявлено.</p>
+      <p style="margin:0;">На основании решения о проведении выездной проверки от 11.05.2021 г. №22 Регионального отделения Фонда социального страхования Российской Федерации по Республике Тыва проведены выездные проверки по обязательному социальному страхованию от несчастных случаев на производстве и профессиональных заболеваний за период с 01.01.2018 года по 31.12.2020 года, а также по проверке полноты и достоверности представляемых страхователем сведений и документов, необходимых для назначения и выплаты страхового обеспечения за период с 01.07.2018 года по 31.12.2020 года. По результатам проведенных проверок нарушений не установлено, о чем составлены справки от 1 июня 2021 года № 22 и от 1 июня 2021 года № 17002180000352.</p>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy/rezultaty-proverok" style="color: #003366; text-decoration: none;">← Назад к результатам проверок</a>
+  </div>
+</div>
+`;
+
+const INFO_FINANCE_PROCUREMENT_SLUG = "info/finansy/goszakupki";
+const INFO_FINANCE_PROCUREMENT_TITLE = "Государственные закупки";
+const INFO_FINANCE_PROCUREMENT_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Государственные закупки</h2>
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+      <p style="margin:0 0 8px 0; font-weight: 600; color: #111827;">Документы:</p>
+      <ul style="margin:0; padding-left: 20px; line-height: 2;">
+        <li><a href="https://khural.rtyva.ru/upload/iblock/1f9/%D0%9E%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D1%82%D0%B8%D0%B2%D0%B0%D1%85%20%D0%B7%D0%B0%D0%BA%D1%83%D0%BF%D0%BE%D0%BA%20%D0%92%D0%A5%20%D0%A0%D0%A2.docx" target="_blank" rel="noreferrer" style="color: #003366;">О нормативах закупок Верховного Хурала (парламента) РТ</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy" style="color: #003366; text-decoration: none;">← Назад к финансам</a>
+  </div>
 </div>
 `;
 
@@ -422,6 +518,12 @@ export default function PageBySlug() {
   const isFederationCouncil = slug === FEDERATION_COUNCIL_SLUG;
   const isInfoIndex = slug === INFO_INDEX_SLUG;
   const isInfoFinance = slug === INFO_FINANCE_SLUG;
+  const isInfoFinanceChecks = slug === INFO_FINANCE_CHECKS_SLUG;
+  const isInfoFinanceChecks2016 = slug === INFO_FINANCE_CHECKS_2016_SLUG;
+  const isInfoFinanceChecks2018 = slug === INFO_FINANCE_CHECKS_2018_SLUG;
+  const isInfoFinanceChecks2019 = slug === INFO_FINANCE_CHECKS_2019_SLUG;
+  const isInfoFinanceChecks2020 = slug === INFO_FINANCE_CHECKS_2020_SLUG;
+  const isInfoFinanceProcurement = slug === INFO_FINANCE_PROCUREMENT_SLUG;
   const isInfoDistricts = slug === INFO_DISTRICTS_SLUG;
   const isInfoLawmap = slug === INFO_LAWMAP_SLUG;
   const isOpenData = slug === OPENDATA_SLUG;
@@ -434,6 +536,12 @@ export default function PageBySlug() {
     !hasPageFromCms &&
     (isInfoIndex ||
       isInfoFinance ||
+      isInfoFinanceChecks ||
+      isInfoFinanceChecks2016 ||
+      isInfoFinanceChecks2018 ||
+      isInfoFinanceChecks2019 ||
+      isInfoFinanceChecks2020 ||
+      isInfoFinanceProcurement ||
       isInfoDistricts ||
       isInfoLawmap ||
       isOpenData ||
@@ -462,19 +570,31 @@ export default function PageBySlug() {
               ? t(INFO_INDEX_TITLE) || INFO_INDEX_TITLE
               : isInfoFinance
                 ? t(INFO_FINANCE_TITLE) || INFO_FINANCE_TITLE
-                : isInfoDistricts
-                  ? t(INFO_DISTRICTS_TITLE) || INFO_DISTRICTS_TITLE
-                  : isInfoLawmap
-                    ? t(INFO_LAWMAP_TITLE) || INFO_LAWMAP_TITLE
-                    : isOpenData
-                      ? t(OPENDATA_TITLE) || OPENDATA_TITLE
-                      : isInfoOmbHuman
-                        ? t(INFO_OMBUDSMAN_HUMAN_TITLE) || INFO_OMBUDSMAN_HUMAN_TITLE
-                        : isInfoOmbChild
-                          ? t(INFO_OMBUDSMAN_CHILD_TITLE) || INFO_OMBUDSMAN_CHILD_TITLE
-                          : isInfoPersonnel
-                            ? t(INFO_PERSONNEL_TITLE) || INFO_PERSONNEL_TITLE
-                            : extractPageTitle(page, locale, slug)
+                : isInfoFinanceChecks
+                  ? t(INFO_FINANCE_CHECKS_TITLE) || INFO_FINANCE_CHECKS_TITLE
+                  : isInfoFinanceChecks2016
+                    ? t(INFO_FINANCE_CHECKS_2016_TITLE) || INFO_FINANCE_CHECKS_2016_TITLE
+                    : isInfoFinanceChecks2018
+                      ? t(INFO_FINANCE_CHECKS_2018_TITLE) || INFO_FINANCE_CHECKS_2018_TITLE
+                      : isInfoFinanceChecks2019
+                        ? t(INFO_FINANCE_CHECKS_2019_TITLE) || INFO_FINANCE_CHECKS_2019_TITLE
+                        : isInfoFinanceChecks2020
+                          ? t(INFO_FINANCE_CHECKS_2020_TITLE) || INFO_FINANCE_CHECKS_2020_TITLE
+                          : isInfoFinanceProcurement
+                            ? t(INFO_FINANCE_PROCUREMENT_TITLE) || INFO_FINANCE_PROCUREMENT_TITLE
+                            : isInfoDistricts
+                            ? t(INFO_DISTRICTS_TITLE) || INFO_DISTRICTS_TITLE
+                            : isInfoLawmap
+                              ? t(INFO_LAWMAP_TITLE) || INFO_LAWMAP_TITLE
+                              : isOpenData
+                                ? t(OPENDATA_TITLE) || OPENDATA_TITLE
+                                : isInfoOmbHuman
+                                  ? t(INFO_OMBUDSMAN_HUMAN_TITLE) || INFO_OMBUDSMAN_HUMAN_TITLE
+                                  : isInfoOmbChild
+                                    ? t(INFO_OMBUDSMAN_CHILD_TITLE) || INFO_OMBUDSMAN_CHILD_TITLE
+                                    : isInfoPersonnel
+                                      ? t(INFO_PERSONNEL_TITLE) || INFO_PERSONNEL_TITLE
+                                      : extractPageTitle(page, locale, slug)
         : extractPageTitle(page, locale, slug);
   const html = isCodeOfHonor
     ? CODE_OF_HONOR_HTML
@@ -489,19 +609,31 @@ export default function PageBySlug() {
               ? INFO_INDEX_HTML
               : isInfoFinance
                 ? INFO_FINANCE_HTML
-                : isInfoDistricts
-                  ? INFO_DISTRICTS_HTML
-                  : isInfoLawmap
-                    ? INFO_LAWMAP_HTML
-                    : isOpenData
-                      ? OPENDATA_HTML
-                      : isInfoOmbHuman
-                        ? INFO_OMBUDSMAN_HUMAN_HTML
-                        : isInfoOmbChild
-                          ? INFO_OMBUDSMAN_CHILD_HTML
-                          : isInfoPersonnel
-                            ? INFO_PERSONNEL_HTML
-                            : extractPageHtml(page, locale)
+                : isInfoFinanceChecks
+                  ? INFO_FINANCE_CHECKS_HTML
+                  : isInfoFinanceChecks2016
+                    ? INFO_FINANCE_CHECKS_2016_HTML
+                    : isInfoFinanceChecks2018
+                      ? INFO_FINANCE_CHECKS_2018_HTML
+                      : isInfoFinanceChecks2019
+                        ? INFO_FINANCE_CHECKS_2019_HTML
+                        : isInfoFinanceChecks2020
+                          ? INFO_FINANCE_CHECKS_2020_HTML
+                          : isInfoFinanceProcurement
+                            ? INFO_FINANCE_PROCUREMENT_HTML
+                            : isInfoDistricts
+                            ? INFO_DISTRICTS_HTML
+                            : isInfoLawmap
+                              ? INFO_LAWMAP_HTML
+                              : isOpenData
+                                ? OPENDATA_HTML
+                                : isInfoOmbHuman
+                                  ? INFO_OMBUDSMAN_HUMAN_HTML
+                                  : isInfoOmbChild
+                                    ? INFO_OMBUDSMAN_CHILD_HTML
+                                    : isInfoPersonnel
+                                      ? INFO_PERSONNEL_HTML
+                                      : extractPageHtml(page, locale)
           : extractPageHtml(page, locale);
 
   // Определяем slug для админки
