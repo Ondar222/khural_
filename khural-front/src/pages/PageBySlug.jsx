@@ -374,7 +374,7 @@ function getSlugFromPath() {
 }
 
 export default function PageBySlug() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const adminData = useAdminData();
   const [slug, setSlug] = React.useState(() => getSlugFromPath());
   const [page, setPage] = React.useState(null);
@@ -448,31 +448,32 @@ export default function PageBySlug() {
     isFederationCouncil ||
     shouldUseInfoFallback;
 
+  // Получаем заголовок с переводом
   const title = isCodeOfHonor
-    ? CODE_OF_HONOR_TITLE
+    ? t(CODE_OF_HONOR_TITLE) || CODE_OF_HONOR_TITLE
     : isMothersCommandments
-      ? MOTHERS_COMMANDMENTS_TITLE
+      ? t(MOTHERS_COMMANDMENTS_TITLE) || MOTHERS_COMMANDMENTS_TITLE
       : isForMedia
-        ? FOR_MEDIA_TITLE
+        ? t(FOR_MEDIA_TITLE) || FOR_MEDIA_TITLE
         : isFederationCouncil
-          ? FEDERATION_COUNCIL_TITLE
+          ? t(FEDERATION_COUNCIL_TITLE) || FEDERATION_COUNCIL_TITLE
           : shouldUseInfoFallback
             ? isInfoIndex
-              ? INFO_INDEX_TITLE
+              ? t(INFO_INDEX_TITLE) || INFO_INDEX_TITLE
               : isInfoFinance
-                ? INFO_FINANCE_TITLE
+                ? t(INFO_FINANCE_TITLE) || INFO_FINANCE_TITLE
                 : isInfoDistricts
-                  ? INFO_DISTRICTS_TITLE
+                  ? t(INFO_DISTRICTS_TITLE) || INFO_DISTRICTS_TITLE
                   : isInfoLawmap
-                    ? INFO_LAWMAP_TITLE
+                    ? t(INFO_LAWMAP_TITLE) || INFO_LAWMAP_TITLE
                     : isOpenData
-                      ? OPENDATA_TITLE
+                      ? t(OPENDATA_TITLE) || OPENDATA_TITLE
                       : isInfoOmbHuman
-                        ? INFO_OMBUDSMAN_HUMAN_TITLE
+                        ? t(INFO_OMBUDSMAN_HUMAN_TITLE) || INFO_OMBUDSMAN_HUMAN_TITLE
                         : isInfoOmbChild
-                          ? INFO_OMBUDSMAN_CHILD_TITLE
+                          ? t(INFO_OMBUDSMAN_CHILD_TITLE) || INFO_OMBUDSMAN_CHILD_TITLE
                           : isInfoPersonnel
-                            ? INFO_PERSONNEL_TITLE
+                            ? t(INFO_PERSONNEL_TITLE) || INFO_PERSONNEL_TITLE
                             : extractPageTitle(page, locale, slug)
         : extractPageTitle(page, locale, slug);
   const html = isCodeOfHonor

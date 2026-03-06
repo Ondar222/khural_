@@ -1,5 +1,6 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
 import { Input, Select, Space, Switch, Pagination } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
@@ -30,6 +31,7 @@ function renderDocDesc(raw) {
 }
 
 export default function Documents() {
+  const { t } = useI18n();
   const { documents, loading, errors, reload } = useData();
   const [cat, setCat] = React.useState("Все");
   const [year, setYear] = React.useState("Все");
@@ -143,7 +145,7 @@ export default function Documents() {
       <div className="container">
         <div className="page-grid">
           <div>
-            <h1>Документы</h1>
+            <h1>{t("Документы") || "Документы"}</h1>
             <DataState
               loading={Boolean(loading?.documents) && (!documents || documents.length === 0)}
               error={errors?.documents}

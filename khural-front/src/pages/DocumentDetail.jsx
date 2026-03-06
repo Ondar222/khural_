@@ -26,8 +26,8 @@ function renderDocDesc(raw) {
 }
 
 export default function DocumentDetail() {
+  const { lang, t } = useI18n();
   const { route, navigate } = useHashRoute();
-  const { lang } = useI18n();
   const docId = route.params?.id;
   const [doc, setDoc] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -223,7 +223,7 @@ export default function DocumentDetail() {
                 padding: 0,
               }}
             >
-              ← Назад к списку документов
+              ← {t("Назад к списку документов") || "Назад к списку документов"}
             </button>
             <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>{doc.title}</h1>
             <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useI18n } from "../../context/I18nContext.jsx";
 import SideNav from "../../components/SideNav.jsx";
 import ScrollToTop from "../../components/ScrollToTop.jsx";
 import { useData } from "../../context/DataContext.jsx";
@@ -46,6 +47,7 @@ const CATEGORIES = [
 ];
 
 export default function DocsPage() {
+  const { t } = useI18n();
   const { documents, deputies, committees, convocations } = useData();
   const { route } = useHashRoute();
   const [docs, setDocs] = React.useState([]);
@@ -235,7 +237,7 @@ export default function DocsPage() {
       <div className="container">
         <div className="page-grid">
           <div className="docs-page__main">
-            <h1 className="docs-page__title">{cat.title}</h1>
+            <h1 className="docs-page__title">{t(cat.title) || cat.title}</h1>
             
             {/* Подкатегории для раздела Конституции */}
             {slug === "constitution" && (
