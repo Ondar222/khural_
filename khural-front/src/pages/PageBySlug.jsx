@@ -1,6 +1,7 @@
 import React from "react";
 import { AboutApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useAdminData } from "../hooks/useAdminData.js";
 import DataState from "../components/DataState.jsx";
 import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../content/forMedia.js";
@@ -374,6 +375,7 @@ function getSlugFromPath() {
 
 export default function PageBySlug() {
   const { lang } = useI18n();
+  const adminData = useAdminData();
   const [slug, setSlug] = React.useState(() => getSlugFromPath());
   const [page, setPage] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
@@ -426,19 +428,26 @@ export default function PageBySlug() {
   const isInfoOmbHuman = slug === INFO_OMBUDSMAN_HUMAN_SLUG;
   const isInfoOmbChild = slug === INFO_OMBUDSMAN_CHILD_SLUG;
   const isInfoPersonnel = slug === INFO_PERSONNEL_SLUG;
+
+  const hasPageFromCms = !!page;
+  const shouldUseInfoFallback =
+    !hasPageFromCms &&
+    (isInfoIndex ||
+      isInfoFinance ||
+      isInfoDistricts ||
+      isInfoLawmap ||
+      isOpenData ||
+      isInfoOmbHuman ||
+      isInfoOmbChild ||
+      isInfoPersonnel);
+
   const isStaticPage =
     isCodeOfHonor ||
     isMothersCommandments ||
     isForMedia ||
     isFederationCouncil ||
-    isInfoIndex ||
-    isInfoFinance ||
-    isInfoDistricts ||
-    isInfoLawmap ||
-    isOpenData ||
-    isInfoOmbHuman ||
-    isInfoOmbChild ||
-    isInfoPersonnel;
+    shouldUseInfoFallback;
+
   const title = isCodeOfHonor
     ? CODE_OF_HONOR_TITLE
     : isMothersCommandments
@@ -447,22 +456,24 @@ export default function PageBySlug() {
         ? FOR_MEDIA_TITLE
         : isFederationCouncil
           ? FEDERATION_COUNCIL_TITLE
-          : isInfoIndex
-            ? INFO_INDEX_TITLE
-            : isInfoFinance
-              ? INFO_FINANCE_TITLE
-              : isInfoDistricts
-                ? INFO_DISTRICTS_TITLE
-                : isInfoLawmap
-                  ? INFO_LAWMAP_TITLE
-                  : isOpenData
-                    ? OPENDATA_TITLE
-                    : isInfoOmbHuman
-                      ? INFO_OMBUDSMAN_HUMAN_TITLE
-                      : isInfoOmbChild
-                        ? INFO_OMBUDSMAN_CHILD_TITLE
-                        : isInfoPersonnel
-                          ? INFO_PERSONNEL_TITLE
+          : shouldUseInfoFallback
+            ? isInfoIndex
+              ? INFO_INDEX_TITLE
+              : isInfoFinance
+                ? INFO_FINANCE_TITLE
+                : isInfoDistricts
+                  ? INFO_DISTRICTS_TITLE
+                  : isInfoLawmap
+                    ? INFO_LAWMAP_TITLE
+                    : isOpenData
+                      ? OPENDATA_TITLE
+                      : isInfoOmbHuman
+                        ? INFO_OMBUDSMAN_HUMAN_TITLE
+                        : isInfoOmbChild
+                          ? INFO_OMBUDSMAN_CHILD_TITLE
+                          : isInfoPersonnel
+                            ? INFO_PERSONNEL_TITLE
+                            : extractPageTitle(page, locale, slug)
         : extractPageTitle(page, locale, slug);
   const html = isCodeOfHonor
     ? CODE_OF_HONOR_HTML
@@ -472,23 +483,56 @@ export default function PageBySlug() {
         ? FOR_MEDIA_HTML
         : isFederationCouncil
           ? FEDERATION_COUNCIL_HTML
-          : isInfoIndex
-            ? INFO_INDEX_HTML
-            : isInfoFinance
-              ? INFO_FINANCE_HTML
-              : isInfoDistricts
-                ? INFO_DISTRICTS_HTML
-                : isInfoLawmap
-                  ? INFO_LAWMAP_HTML
-                  : isOpenData
-                    ? OPENDATA_HTML
-                    : isInfoOmbHuman
-                      ? INFO_OMBUDSMAN_HUMAN_HTML
-                      : isInfoOmbChild
-                        ? INFO_OMBUDSMAN_CHILD_HTML
-                        : isInfoPersonnel
-                          ? INFO_PERSONNEL_HTML
-        : extractPageHtml(page, locale);
+          : shouldUseInfoFallback
+            ? isInfoIndex
+              ? INFO_INDEX_HTML
+              : isInfoFinance
+                ? INFO_FINANCE_HTML
+                : isInfoDistricts
+                  ? INFO_DISTRICTS_HTML
+                  : isInfoLawmap
+                    ? INFO_LAWMAP_HTML
+                    : isOpenData
+                      ? OPENDATA_HTML
+                      : isInfoOmbHuman
+                        ? INFO_OMBUDSMAN_HUMAN_HTML
+                        : isInfoOmbChild
+                          ? INFO_OMBUDSMAN_CHILD_HTML
+                          : isInfoPersonnel
+                            ? INFO_PERSONNEL_HTML
+                            : extractPageHtml(page, locale)
+          : extractPageHtml(page, locale);
+
+  // Определяем slug для админки
+  const adminPageSlug = isCodeOfHonor
+    ? CODE_OF_HONOR_SLUG
+    : isMothersCommandments
+      ? MOTHERS_COMMANDMENTS_SLUG
+      : isForMedia
+        ? FOR_MEDIA_SLUG
+        : isFederationCouncil
+          ? FEDERATION_COUNCIL_SLUG
+          : shouldUseInfoFallback
+            ? isInfoIndex
+              ? INFO_INDEX_SLUG
+              : isInfoFinance
+                ? INFO_FINANCE_SLUG
+                : isInfoDistricts
+                  ? INFO_DISTRICTS_SLUG
+                  : isInfoLawmap
+                    ? INFO_LAWMAP_SLUG
+                    : isOpenData
+                      ? OPENDATA_SLUG
+                      : isInfoOmbHuman
+                        ? INFO_OMBUDSMAN_HUMAN_SLUG
+                        : isInfoOmbChild
+                          ? INFO_OMBUDSMAN_CHILD_SLUG
+                          : isInfoPersonnel
+                            ? INFO_PERSONNEL_SLUG
+                            : slug
+          : slug;
+
+  const canEdit = adminData?.canWrite && isStaticPage;
 
   return (
     <section className="section">
@@ -503,6 +547,13 @@ export default function PageBySlug() {
           <div className="card" style={{ padding: 18 }}>
             {html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <div>—</div>}
           </div>
+          {canEdit && (
+            <div style={{ marginTop: 20 }}>
+              <a href={`/admin/pages/edit/${adminPageSlug}`} className="btn" style={{ fontSize: 14 }}>
+                Редактировать в админке →
+              </a>
+            </div>
+          )}
         </DataState>
       </div>
     </section>

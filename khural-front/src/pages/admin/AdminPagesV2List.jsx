@@ -51,6 +51,14 @@ const STATIC_SECTIONS = [
 const FIXED_CONTENT_PAGES = [
   { slug: "code-of-honor", title: "Кодекс чести мужчины Тувы" },
   { slug: "mothers-commandments", title: "Свод заповедей матерей Тувы" },
+  { slug: "struct/council", title: "Представительство в Совете Федерации" },
+  { slug: "info/finansy", title: "Финансы" },
+  { slug: "info/iokrug", title: "Избирательные округа" },
+  { slug: "info/zakon-karta", title: "Законодательная карта сайта" },
+  { slug: "opendata", title: "Открытые данные" },
+  { slug: "info/upoln-po-prav", title: "Уполномоченный по правам человека в Республике Тыва" },
+  { slug: "info/upoln-po-reb", title: "Уполномоченный по правам ребенка в Республике Тыва" },
+  { slug: "info/personnel", title: "Кадровое обеспечение" },
 ];
 
 async function listPagesWithFallback({ locale, authPreferred } = {}) {

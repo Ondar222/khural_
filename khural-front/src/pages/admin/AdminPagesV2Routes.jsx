@@ -75,12 +75,26 @@ export default function AdminPagesV2Routes() {
         }
         onEdit={(id) => navigate(`/admin/pages/edit/${encodeURIComponent(id)}`)}
         onPreview={(slug) => {
-          const segs = String(slug || "")
+          const s = String(slug || "").replace(/^\/+|\/+$/g, "");
+          if (!s) return;
+
+          // Some pages are real routes (not CMS pages under /p/:slug)
+          const isDirectRoute =
+            s === "info" ||
+            s === "opendata" ||
+            s.startsWith("info/") ||
+            s.startsWith("struct/");
+
+          if (isDirectRoute) {
+            window.open(`/${s}`, "_blank");
+            return;
+          }
+
+          const segs = s
             .split("/")
             .filter(Boolean)
-            .map((s) => encodeURIComponent(s));
-          const path = `/p/${segs.join("/")}`;
-          window.open(path, "_blank");
+            .map((x) => encodeURIComponent(x));
+          window.open(`/p/${segs.join("/")}`, "_blank");
         }}
         onMessage={(type, text) => {
           if (type === "success") message.success(text);
