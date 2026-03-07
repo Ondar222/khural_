@@ -288,6 +288,7 @@ export default function Header() {
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("vh")}>
                 <a href="/about">{t("aboutVH")}</a>
                 <a href="/about/istoriya-parlamentarizma">История парламентаризма в Республике Тыва</a>
+                <a href="/about/polnomochiya">Полномочия Верховного Хурала</a>
                 <a href="/section">{t("structure")}</a>
                 <a href="/committee">{t("committees")}</a>
                 {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
@@ -768,6 +769,12 @@ export default function Header() {
             <a className="tile link" href="/about/istoriya-parlamentarizma" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 История парламентаризма в Республике Тыва
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/about/polnomochiya" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Полномочия Верховного Хурала
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
