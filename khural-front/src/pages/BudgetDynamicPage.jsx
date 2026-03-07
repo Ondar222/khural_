@@ -3,12 +3,18 @@ import { DocumentsApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
 
 function getSlugFromPath() {
-  const hash = window.location.hash.replace(/^#/, "");
-  const [path] = hash.split("?");
-  const parts = path.split("/").filter(Boolean);
-  const slugIndex = parts.findIndex((p) => p === "byudzhet");
-  if (slugIndex !== -1 && slugIndex + 1 < parts.length) {
-    return parts[slugIndex + 1];
+  // Сначала пробуем взять из routeParams от роутера
+  if (typeof window !== "undefined" && window.__routeParams && window.__routeParams.slug) {
+    return window.__routeParams.slug;
+  }
+  // Фоллбэк: парсим из текущего пути (pathname, не hash)
+  if (typeof window !== "undefined") {
+    const pathname = window.location.pathname;
+    const parts = pathname.split("/").filter(Boolean);
+    const byudzhetIndex = parts.findIndex((p) => p === "byudzhet");
+    if (byudzhetIndex !== -1 && byudzhetIndex + 1 < parts.length) {
+      return parts[byudzhetIndex + 1];
+    }
   }
   return "";
 }

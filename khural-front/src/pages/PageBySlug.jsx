@@ -735,14 +735,111 @@ const INFO_BUDGET_HTML = `
 const INFO_DISTRICTS_SLUG = "info/iokrug";
 const INFO_DISTRICTS_TITLE = "Избирательные округа";
 const INFO_DISTRICTS_HTML = `
-<div style="display:grid; gap:10px;">
-  <p style="margin:0; line-height:1.7;">
-    Контент этой страницы будет перенесен со старого сайта. Сейчас исходный раздел временно отвечает слишком медленно.
-  </p>
-  <p style="margin:0;">
-    Открыть на старом сайте:
-    <a href="https://khural.rtyva.ru/info/iokrug/" target="_blank" rel="noreferrer">khural.rtyva.ru/info/iokrug</a>
-  </p>
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Избирательные округа</h2>
+    
+    <div style="display:grid; gap:12px; margin-top: 20px;">
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/1" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Правобережный одномандатный избирательный округ № 1
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/2" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Западный одномандатный избирательный округ № 2
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/3" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Центральный одномандатный избирательный округ № 3
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/4" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Магистральный одномандатный избирательный округ № 4
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/5" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Первомайский одномандатный избирательный округ № 5
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/6" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Восточный одномандатный избирательный округ № 6
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/7" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Бай-Тайгинский одномандатный избирательный округ № 7
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/8" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Барун-Хемчикский одномандатный избирательный округ № 8
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/9" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Дзун-Хемчикский одномандатный избирательный округ №9
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/10" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Сут-Хольский одномандатный избирательный округ № 10
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/11" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Улуг-Хемский одномандатный избирательный округ № 11
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/12" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Кызылский одномандатный избирательный округ № 12
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/13" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Тандинский одномандатный избирательный округ № 13
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/14" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Пий-Хемский одномандатный избирательный округ № 14
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/15" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Каа-Хемский одномандатный избирательный округ №15
+        </a>
+      </div>
+      
+      <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
+        <a href="/info/iokrug/16" style="color: #003366; text-decoration: none; font-weight: 600; font-size: 16px;">
+          Эрзинский одномандатный избирательный округ №16
+        </a>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info" style="color: #003366; text-decoration: none;">← Назад к информации</a>
+  </div>
 </div>
 `;
 
