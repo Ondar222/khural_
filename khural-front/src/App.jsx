@@ -58,6 +58,7 @@ import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import PdPolicy from "./pages/PdPolicy.jsx";
 import License from "./pages/License.jsx";
 import Sitemap from "./pages/Sitemap.jsx";
+import LegislativeMap from "./pages/LegislativeMap.jsx";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage.jsx";
 import AdminNewsPage from "./pages/admin/AdminNewsPage.jsx";
 import AdminNewsCreatePage from "./pages/admin/AdminNewsCreatePage.jsx";
@@ -249,6 +250,8 @@ export default function App() {
                           "/info/iokrug": PageBySlug,
                           // Динамические страницы бюджета (должны быть перед /info/:slug)
                           "/info/finansy/byudzhet/:slug": BudgetDynamicPage,
+                          // Законодательная карта (должна быть перед /info/:slug)
+                          "/info/zakon-karta": LegislativeMap,
                           // Динамические страницы избирательных округов (должны быть после /info/iokrug)
                           "/info/iokrug/:slug": DistrictDetailPage,
                           "/info/:slug": PageBySlug,
