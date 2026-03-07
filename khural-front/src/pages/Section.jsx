@@ -1731,7 +1731,7 @@ export default function SectionPage() {
                   </div>
                   <PersonDetail item={item} type="gov" backHref={sectionBackHref} />
                 </div>
-                <SideNav title="Разделы" links={APPARATUS_NAV_LINKS} />
+                <SideNav title="Разделы" links={navLinks} />
               </div>
             </div>
           </section>
@@ -2500,7 +2500,7 @@ export default function SectionPage() {
                   </div>
                 </div>
               </div>
-              <SideNav title="Разделы" links={APPARATUS_NAV_LINKS} />
+              <SideNav title="Разделы" links={navLinks} />
             </div>
           </div>
         </section>
