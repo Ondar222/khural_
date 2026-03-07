@@ -859,16 +859,244 @@ const INFO_LAWMAP_HTML = `
 const INFO_PERSONNEL_SLUG = "info/personnel";
 const INFO_PERSONNEL_TITLE = "Кадровое обеспечение";
 const INFO_PERSONNEL_HTML = `
-<div style="display:grid; gap:10px; line-height:1.7;">
-  <ul>
-    <li><a href="https://khural.rtyva.ru/info/personnel/443/" target="_blank" rel="noreferrer">Указ Президента РФ от 10.10.2024 № 870</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/444/" target="_blank" rel="noreferrer">Путеводитель по Госслужбе</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/285/" target="_blank" rel="noreferrer">Порядок оформления, выдачи и учета удостоверений</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/242/" target="_blank" rel="noreferrer">Положение о помощнике депутата</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/456/" target="_blank" rel="noreferrer">Документы при поступлении на госслужбу</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/4/" target="_blank" rel="noreferrer">Телефон для справок по вакансиям</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/" target="_blank" rel="noreferrer">Все материалы раздела</a></li>
-  </ul>
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Кадровое обеспечение</h2>
+    
+    <div style="margin-top: 20px;">
+      <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+        <li><a href="/info/personnel/gosgrazhdanskaya-sluzhba" style="color: #003366; font-weight: 600;">Государственная гражданская служба</a></li>
+        <li><a href="/info/personnel/poryadok-postupleniya" style="color: #003366;">Порядок поступления граждан на государственную гражданскую службу</a></li>
+        <li><a href="/info/personnel/vakansii" style="color: #003366;">Сведения о вакантных должностях и квалификационные требования</a></li>
+        <li><a href="/info/personnel/konkursy" style="color: #003366;">Результаты проведения конкурсов</a></li>
+        <li><a href="/info/personnel/telefon-spravok" style="color: #003366;">Телефон для справок по вопросу замещения вакантных должностей</a></li>
+        <li><a href="/info/personnel/metodika-konkursa" style="color: #003366;">Методика проведения конкурса на замещение вакантной должности государственной гражданской службы</a></li>
+        <li><a href="/info/personnel/poryadok-obzhalovaniya" style="color: #003366;">Порядок обжалования результатов конкурса</a></li>
+        <li><a href="/info/personnel/komissii" style="color: #003366;">Комиссии</a></li>
+        <li><a href="/info/personnel/dokumenty-pri-postuplenii" style="color: #003366;">Документы необходимые при поступлении на государственную гражданскую службу</a></li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">Документы</h3>
+      <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+        <li><a href="https://khural.rtyva.ru/info/personnel/443/" target="_blank" rel="noreferrer" style="color: #003366;">Указ Президента Российской Федерации от 10.10.2024 № 870</a></li>
+        <li><a href="https://khural.rtyva.ru/info/personnel/444/" target="_blank" rel="noreferrer" style="color: #003366;">Путеводитель по Госслужбе</a></li>
+        <li><a href="https://khural.rtyva.ru/info/personnel/285/" target="_blank" rel="noreferrer" style="color: #003366;">Порядок оформления, выдачи и учета удостоверений</a></li>
+        <li><a href="https://khural.rtyva.ru/info/personnel/242/" target="_blank" rel="noreferrer" style="color: #003366;">Положение о помощнике депутата Верховного Хурала (парламента) Республики Тыва</a></li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">Информация</h3>
+      <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+        <li><a href="https://khural.rtyva.ru/info/personnel/459/" target="_blank" rel="noreferrer" style="color: #003366;">Новый порядок пенсионного обеспечения государственных служащих</a></li>
+        <li><a href="https://khural.rtyva.ru/info/personnel/460/" target="_blank" rel="noreferrer" style="color: #003366;">Об уменьшении продолжительности отпуска государственных служащих</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info" style="color: #003366; text-decoration: none;">← Назад к информации</a>
+  </div>
+</div>
+`;
+
+const INFO_PERSONNEL_GOSLUZHPBA_SLUG = "info/personnel/gosgrazhdanskaya-sluzhba";
+const INFO_PERSONNEL_GOSLUZHPBA_TITLE = "Государственная гражданская служба";
+const INFO_PERSONNEL_GOSLUZHPBA_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Государственная гражданская служба</h2>
+    
+    <div style="line-height: 1.7; color: #374151;">
+      <p style="margin:0 0 12px 0;">
+        Государственная гражданская служба Республики Тыва - вид государственной службы, представляющей собой профессиональную служебную деятельность граждан Российской Федерации на должностях государственной гражданской службы Республики Тыва по обеспечению исполнения полномочий государственных органов Республики Тыва, лиц, замещающих государственные должности Республики Тыва (включая нахождение в кадровом резерве и другие случаи).
+      </p>
+      <p style="margin:0 0 12px 0;">
+        Государственная гражданская служба Республики Тыва является составной частью государственной гражданской службы Российской Федерации.
+      </p>
+      <p style="margin:0 0 12px 0;"><strong>Принципами гражданской службы являются:</strong></p>
+      <ol style="margin:0 0 12px 0; padding-left: 20px;">
+        <li>приоритет прав и свобод человека и гражданина;</li>
+        <li>единство правовых и организационных основ федеральной гражданской службы и гражданской службы субъектов Российской Федерации;</li>
+        <li>равный доступ граждан, владеющих государственным языком Российской Федерации, к гражданской службе и равные условия ее прохождения независимо от пола, расы, национальности, происхождения, имущественного и должностного положения, места жительства, отношения к религии, убеждений, принадлежности к общественным объединениям, а также от других обстоятельств, не связанных с профессиональными и деловыми качествами гражданского служащего;</li>
+        <li>профессионализм и компетентность гражданских служащих;</li>
+        <li>стабильность гражданской службы;</li>
+        <li>доступность информации о гражданской службе;</li>
+        <li>взаимодействие с общественными объединениями и гражданами;</li>
+        <li>защищенность гражданских служащих от неправомерного вмешательства в их профессиональную служебную деятельность.</li>
+      </ol>
+      <p style="margin:0 0 12px 0;"><strong>Регулирование отношений, связанных с гражданской службой, осуществляется:</strong></p>
+      <ol style="margin:0; padding-left: 20px;">
+        <li>Конституцией Российской Федерации;</li>
+        <li>Федеральным законом «О системе государственной службы Российской Федерации» и «О государственной гражданской службе Российской Федерации»;</li>
+        <li>другими федеральными законами, в том числе федеральными законами, регулирующими особенности прохождения гражданской службы;</li>
+        <li>указами Президента Российской Федерации;</li>
+        <li>постановлениями Правительства Российской Федерации;</li>
+        <li>нормативными правовыми актами федеральных органов исполнительной власти;</li>
+        <li>Конституцией Республики Тыва, Законом Республики Тыва от 21.04.2006 г. № 1739 ВХ-1 «О вопросах государственной гражданской службы Республики Тыва», иными нормативными правовыми актами Республики Тыва.</li>
+      </ol>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/personnel" style="color: #003366; text-decoration: none;">← Назад к кадровому обеспечению</a>
+  </div>
+</div>
+`;
+
+const INFO_PERSONNEL_PORYADOK_SLUG = "info/personnel/poryadok-postupleniya";
+const INFO_PERSONNEL_PORYADOK_TITLE = "Порядок поступления граждан на государственную гражданскую службу";
+const INFO_PERSONNEL_PORYADOK_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Порядок поступления граждан на государственную гражданскую службу</h2>
+    
+    <div style="margin-top: 20px;">
+      <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">Нормативные правовые акты</h3>
+      <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+        <li><a href="/info/personnel/law-58fz" style="color: #003366;">Федеральный закон № 58-ФЗ от 27.05.2003 г. "О системе государственной службы РФ"</a></li>
+        <li><a href="/info/personnel/law-79fz" style="color: #003366;">Федеральный закон № 79-ФЗ от 27.07.2004 г. "О государственной гражданской службе РФ"</a></li>
+        <li><a href="/info/personnel/law-112" style="color: #003366;">Указ Президента РФ от 01.02.2005 N 112 "О конкурсе на замещение вакантной должности государственной гражданской службы Российской Федерации"</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/personnel" style="color: #003366; text-decoration: none;">← Назад к кадровому обеспечению</a>
+  </div>
+</div>
+`;
+
+const INFO_PERSONNEL_LAW58FZ_SLUG = "info/personnel/law-58fz";
+const INFO_PERSONNEL_LAW58FZ_TITLE = "Федеральный закон № 58-ФЗ от 27.05.2003 г. \"О системе государственной службы РФ\"";
+const INFO_PERSONNEL_LAW58FZ_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Федеральный закон № 58-ФЗ от 27.05.2003 г. "О системе государственной службы РФ"</h2>
+    
+    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; line-height: 1.7;">
+      <p style="margin:0 0 12px 0; font-weight: 600;">РОССИЙСКАЯ ФЕДЕРАЦИЯ</p>
+      <p style="margin:0 0 12px 0; font-weight: 600;">ФЕДЕРАЛЬНЫЙ ЗАКОН О СИСТЕМЕ ГОСУДАРСТВЕННОЙ СЛУЖБЫ РОССИЙСКОЙ ФЕДЕРАЦИИ</p>
+      <p style="margin:0 0 12px 0;"><strong>Принят</strong> Государственной Думой 25 апреля 2003 года</p>
+      <p style="margin:0 0 12px 0;"><strong>Одобрен</strong> Советом Федерации 14 мая 2003 года</p>
+      <p style="margin:0 0 12px 0; font-style: italic;">(извлечение)</p>
+      
+      <h4 style="margin:16px 0 8px 0; font-size: 15px; font-weight: 600; color: #111827;">Статья 12. Поступление на государственную службу, ее прохождение и прекращение</h4>
+      <ol style="margin:0; padding-left: 20px; line-height: 1.8;">
+        <li style="margin:0 0 8px 0;">На государственную службу по контракту вправе поступать граждане, владеющие государственным языком Российской Федерации и достигшие возраста, установленного федеральным законом о виде государственной службы для прохождения государственной службы данного вида.<br/>Федеральным законом о виде государственной службы или законом субъекта Российской Федерации могут быть установлены дополнительные требования к гражданам при поступлении на государственную службу по контракту.</li>
+        <li style="margin:0 0 8px 0;">Условия контрактов, порядок их заключения, а также основания и порядок прекращения их действия устанавливаются в соответствии с федеральным законом о виде государственной службы.</li>
+        <li style="margin:0 0 8px 0;">В соответствии с федеральным законом о виде государственной службы контракт может заключаться с гражданином:<ul style="margin:4px 0 0 0; padding-left: 20px;">
+          <li>на неопределенный срок;</li>
+          <li>на определенный срок;</li>
+          <li>на срок обучения в образовательном учреждении профессионального образования и на определенный срок государственной службы после его окончания.</li>
+        </ul></li>
+        <li style="margin:0 0 8px 0;">Федеральным законом о виде государственной службы определяется предельный возраст пребывания на государственной службе данного вида.</li>
+        <li style="margin:0 0 8px 0;">Прохождение государственной службы включает в себя назначение на должность, присвоение классного чина, дипломатического ранга, воинского и специального звания, аттестацию или квалификационный экзамен, а также другие обстоятельства (события) в соответствии с настоящим Федеральным законом, федеральными законами о видах государственной службы и иными нормативными правовыми актами Российской Федерации, законами и иными нормативными правовыми актами субъектов Российской Федерации.</li>
+        <li style="margin:0 0 8px 0;">Основания прекращения государственной службы, в том числе основания увольнения в запас или в отставку государственного служащего, устанавливаются федеральными законами о видах государственной службы.</li>
+      </ol>
+      
+      <p style="margin:24px 0 8px 0; font-weight: 600;">Москва, Кремль<br/>27 мая 2003 года<br/>№ 58-ФЗ</p>
+      <p style="margin:0; font-weight: 600;">Президент Российской Федерации<br/>В.ПУТИН</p>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/personnel/poryadok-postupleniya" style="color: #003366; text-decoration: none;">← Назад к порядку поступления</a>
+  </div>
+</div>
+`;
+
+const INFO_PERSONNEL_LAW79FZ_SLUG = "info/personnel/law-79fz";
+const INFO_PERSONNEL_LAW79FZ_TITLE = "Федеральный закон № 79-ФЗ от 27.07.2004 г. \"О государственной гражданской службе РФ\"";
+const INFO_PERSONNEL_LAW79FZ_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Федеральный закон № 79-ФЗ от 27.07.2004 г. "О государственной гражданской службе РФ"</h2>
+    
+    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; line-height: 1.7;">
+      <p style="margin:0 0 12px 0; font-weight: 600;">РОССИЙСКАЯ ФЕДЕРАЦИЯ</p>
+      <p style="margin:0 0 12px 0; font-weight: 600;">ФЕДЕРАЛЬНЫЙ ЗАКОН О ГОСУДАРСТВЕННОЙ ГРАЖДАНСКОЙ СЛУЖБЕ РОССИЙСКОЙ ФЕДЕРАЦИИ</p>
+      <p style="margin:0 0 12px 0;"><strong>Принят</strong> Государственной Думой 7 июля 2004 года</p>
+      <p style="margin:0 0 12px 0;"><strong>Одобрен</strong> Советом Федерации 15 июля 2004 года</p>
+      <p style="margin:0 0 12px 0; font-style: italic;">(извлечение)</p>
+      
+      <h4 style="margin:16px 0 8px 0; font-size: 15px; font-weight: 600; color: #111827;">Глава 4. ПОСТУПЛЕНИЕ НА ГРАЖДАНСКУЮ СЛУЖБУ</h4>
+      
+      <h5 style="margin:16px 0 8px 0; font-size: 14px; font-weight: 600; color: #111827;">Статья 21. Право поступления на гражданскую службу</h5>
+      <ol style="margin:0; padding-left: 20px; line-height: 1.8;">
+        <li style="margin:0 0 8px 0;">На гражданскую службу вправе поступать граждане Российской Федерации, достигшие возраста 18 лет, владеющие государственным языком Российской Федерации и соответствующие квалификационным требованиям, установленным настоящим Федеральным законом.</li>
+      </ol>
+      
+      <h5 style="margin:16px 0 8px 0; font-size: 14px; font-weight: 600; color: #111827;">Статья 22. Поступление на гражданскую службу и замещение должности гражданской службы по конкурсу</h5>
+      <ol style="margin:0; padding-left: 20px; line-height: 1.8;">
+        <li style="margin:0 0 8px 0;">Поступление гражданина на гражданскую службу для замещения должности гражданской службы или замещение гражданским служащим другой должности гражданской службы осуществляется по результатам конкурса, если иное не установлено настоящей статьей. Конкурс заключается в оценке профессионального уровня претендентов на замещение должности гражданской службы, их соответствия установленным квалификационным требованиям к должности гражданской службы.</li>
+        <li style="margin:0 0 8px 0;">Конкурс не проводится:<ul style="margin:4px 0 0 0; padding-left: 20px;">
+          <li>1) при назначении на замещаемые на определенный срок полномочий должности гражданской службы категорий "руководители" и "помощники (советники)";</li>
+          <li>2) при назначении на должности гражданской службы категории "руководители", назначение на которые и освобождение от которых осуществляются Президентом Российской Федерации или Правительством Российской Федерации;</li>
+          <li>3) при заключении срочного служебного контракта;</li>
+          <li>4) при назначении гражданского служащего на иную должность гражданской службы в случаях, предусмотренных частью 2 статьи 28 и частями 1, 2 и 3 статьи 31 настоящего Федерального закона;</li>
+          <li>5) при назначении на должность гражданской службы гражданского служащего (гражданина), состоящего в кадровом резерве, сформированном на конкурсной основе.</li>
+        </ul></li>
+        <li style="margin:0 0 8px 0;">Конкурс может не проводиться при назначении на отдельные должности гражданской службы, исполнение должностных обязанностей по которым связано с использованием сведений, составляющих государственную тайну, по перечню должностей, утверждаемому нормативным актом государственного органа.</li>
+        <li style="margin:0 0 8px 0;">По решению представителя нанимателя конкурс может не проводиться при назначении на должности гражданской службы, относящиеся к группе младших должностей гражданской службы.</li>
+        <li style="margin:0 0 8px 0;">Претенденту на замещение должности гражданской службы может быть отказано в допуске к участию в конкурсе в связи с несоответствием квалификационным требованиям к вакантной должности гражданской службы, а также в связи с ограничениями, установленными настоящим Федеральным законом для поступления на гражданскую службу и ее прохождения.</li>
+        <li style="margin:0 0 8px 0;">Претендент на замещение должности гражданской службы, не допущенный к участию в конкурсе, вправе обжаловать это решение в соответствии с настоящим Федеральным законом.</li>
+        <li style="margin:0 0 8px 0;">Для проведения конкурса на замещение вакантной должности гражданской службы правовым актом соответствующего государственного органа образуется конкурсная комиссия.</li>
+        <li style="margin:0 0 8px 0;">В состав конкурсной комиссии входят представитель нанимателя и (или) уполномоченные им гражданские служащие (в том числе из подразделения по вопросам государственной службы и кадров, юридического (правового) подразделения и подразделения, в котором проводится конкурс на замещение вакантной должности гражданской службы), представитель соответствующего органа по управлению государственной службой, а также представители научных и образовательных учреждений, других организаций, приглашаемые органом по управлению государственной службой по запросу представителя нанимателя в качестве независимых экспертов - специалистов по вопросам, связанным с гражданской службой, без указания персональных данных экспертов. Число независимых экспертов должно составлять не менее одной четверти от общего числа членов конкурсной комиссии.</li>
+        <li style="margin:0 0 8px 0;">Состав конкурсной комиссии для проведения конкурса на замещение вакантной должности гражданской службы, исполнение должностных обязанностей по которой связано с использованием сведений, составляющих государственную тайну, формируется с учетом положений законодательства Российской Федерации о государственной тайне.</li>
+        <li style="margin:0 0 8px 0;">Состав конкурсной комиссии формируется таким образом, чтобы была исключена возможность возникновения конфликтов интересов, которые могли бы повлиять на принимаемые конкурсной комиссией решения.</li>
+        <li style="margin:0 0 8px 0;">Претендент на замещение должности гражданской службы вправе обжаловать решение конкурсной комиссии в соответствии с настоящим Федеральным законом.</li>
+        <li style="margin:0 0 8px 0;">Положение о конкурсе на замещение вакантной должности государственной гражданской службы Российской Федерации, определяющее порядок и условия его проведения, утверждается указом Президента Российской Федерации.</li>
+      </ol>
+      
+      <p style="margin:24px 0 8px 0; font-weight: 600;">Президент Российской Федерации<br/>В.ПУТИН</p>
+      <p style="margin:0; font-weight: 600;">Москва, Кремль<br/>27 июля 2004 года<br/>№ 79-ФЗ</p>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/personnel/poryadok-postupleniya" style="color: #003366; text-decoration: none;">← Назад к порядку поступления</a>
+  </div>
+</div>
+`;
+
+const INFO_PERSONNEL_LAW112_SLUG = "info/personnel/law-112";
+const INFO_PERSONNEL_LAW112_TITLE = "Указ Президента РФ от 01.02.2005 N 112 \"О конкурсе на замещение вакантной должности государственной гражданской службы Российской Федерации\"";
+const INFO_PERSONNEL_LAW112_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Указ Президента РФ от 01.02.2005 N 112</h2>
+    
+    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; line-height: 1.7;">
+      <p style="margin:0 0 12px 0; font-weight: 600;">УКАЗ ПРЕЗИДЕНТА РОССИЙСКОЙ ФЕДЕРАЦИИ</p>
+      <p style="margin:0 0 12px 0; font-weight: 600;">О КОНКУРСЕ НА ЗАМЕЩЕНИЕ ВАКАНТНОЙ ДОЛЖНОСТИ ГОСУДАРСТВЕННОЙ ГРАЖДАНСКОЙ СЛУЖБЫ РОССИЙСКОЙ ФЕДЕРАЦИИ</p>
+      <p style="margin:0 0 12px 0; font-style: italic;">(в ред. Указов Президента РФ от 22.01.2011 N 82, от 19.03.2013 N 208, от 19.03.2014 N 156)</p>
+      
+      <p style="margin:0 0 12px 0;">
+        В соответствии с Федеральным законом от 27 июля 2004 г. N 79-ФЗ "О государственной гражданской службе Российской Федерации", в целях обеспечения конституционного права граждан Российской Федерации на равный доступ к государственной службе и права государственных гражданских служащих на должностной рост на конкурсной основе постановляю:
+      </p>
+      
+      <ol style="margin:0; padding-left: 20px; line-height: 1.8;">
+        <li style="margin:0 0 8px 0;">Утвердить прилагаемое Положение о конкурсе на замещение вакантной должности государственной гражданской службы Российской Федерации.</li>
+        
+        <li style="margin:0 0 8px 0;">Установить на основании части 6 статьи 71 Федерального закона от 27 июля 2004 г. N 79-ФЗ "О государственной гражданской службе Российской Федерации", что до образования федерального государственного органа по управлению государственной службой и государственных органов субъектов Российской Федерации по управлению государственной службой функции этих органов, предусмотренные Положением, утвержденным настоящим Указом, выполняются государственными органами (аппаратами государственных органов), в которых проводится конкурс, в соответствии с законодательством Российской Федерации и законодательством субъектов Российской Федерации.</li>
+        
+        <li style="margin:0 0 8px 0;">Правительству Российской Федерации:<ul style="margin:4px 0 0 0; padding-left: 20px;">
+          <li>утвердить форму анкеты, подлежащей представлению в государственный орган гражданином Российской Федерации, изъявившим желание участвовать в конкурсе на замещение вакантной должности государственной гражданской службы Российской Федерации;</li>
+          <li>обеспечить финансирование расходов, связанных с проведением конкурсов на замещение вакантных должностей федеральной государственной гражданской службы, в том числе расходов на оплату труда независимых экспертов, в пределах средств федерального бюджета, предусмотренных на содержание федеральных государственных органов или их аппаратов.</li>
+        </ul></li>
+        
+        <li style="margin:0 0 8px 0;">Установить, что расходы, связанные с проведением конкурсов на замещение вакантных должностей государственной гражданской службы субъектов Российской Федерации, осуществляются в соответствии с законодательством субъектов Российской Федерации.</li>
+        
+        <li style="margin:0 0 8px 0;">Признать утратившим силу Указ Президента Российской Федерации от 29 апреля 1996 г. N 604 "Об утверждении Положения о проведении конкурса на замещение вакантной государственной должности федеральной государственной службы" (Собрание законодательства Российской Федерации, 1996, N 18, ст. 2115).</li>
+        
+        <li style="margin:0 0 8px 0;">Настоящий Указ вступает в силу с 1 февраля 2005 г.</li>
+      </ol>
+      
+      <p style="margin:24px 0 8px 0; font-weight: 600;">Президент Российской Федерации<br/>В.ПУТИН</p>
+      <p style="margin:0; font-weight: 600;">Москва, Кремль<br/>1 февраля 2005 года<br/>N 112</p>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/personnel/poryadok-postupleniya" style="color: #003366; text-decoration: none;">← Назад к порядку поступления</a>
+  </div>
 </div>
 `;
 
@@ -1169,6 +1397,11 @@ export default function PageBySlug() {
   const isInfoOmbHuman = slug === INFO_OMBUDSMAN_HUMAN_SLUG;
   const isInfoOmbChild = slug === INFO_OMBUDSMAN_CHILD_SLUG;
   const isInfoPersonnel = slug === INFO_PERSONNEL_SLUG;
+  const isInfoPersonnelGossluzhba = slug === INFO_PERSONNEL_GOSLUZHPBA_SLUG;
+  const isInfoPersonnelPoryadok = slug === INFO_PERSONNEL_PORYADOK_SLUG;
+  const isInfoPersonnelLaw58fz = slug === INFO_PERSONNEL_LAW58FZ_SLUG;
+  const isInfoPersonnelLaw79fz = slug === INFO_PERSONNEL_LAW79FZ_SLUG;
+  const isInfoPersonnelLaw112 = slug === INFO_PERSONNEL_LAW112_SLUG;
 
   const hasPageFromCms = !!page;
   const shouldUseInfoFallback =
@@ -1197,7 +1430,12 @@ export default function PageBySlug() {
       isOpenData ||
       isInfoOmbHuman ||
       isInfoOmbChild ||
-      isInfoPersonnel);
+      isInfoPersonnel ||
+      isInfoPersonnelGossluzhba ||
+      isInfoPersonnelPoryadok ||
+      isInfoPersonnelLaw58fz ||
+      isInfoPersonnelLaw79fz ||
+      isInfoPersonnelLaw112);
 
   const isStaticPage =
     isCodeOfHonor ||
@@ -1266,7 +1504,17 @@ export default function PageBySlug() {
                                     ? t(INFO_OMBUDSMAN_CHILD_TITLE) || INFO_OMBUDSMAN_CHILD_TITLE
                                     : isInfoPersonnel
                                       ? t(INFO_PERSONNEL_TITLE) || INFO_PERSONNEL_TITLE
-                                      : extractPageTitle(page, locale, slug)
+                                      : isInfoPersonnelGossluzhba
+                                        ? t(INFO_PERSONNEL_GOSLUZHPBA_TITLE) || INFO_PERSONNEL_GOSLUZHPBA_TITLE
+                                        : isInfoPersonnelPoryadok
+                                          ? t(INFO_PERSONNEL_PORYADOK_TITLE) || INFO_PERSONNEL_PORYADOK_TITLE
+                                          : isInfoPersonnelLaw58fz
+                                            ? t(INFO_PERSONNEL_LAW58FZ_TITLE) || INFO_PERSONNEL_LAW58FZ_TITLE
+                                            : isInfoPersonnelLaw79fz
+                                              ? t(INFO_PERSONNEL_LAW79FZ_TITLE) || INFO_PERSONNEL_LAW79FZ_TITLE
+                                              : isInfoPersonnelLaw112
+                                                ? t(INFO_PERSONNEL_LAW112_TITLE) || INFO_PERSONNEL_LAW112_TITLE
+                                                : extractPageTitle(page, locale, slug)
         : extractPageTitle(page, locale, slug);
   const html = isCodeOfHonor
     ? CODE_OF_HONOR_HTML
@@ -1327,7 +1575,17 @@ export default function PageBySlug() {
                                     ? INFO_OMBUDSMAN_CHILD_HTML
                                     : isInfoPersonnel
                                       ? INFO_PERSONNEL_HTML
-                                      : extractPageHtml(page, locale)
+                                      : isInfoPersonnelGossluzhba
+                                        ? INFO_PERSONNEL_GOSLUZHPBA_HTML
+                                        : isInfoPersonnelPoryadok
+                                          ? INFO_PERSONNEL_PORYADOK_HTML
+                                          : isInfoPersonnelLaw58fz
+                                            ? INFO_PERSONNEL_LAW58FZ_HTML
+                                            : isInfoPersonnelLaw79fz
+                                              ? INFO_PERSONNEL_LAW79FZ_HTML
+                                              : isInfoPersonnelLaw112
+                                                ? INFO_PERSONNEL_LAW112_HTML
+                                                : extractPageHtml(page, locale)
           : extractPageHtml(page, locale);
 
   // Определяем slug для админки
