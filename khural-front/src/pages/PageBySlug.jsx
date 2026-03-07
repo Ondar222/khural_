@@ -155,10 +155,10 @@ const INFO_FINANCE_TITLE = "Финансы";
 const INFO_FINANCE_HTML = `
 <div style="display:grid; gap:10px;">
   <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
-    <li><a href="/info/finansy/rezultaty-proverok">Результаты проверок</a></li>
-    <li><a href="/info/finansy/goszakupki">Государственные закупки</a></li>
-    <li><a href="/info/finansy/otcheti">Отчеты</a></li>
-    <li><a href="https://khural.rtyva.ru/info/finansy/108/" target="_blank" rel="noreferrer">Бюджет</a></li>
+    <li><a href="/info/finansy/rezultaty-proverok" style="color: #003366;">Результаты проверок</a></li>
+    <li><a href="/info/finansy/goszakupki" style="color: #003366;">Государственные закупки</a></li>
+    <li><a href="/info/finansy/otcheti" style="color: #003366;">Отчеты</a></li>
+    <li><a href="/info/finansy/byudzhet" style="color: #003366;">Бюджет</a></li>
   </ul>
   <p style="margin:0; line-height:1.7;">
     С 1 января 2011 г. информация о процедурах государственных закупок размещается на едином официальном сайте РФ:
@@ -672,6 +672,66 @@ const INFO_FINANCE_REPORTS_2023_HTML = `
 </div>
 `;
 
+const INFO_BUDGET_SLUG = "info/finansy/byudzhet";
+const INFO_BUDGET_TITLE = "Бюджет";
+const INFO_BUDGET_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Бюджет</h2>
+    
+    <div style="margin-top: 20px;">
+      <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">Исполнение республиканского бюджета Республики Тыва</h3>
+      <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2015" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2015 год</a></li>
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2016" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2016 год</a></li>
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2017" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2017 год</a></li>
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2018" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2018 год</a></li>
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2019" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2019 год</a></li>
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2020" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2020 год</a></li>
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2021" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2021 год</a></li>
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2022" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2022 год</a></li>
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2023" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2023 год</a></li>
+        <li><a href="/info/finansy/byudzhet/ispolnenie-2024" style="color: #003366;">Исполнение республиканского бюджета Республики Тыва за 2024 год</a></li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">Общая сумма бюджетных средств</h3>
+      <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+        <li><a href="/info/finansy/byudzhet/summ-2015" style="color: #003366;">Общая сумма бюджетных средств, выделенных на функционирование Верховного Хурала (парламента) РТ за 2015 год</a></li>
+        <li><a href="/info/finansy/byudzhet/summ-2016" style="color: #003366;">Общая сумма бюджетных средств, выделенных на функционирование Верховного Хурала (парламента) Республики Тыва за 2016 год</a></li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">Проекты законов о бюджете</h3>
+      <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+        <li><a href="/info/finansy/byudzhet/proekt-2017" style="color: #003366;">Проект республиканского бюджета на 2017 год и на плановый период 2018 и 2019 годов</a></li>
+        <li><a href="/info/finansy/byudzhet/proekt-2018" style="color: #003366;">Проект закона Республики Тыва "О республиканском бюджете Республики Тыва на 2018 год и на плановый период 2019 и 2020 годов"</a></li>
+        <li><a href="/info/finansy/byudzhet/proekt-2019" style="color: #003366;">Проект закона Республики Тыва "О республиканском бюджете Республики Тыва на 2019 год и на плановый период 2020 и 2021 годов"</a></li>
+        <li><a href="/info/finansy/byudzhet/proekt-2020" style="color: #003366;">Проект закона Республики Тыва "О республиканском бюджете Республики Тыва на 2020 год и на плановый период 2021 и 2022 годов"</a></li>
+        <li><a href="/info/finansy/byudzhet/proekt-2021" style="color: #003366;">Проект закона Республики Тыва "О республиканском бюджете Республики Тыва на плановый период 2021-2023 годов"</a></li>
+        <li><a href="/info/finansy/byudzhet/proekt-2022" style="color: #003366;">Проект закона Республики Тыва "О республиканском бюджете Республики Тыва на 2022 год и на плановый период 2023 и 2024 годов"</a></li>
+        <li><a href="/info/finansy/byudzhet/proekt-2023" style="color: #003366;">Проект закона Республики Тыва "О республиканском бюджете Республики Тыва на 2023 год и на плановый период 2024 и 2025 годов"</a></li>
+        <li><a href="/info/finansy/byudzhet/proekt-2024" style="color: #003366;">Проект закона Республики Тыва "О республиканском бюджете Республики Тыва на 2024 год и на плановый период 2025 и 2026 годов"</a></li>
+        <li><a href="/info/finansy/byudzhet/proekt-2025" style="color: #003366;">Проект закона Республики Тыва «О республиканском бюджете Республики Тыва на 2025 год и на плановый период 2026 и 2027 годов»</a></li>
+        <li><a href="/info/finansy/byudzhet/proekt-2026" style="color: #003366;">Проект закона Республики Тыва «О республиканском бюджете Республики Тыва на 2026 год и на плановый период 2027 и 2028 годов»</a></li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">Отчеты</h3>
+      <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
+        <li><a href="/info/finansy/byudzhet/otchety" style="color: #003366;">Отчеты об исполнении республиканского бюджета Республики Тыва</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top: 16px;">
+    <a href="/info/finansy" style="color: #003366; text-decoration: none;">← Назад к финансам</a>
+  </div>
+</div>
+`;
+
 const INFO_DISTRICTS_SLUG = "info/iokrug";
 const INFO_DISTRICTS_TITLE = "Избирательные округа";
 const INFO_DISTRICTS_HTML = `
@@ -723,7 +783,7 @@ const OPENDATA_HTML = `
   <div class="card" style="padding: 12px; background: rgba(255,255,255,0.55);">
     <div style="font-weight:800; margin-bottom:8px;">Набор данных</div>
     <div style="display:grid; gap:6px;">
-      <div><strong>Идентификатор:</strong> 1701009892-maininfo</div>
+      <div><strong>Идентиф��катор:</strong> 1701009892-maininfo</div>
       <div><strong>Наименование:</strong> Общая информация о Верховном Хурале (парламенте) Республики Тыва</div>
       <div><strong>Формат:</strong> CSV</div>
       <div>
@@ -940,6 +1000,7 @@ export default function PageBySlug() {
   const isInfoFinanceReports2021 = slug === INFO_FINANCE_REPORTS_2021_SLUG;
   const isInfoFinanceReports2022 = slug === INFO_FINANCE_REPORTS_2022_SLUG;
   const isInfoFinanceReports2023 = slug === INFO_FINANCE_REPORTS_2023_SLUG;
+  const isInfoBudget = slug === INFO_BUDGET_SLUG;
   const isInfoDistricts = slug === INFO_DISTRICTS_SLUG;
   const isInfoLawmap = slug === INFO_LAWMAP_SLUG;
   const isOpenData = slug === OPENDATA_SLUG;
@@ -968,6 +1029,7 @@ export default function PageBySlug() {
       isInfoFinanceReports2021 ||
       isInfoFinanceReports2022 ||
       isInfoFinanceReports2023 ||
+      isInfoBudget ||
       isInfoDistricts ||
       isInfoLawmap ||
       isOpenData ||
@@ -1028,7 +1090,9 @@ export default function PageBySlug() {
                                               ? t(INFO_FINANCE_REPORTS_2022_TITLE) || INFO_FINANCE_REPORTS_2022_TITLE
                                               : isInfoFinanceReports2023
                                                 ? t(INFO_FINANCE_REPORTS_2023_TITLE) || INFO_FINANCE_REPORTS_2023_TITLE
-                                                : isInfoDistricts
+                                                : isInfoBudget
+                                                  ? t(INFO_BUDGET_TITLE) || INFO_BUDGET_TITLE
+                                                  : isInfoDistricts
                             ? t(INFO_DISTRICTS_TITLE) || INFO_DISTRICTS_TITLE
                             : isInfoLawmap
                               ? t(INFO_LAWMAP_TITLE) || INFO_LAWMAP_TITLE
@@ -1087,7 +1151,9 @@ export default function PageBySlug() {
                                               ? INFO_FINANCE_REPORTS_2022_HTML
                                               : isInfoFinanceReports2023
                                                 ? INFO_FINANCE_REPORTS_2023_HTML
-                                                : isInfoDistricts
+                                                : isInfoBudget
+                                                  ? INFO_BUDGET_HTML
+                                                  : isInfoDistricts
                             ? INFO_DISTRICTS_HTML
                             : isInfoLawmap
                               ? INFO_LAWMAP_HTML

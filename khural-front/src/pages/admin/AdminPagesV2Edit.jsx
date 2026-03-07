@@ -7,6 +7,7 @@ import { getPageOverrideById, upsertPageOverride } from "../../utils/pagesOverri
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import { useTranslation } from "../../hooks/useTranslation.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../../content/forMedia.js";
+import BudgetDocumentsEditor from "./BudgetDocumentsEditor.jsx";
 
 function normalizeList(res) {
   if (Array.isArray(res)) return res;
@@ -143,6 +144,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
   const [parents, setParents] = React.useState([]);
   const [documents, setDocuments] = React.useState([]);
   const [loadingDocs, setLoadingDocs] = React.useState(false);
+  const [pageSlug, setPageSlug] = React.useState("");
   const blocks = Form.useWatch("blocks", form) || [];
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
 
@@ -192,6 +194,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         if (!alive) return;
         if (!page) throw new Error("Страница не найдена");
         const slug = String(page.slug || "");
+        setPageSlug(slug);
         const parts = slug.split("/").filter(Boolean);
         const parentSlug = parts.slice(0, -1).join("/");
         const leaf = parts.slice(-1)[0] || "";
@@ -727,6 +730,10 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           </Form.Item>
         </Form>
       </div>
+
+      {pageSlug.startsWith("info/finansy/byudzhet") && canWrite && (
+        <BudgetDocumentsEditor pageSlug={pageSlug} canWrite={canWrite} />
+      )}
     </div>
   );
 }

@@ -49,6 +49,7 @@ import DocsPage from "./pages/docs/DocsPage.jsx";
 import ActivitySectionPage from "./pages/activity/ActivitySection.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import BudgetDynamicPage from "./pages/BudgetDynamicPage.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import RequireAdmin from "./components/RequireAdmin.jsx";
@@ -243,6 +244,8 @@ export default function App() {
                           "/section": SectionPage,
                           "/struct/:slug": PageBySlug,
                           "/info": PageBySlug,
+                          // Динамические страницы бюджета (должны быть перед /info/:slug)
+                          "/info/finansy/byudzhet/:slug": BudgetDynamicPage,
                           "/info/:slug": PageBySlug,
                           "/opendata": PageBySlug,
                           // "/convocations": Convocations, // Скрыто временно
