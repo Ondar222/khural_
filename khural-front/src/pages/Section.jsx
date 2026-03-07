@@ -6,7 +6,7 @@ import SideNav from "../components/SideNav.jsx";
 import PersonDetail from "../components/PersonDetail.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
-import { APPARATUS_NAV_LINKS } from "../utils/apparatusLinks.js";
+import { getApparatusNavLinks } from "../utils/apparatusLinks.js";
 import { APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
 import { normalizeBool } from "../utils/bool.js";
 import {
@@ -1625,7 +1625,7 @@ function ApparatusSectionDetail({ title, backHref }) {
               </div>
             )}
           </div>
-          <SideNav title="Разделы" links={APPARATUS_NAV_LINKS} />
+          <SideNav title="Разделы" links={navLinks} />
         </div>
       </div>
     </section>
@@ -1672,7 +1672,10 @@ export default function SectionPage() {
   const q = useQuery();
   const titleParam = q.get("title");
   const { committees, commissions, factions: structureFactions, government, deputies, convocations } = useData();
+  const { t } = useI18n();
   const focus = q.get("focus");
+
+  const navLinks = React.useMemo(() => getApparatusNavLinks(t), [t]);
 
   const committeesDeduped = React.useMemo(
     () => deduplicateCommitteesByRichness(committees || []),

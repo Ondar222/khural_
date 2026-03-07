@@ -1,11 +1,15 @@
 import React from "react";
 import SideNav from "../components/SideNav.jsx";
-import { APPARATUS_NAV_LINKS } from "../utils/apparatusLinks.js";
+import { getApparatusNavLinks } from "../utils/apparatusLinks.js";
+import { useI18n } from "../context/I18nContext.jsx";
 
 export default function Apparatus() {
+  const { t } = useI18n();
   const toSectionHref = React.useCallback((title) => {
     return `/section?title=${encodeURIComponent(String(title || "").trim())}`;
   }, []);
+
+  const navLinks = React.useMemo(() => getApparatusNavLinks(t), [t]);
 
   return (
     <section className="section apparatus-page">
@@ -147,7 +151,7 @@ export default function Apparatus() {
               </div>
             </div>
           </div>
-          <SideNav links={APPARATUS_NAV_LINKS} />
+          <SideNav links={navLinks} />
         </div>
       </div>
     </section>

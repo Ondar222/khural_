@@ -1,57 +1,57 @@
-export const APPARATUS_NAV_LINKS = [
-  { label: "Структура", href: "/about?tab=structure&focus=overview" },
+// Функция для получения ссылок бокового меню с переводами
+export const getApparatusNavLinks = (t) => [
+  { label: t("Структура"), href: "/about?tab=structure&focus=overview" },
   {
-    label: "Руководитель Аппарата",
+    label: t("Руководитель Аппарата"),
     href: "/section?title=" + encodeURIComponent("Руководитель Аппарата"),
   },
   {
-    label: "Заместитель Руководителя Аппарата",
+    label: t("Заместитель Руководителя Аппарата"),
     href: "/section?title=" + encodeURIComponent("Заместитель Руководителя Аппарата"),
   },
   {
-    label: "Первый помощник Председателя",
+    label: t("Первый помощник Председателя"),
     href: "/section?title=" + encodeURIComponent("Первый помощник Председателя"),
   },
   {
-    label: "Помощник Председателя",
+    label: t("Помощник Председателя"),
     href: "/section?title=" + encodeURIComponent("Помощник Председателя"),
   },
   {
-    label: "Помощник заместителя Председателя",
+    label: t("Помощник заместителя Председателя"),
     href: "/section?title=" + encodeURIComponent("Помощник заместителя Председателя"),
   },
   {
-    label: "Организационное управление",
+    label: t("Организационное управление"),
     href: "/section?title=" + encodeURIComponent("Организационное управление"),
   },
   {
-    label: "Информационно-аналитическое управление",
+    label: t("Информационно-аналитическое управление"),
     href: "/section?title=" + encodeURIComponent("Информационно-аналитическое управление"),
   },
   {
-    label: "Государственно-правовое управление",
+    label: t("Государственно-правовое управление"),
     href: "/section?title=" + encodeURIComponent("Государственно-правовое управление"),
   },
   {
-    label: "Управление финансов, бухгалтерского учета и отчетности",
+    label: t("Управление финансов, бухгалтерского учета и отчетности"),
     href:
       "/section?title=" +
       encodeURIComponent("Управление финансов, бухгалтерского учета и отчетности"),
   },
   {
-    label: "Управление делами",
+    label: t("Управление делами"),
     href: "/section?title=" + encodeURIComponent("Управление делами"),
   },
   {
-    label: "Отдел технического и программного обеспечения",
+    label: t("Отдел технического и программного обеспечения"),
     href:
       "/section?title=" +
       encodeURIComponent("Отдел технического и программного обеспечения"),
   },
   {
-    label: "Отдел кадров и государственной службы",
+    label: t("Отдел кадров и государственной службы"),
     href:
       "/section?title=" + encodeURIComponent("Отдел кадров и государственной службы"),
   },
 ];
-
