@@ -852,48 +852,103 @@ const INFO_LAWMAP_HTML = `
     «Об обеспечении доступа к информации о деятельности государственных органов и органов местного самоуправления», представленная в виде законодательной карты.
   </p>
   <p style="margin:0;">
-    Полная версия на старом сайте:
-    <a href="https://khural.rtyva.ru/info/zakon_karta.php" target="_blank" rel="noreferrer">Законодательная карта сайта</a>
   </p>
-  <div style="display:grid; gap:6px;">
-    <div style="font-weight:800;">Быстрые ссылки</div>
-    <ul>
-      <li><a href="/section" rel="noreferrer">Структура</a></li>
-      <li><a href="/contacts" rel="noreferrer">Контактная информация</a></li>
-      <li><a href="/apparatus" rel="noreferrer">Аппарат</a></li>
-      <li><a href="/docs/laws" rel="noreferrer">Документы</a></li>
-      <li><a href="/news" rel="noreferrer">Новости</a></li>
-    </ul>
-  </div>
+</div>
+`;
+
+const INFO_PERSONNEL_SLUG = "info/personnel";
+const INFO_PERSONNEL_TITLE = "Кадровое обеспечение";
+const INFO_PERSONNEL_HTML = `
+<div style="display:grid; gap:10px; line-height:1.7;">
+  <ul>
+    <li><a href="https://khural.rtyva.ru/info/personnel/443/" target="_blank" rel="noreferrer">Указ Президента РФ от 10.10.2024 № 870</a></li>
+    <li><a href="https://khural.rtyva.ru/info/personnel/444/" target="_blank" rel="noreferrer">Путеводитель по Госслужбе</a></li>
+    <li><a href="https://khural.rtyva.ru/info/personnel/285/" target="_blank" rel="noreferrer">Порядок оформления, выдачи и учета удостоверений</a></li>
+    <li><a href="https://khural.rtyva.ru/info/personnel/242/" target="_blank" rel="noreferrer">Положение о помощнике депутата</a></li>
+    <li><a href="https://khural.rtyva.ru/info/personnel/456/" target="_blank" rel="noreferrer">Документы при поступлении на госслужбу</a></li>
+    <li><a href="https://khural.rtyva.ru/info/personnel/4/" target="_blank" rel="noreferrer">Телефон для справок по вакансиям</a></li>
+    <li><a href="https://khural.rtyva.ru/info/personnel/" target="_blank" rel="noreferrer">Все материалы раздела</a></li>
+  </ul>
 </div>
 `;
 
 const OPENDATA_SLUG = "opendata";
 const OPENDATA_TITLE = "Открытые данные";
 const OPENDATA_HTML = `
-<div style="display:grid; gap:12px; line-height:1.7;">
-  <p style="margin:0;">
-    В этом разделе представлена информация о деятельности Верховного Хурала (парламента) Республики Тыва, размещаемая в сети «Интернет» в форме открытых данных.
-    Предложения и отзывы вы можете оставить через
-    <a href="https://khural.rtyva.ru/services/feedback/" target="_blank" rel="noreferrer">форму обратной связи</a>.
-  </p>
-  <div class="card" style="padding: 12px; background: rgba(255,255,255,0.55);">
-    <div style="font-weight:800; margin-bottom:8px;">Набор данных</div>
-    <div style="display:grid; gap:6px;">
-      <div><strong>Идентиф��катор:</strong> 1701009892-maininfo</div>
-      <div><strong>Наименование:</strong> Общая информация о Верховном Хурале (парламенте) Республики Тыва</div>
-      <div><strong>Формат:</strong> CSV</div>
-      <div>
-        <strong>Файлы:</strong>
-        <a href="https://khural.rtyva.ru/docs/1701009892-maininfo2.csv" target="_blank" rel="noreferrer">CSV</a>,
-        <a href="https://khural.rtyva.ru/opendata/1701009892-structure-20170309.csv" target="_blank" rel="noreferrer">Описание структуры</a>
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px;">
+    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Открытые данные</h2>
+    
+    <div style="line-height: 1.7; margin-bottom: 24px;">
+      <p style="margin:0 0 12px 0;">
+        В этом разделе представлена информация о деятельности Верховного Хурала (парламента) Республики Тыва, размещаемая в сети «Интернет» в форме открытых данных.
+      </p>
+      <p style="margin:12px 0 0 0; line-height: 1.7;">
+        Размещение государственными органами и органами местного самоуправления информации о своей деятельности в сети «Интернет» в форме открытых данных - это форма, при которой такая информация размещается в сети «Интернет» в виде массивов данных, организованных в формате, обеспечивающем их автоматическую обработку в целях повторного использования без предварительного изменения человеком (машиночитаемый формат), и на условиях ее свободного использования.
+      </p>
+      <p style="margin:12px 0 0 0; line-height: 1.7;">
+        Предложения и отзывы по наборам открытых данных вы можете оставить через <a href="/appeals" style="color: #003366; text-decoration: underline;">форму обратной связи</a>.
+      </p>
+    </div>
+
+    <div style="margin-top: 24px;">
+      <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">Характеристика набора данных</h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <thead>
+          <tr style="background: #f9fafb;">
+            <th style="border: 1px solid #dfe3eb; padding: 10px; text-align: left; font-weight: 600; color: #111827;">№</th>
+            <th style="border: 1px solid #dfe3eb; padding: 10px; text-align: left; font-weight: 600; color: #111827;">Характеристика</th>
+            <th style="border: 1px solid #dfe3eb; padding: 10px; text-align: left; font-weight: 600; color: #111827;">Описание</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">1</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Идентификационный номер (код) актуального набора данных</td><td style="border: 1px solid #dfe3eb; padding: 8px;">1701009892-maininfo</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">2</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Наименование набора данных</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Общая информация о Верховном Хурале (парламенте) Республики Тыва</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">3</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Описание набора данных</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Информация о Верховном Хурале (парламенте) Республики Тыва, его почтовый адрес, адрес электронной почты, номера телефонов</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">4</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Владелец набора данных</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Верховный Хурал (парламент) Республики Тыва</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">5</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Ответственное лицо</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Хертек Санчаа Саянович - заместитель начальника отдела</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">6</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Телефон ответственного лица</td><td style="border: 1px solid #dfe3eb; padding: 8px;">(394-22) 2-32-27</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">7</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Адрес электронной почты ответственного лица</td><td style="border: 1px solid #dfe3eb; padding: 8px;"><a href="mailto:sanchaa.xertek@mail.ru" style="color: #003366;">sanchaa.xertek@mail.ru</a></td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">8</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Гиперссылка (URL) на набор</td><td style="border: 1px solid #dfe3eb; padding: 8px;">1701009892-data-structure</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">9</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Формат данных</td><td style="border: 1px solid #dfe3eb; padding: 8px;">csv</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">10</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Описание структуры набора данных</td><td style="border: 1px solid #dfe3eb; padding: 8px;">1701009892-structure-20170309</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">11</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Дата первой публикации набора данных</td><td style="border: 1px solid #dfe3eb; padding: 8px;">09.03.2017</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">12</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Дата последнего внесения изменений</td><td style="border: 1px solid #dfe3eb; padding: 8px;">09.03.2017</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">13</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Содержание последнего изменения</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Первичная публикация</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">14</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Периодичность актуализации набора данных</td><td style="border: 1px solid #dfe3eb; padding: 8px;">По мере изменения</td></tr>
+          <tr><td style="border: 1px solid #dfe3eb; padding: 8px;">15</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Ключевые слова</td><td style="border: 1px solid #dfe3eb; padding: 8px;">Общая информация о Верховном Хурале (парламенте) Республики Тыва</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 24px; padding: 16px; background: #f9fafb; border-radius: 8px;">
+      <strong style="color: #111827;">Файловое представление:</strong>
+      <div style="margin-top: 8px;">
+        <a href="https://khural.rtyva.ru/upload/iblock/opendata/1701009892-maininfo.csv" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+          1701009892-maininfo.csv
+        </a>
       </div>
     </div>
+
+    <div style="margin-top: 24px; padding: 16px; background: #f9fafb; border-radius: 8px;">
+      <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">Условия использования набора данных:</h3>
+      <p style="margin:0 0 12px 0; line-height: 1.7;">
+        Пользователь без заключения договора может использовать (в том числе повторно) открытые данные свободно, бесплатно, бессрочно, безвозмездно и без ограничения территории использования, в том числе имеет право копировать, публиковать, распространять открытые данные, видоизменять открытые данные и объединять их с другой информацией, использовать открытые данные в некоммерческих и коммерческих целях, использовать для создания программ для ЭВМ и приложений.
+      </p>
+      <p style="margin:0 0 12px 0; line-height: 1.7;"><strong>При использовании открытых данных Пользователь обязан:</strong></p>
+      <ul style="margin:0 0 12px 0; padding-left: 20px; line-height: 1.7;">
+        <li>Использовать открытые данные только в законных целях;</li>
+        <li>Не искажать открытые данные при их использовании;</li>
+        <li>Сохранять ссылку на источник информации при использовании открытых данных.</li>
+      </ul>
+      <p style="margin:0; line-height: 1.7;">
+        При несоблюдении пользователем условий соглашения права, предоставленные пользователю в соответствии с соглашением, автоматически прекращаются.
+      </p>
+    </div>
   </div>
-  <p style="margin:0;">
-    Условия использования набора данных и подробности доступны на старом сайте:
-    <a href="https://khural.rtyva.ru/opendata/" target="_blank" rel="noreferrer">khural.rtyva.ru/opendata</a>
-  </p>
+  <div style="margin-top: 16px;">
+    <a href="/info" style="color: #003366; text-decoration: none;">← Назад к информации</a>
+  </div>
 </div>
 `;
 
@@ -909,7 +964,7 @@ const INFO_OMBUDSMAN_HUMAN_HTML = `
       loading="lazy"
     />
     <div class="ombudsman-page__titles">
-      <div class="ombudsman-page__title">${INFO_OMBUDSMAN_HUMAN_TITLE}</div>
+      <div class="ombudsman-page__title">Уполномоченный по правам человека в Республике Тыва</div>
       <div class="ombudsman-page__name">Адыгбай Александр Мижит-оолович</div>
       <div class="ombudsman-page__subtitle">
         Действительный государственный советник Республики Тыва 3 класса.
@@ -932,31 +987,33 @@ const INFO_OMBUDSMAN_HUMAN_HTML = `
     <div class="ombudsman-page__block">
       <div class="ombudsman-page__block-title">Трудовая деятельность</div>
       <ul>
-        <li>1985 – 2003 г. служба в органах прокуратуры Тувинской АССР, Томской и Новосибирской области.</li>
-        <li>2003 - 2004 заместитель руководителя Межрегионального территориального органа в Сибирском федеральном округе федеральной службы РФ по финансовому оздоровлению и банкротству.</li>
-        <li>С 2004 - 2004г. начальник службы экономическ����������го развития в ЗАО группа «Февраль».</li>
-        <li>2005 – 2006 г. д��ректор Новосибирского филиала некоммерческого партнерства «Сибирская межрегиональная саморегулируемая организация арбитражных управляющих».</li>
-        <li>2007 – 2007 г. начальник отдела юридического и кадрового обеспечения управления Росприроднадзора по Новосибирской области Федеральной службы по надзору в сфере природопользования РФ.</li>
-        <li>2007 – 2009 г. заместитель руководителя аппарата Правительства Республики Тыва - начальник управления правовой экспертизы и систематизации законодательства.</li>
-        <li>2009 – 2017 г. руководитель управления Росприроднадзора по Республике Тыва Федеральной службы по надзору в сфере природопользования РФ.</li>
+        <li>1985 – 2003 г. служба в органах прокуратуры Тувинской АССР, Томской и Новосибирской области</li>
+        <li>2003 - 2004 г. заместитель руководителя Межрегионального территориального органа в Сибирском федеральном округе федеральной службы РФ по финансовому оздоровлению и банкротству</li>
+        <li>2004 г. начальник службы экономического развития в ЗАО группа «Февраль»</li>
+        <li>2005 – 2006 г. директор Новосибирского филиала некоммерческого партнерства «Сибирская межрегиональная саморегулируемая организация арбитражных управляющих»</li>
+        <li>2007 г. начальник отдела юридического и кадрового обеспечения управления Росприроднадзора по Новосибирской области Федеральной службы по надзору в сфере природопользования РФ</li>
+        <li>2007 – 2009 г. заместитель руководителя аппарата Правительства Республики Тыва - начальник управления правовой экспертизы и систематизации законодательства</li>
+        <li>2009 – 2017 г. руководитель управления Росприроднадзора по Республике Тыва Федеральной службы по надзору в сфере природопользования РФ</li>
+        <li>2017 – 2021 гг. депутат Верховного Хурала (парламента) Республики Тыва</li>
+        <li>С 2023 года – Уполномоченный по правам человека в Республике Тыва</li>
       </ul>
     </div>
 
     <div class="ombudsman-page__block">
-      <div class="ombudsman-page__block-title">Кон��акты и адреса</div>
-      <div class="ombudsman-page__kv">
-        <div><strong>Телефон:</strong> +7(394-22)-2-63-08</div>
-        <div><strong>Адрес:</strong> 667010, Республика Тыва, г. Кызыл, ул. Красноарм��йская д.100, каб. 402</div>
-        <div><strong>E-mail:</strong> <a href="mailto:ombudsman@rtyva.ru">ombudsman@rtyva.ru</a></div>
-      </div>
+      <div class="ombudsman-page__block-title">Контакты и адреса</div>
+      <ul style="margin:0; padding-left: 20px;">
+        <li>Телефон: <a href="tel:+73942226308" style="color: #003366;">+7(394-22)-2-63-08</a></li>
+        <li>Адрес: 667010, Республика Тыва, г. Кызыл, ул. Красноармейская д.100, каб. 402</li>
+        <li>E-mail: <a href="mailto:ombudsman@rtyva.ru" style="color: #003366;">ombudsman@rtyva.ru</a></li>
+      </ul>
     </div>
 
     <div class="ombudsman-page__block">
-      <div class="ombudsman-page__block-title">Доклады</div>
-      <ul>
-        <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A7%20%D0%B7%D0%B0%202022%20%D0%B3..pdf" target="_blank" rel="noreferrer">Доклад за 2022 год (PDF)</a></li>
-        <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%90%D0%B4%D1%8B%D0%B3%D0%B1%D0%B0%D0%B9%20%D0%90.%D0%9C.%20%D0%B7%D0%B0%202024%20%D0%B3%D0%BE%D0%B4.pdf" target="_blank" rel="noreferrer">Доклад за 2024 год (PDF)</a></li>
-        <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%B7%D0%B0%202021%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer">Доклад за 2021 год (DOCX)</a></li>
+      <div class="ombudsman-page__block-title">Документы</div>
+      <ul style="margin:0; padding-left: 20px;">
+        <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A7%20%D0%B7%D0%B0%202022%20%D0%B3..pdf" target="_blank" rel="noreferrer" style="color: #003366;">Доклад Уполномоченного по правам человека в Республике Тыва за 2022 год (PDF)</a></li>
+        <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%B7%D0%B0%202021%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366;">Доклад Уполномоченного по правам человека в Республике Тыва за 2021 год (DOCX)</a></li>
+        <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%90%D0%B4%D1%8B%D0%B3%D0%B1%D0%B0%D0%B9%20%D0%90.%D0%9C.%20%D0%B7%D0%B0%202024%20%D0%B3%D0%BE%D0%B4.pdf" target="_blank" rel="noreferrer" style="color: #003366;">Доклад Уполномоченного по правам человека в Республике Тыва за 2024 год (PDF)</a></li>
       </ul>
     </div>
   </div>
@@ -975,52 +1032,60 @@ const INFO_OMBUDSMAN_CHILD_HTML = `
     <div style="font-weight:800;">Контакты</div>
     <div>Адрес: 667010, Республика Тыва, г. Кызыл, ул. Калинина д.1б</div>
     <div>Телефон: <a href="tel:83942226309">8 (394-22) 2-63-09</a></div>
+    <div>Факс: 8 (39422) 26308</div>
     <div>E-mail: <a href="mailto:saidasengii@mail.ru">saidasengii@mail.ru</a></div>
     <div>E-mail: <a href="mailto:tyvarfdeti@rtyva.ru">tyvarfdeti@rtyva.ru</a></div>
   </div>
   <div style="display:grid; gap:6px;">
-    <div style="font-weight:800;">Краткая биография</div>
+    <div style="font-weight:800;">Биография</div>
     <div>Родилась 17 мая 1970 года в г. Кызыле.</div>
-    <div><strong>Образование:</strong> Кызылский государственный педагогический институт (1993), Сибирский юридический институт МВД России (2007).</div>
-    <div><strong>Награды:</strong> медаль РТ «За доблестный труд» (2007), юбилейная медаль 100‑летия ТНР (2021).</div>
+  </div>
+  <div style="display:grid; gap:6px;">
+    <div style="font-weight:800;">Образование</div>
+    <ul style="margin:0; padding-left: 20px;">
+      <li>1993 г. – Кызылский государственный педагогический институт</li>
+      <li>2007 г. – Сибирский юридический институт МВД России</li>
+    </ul>
+  </div>
+  <div style="display:grid; gap:6px;">
+    <div style="font-weight:800;">Награды</div>
+    <ul style="margin:0; padding-left: 20px;">
+      <li>2007 г. – медаль Республики Тыва «За доблестный труд»</li>
+      <li>2021 г. – юбилейная медаль в честь 100-летия образования Тувинской Народной Республики</li>
+    </ul>
+  </div>
+  <div style="display:grid; gap:6px;">
+    <div style="font-weight:800;">Трудовая деятельность</div>
+    <ul style="margin:0; padding-left: 20px;">
+      <li>09.1987 – 06.1993 гг. – студент Красноярского, Кызылского педагогических институтов</li>
+      <li>09.1993 – 09.1994 гг. – учитель тувинского языка в начальных классах школы № 4 г. Кызыла</li>
+      <li>09.1994 – 09.2016 гг. – инспектор по делам несовершеннолетних, старший инспектор по делам несовершеннолетних, начальник отделения организации работы подразделений по делам несовершеннолетних, начальник отдела организации деятельности участковых уполномоченных полиции и подразделений по делам несовершеннолетних МВД по Республике Тыва</li>
+      <li>07.2016 – 12.2018 гг. – директор Агентства по делам семьи и детей в Республике Тыва</li>
+      <li>12.2018 – 03.2020 гг. – министр труда и социальной политики Республики Тыва</li>
+      <li>03.2020 – 04.2021 гг. – и.о. заместителя Председателя Правительства Республики Тыва, заместитель Председателя Правительства Республики Тыва</li>
+      <li>04.2021 – 10.2021 гг. – и.о. заместителя Председателя Правительства Республики Тыва</li>
+      <li>10.2021 – 05.2022 гг. – советник Главы Республики Тыва, Администрации Главы Республики Тыва и Аппарата Правительства Республики Тыва</li>
+      <li>05.2022 – 03.2024 гг. – начальник управления по обеспечению деятельности Межведомственной комиссии по делам несовершеннолетних и защите их прав при Правительстве Республики Тыва (руководитель аппарата Межведомственной комиссии по делам несовершеннолетних и защите их прав при Правительстве Республики Тыва) Администрации Главы Республики Тыва и Аппарата Правительства Республики Тыва</li>
+      <li>27 марта 2024 года постановлением Верховного Хурала (Парламента) назначена на должность Уполномоченного по правам ребенка в Республике Тыва.</li>
+    </ul>
   </div>
   <div style="display:grid; gap:6px;">
     <div style="font-weight:800;">Документы</div>
-    <ul>
-      <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A0%20%D0%B7%D0%B0%202024%20%D0%B3.,%20%D0%BE%D0%BA%D0%BE%D0%BD%D1%87..docx" target="_blank" rel="noreferrer">Доклад за 2024 го�� (DOCX)</a></li>
+    <ul style="margin:0; padding-left: 20px; color: #003366">
+      <li><a href="https://khural.rtyva.ru/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A0%20%D0%B7%D0%B0%202024%20%D0%B3.,%20%D0%BE%D0%BA%D0%BE%D0%BD%D1%87..docx" target="_blank" rel="noreferrer">Доклад о деятельности уполномоченного по правам ребенка в Республике Тыве за 2024 год (DOCX)</a></li>
     </ul>
   </div>
-  <p style="margin:0;">
-    Полная версия на старом сайте:
-    <a href="https://khural.rtyva.ru/info/upoln_po_reb.php" target="_blank" rel="noreferrer">khural.rtyva.ru/info/upoln_po_reb.php</a>
-  </p>
-</div>
-`;
-
-const INFO_PERSONNEL_SLUG = "info/personnel";
-const INFO_PERSONNEL_TITLE = "Кадровое обеспечение";
-const INFO_PERSONNEL_HTML = `
-<div style="display:grid; gap:10px; line-height:1.7;">
-  <ul>
-    <li><a href="https://khural.rtyva.ru/info/personnel/443/" target="_blank" rel="noreferrer">Указ Президента РФ от 10.10.2024 № 870</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/444/" target="_blank" rel="noreferrer">Путеводитель по Госслужбе</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/285/" target="_blank" rel="noreferrer">Порядок оформления, выдачи и учета удостоверений</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/242/" target="_blank" rel="noreferrer">Положение о помощнике депутата</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/456/" target="_blank" rel="noreferrer">Документы при поступлении на госслужбу</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/4/" target="_blank" rel="noreferrer">Телефон для справок по вакансиям</a></li>
-    <li><a href="https://khural.rtyva.ru/info/personnel/" target="_blank" rel="noreferrer">Все материалы раздела</a></li>
-  </ul>
 </div>
 `;
 
 function getSlugFromPath() {
   const path = typeof window !== "undefined" ? window.location.pathname || "" : "";
-  
+
   // Поддерживаем оба формата: /p/:slug и /:section/:slug
   if (path.startsWith("/p/")) {
     return decodeURIComponent(path.slice(3));
   }
-  
+
   // Для маршрутов типа /news/:slug, /deputies/:slug и т.д.
   // Извлекаем весь путь после первого сегмента
   const segments = path.split("/").filter(Boolean);
@@ -1028,7 +1093,7 @@ function getSlugFromPath() {
     // Возвращаем slug как "section/slug" или "slug" (например, info/finansy или opendata)
     return decodeURIComponent(segments.join("/"));
   }
-  
+
   return "";
 }
 
