@@ -1590,7 +1590,7 @@ function ApparatusPersonCard({ p, href }) {
   return <div className={className}>{cardContent}</div>;
 }
 
-function ApparatusSectionDetail({ title, backHref }) {
+function ApparatusSectionDetail({ title, backHref, navLinks }) {
   const data = APPARATUS_SECTIONS?.[title];
   if (!data) return null;
   const people = Array.isArray(data.people) ? data.people : [];
@@ -1741,6 +1741,7 @@ export default function SectionPage() {
         <ApparatusSectionDetail
           title={title}
           backHref={`/section?title=${encodeURIComponent("Структура Аппарата")}`}
+          navLinks={navLinks}
         />
       );
     }
