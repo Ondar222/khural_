@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { DocumentsApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
+import SideNav from "../components/SideNav.jsx";
 
 function getSlugFromPath() {
   // Сначала пробуем взять из routeParams от роутера
@@ -96,61 +97,68 @@ export default function BudgetDynamicPage() {
   const pageTitle = BUDGET_TITLES[slug] || "Бюджет";
 
   return (
-    <div className="container" style={{ padding: "24px 0" }}>
-      <div style={{ marginBottom: 24 }}>
-        <a href="/info/finansy/byudzhet" style={{ color: "#003366", textDecoration: "none" }}>
-          ← Назад к бюджету
-        </a>
-      </div>
+    <section className="section">
+      <div className="container">
+        <div className="page-grid">
+          <div>
+            <div style={{ marginBottom: 24 }}>
+              <a href="/info/finansy/byudzhet" style={{ color: "#003366", textDecoration: "none" }}>
+                ← Назад к бюджету
+              </a>
+            </div>
 
-      <div className="card" style={{ padding: 20 }}>
-        <h1 style={{ margin: "0 0 24px 0", fontSize: 24, fontWeight: 700 }}>{pageTitle}</h1>
-        
-        {loading ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#666" }}>
-            Загрузка документов...
-          </div>
-        ) : documents.length > 0 ? (
-          <div style={{ display: "grid", gap: 12 }}>
-            {documents.map((doc) => (
-              <div
-                key={doc.id}
-                style={{
-                  padding: 16,
-                  background: "#fff",
-                  border: "1px solid #dfe3eb",
-                  borderRadius: 8,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 24 }}>📄</span>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ fontWeight: 600, color: "#111827" }}>
-                      <a
-                        href={doc.file_url || doc.url || "#"}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: "#003366", textDecoration: "underline" }}
-                      >
-                        {doc.title || "Документ"}
-                      </a>
-                    </div>
-                    {doc.description && (
-                      <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
-                        {doc.description}
-                      </div>
-                    )}
-                  </div>
+            <div className="card" style={{ padding: 20 }}>
+              <h1 style={{ margin: "0 0 24px 0", fontSize: 24, fontWeight: 700 }}>{pageTitle}</h1>
+
+              {loading ? (
+                <div style={{ padding: 40, textAlign: "center", color: "#666" }}>
+                  Загрузка документов...
                 </div>
-              </div>
-            ))}
+              ) : documents.length > 0 ? (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      style={{
+                        padding: 16,
+                        background: "#fff",
+                        border: "1px solid #dfe3eb",
+                        borderRadius: 8,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 24 }}>📄</span>
+                        <div style={{ flex: 1, minWidth: 200 }}>
+                          <div style={{ fontWeight: 600, color: "#111827" }}>
+                            <a
+                              href={doc.file_url || doc.url || "#"}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: "#003366", textDecoration: "underline" }}
+                            >
+                              {doc.title || "Документ"}
+                            </a>
+                          </div>
+                          {doc.description && (
+                            <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
+                              {doc.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: 40, textAlign: "center", color: "#666" }}>
+                  Документы пока не добавлены
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <div style={{ padding: 40, textAlign: "center", color: "#666" }}>
-            Документы пока не добавлены
-          </div>
-        )}
+          <SideNav title="Финансы" loadPages={true} autoSection={true} />
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

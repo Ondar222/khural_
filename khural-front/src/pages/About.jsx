@@ -372,7 +372,23 @@ export default function About() {
               {/* NOTE: ниже ничего не рендерим — схема должна совпадать с /section */}
             </div>
           </div>
-          <SideNav className="sidenav--about" title={t("О Верховном Хурале")} loadPages={true} autoSection={true} />
+          <SideNav
+            className="sidenav--about"
+            title={t("О Верховном Хурале")}
+            links={[
+              { label: t("Общие сведения"), href: "/about" },
+              { label: t("Структура парламента"), href: "/about?tab=structure&focus=overview" },
+              { label: t("Руководство"), href: "/government" },
+              { label: t("Депутаты"), href: "/deputies?convocation=VIII" },
+              { label: t("Комитеты"), href: "/about?tab=structure&focus=committees" },
+              { label: t("Комиссии"), href: "/about?tab=structure&focus=commissions" },
+              { label: t("Депутатские фракции"), href: "/about?tab=structure&focus=factions" },
+              { label: t("Представительство в Совете Федерации"), href: "/struct/council" },
+              { label: t("Молодежный Хурал"), href: "/section?title=" + encodeURIComponent("Молодежный Хурал") },
+            ]}
+            loadPages={true}
+            autoSection={true}
+          />
         </div>
       </div>
     </section>

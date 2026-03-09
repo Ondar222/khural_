@@ -7,6 +7,7 @@ import {
   PrinterOutlined,
 } from "@ant-design/icons";
 import { useI18n } from "../context/I18nContext.jsx";
+import SideNav from "../components/SideNav.jsx";
 
 function YandexMap({ constructorId, address }) {
   const src = constructorId
@@ -51,15 +52,17 @@ export default function Contacts() {
   return (
     <section className="section">
       <div className="container">
-        <h1>{t("Контакты")}</h1>
-        <div 
-          className="grid cols-2" 
-          style={{ 
-            alignItems: "stretch", 
-            gap: 16,
-          }}
-        >
-          <div className="card" style={{ padding: "20px" }}>
+        <div className="page-grid">
+          <div>
+            <h1>{t("Контакты")}</h1>
+            <div
+              className="grid cols-2"
+              style={{
+                alignItems: "stretch",
+                gap: 16,
+              }}
+            >
+              <div className="card" style={{ padding: "20px" }}>
             <h2 style={{ marginTop: 0, marginBottom: 20, fontSize: "clamp(18px, 4vw, 24px)" }}>
               {lang === "ty" ? "Харылзаа медээлери" : "Контактная информация"}
             </h2>
@@ -170,6 +173,9 @@ export default function Contacts() {
               <YandexMap constructorId={constructorId} address={address} />
             </div>
           </div>
+        </div>
+          </div>
+          <SideNav title="Контакты" loadPages={true} autoSection={true} />
         </div>
       </div>
       <style>{`

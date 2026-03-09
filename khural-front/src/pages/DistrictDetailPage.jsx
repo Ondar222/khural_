@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useI18n } from "../context/I18nContext.jsx";
+import SideNav from "../components/SideNav.jsx";
 
 const DISTRICTS_DATA = {
   "1": {
@@ -140,69 +141,83 @@ export default function DistrictDetailPage() {
 
   if (!district) {
     return (
-      <div className="container" style={{ padding: "24px 0" }}>
-        <div style={{ marginBottom: 24 }}>
-          <a href="/info/iokrug" style={{ color: "#003366", textDecoration: "none" }}>
-            ← Назад к избирательным округам
-          </a>
+      <section className="section">
+        <div className="container">
+          <div className="page-grid">
+            <div>
+              <div style={{ marginBottom: 24 }}>
+                <a href="/info/iokrug" style={{ color: "#003366", textDecoration: "none" }}>
+                  ← Назад к избирательным округам
+                </a>
+              </div>
+              <div className="card" style={{ padding: 20 }}>
+                <h1 style={{ margin: "0 0 24px 0", fontSize: 24, fontWeight: 700 }}>Округ не найден</h1>
+                <p style={{ color: "#666" }}>Избирательный округ с таким номером не существует</p>
+              </div>
+            </div>
+            <SideNav title="Избирательные округа" loadPages={true} autoSection={true} />
+          </div>
         </div>
-        <div className="card" style={{ padding: 20 }}>
-          <h1 style={{ margin: "0 0 24px 0", fontSize: 24, fontWeight: 700 }}>Округ не найден</h1>
-          <p style={{ color: "#666" }}>Избирательный округ с таким номером не существует</p>
-        </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="container" style={{ padding: "24px 0" }}>
-      <div style={{ marginBottom: 24 }}>
-        <a href="/info/iokrug" style={{ color: "#003366", textDecoration: "none" }}>
-          ← Назад к избирательным округам
-        </a>
-      </div>
-
-      <div className="card" style={{ padding: 20 }}>
-        <h1 style={{ margin: "0 0 24px 0", fontSize: 24, fontWeight: 700 }}>
-          {district.name}
-        </h1>
-
-        <div style={{ display: "grid", gap: 24 }}>
+    <section className="section">
+      <div className="container">
+        <div className="page-grid">
           <div>
-            <h2 style={{ margin: "0 0 12px 0", fontSize: 18, fontWeight: 600, color: "#111827" }}>
-              Границы избирательного округа
-            </h2>
-            <div style={{ padding: 16, background: "#f9fafb", borderRadius: 8, lineHeight: 1.7, color: "#374151" }}>
-              {district.boundaries}
+            <div style={{ marginBottom: 24 }}>
+              <a href="/info/iokrug" style={{ color: "#003366", textDecoration: "none" }}>
+                ← Назад к избирательным округам
+              </a>
             </div>
-          </div>
 
-          <div>
-            <h2 style={{ margin: "0 0 12px 0", fontSize: 18, fontWeight: 600, color: "#111827" }}>
-              Депутат(ы)
-            </h2>
-            <div style={{ display: "grid", gap: 8 }}>
-              {district.deputies.map((deputy, index) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: 12,
-                    background: "#fff",
-                    border: "1px solid #dfe3eb",
-                    borderRadius: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                  }}
-                >
-                  <span style={{ fontSize: 20 }}>👤</span>
-                  <span style={{ fontWeight: 500, color: "#111827" }}>{deputy}</span>
+            <div className="card" style={{ padding: 20 }}>
+              <h1 style={{ margin: "0 0 24px 0", fontSize: 24, fontWeight: 700 }}>
+                {district.name}
+              </h1>
+
+              <div style={{ display: "grid", gap: 24 }}>
+                <div>
+                  <h2 style={{ margin: "0 0 12px 0", fontSize: 18, fontWeight: 600, color: "#111827" }}>
+                    Границы избирательного округа
+                  </h2>
+                  <div style={{ padding: 16, background: "#f9fafb", borderRadius: 8, lineHeight: 1.7, color: "#374151" }}>
+                    {district.boundaries}
+                  </div>
                 </div>
-              ))}
+
+                <div>
+                  <h2 style={{ margin: "0 0 12px 0", fontSize: 18, fontWeight: 600, color: "#111827" }}>
+                    Депутат(ы)
+                  </h2>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {district.deputies.map((deputy, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          padding: 12,
+                          background: "#fff",
+                          border: "1px solid #dfe3eb",
+                          borderRadius: 8,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                        }}
+                      >
+                        <span style={{ fontSize: 20 }}>👤</span>
+                        <span style={{ fontWeight: 500, color: "#111827" }}>{deputy}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+          <SideNav title="Избирательные округа" loadPages={true} autoSection={true} />
         </div>
       </div>
-    </div>
+    </section>
   );
 }

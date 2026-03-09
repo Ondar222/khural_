@@ -3,6 +3,7 @@ import { AboutApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useAdminData } from "../hooks/useAdminData.js";
 import DataState from "../components/DataState.jsx";
+import SideNav from "../components/SideNav.jsx";
 import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../content/forMedia.js";
 
@@ -1962,29 +1963,34 @@ export default function PageBySlug() {
   return (
     <section className="section">
       <div className="container">
-        <div style={{ marginBottom: 16 }}>
-          <a href={backUrl} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
-            {backText}
-          </a>
-        </div>
-        <h1 className="h1-compact">{title}</h1>
-        <DataState
-          loading={loading}
-          error={error}
-          empty={!isStaticPage && !loading && !page}
-          emptyDescription="Страница не найдена"
-        >
-          <div className="card" style={{ padding: 18 }}>
-            {html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <div>—</div>}
-          </div>
-          {canEdit && (
-            <div style={{ marginTop: 20 }}>
-              <a href={`/admin/pages/edit/${adminPageSlug}`} className="btn" style={{ fontSize: 14 }}>
-                Редактировать в админке →
+        <div className="page-grid">
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <a href={backUrl} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                {backText}
               </a>
             </div>
-          )}
-        </DataState>
+            <h1 className="h1-compact">{title}</h1>
+            <DataState
+              loading={loading}
+              error={error}
+              empty={!isStaticPage && !loading && !page}
+              emptyDescription="Страница не найдена"
+            >
+              <div className="card" style={{ padding: 18 }}>
+                {html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <div>—</div>}
+              </div>
+              {canEdit && (
+                <div style={{ marginTop: 20 }}>
+                  <a href={`/admin/pages/edit/${adminPageSlug}`} className="btn" style={{ fontSize: 14 }}>
+                    Редактировать в админке →
+                  </a>
+                </div>
+              )}
+            </DataState>
+          </div>
+          <SideNav title={title} loadPages={true} autoSection={true} />
+        </div>
       </div>
     </section>
   );

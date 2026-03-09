@@ -75,6 +75,15 @@ const defaultLinks = [
     label: "Молодежный Хурал",
     href: "/section?title=" + encodeURIComponent("Молодежный Хурал"),
   },
+  // Информация
+  { label: "Финансы", href: "/info/finansy" },
+  { label: "Избирательные округа", href: "/info/iokrug" },
+  { label: "Уполномоченный по правам человека", href: "/info/upoln-po-prav" },
+  { label: "Уполномоченный по правам ребенка", href: "/info/upoln-po-reb" },
+  { label: "Кадровое обеспечение", href: "/info/personnel" },
+  { label: "Законодательная карта", href: "/info/zakon-karta" },
+  { label: "История парламентаризма", href: "/about/istoriya-parlamentarizma" },
+  { label: "Полномочия", href: "/info/polnomochiya" },
 ];
 
 // Стандартные ссылки для раздела "Обращения" (как в Header)
