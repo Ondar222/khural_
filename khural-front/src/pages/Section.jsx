@@ -1805,20 +1805,98 @@ export default function SectionPage() {
             <div className="page-grid">
               <div>
                 <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
+
+                <p style={{ marginTop: 16, lineHeight: 1.6, color: "#374151", maxWidth: 860 }}>
+                  Комиссии Верховного Хурала (парламента) Республики Тыва являются постоянными органами,
+                  образуемыми для предварительного рассмотрения и подготовки вопросов, относящихся к
+                  ведению Верховного Хурала.
+                </p>
+
                 {commissionsList.length > 0 ? (
-                  <ul>
-{commissionsList.map((item) => (
-                    <li key={item.id}>
-                      <a href={`/commission?id=${item.id}`}>
-                        {typeof item.name === "string" && /<[^>]+>/.test(item.name)
+                  <div style={{ marginTop: 32 }}>
+                    <div style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                    }}>
+                      {commissionsList.map((item, index) => {
+                        const commissionName = typeof item.name === "string" && /<[^>]+>/.test(item.name)
                           ? item.name.replace(/<[^>]*>/g, "").trim() || item.name
-                          : item.name}
-                      </a>
-                    </li>
-                  ))}
-                  </ul>
+                          : item.name;
+
+                        return (
+                          <a
+                            key={item.id}
+                            href={`/commission?id=${item.id}`}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 16,
+                              padding: "20px 24px",
+                              background: "#fff",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: 8,
+                              textDecoration: "none",
+                              color: "inherit",
+                              transition: "all 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 51, 102, 0.1)";
+                              e.currentTarget.style.borderColor = "#003366";
+                              e.currentTarget.style.transform = "translateX(4px)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.boxShadow = "none";
+                              e.currentTarget.style.borderColor = "#e5e7eb";
+                              e.currentTarget.style.transform = "translateX(0)";
+                            }}
+                          >
+                            <div style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 8,
+                              background: "linear-gradient(135deg, #003366 0%, #0055a5 100%)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}>
+                              <span style={{ fontSize: 20, color: "#fff" }}>📋</span>
+                            </div>
+                            <div style={{
+                              flex: 1,
+                              minWidth: 0,
+                            }}>
+                              <div style={{
+                                fontSize: 16,
+                                fontWeight: 600,
+                                color: "#003366",
+                                lineHeight: 1.4,
+                                wordBreak: "break-word",
+                              }}>
+                                {commissionName}
+                              </div>
+                            </div>
+                            <div style={{
+                              color: "#0066cc",
+                              fontSize: 18,
+                              fontWeight: 600,
+                              flexShrink: 0,
+                            }}>
+                              →
+                            </div>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ) : (
-                  <p style={{ marginTop: 0 }}>Список комиссий пока не заполнен. Добавьте комиссии в админ-панели.</p>
+                  <div className="card" style={{ marginTop: 32, padding: 40, textAlign: "center" }}>
+                    <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+                    <p style={{ margin: 0, fontSize: 16, color: "#6b7280" }}>
+                      Список комиссий пока не заполнен. Добавьте комиссии в админ-панели.
+                    </p>
+                  </div>
                 )}
               </div>
               <SideNav title="Разделы" loadPages={true} autoSection={true} />

@@ -25,6 +25,9 @@ const TITLES = {
   "/activity": "Деятельность",
   "/docs": "Документы",
   "/contacts": "Контакты",
+  "/info": "Информация",
+  "/info/finansy": "Финансы",
+  "/info/personnel": "Кадровое обеспечение",
 };
 
 function getRouteBase(route) {
@@ -140,6 +143,165 @@ export default function Breadcrumbs() {
           return crumbs;
         }
       } catch {}
+    }
+    // Handle /info routes (PageBySlug)
+    if (base === "/info") {
+      crumbs.push({ label: "Информация" });
+      return crumbs;
+    }
+    // Handle /info/* routes (PageBySlug)
+    if (base.startsWith("/info/")) {
+      const pathParts = base.slice(6).split("/"); // After "/info/"
+      crumbs.push({ label: "Информация", href: "/info" });
+      
+      const firstPart = pathParts[0];
+      
+      // Handle /info/iokrug/*
+      if (firstPart === "iokrug") {
+        if (pathParts.length === 1) {
+          crumbs.push({ label: "Избирательные округа" });
+        } else {
+          crumbs.push({ label: "Избирательные округа", href: "/info/iokrug" });
+          // District detail page - try to get district name
+          const districtSlug = pathParts[1];
+          const districtNames = {
+            "1": "Одномандатный избирательный округ №1",
+            "2": "Одномандатный избирательный округ №2",
+            "3": "Одномандатный избирательный округ №3",
+            "4": "Одномандатный избирательный округ №4",
+            "5": "Одномандатный избирательный округ №5",
+            "6": "Одномандатный избирательный округ №6",
+            "7": "Одномандатный избирательный округ №7",
+            "8": "Одномандатный избирательный округ №8",
+            "9": "Одномандатный избирательный округ №9",
+            "10": "Одномандатный избирательный округ №10",
+            "11": "Одномандатный избирательный округ №11",
+            "12": "Одномандатный избирательный округ №12",
+            "13": "Одномандатный избирательный округ №13",
+            "14": "Одномандатный избирательный округ №14",
+            "15": "Одномандатный избирательный округ №15",
+            "16": "Одномандатный избирательный округ №16",
+          };
+          crumbs.push({ label: districtNames[districtSlug] || `Округ ${districtSlug}` });
+        }
+        return crumbs;
+      }
+      
+      // Handle /info/finansy/*
+      if (firstPart === "finansy") {
+        if (pathParts.length === 1) {
+          crumbs.push({ label: "Финансы" });
+        } else {
+          const secondPart = pathParts[1];
+          if (secondPart === "byudzhet") {
+            crumbs.push({ label: "Финансы", href: "/info/finansy" });
+            if (pathParts.length === 2) {
+              crumbs.push({ label: "Бюджет" });
+            } else {
+              crumbs.push({ label: "Бюджет", href: "/info/finansy/byudzhet" });
+              // Budget year detail
+              crumbs.push({ label: pathParts[2] });
+            }
+          } else if (secondPart === "otcheti") {
+            crumbs.push({ label: "Финансы", href: "/info/finansy" });
+            if (pathParts.length === 2) {
+              crumbs.push({ label: "Отчеты" });
+            } else {
+              crumbs.push({ label: "Отчеты", href: "/info/finansy/otcheti" });
+              crumbs.push({ label: pathParts[2] });
+            }
+          } else if (secondPart === "rezultaty-proverok") {
+            crumbs.push({ label: "Финансы", href: "/info/finansy" });
+            if (pathParts.length === 2) {
+              crumbs.push({ label: "Результаты проверок" });
+            } else {
+              crumbs.push({ label: "Результаты проверок", href: "/info/finansy/rezultaty-proverok" });
+              crumbs.push({ label: pathParts[2] });
+            }
+          } else {
+            crumbs.push({ label: "Финансы", href: "/info/finansy" });
+            crumbs.push({ label: pathParts[1] });
+          }
+        }
+        return crumbs;
+      }
+      
+      // Handle /info/personnel/*
+      if (firstPart === "personnel") {
+        if (pathParts.length === 1) {
+          crumbs.push({ label: "Кадровое обеспечение" });
+        } else {
+          crumbs.push({ label: "Кадровое обеспечение", href: "/info/personnel" });
+          const titles = {
+            "gossluzhba": "Государственная служба",
+            "poryadok-postupleniya": "Порядок поступления",
+            "law-58fz": "Федеральный закон № 58-ФЗ",
+            "law-79fz": "Федеральный закон № 79-ФЗ",
+            "law-112": "Указ Президента № 112",
+            "telefon-spravok": "Телефон для справок",
+            "poryadok-obzhalovaniya": "Порядок обжалования",
+            "pensionnoe-obespechenie": "Пенсионное обеспечение",
+            "otpusk-sluzhaschih": "Отпуска служащих",
+          };
+          crumbs.push({ label: titles[pathParts[1]] || pathParts[1] });
+        }
+        return crumbs;
+      }
+      
+      // Handle other /info/* pages
+      if (pathParts.length === 1) {
+        const titles = {
+          "zakon-karta": "Законодательная карта",
+          "istoriya-parlamentarizma": "История парламентаризма",
+          "polnomochiya": "Полномочия",
+          "upoln-po-prav": "Уполномоченный по правам человека",
+          "upoln-po-rebenku": "Уполномоченный по правам ребенка",
+        };
+        crumbs.push({ label: titles[firstPart] || firstPart });
+      } else {
+        const titles = {
+          "zakon-karta": "Законодательная карта",
+          "istoriya-parlamentarizma": "История парламентаризма",
+          "polnomochiya": "Полномочия",
+          "upoln-po-prav": "Уполномоченный по правам человека",
+          "upoln-po-rebenku": "Уполномоченный по правам ребенка",
+        };
+        crumbs.push({ label: titles[firstPart] || firstPart, href: `/info/${firstPart}` });
+        crumbs.push({ label: pathParts[1] });
+      }
+      return crumbs;
+    }
+    
+    // Handle /struct/* routes
+    if (base.startsWith("/struct/")) {
+      const slug = base.slice(8);
+      crumbs.push({ label: "Структура", href: "/section" });
+      const titles = {
+        "o-verkhovnom-khurale": "О Верховном Хурале",
+        "predstavitelstvo": "Представительство",
+        "deputatskie-fraktsii": "Депутатские фракции",
+        "komissii": "Комиссии",
+        "molodezhnyy-khural": "Молодежный Хурал",
+      };
+      crumbs.push({ label: titles[slug] || slug });
+      return crumbs;
+    }
+    
+    // Handle /page/* routes (legacy)
+    if (base.startsWith("/page/")) {
+      const slug = base.slice(6);
+      if (slug.startsWith("info/")) {
+        crumbs.push({ label: "Информация", href: "/info" });
+        if (slug.startsWith("info/finansy/")) {
+          crumbs.push({ label: "Финансы", href: "/info/finansy" });
+        } else if (slug.startsWith("info/personnel/")) {
+          crumbs.push({ label: "Кадровое обеспечение", href: "/info/personnel" });
+        }
+      } else if (slug.startsWith("about/")) {
+        crumbs.push({ label: "О парламенте", href: "/about" });
+      }
+      crumbs.push({ label: slug.split("/").pop() });
+      return crumbs;
     }
     // Default: show just page title
     const title = TITLES[base];
