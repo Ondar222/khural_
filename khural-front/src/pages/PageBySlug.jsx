@@ -195,9 +195,6 @@ const INFO_FINANCE_CHECKS_2016_HTML = `
       <p style="margin:0;">Все доначисленные по результатам проверок суммы уплачены в установленные сроки во внебюджетные фонды.</p>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/rezultaty-proverok" style="color: #003366; text-decoration: none;">← Назад к результатам проверок</a>
-  </div>
 </div>
 `;
 
@@ -209,9 +206,6 @@ const INFO_FINANCE_CHECKS_2018_HTML = `
     <div style="line-height: 1.7; color: #374151;">
       <p style="margin:0;">В 2019 году проведена проверка целевого и эффективного использования средств республиканского бюджета Республики Тыва, выделенных в 2018 году Верховному Хуралу (парламенту) Республики Тыва. Проверка проведена Счетной палатой Республики Тыва, о чем составлен акт от 15 февраля 2019 года. По результатам проведенной проверки нарушений не выявлено.</p>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/rezultaty-proverok" style="color: #003366; text-decoration: none;">← Назад к результатам проверок</a>
   </div>
 </div>
 `;
@@ -225,9 +219,6 @@ const INFO_FINANCE_CHECKS_2019_HTML = `
       <p style="margin:0;">В 2020 году проведена проверка целевого и эффективного использования средств республиканского бюджета Республики Тыва, выделенных в 2019 году Верховному Хуралу (парламенту) Республики Тыва. Проверка проведена Счетной палатой Республики Тыва, о чем составлен акт от 2 октября 2020 года. По результатам проведенной проверки нарушений и недостатков не выявлено.</p>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/rezultaty-proverok" style="color: #003366; text-decoration: none;">← Назад к результатам проверок</a>
-  </div>
 </div>
 `;
 
@@ -240,9 +231,6 @@ const INFO_FINANCE_CHECKS_2020_HTML = `
       <p style="margin:0 0 12px 0;">В 2021 году проведена проверка целевого и эффективного использования средств республиканского бюджета Республики Тыва, выделенных в 2020 году Верховному Хуралу (парламенту) Республики Тыва. Проверка проведена Счетной палатой Республики Тыва, о чем составлен акт от 6 апреля 2021 года. По результатам проведенной проверки нарушений и недостатков не выявлено.</p>
       <p style="margin:0;">На основании решения о проведении выездной проверки от 11.05.2021 г. №22 Регионального отделения Фонда социального страхования Российской Федерации по Республике Тыва проведены выездные проверки по обязательному социальному страхованию от несчастных случаев на производстве и профессиональных заболеваний за период с 01.01.2018 года по 31.12.2020 года, а также по проверке полноты и достоверности представляемых страхователем сведений и документов, необходимых для назначения и выплаты страхового обеспечения за период с 01.07.2018 года по 31.12.2020 года. По результатам проведенных проверок нарушений не установлено, о чем составлены справки от 1 июня 2021 года № 22 и от 1 июня 2021 года № 17002180000352.</p>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/rezultaty-proverok" style="color: #003366; text-decoration: none;">← Назад к результатам проверок</a>
   </div>
 </div>
 `;
@@ -259,9 +247,6 @@ const INFO_FINANCE_PROCUREMENT_HTML = `
         <li><a href="https://khural.rtyva.ru/upload/iblock/1f9/%D0%9E%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D1%82%D0%B8%D0%B2%D0%B0%D1%85%20%D0%B7%D0%B0%D0%BA%D1%83%D0%BF%D0%BE%D0%BA%20%D0%92%D0%A5%20%D0%A0%D0%A2.docx" target="_blank" rel="noreferrer" style="color: #003366;">О нормативах закупок Верховного Хурала (парламента) РТ</a></li>
       </ul>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy" style="color: #003366; text-decoration: none;">← Назад к финансам</a>
   </div>
 </div>
 `;
@@ -284,9 +269,6 @@ const INFO_FINANCE_REPORTS_HTML = `
       <li><a href="/info/finansy/otcheti/2023" style="color: #003366;">Отчет за 2023 год</a></li>
     </ul>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy" style="color: #003366; text-decoration: none;">← Назад к финансам</a>
-  </div>
 </div>
 `;
 
@@ -297,10 +279,10 @@ const INFO_FINANCE_REPORTS_2015_HTML = `
   <div class="card" style="padding: 20px;">
     <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2015 год</h2>
     <p style="margin:0 0 16px 0; color: #6b7280; font-size: 14px;">Приложение 6 к Закону Республики Тыва "Об исполнении республиканского бюджета Республики Тыва за 2015 год"</p>
-    
+
     <h3 style="margin:0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827;">ВЕДОМСТВЕННАЯ СТРУКТУРА РАСХОДОВ РЕСПУБЛИКАНСКОГО БЮДЖЕТА РЕСПУБЛИКИ ТЫВА ЗА 2015 ГОД</h3>
     <p style="margin:0 0 16px 0; color: #6b7280; font-size: 13px;">(тыс. рублей)</p>
-    
+
     <div style="overflow-x: auto;">
       <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
         <thead>
@@ -346,9 +328,6 @@ const INFO_FINANCE_REPORTS_2015_HTML = `
       </table>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
-  </div>
 </div>
 `;
 
@@ -358,7 +337,7 @@ const INFO_FINANCE_REPORTS_2016_HTML = `
 <div style="display:grid; gap:16px;">
   <div class="card" style="padding: 20px;">
     <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2016 год</h2>
-    
+
     <div style="overflow-x: auto;">
       <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
         <thead>
@@ -410,9 +389,6 @@ const INFO_FINANCE_REPORTS_2016_HTML = `
       </table>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
-  </div>
 </div>
 `;
 
@@ -423,7 +399,7 @@ const INFO_FINANCE_REPORTS_2017_HTML = `
   <div class="card" style="padding: 20px;">
     <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2017 год</h2>
     <p style="margin:0 0 16px 0; color: #6b7280; font-size: 13px;">(тыс. руб.)</p>
-    
+
     <div style="overflow-x: auto;">
       <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
         <thead>
@@ -468,9 +444,6 @@ const INFO_FINANCE_REPORTS_2017_HTML = `
       </table>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
-  </div>
 </div>
 `;
 
@@ -481,7 +454,7 @@ const INFO_FINANCE_REPORTS_2018_HTML = `
   <div class="card" style="padding: 20px;">
     <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2018 год</h2>
     <p style="margin:0 0 16px 0; color: #6b7280; font-size: 13px;">(тыс. руб.)</p>
-    
+
     <div style="overflow-x: auto;">
       <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
         <thead>
@@ -533,9 +506,6 @@ const INFO_FINANCE_REPORTS_2018_HTML = `
       </table>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
-  </div>
 </div>
 `;
 
@@ -545,7 +515,7 @@ const INFO_FINANCE_REPORTS_2019_HTML = `
 <div style="display:grid; gap:16px;">
   <div class="card" style="padding: 20px;">
     <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Отчет об использовании бюджетных средств за 2019 год</h2>
-    
+
     <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
         <span style="font-size: 24px;">📄</span>
@@ -554,12 +524,9 @@ const INFO_FINANCE_REPORTS_2019_HTML = `
             <a href="https://khural.rtyva.ru/upload/iblock/178/ix4d70jwylfahx5ibn11bie0yutb17n0/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202019%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
               Отчетность за 2019 год
             </a>
-        
+
       </div>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
   </div>
 </div>
 `;
@@ -585,9 +552,6 @@ const INFO_FINANCE_REPORTS_2020_HTML = `
       </div>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
-  </div>
 </div>
 `;
 
@@ -607,13 +571,10 @@ const INFO_FINANCE_REPORTS_2021_HTML = `
               Отчетность за 2021 год
             </a>
           </div>
-    
+
         </div>
       </div>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
   </div>
 </div>
 `;
@@ -639,9 +600,6 @@ const INFO_FINANCE_REPORTS_2022_HTML = `
       </div>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
-  </div>
 </div>
 `;
 
@@ -665,9 +623,6 @@ const INFO_FINANCE_REPORTS_2023_HTML = `
         </div>
       </div>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy/otcheti" style="color: #003366; text-decoration: none;">← Назад к отчетам</a>
   </div>
 </div>
 `;
@@ -725,9 +680,6 @@ const INFO_BUDGET_HTML = `
         <li><a href="/info/finansy/byudzhet/otchety" style="color: #003366;">Отчеты об исполнении республиканского бюджета Республики Тыва</a></li>
       </ul>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/finansy" style="color: #003366; text-decoration: none;">← Назад к финансам</a>
   </div>
 </div>
 `;
@@ -837,9 +789,6 @@ const INFO_DISTRICTS_HTML = `
       </div>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info" style="color: #003366; text-decoration: none;">← Назад к информации</a>
-  </div>
 </div>
 `;
 
@@ -895,9 +844,6 @@ const INFO_HISTORY_HTML = `
         </ol>
       </div>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/about" style="color: #003366; text-decoration: none;">← Назад к общим сведениям</a>
   </div>
 </div>
 `;
@@ -1033,9 +979,6 @@ const INFO_POLNOMOCHIYA_HTML = `
       </div>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/about" style="color: #003366; text-decoration: none;">← Назад к общим сведениям</a>
-  </div>
 </div>
 `;
 
@@ -1078,9 +1021,6 @@ const INFO_PERSONNEL_HTML = `
       </ul>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info" style="color: #003366; text-decoration: none;">← Назад к информации</a>
-  </div>
 </div>
 `;
 
@@ -1121,9 +1061,6 @@ const INFO_PERSONNEL_GOSLUZHPBA_HTML = `
       </ol>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/personnel" style="color: #003366; text-decoration: none;">← Назад к кадровому обеспечению</a>
-  </div>
 </div>
 `;
 
@@ -1142,9 +1079,6 @@ const INFO_PERSONNEL_PORYADOK_HTML = `
         <li><a href="/info/personnel/law-112" style="color: #003366;">Указ Президента РФ от 01.02.2005 N 112 "О конкурсе на замещение вакантной должности государственной гражданской службы Российской Федерации"</a></li>
       </ul>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/personnel" style="color: #003366; text-decoration: none;">← Назад к кадровому обеспечению</a>
   </div>
 </div>
 `;
@@ -1180,9 +1114,6 @@ const INFO_PERSONNEL_LAW58FZ_HTML = `
       <p style="margin:24px 0 8px 0; font-weight: 600;">Москва, Кремль<br/>27 мая 2003 года<br/>№ 58-ФЗ</p>
       <p style="margin:0; font-weight: 600;">Президент Российской Федерации<br/>В.ПУТИН</p>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/personnel/poryadok-postupleniya" style="color: #003366; text-decoration: none;">← Назад к порядку поступления</a>
   </div>
 </div>
 `;
@@ -1234,9 +1165,6 @@ const INFO_PERSONNEL_LAW79FZ_HTML = `
       <p style="margin:0; font-weight: 600;">Москва, Кремль<br/>27 июля 2004 года<br/>№ 79-ФЗ</p>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/personnel/poryadok-postupleniya" style="color: #003366; text-decoration: none;">← Назад к порядку поступления</a>
-  </div>
 </div>
 `;
 
@@ -1277,9 +1205,6 @@ const INFO_PERSONNEL_LAW112_HTML = `
       <p style="margin:0; font-weight: 600;">Москва, Кремль<br/>1 февраля 2005 года<br/>N 112</p>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/personnel/poryadok-postupleniya" style="color: #003366; text-decoration: none;">← Назад к порядку поступления</a>
-  </div>
 </div>
 `;
 
@@ -1309,9 +1234,6 @@ const INFO_PERSONNEL_TELEFON_HTML = `
         </div>
       </div>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/personnel/poryadok-postupleniya" style="color: #003366; text-decoration: none;">← Назад к порядку поступления</a>
   </div>
 </div>
 `;
@@ -1363,9 +1285,6 @@ const INFO_PERSONNEL_OBZHALOVANIE_HTML = `
       </ol>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/personnel/poryadok-postupleniya" style="color: #003366; text-decoration: none;">← Назад к порядку поступления</a>
-  </div>
 </div>
 `;
 
@@ -1406,9 +1325,6 @@ const INFO_PERSONNEL_PENSION_HTML = `
       </p>
     </div>
   </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/personnel" style="color: #003366; text-decoration: none;">← Назад к кадровому обеспечению</a>
-  </div>
 </div>
 `;
 
@@ -1439,9 +1355,6 @@ const INFO_PERSONNEL_OTPUSK_HTML = `
         Источник: "Федеральный портал государственной службы и управленческих кадров"
       </p>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info/personnel" style="color: #003366; text-decoration: none;">← Назад к кадровому обеспечению</a>
   </div>
 </div>
 `;
@@ -1519,9 +1432,6 @@ const OPENDATA_HTML = `
         При несоблюдении пользователем условий соглашения права, предоставленные пользователю в соответствии с соглашением, автоматически прекращаются.
       </p>
     </div>
-  </div>
-  <div style="margin-top: 16px;">
-    <a href="/info" style="color: #003366; text-decoration: none;">← Назад к информации</a>
   </div>
 </div>
 `;
@@ -1802,6 +1712,54 @@ export default function PageBySlug() {
     isFederationCouncil ||
     shouldUseInfoFallback;
 
+  // Определяем URL для кнопки "Назад"
+  const backUrl = isInfoFinanceChecks2016 || isInfoFinanceChecks2018 || isInfoFinanceChecks2019 || isInfoFinanceChecks2020
+    ? "/info/finansy/rezultaty-proverok"
+    : isInfoFinanceReports2015 || isInfoFinanceReports2016 || isInfoFinanceReports2017 || 
+      isInfoFinanceReports2018 || isInfoFinanceReports2019 || isInfoFinanceReports2020 ||
+      isInfoFinanceReports2021 || isInfoFinanceReports2022 || isInfoFinanceReports2023
+    ? "/info/finansy/otcheti"
+    : isInfoFinanceChecks || isInfoFinanceProcurement || isInfoFinanceReports || isInfoBudget
+    ? "/info/finansy"
+    : isInfoDistricts || isInfoLawmap || isInfoHistory || isInfoPolnomochiya || isOpenData ||
+      isInfoOmbHuman || isInfoOmbChild
+    ? "/info"
+    : isInfoPersonnelGossluzhba || isInfoPersonnelPoryadok || isInfoPersonnelLaw58fz ||
+      isInfoPersonnelLaw79fz || isInfoPersonnelLaw112 || isInfoPersonnelTelefon ||
+      isInfoPersonnelObzhalovanie || isInfoPersonnelPension || isInfoPersonnelOtpusk
+    ? "/info/personnel"
+    : isInfoFinance || isInfoIndex
+    ? "/info"
+    : isMothersCommandments || isCodeOfHonor
+    ? "/about"
+    : isForMedia
+    ? "/info"
+    : isFederationCouncil
+    ? "/info"
+    : "/info";
+
+  // Определяем текст для кнопки "Назад"
+  const backText = isInfoFinanceChecks2016 || isInfoFinanceChecks2018 || isInfoFinanceChecks2019 || isInfoFinanceChecks2020
+    ? "← Назад к результатам проверок"
+    : isInfoFinanceReports2015 || isInfoFinanceReports2016 || isInfoFinanceReports2017 || 
+      isInfoFinanceReports2018 || isInfoFinanceReports2019 || isInfoFinanceReports2020 ||
+      isInfoFinanceReports2021 || isInfoFinanceReports2022 || isInfoFinanceReports2023
+    ? "← Назад к отчетам"
+    : isInfoFinanceChecks || isInfoFinanceProcurement || isInfoFinanceReports || isInfoBudget
+    ? "← Назад к финансам"
+    : isInfoDistricts || isInfoLawmap || isInfoHistory || isInfoPolnomochiya || isOpenData ||
+      isInfoOmbHuman || isInfoOmbChild
+    ? "← Назад к информации"
+    : isInfoPersonnelGossluzhba || isInfoPersonnelPoryadok || isInfoPersonnelLaw58fz ||
+      isInfoPersonnelLaw79fz || isInfoPersonnelLaw112 || isInfoPersonnelTelefon ||
+      isInfoPersonnelObzhalovanie || isInfoPersonnelPension || isInfoPersonnelOtpusk
+    ? "← Назад к кадровому обеспечению"
+    : isInfoFinance || isInfoIndex
+    ? "← Назад к информации"
+    : isMothersCommandments || isCodeOfHonor
+    ? "← Назад к общим сведениям"
+    : "← Назад";
+
   // Получаем заголовок с переводом
   const title = isCodeOfHonor
     ? t(CODE_OF_HONOR_TITLE) || CODE_OF_HONOR_TITLE
@@ -2004,6 +1962,11 @@ export default function PageBySlug() {
   return (
     <section className="section">
       <div className="container">
+        <div style={{ marginBottom: 16 }}>
+          <a href={backUrl} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+            {backText}
+          </a>
+        </div>
         <h1 className="h1-compact">{title}</h1>
         <DataState
           loading={loading}

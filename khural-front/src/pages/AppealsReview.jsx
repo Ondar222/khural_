@@ -10,6 +10,11 @@ export default function AppealsReview() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
+            <div style={{ marginBottom: 16 }}>
+              <a href="/appeals" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                &larr; Назад к способам подачи обращений
+              </a>
+            </div>
             <h1 className="h1-compact">{t("Порядок рассмотрения обращений")}</h1>
 
         <div className="tile" style={{ marginBottom: 24 }}>
@@ -235,9 +240,6 @@ export default function AppealsReview() {
         </div>
 
         <div style={{ display: "flex", gap: 16, marginTop: 20 }}>
-          <a href="/appeals" className="btn">
-            &larr; Назад к способам подачи обращений
-          </a>
           <a href="/appeals/complaints" className="link" style={{ fontSize: 15, alignSelf: "center" }}>
             Порядок обжалования
           </a>

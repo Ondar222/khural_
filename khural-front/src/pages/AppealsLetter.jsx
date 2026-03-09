@@ -10,6 +10,11 @@ export default function AppealsLetter() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
+            <div style={{ marginBottom: 16 }}>
+              <a href="/appeals" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                &larr; Назад к способам подачи обращений
+              </a>
+            </div>
             <h1 className="h1-compact">{t("Обращения граждан и юридических лиц")}</h1>
 
         <div className="tile" style={{ marginBottom: 24 }}>
@@ -132,12 +137,6 @@ export default function AppealsLetter() {
               Порядок обжалования
             </a>
           </div>
-        </div>
-
-        <div style={{ marginTop: 24 }}>
-          <a href="/appeals" className="btn">
-            &larr; Назад к способам подачи обращений
-          </a>
         </div>
           </div>
           <SideNav title="Разделы" loadPages={true} autoSection={true} />

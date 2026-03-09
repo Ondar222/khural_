@@ -11,6 +11,11 @@ export default function AppealsStatus() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
+            <div style={{ marginBottom: 16 }}>
+              <a href="/appeals" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                &larr; Назад к способам подачи обращений
+              </a>
+            </div>
             <h1 className="h1-compact">{t("Проверить статус обращения")}</h1>
 
         <div className="tile" style={{ marginBottom: 24 }}>
@@ -46,9 +51,6 @@ export default function AppealsStatus() {
         <div style={{ display: "flex", gap: 16, marginTop: 24 }}>
           <a href="/appeals/online" className="btn btn--primary">
             Электронная приемная (Мои обращения)
-          </a>
-          <a href="/appeals" className="btn">
-            &larr; Назад к способам подачи обращений
           </a>
         </div>
           </div>

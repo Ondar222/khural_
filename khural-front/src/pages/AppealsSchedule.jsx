@@ -10,6 +10,11 @@ export default function AppealsSchedule() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
+            <div style={{ marginBottom: 16 }}>
+              <a href="/appeals" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                &larr; Назад к способам подачи обращений
+              </a>
+            </div>
             <h1 className="h1-compact">{t("График приема граждан")}</h1>
 
         <div className="tile" style={{ marginBottom: 24 }}>
@@ -49,12 +54,6 @@ export default function AppealsSchedule() {
             Для уточнения графика приёма депутатов и руководителей органов Верховного Хурала обращайтесь в приёмную
             по телефонам, указанным в разделе «Контакты». Предварительная запись может быть обязательной.
           </p>
-        </div>
-
-        <div style={{ marginTop: 24 }}>
-          <a href="/appeals" className="btn">
-            &larr; Назад к способам подачи обращений
-          </a>
         </div>
           </div>
           <SideNav title="Разделы" loadPages={true} autoSection={true} />

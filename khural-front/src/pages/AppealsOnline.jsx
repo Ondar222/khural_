@@ -616,6 +616,11 @@ export default function AppealsOnline() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
+            <div style={{ marginBottom: 16 }}>
+              <a href="/appeals" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                &larr; Назад к способам подачи обращений
+              </a>
+            </div>
             <h1 className="h1-compact">{t("Электронная приемная")}</h1>
 
         {!isAuthenticated ? (
@@ -956,10 +961,6 @@ export default function AppealsOnline() {
             // },
           ]}
         />
-
-        <div style={{ marginTop: 12 }}>
-          <a href="/appeals">&larr; Назад к способам подачи обращений</a>
-        </div>
           </div>
           <SideNav title="Разделы" loadPages={true} autoSection={true} />
         </div>
