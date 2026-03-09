@@ -56,6 +56,17 @@ body {
   overflow-x: hidden; /* avoid accidental horizontal scroll */
 }
 
+/* Text selection color - yellow/gold */
+::selection {
+  background: #a3943e;
+  color: #000;
+}
+
+::-moz-selection {
+  background: #a3943e;
+  color: #000;
+}
+
 /* Настройки доступности: отключение анимаций и переходов */
 body.a11y-no-motion,
 body.a11y-no-motion * {
