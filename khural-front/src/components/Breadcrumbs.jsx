@@ -255,6 +255,7 @@ export default function Breadcrumbs() {
           "istoriya-parlamentarizma": "История парламентаризма",
           "polnomochiya": "Полномочия",
           "upoln-po-prav": "Уполномоченный по правам человека",
+          "upoln-po-reb": "Уполномоченный по правам ребенка",
           "upoln-po-rebenku": "Уполномоченный по правам ребенка",
         };
         crumbs.push({ label: titles[firstPart] || firstPart });
@@ -264,6 +265,7 @@ export default function Breadcrumbs() {
           "istoriya-parlamentarizma": "История парламентаризма",
           "polnomochiya": "Полномочия",
           "upoln-po-prav": "Уполномоченный по правам человека",
+          "upoln-po-reb": "Уполномоченный по правам ребенка",
           "upoln-po-rebenku": "Уполномоченный по правам ребенка",
         };
         crumbs.push({ label: titles[firstPart] || firstPart, href: `/info/${firstPart}` });
@@ -282,6 +284,7 @@ export default function Breadcrumbs() {
         "deputatskie-fraktsii": "Депутатские фракции",
         "komissii": "Комиссии",
         "molodezhnyy-khural": "Молодежный Хурал",
+        "council": "Представительство в Совете Федерации",
       };
       crumbs.push({ label: titles[slug] || slug });
       return crumbs;
