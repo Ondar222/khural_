@@ -1,10 +1,11 @@
 import React from "react";
 import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
+import { useI18n } from "../context/I18nContext.jsx";
 import Link from "./Link.jsx";
 
-// Static titles for base pages
-const TITLES = {
+// Static titles for base pages (will be translated via t())
+const TITLES_KEYS = {
   "/": "Главная",
   "/region": "Регион",
   "/about": "О парламенте",
@@ -39,96 +40,91 @@ export default function Breadcrumbs() {
   const { route, navigate } = useHashRoute();
   const base = getRouteBase(route);
   const { committees, slides } = useData();
+  const { t } = useI18n();
 
   // Build hierarchical trail
   const trail = React.useMemo(() => {
-    const crumbs = [{ label: "Главная", href: "/" }];
+    const crumbs = [{ label: t("Главная"), href: "/" }];
     // Optional intermediate for certain sections
     if (base === "/committee") {
-      crumbs.push({ label: "Структура", href: "/section" });
+      crumbs.push({ label: t("Структура"), href: "/section" });
       // append selected committee title when possible
       try {
         const sp = new URLSearchParams((route || "").split("?")[1]);
         const id = sp.get("id");
         const c = (committees || []).find((x) => x.id === id);
         if (c?.title) {
-          crumbs.push({ label: "Комитеты", href: "/committee" });
+          crumbs.push({ label: t("Комитеты"), href: "/committee" });
           crumbs.push({ label: c.title });
           return crumbs;
         }
       } catch {}
-      crumbs.push({ label: "Комитеты" });
+      crumbs.push({ label: t("Комитеты") });
       return crumbs;
     }
     // News: Week highlights page
     if (base === "/news/week") {
-      crumbs.push({ label: "Новости", href: "/news" });
-      crumbs.push({ label: "Главные события недели" });
+      crumbs.push({ label: t("Новости"), href: "/news" });
+      crumbs.push({ label: t("Главные события недели") });
       return crumbs;
     }
     // News: Slider detail page
     if (base.startsWith("/news/slider/")) {
-      crumbs.push({ label: "Новости", href: "/news" });
-      crumbs.push({ label: "Главные события недели", href: "/news/week" });
+      crumbs.push({ label: t("Новости"), href: "/news" });
+      crumbs.push({ label: t("Главные события недели"), href: "/news/week" });
       try {
         const id =
           (typeof window !== "undefined" && window.__routeParams && window.__routeParams.id
             ? String(window.__routeParams.id)
             : decodeURIComponent(base.slice("/news/slider/".length))) || "";
         const found = (Array.isArray(slides) ? slides : []).find((s) => String(s?.id ?? "") === String(id));
-        crumbs.push({ label: String(found?.title || "").trim() || "Событие" });
+        crumbs.push({ label: String(found?.title || "").trim() || t("Событие") });
       } catch {
-        crumbs.push({ label: "Событие" });
+        crumbs.push({ label: t("Событие") });
       }
       return crumbs;
     }
     if (base === "/deputies") {
-      crumbs.push({ label: "Структура", href: "/section" });
+      crumbs.push({ label: t("Структура"), href: "/section" });
       try {
         const sp = new URLSearchParams((route || "").split("?")[1]);
         const status = String(sp.get("status") || "").toLowerCase();
         if (status === "ended") {
-          crumbs.push({ label: "Депутаты (прекратившие полномочия)" });
+          crumbs.push({ label: t("Депутаты (прекратившие полномочия)") });
           return crumbs;
         }
       } catch {}
-      crumbs.push({ label: "Депутаты" });
+      crumbs.push({ label: t("Депутаты") });
       return crumbs;
     }
     // Handle commission pages
     if (base === "/commission") {
-      crumbs.push({ label: "Структура", href: "/section" });
+      crumbs.push({ label: t("Структура"), href: "/section" });
       try {
         const sp = new URLSearchParams((route || "").split("?")[1]);
         const id = sp.get("id");
         // Import commission titles mapping
         const COMMISSION_IDS = {
-          nagradnaya: "Наградная комиссия Верховного Хурала (парламента) Республики Тыва",
-          "kontrol-dostovernost":
-            "Комиссия Верховного Хурала (парламента) Республики Тыва по контролю за достоверностью сведений о доходах, об имуществе и обязательствах имущественного характера, представляемых депутатами Верховного Хурала (парламента) Республики Тыва",
-          schetnaya: "Счетная комиссия Верховного Хурала",
-          "reglament-etika":
-            "Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала (парламента) Республики Тыва и депутатской этике",
-          reabilitatsiya:
-            "Республиканская комиссия по восстановлению прав реабилитированных жертв политических репрессий",
-          "svo-podderzhka":
-            "Комиссия Верховного Хурала (парламента) Республики Тыва по поддержке участников специальной военной операции и их семей",
-          "smi-obshestvo":
-            "Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями",
-          "mezhregionalnye-svyazi":
-            "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным и международным связям",
+          nagradnaya: t("Наградная комиссия"),
+          "kontrol-dostovernost": t("Комиссия по контролю за достоверностью сведений"),
+          schetnaya: t("Счетная комиссия"),
+          "reglament-etika": t("Комиссия по Регламенту и депутатской этике"),
+          reabilitatsiya: t("Комиссия по восстановлению прав реабилитированных"),
+          "svo-podderzhka": t("Комиссия по поддержке участников СВО"),
+          "smi-obshestvo": t("Комитет по взаимодействию со СМИ"),
+          "mezhregionalnye-svyazi": t("Комитет по межрегиональным связям"),
         };
         if (id && COMMISSION_IDS[id]) {
           crumbs.push({
-            label: "Комиссии",
+            label: t("Комиссии"),
             href: "/section?title=" + encodeURIComponent("Комиссии"),
           });
           crumbs.push({ label: COMMISSION_IDS[id] });
           return crumbs;
         }
       } catch {}
-      crumbs.push({ label: "Комиссии", href: "/section?title=" + encodeURIComponent("Комиссии") });
-      crumbs.push({ label: "Комиссия" });
+      crumbs.push({ label: t("Комиссии"), href: "/section?title=" + encodeURIComponent("Комиссии") });
+      crumbs.push({ label: t("Комиссия") });
       return crumbs;
     }
     // Handle section pages with specific titles
@@ -138,7 +134,7 @@ export default function Breadcrumbs() {
         const sectionTitle = sp.get("title");
         if (sectionTitle) {
           const decodedTitle = decodeURIComponent(sectionTitle);
-          crumbs.push({ label: "Структура", href: "/section" });
+          crumbs.push({ label: t("Структура"), href: "/section" });
           crumbs.push({ label: decodedTitle });
           return crumbs;
         }
@@ -146,127 +142,127 @@ export default function Breadcrumbs() {
     }
     // Handle /info routes (PageBySlug)
     if (base === "/info") {
-      crumbs.push({ label: "Информация" });
+      crumbs.push({ label: t("Информация") });
       return crumbs;
     }
     // Handle /info/* routes (PageBySlug)
     if (base.startsWith("/info/")) {
       const pathParts = base.slice(6).split("/"); // After "/info/"
-      crumbs.push({ label: "Информация", href: "/info" });
-      
+      crumbs.push({ label: t("Информация"), href: "/info" });
+
       const firstPart = pathParts[0];
-      
+
       // Handle /info/iokrug/*
       if (firstPart === "iokrug") {
         if (pathParts.length === 1) {
-          crumbs.push({ label: "Избирательные округа" });
+          crumbs.push({ label: t("Избирательные округа") });
         } else {
-          crumbs.push({ label: "Избирательные округа", href: "/info/iokrug" });
+          crumbs.push({ label: t("Избирательные округа"), href: "/info/iokrug" });
           // District detail page - try to get district name
           const districtSlug = pathParts[1];
           const districtNames = {
-            "1": "Одномандатный избирательный округ №1",
-            "2": "Одномандатный избирательный округ №2",
-            "3": "Одномандатный избирательный округ №3",
-            "4": "Одномандатный избирательный округ №4",
-            "5": "Одномандатный избирательный округ №5",
-            "6": "Одномандатный избирательный округ №6",
-            "7": "Одномандатный избирательный округ №7",
-            "8": "Одномандатный избирательный округ №8",
-            "9": "Одномандатный избирательный округ №9",
-            "10": "Одномандатный избирательный округ №10",
-            "11": "Одномандатный избирательный округ №11",
-            "12": "Одномандатный избирательный округ №12",
-            "13": "Одномандатный избирательный округ №13",
-            "14": "Одномандатный избирательный округ №14",
-            "15": "Одномандатный избирательный округ №15",
-            "16": "Одномандатный избирательный округ №16",
+            "1": t("Одномандатный избирательный округ №1"),
+            "2": t("Одномандатный избирательный округ №2"),
+            "3": t("Одномандатный избирательный округ №3"),
+            "4": t("Одномандатный избирательный округ №4"),
+            "5": t("Одномандатный избирательный округ №5"),
+            "6": t("Одномандатный избирательный округ №6"),
+            "7": t("Одномандатный избирательный округ №7"),
+            "8": t("Одномандатный избирательный округ №8"),
+            "9": t("Одномандатный избирательный округ №9"),
+            "10": t("Одномандатный избирательный округ №10"),
+            "11": t("Одномандатный избирательный округ №11"),
+            "12": t("Одномандатный избирательный округ №12"),
+            "13": t("Одномандатный избирательный округ №13"),
+            "14": t("Одномандатный избирательный округ №14"),
+            "15": t("Одномандатный избирательный округ №15"),
+            "16": t("Одномандатный избирательный округ №16"),
           };
-          crumbs.push({ label: districtNames[districtSlug] || `Округ ${districtSlug}` });
+          crumbs.push({ label: districtNames[districtSlug] || `${t("Округ")} ${districtSlug}` });
         }
         return crumbs;
       }
-      
+
       // Handle /info/finansy/*
       if (firstPart === "finansy") {
         if (pathParts.length === 1) {
-          crumbs.push({ label: "Финансы" });
+          crumbs.push({ label: t("Финансы") });
         } else {
           const secondPart = pathParts[1];
           if (secondPart === "byudzhet") {
-            crumbs.push({ label: "Финансы", href: "/info/finansy" });
+            crumbs.push({ label: t("Финансы"), href: "/info/finansy" });
             if (pathParts.length === 2) {
-              crumbs.push({ label: "Бюджет" });
+              crumbs.push({ label: t("Бюджет") });
             } else {
-              crumbs.push({ label: "Бюджет", href: "/info/finansy/byudzhet" });
+              crumbs.push({ label: t("Бюджет"), href: "/info/finansy/byudzhet" });
               // Budget year detail
               crumbs.push({ label: pathParts[2] });
             }
           } else if (secondPart === "otcheti") {
-            crumbs.push({ label: "Финансы", href: "/info/finansy" });
+            crumbs.push({ label: t("Финансы"), href: "/info/finansy" });
             if (pathParts.length === 2) {
-              crumbs.push({ label: "Отчеты" });
+              crumbs.push({ label: t("Отчеты") });
             } else {
-              crumbs.push({ label: "Отчеты", href: "/info/finansy/otcheti" });
+              crumbs.push({ label: t("Отчеты"), href: "/info/finansy/otcheti" });
               crumbs.push({ label: pathParts[2] });
             }
           } else if (secondPart === "rezultaty-proverok") {
-            crumbs.push({ label: "Финансы", href: "/info/finansy" });
+            crumbs.push({ label: t("Финансы"), href: "/info/finansy" });
             if (pathParts.length === 2) {
-              crumbs.push({ label: "Результаты проверок" });
+              crumbs.push({ label: t("Результаты проверок") });
             } else {
-              crumbs.push({ label: "Результаты проверок", href: "/info/finansy/rezultaty-proverok" });
+              crumbs.push({ label: t("Результаты проверок"), href: "/info/finansy/rezultaty-proverok" });
               crumbs.push({ label: pathParts[2] });
             }
           } else {
-            crumbs.push({ label: "Финансы", href: "/info/finansy" });
+            crumbs.push({ label: t("Финансы"), href: "/info/finansy" });
             crumbs.push({ label: pathParts[1] });
           }
         }
         return crumbs;
       }
-      
+
       // Handle /info/personnel/*
       if (firstPart === "personnel") {
         if (pathParts.length === 1) {
-          crumbs.push({ label: "Кадровое обеспечение" });
+          crumbs.push({ label: t("Кадровое обеспечение") });
         } else {
-          crumbs.push({ label: "Кадровое обеспечение", href: "/info/personnel" });
+          crumbs.push({ label: t("Кадровое обеспечение"), href: "/info/personnel" });
           const titles = {
-            "gossluzhba": "Государственная служба",
-            "poryadok-postupleniya": "Порядок поступления",
-            "law-58fz": "Федеральный закон № 58-ФЗ",
-            "law-79fz": "Федеральный закон № 79-ФЗ",
-            "law-112": "Указ Президента № 112",
-            "telefon-spravok": "Телефон для справок",
-            "poryadok-obzhalovaniya": "Порядок обжалования",
-            "pensionnoe-obespechenie": "Пенсионное обеспечение",
-            "otpusk-sluzhaschih": "Отпуска служащих",
+            "gossluzhba": t("Государственная служба"),
+            "poryadok-postupleniya": t("Порядок поступления"),
+            "law-58fz": t("Федеральный закон № 58-ФЗ"),
+            "law-79fz": t("Федеральный закон № 79-ФЗ"),
+            "law-112": t("Указ Президента № 112"),
+            "telefon-spravok": t("Телефон для справок"),
+            "poryadok-obzhalovaniya": t("Порядок обжалования"),
+            "pensionnoe-obespechenie": t("Пенсионное обеспечение"),
+            "otpusk-sluzhaschih": t("Отпуска служащих"),
           };
           crumbs.push({ label: titles[pathParts[1]] || pathParts[1] });
         }
         return crumbs;
       }
-      
+
       // Handle other /info/* pages
       if (pathParts.length === 1) {
         const titles = {
-          "zakon-karta": "Законодательная карта",
-          "istoriya-parlamentarizma": "История парламентаризма",
-          "polnomochiya": "Полномочия",
-          "upoln-po-prav": "Уполномоченный по правам человека",
-          "upoln-po-reb": "Уполномоченный по правам ребенка",
-          "upoln-po-rebenku": "Уполномоченный по правам ребенка",
+          "zakon-karta": t("Законодательная карта"),
+          "istoriya-parlamentarizma": t("История парламентаризма"),
+          "polnomochiya": t("Полномочия"),
+          "upoln-po-prav": t("Уполномоченный по правам человека"),
+          "upoln-po-reb": t("Уполномоченный по правам ребенка"),
+          "upoln-po-rebenku": t("Уполномоченный по правам ребенка"),
         };
         crumbs.push({ label: titles[firstPart] || firstPart });
       } else {
         const titles = {
-          "zakon-karta": "Законодательная карта",
-          "istoriya-parlamentarizma": "История парламентаризма",
-          "polnomochiya": "Полномочия",
-          "upoln-po-prav": "Уполномоченный по правам человека",
-          "upoln-po-reb": "Уполномоченный по правам ребенка",
-          "upoln-po-rebenku": "Уполномоченный по правам ребенка",
+          "zakon-karta": t("Законодательная карта"),
+          "istoriya-parlamentarizma": t("История парламентаризма"),
+          "polnomochiya": t("Полномочия"),
+          "upoln-po-prav": t("Уполномоченный по правам человека"),
+          "upoln-po-reb": t("Уполномоченный по правам ребенка"),
+          "upoln-po-rebenku": t("Уполномоченный по правам ребенка"),
         };
         crumbs.push({ label: titles[firstPart] || firstPart, href: `/info/${firstPart}` });
         crumbs.push({ label: pathParts[1] });
@@ -277,42 +273,42 @@ export default function Breadcrumbs() {
     // Handle /struct/* routes
     if (base.startsWith("/struct/")) {
       const slug = base.slice(8);
-      crumbs.push({ label: "Структура", href: "/section" });
+      crumbs.push({ label: t("Структура"), href: "/section" });
       const titles = {
-        "o-verkhovnom-khurale": "О Верховном Хурале",
-        "predstavitelstvo": "Представительство",
-        "deputatskie-fraktsii": "Депутатские фракции",
-        "komissii": "Комиссии",
-        "molodezhnyy-khural": "Молодежный Хурал",
-        "council": "Представительство в Совете Федерации",
+        "o-verkhovnom-khurale": t("О Верховном Хурале"),
+        "predstavitelstvo": t("Представительство"),
+        "deputatskie-fraktsii": t("Депутатские фракции"),
+        "komissii": t("Комиссии"),
+        "molodezhnyy-khural": t("Молодежный Хурал"),
+        "council": t("Представительство в Совете Федерации"),
       };
       crumbs.push({ label: titles[slug] || slug });
       return crumbs;
     }
-    
+
     // Handle /page/* routes (legacy)
     if (base.startsWith("/page/")) {
       const slug = base.slice(6);
       if (slug.startsWith("info/")) {
-        crumbs.push({ label: "Информация", href: "/info" });
+        crumbs.push({ label: t("Информация"), href: "/info" });
         if (slug.startsWith("info/finansy/")) {
-          crumbs.push({ label: "Финансы", href: "/info/finansy" });
+          crumbs.push({ label: t("Финансы"), href: "/info/finansy" });
         } else if (slug.startsWith("info/personnel/")) {
-          crumbs.push({ label: "Кадровое обеспечение", href: "/info/personnel" });
+          crumbs.push({ label: t("Кадровое обеспечение"), href: "/info/personnel" });
         }
       } else if (slug.startsWith("about/")) {
-        crumbs.push({ label: "О парламенте", href: "/about" });
+        crumbs.push({ label: t("О парламенте"), href: "/about" });
       }
       crumbs.push({ label: slug.split("/").pop() });
       return crumbs;
     }
     // Default: show just page title
-    const title = TITLES[base];
-    if (title && base !== "/") {
-      crumbs.push({ label: title });
+    const titleKey = TITLES_KEYS[base];
+    if (titleKey && base !== "/") {
+      crumbs.push({ label: t(titleKey) });
     }
     return crumbs;
-  }, [base, route, committees, slides]);
+  }, [base, route, committees, slides, t]);
 
   // Hide on home
   if (base === "/") return null;

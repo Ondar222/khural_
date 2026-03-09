@@ -1741,25 +1741,25 @@ export default function PageBySlug() {
 
   // Определяем текст для кнопки "Назад"
   const backText = isInfoFinanceChecks2016 || isInfoFinanceChecks2018 || isInfoFinanceChecks2019 || isInfoFinanceChecks2020
-    ? "← Назад к результатам проверок"
+    ? t("← Назад к результатам проверок")
     : isInfoFinanceReports2015 || isInfoFinanceReports2016 || isInfoFinanceReports2017 || 
       isInfoFinanceReports2018 || isInfoFinanceReports2019 || isInfoFinanceReports2020 ||
       isInfoFinanceReports2021 || isInfoFinanceReports2022 || isInfoFinanceReports2023
-    ? "← Назад к отчетам"
+    ? t("← Назад к отчетам")
     : isInfoFinanceChecks || isInfoFinanceProcurement || isInfoFinanceReports || isInfoBudget
-    ? "← Назад к финансам"
+    ? t("← Назад к финансам")
     : isInfoDistricts || isInfoLawmap || isInfoHistory || isInfoPolnomochiya || isOpenData ||
       isInfoOmbHuman || isInfoOmbChild
-    ? "← Назад к информации"
+    ? t("← Назад к информации")
     : isInfoPersonnelGossluzhba || isInfoPersonnelPoryadok || isInfoPersonnelLaw58fz ||
       isInfoPersonnelLaw79fz || isInfoPersonnelLaw112 || isInfoPersonnelTelefon ||
       isInfoPersonnelObzhalovanie || isInfoPersonnelPension || isInfoPersonnelOtpusk
-    ? "← Назад к кадровому обеспечению"
+    ? t("← Назад к кадровому обеспечению")
     : isInfoFinance || isInfoIndex
-    ? "← Назад к информации"
+    ? t("← Назад к информации")
     : isMothersCommandments || isCodeOfHonor
-    ? "← Назад к общим сведениям"
-    : "← Назад";
+    ? t("← Назад к общим сведениям")
+    : t("← Назад");
 
   // Получаем заголовок с переводом
   const title = isCodeOfHonor
