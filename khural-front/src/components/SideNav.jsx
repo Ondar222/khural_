@@ -106,7 +106,7 @@ const defaultLinksAppeals = [
 
 // Стандартные ссылки для раздела "Новости"
 const defaultLinksNews = [
-  { label: "Главные события недели", href: "/news/week" },
+  { label: "Главные события", href: "/news/week" },
   { label: "Актуальные новости", href: "/news" },
   { label: "Все новости", href: "/news" },
   { label: "Медиа", href: "/news" },

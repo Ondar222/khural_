@@ -262,6 +262,9 @@ export default function App() {
                           "/deputies/history/:convocationToken": DeputiesHistoryRedirect,
                           "/pages": PagesIndex,
                           "/p/:slug": PageBySlug,
+                          "/code-of-honor": PageBySlug,
+                          "/mothers-commandments": PageBySlug,
+                          "/for-media": PageBySlug,
                           "/appeals": Appeals,
                           // Конкретные маршруты обращений (должны быть перед /appeals/:slug)
                           "/appeals/online": AppealsOnline,

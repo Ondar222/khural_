@@ -56,7 +56,7 @@ export default function NewsWeekHighlights() {
             {t("backToNewsList")}
           </a>
           <h1 className="no-gold-underline" style={{ margin: 0 }}>
-            Главные события недели
+            Главные события
           </h1>
         </div>
 

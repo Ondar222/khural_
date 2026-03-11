@@ -10,7 +10,7 @@ const TITLES_KEYS = {
   "/region": "Регион",
   "/about": "О парламенте",
   "/news": "Новости",
-  "/news/week": "Главные события недели",
+  "/news/week": "Главные события",
   "/calendar": "Календарь",
   "/documents": "Документы",
   "/committee": "Комитеты",
@@ -65,13 +65,13 @@ export default function Breadcrumbs() {
     // News: Week highlights page
     if (base === "/news/week") {
       crumbs.push({ label: t("Новости"), href: "/news" });
-      crumbs.push({ label: t("Главные события недели") });
+      crumbs.push({ label: t("Главные события") });
       return crumbs;
     }
     // News: Slider detail page
     if (base.startsWith("/news/slider/")) {
       crumbs.push({ label: t("Новости"), href: "/news" });
-      crumbs.push({ label: t("Главные события недели"), href: "/news/week" });
+      crumbs.push({ label: t("Главные события"), href: "/news/week" });
       try {
         const id =
           (typeof window !== "undefined" && window.__routeParams && window.__routeParams.id

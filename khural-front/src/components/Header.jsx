@@ -344,7 +344,7 @@ export default function Header() {
             >
               <Link to="/news">{t("news")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("news")}>
-                <a href="/news/week">{t("Главные события недели") || "Главные события недели"}</a>
+                <a href="/news/week">{t("Главные события") || "Главные события"}</a>
                 <hr />
                 <a href="/news">{lang === "ty" ? t("hotNews") : t("Актуальные новости") || "Актуальные новости"}</a>
                 <a href="/news">{lang === "ty" ? t("allNews") : t("Все новости") || "Все новости"}</a>
@@ -1058,7 +1058,7 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("news")}</div>
             <a className="tile link" href="/news/week" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                {t("Главные события недели") || "Главные события недели"}
+                {t("Главные события") || "Главные события"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>

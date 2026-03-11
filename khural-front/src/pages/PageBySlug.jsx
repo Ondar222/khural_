@@ -9,8 +9,8 @@ import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../content/forM
 
 /** Статический контент страницы «Кодекс чести мужчины Тувы» (источник: khural.rtyva.ru). */
 const CODE_OF_HONOR_SLUG = "code-of-honor";
-const CODE_OF_HONOR_TITLE = "Кодекс чести мужчины Тувы";
-const CODE_OF_HONOR_HTML = `
+export const CODE_OF_HONOR_TITLE = "Кодекс чести мужчины Тувы";
+export const CODE_OF_HONOR_HTML = `
 <p>Мы, мужчины Республики Тыва,</p>
 <ul>
 <li>выражая свои интересы и волю;</li>
@@ -57,8 +57,8 @@ const CODE_OF_HONOR_HTML = `
 
 /** Статический контент страницы «Свод заповедей матерей Тувы». */
 const MOTHERS_COMMANDMENTS_SLUG = "mothers-commandments";
-const MOTHERS_COMMANDMENTS_TITLE = "Свод заповедей матерей Тувы";
-const MOTHERS_COMMANDMENTS_HTML = `
+export const MOTHERS_COMMANDMENTS_TITLE = "Свод заповедей матерей Тувы";
+export const MOTHERS_COMMANDMENTS_HTML = `
 <p>Мы, матери Тувы,</p>
 <ul>
 <li>осознавая свою священную обязанность по созданию и сохранению семьи, воспитанию детей,</li>
@@ -1669,7 +1669,9 @@ export default function PageBySlug() {
   const hasPageFromCms = !!page;
   const shouldUseInfoFallback =
     !hasPageFromCms &&
-    (isInfoIndex ||
+    (isCodeOfHonor ||
+      isMothersCommandments ||
+      isInfoIndex ||
       isInfoFinance ||
       isInfoFinanceChecks ||
       isInfoFinanceChecks2016 ||

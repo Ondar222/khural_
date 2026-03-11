@@ -1,13 +1,12 @@
-/**
- * Общий список пунктов меню раздела «Новости» для шапки (dropdown) и бокового меню (NewsArchive).
+/** Общий список пунктов меню раздела «Новости» для шапки (dropdown) и бокового меню (NewsArchive).
  * Чтобы выпадающее меню и пункты в сайдбаре совпадали.
  */
 
 /** Дополнительные ссылки раздела «Новости» (страницы и трансляции) — в конце меню */
 export const NEWS_EXTRA_LINKS = [
-  { labelRu: "Кодекс чести мужчины Тувы", href: "/p/code-of-honor" },
-  { labelRu: "Свод заповедей матерей Тувы", href: "/p/mothers-commandments" },
-  { labelRu: "Для СМИ", href: "/p/for-media" },
+  { labelRu: "Кодекс чести мужчины Тувы", href: "/code-of-honor" },
+  { labelRu: "Свод заповедей матерей Тувы", href: "/mothers-commandments" },
+  { labelRu: "Для СМИ", href: "/for-media" },
   { labelKey: "Трансляции", href: "/broadcast" },
 ];
 

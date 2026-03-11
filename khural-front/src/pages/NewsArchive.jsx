@@ -112,7 +112,7 @@ export default function NewsArchive() {
   // Пункты бокового меню «Новости» — только фиксированные и доп. ссылки, без категорий (История, Сессия и т.д.)
   const newsMenuLinks = React.useMemo(
     () => [
-      { label: "Главные события недели", href: "/news/week" },
+      { label: "Главные события", href: "/news/week" },
       { label: "Актуальные новости", href: "/news" },
       { label: "Все новости", href: "/news" },
       { label: "Медиа", href: "/news" },

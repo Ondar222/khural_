@@ -41,6 +41,12 @@ import {
   CONV4_COMMITTEES,
   getConv4DocsByCommittee,
 } from "../data/committeeReportsConv4.js";
+import {
+  CODE_OF_HONOR_HTML,
+  CODE_OF_HONOR_TITLE,
+  MOTHERS_COMMANDMENTS_HTML,
+  MOTHERS_COMMANDMENTS_TITLE,
+} from "./PageBySlug.jsx";
 
 const SECTION_TITLE_TO_SLUG = {
   "Кодекс чести мужчины Тувы": "code-of-honor",
@@ -134,6 +140,33 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
             <div>
               <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
               <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
+            </div>
+            <SideNav title="Разделы" loadPages={true} autoSection={true} />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Fallback to static content for known pages
+  const isCodeOfHonor = title === CODE_OF_HONOR_TITLE;
+  const isMothersCommandments = title === MOTHERS_COMMANDMENTS_TITLE;
+  const staticHtml = isCodeOfHonor
+    ? CODE_OF_HONOR_HTML
+    : isMothersCommandments
+      ? MOTHERS_COMMANDMENTS_HTML
+      : null;
+
+  if (staticHtml) {
+    return (
+      <section className="section section-page">
+        <div className="container">
+          <div className="page-grid">
+            <div>
+              <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
+              <div className="card" style={{ padding: 18, marginTop: 20 }}>
+                <div dangerouslySetInnerHTML={{ __html: staticHtml }} />
+              </div>
             </div>
             <SideNav title="Разделы" loadPages={true} autoSection={true} />
           </div>
