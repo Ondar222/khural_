@@ -6,42 +6,55 @@ export default function VkWidget({ groupId, height = 400 }) {
   const widgetRef = React.useRef(null);
 
   React.useEffect(() => {
-    // Загружаем VK API скрипт
+    // Загружаем VK API скрипт с обработкой ошибок
     if (!window.VK) {
       const script = document.createElement("script");
       script.src = "https://vk.com/js/api/openapi.js?169";
       script.async = true;
+      script.onerror = () => {
+        // Тихо игнорируем ошибки загрузки скрипта VK
+        console.warn("Не удалось загрузить скрипт VK API");
+      };
       script.onload = () => {
-        if (window.VK && window.VK.Widgets && groupId) {
-          window.VK.Widgets.Group(
-            widgetRef.current,
-            {
-              mode: 0, // 0 - последние посты, 1 - только новости, 2 - только фото, 3 - только видео
-              width: "auto",
-              height: height,
-              color1: "FFFFFF",
-              color2: "2B587A",
-              color3: "5B7FA6",
-            },
-            groupId
-          );
+        try {
+          if (window.VK && window.VK.Widgets && groupId) {
+            window.VK.Widgets.Group(
+              widgetRef.current,
+              {
+                mode: 0, // 0 - последние посты, 1 - только новости, 2 - только фото, 3 - только видео
+                width: "auto",
+                height: height,
+                color1: "FFFFFF",
+                color2: "2B587A",
+                color3: "5B7FA6",
+              },
+              groupId
+            );
+          }
+        } catch (err) {
+          // Игнорируем ошибки инициализации виджета
+          console.warn("Ошибка инициализации виджета VK:", err?.message || err);
         }
       };
       document.body.appendChild(script);
     } else if (window.VK && window.VK.Widgets && groupId && widgetRef.current) {
       // Если VK API уже загружен, сразу инициализируем виджет
-      window.VK.Widgets.Group(
-        widgetRef.current,
-        {
-          mode: 0,
-          width: "auto",
-          height: height,
-          color1: "FFFFFF",
-          color2: "2B587A",
-          color3: "5B7FA6",
-        },
-        groupId
-      );
+      try {
+        window.VK.Widgets.Group(
+          widgetRef.current,
+          {
+            mode: 0,
+            width: "auto",
+            height: height,
+            color1: "FFFFFF",
+            color2: "2B587A",
+            color3: "5B7FA6",
+          },
+          groupId
+        );
+      } catch (err) {
+        console.warn("Ошибка инициализации виджета VK:", err?.message || err);
+      }
     }
 
     return () => {

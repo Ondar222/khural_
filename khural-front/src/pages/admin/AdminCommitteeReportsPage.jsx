@@ -349,7 +349,7 @@ export default function AdminCommitteeReportsPage() {
         onOk={saveDoc}
         okText="Сохранить"
         cancelText="Отмена"
-        destroyOnClose
+        destroyOnHidden
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>

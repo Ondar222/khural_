@@ -25,7 +25,7 @@ export default function CmsSnippet({ slug, className = "card", style }) {
       try {
         const page = await AboutApi.getPageBySlug(slugStr, { locale }).catch(() => null);
         if (!alive) return;
-        setHtml(extractPageHtml(page, locale));
+        setHtml(extractPageHtml(page, locale) || "");
       } catch {
         if (!alive) return;
         setHtml("");

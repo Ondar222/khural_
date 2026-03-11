@@ -4,7 +4,10 @@ import process from "node:process";
 
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      // Включаем React Fast Refresh для dev
+      fastRefresh: true,
+    }),
     {
       name: "html-transform",
       transformIndexHtml(html) {
@@ -25,22 +28,32 @@ export default defineConfig({
         drop_console: true,
         drop_debugger: true,
         // Дополнительные оптимизации
-        pure_funcs: ['console.log', 'console.info'],
-        passes: 2,
+        pure_funcs: ['console.log', 'console.info', 'console.warn'],
+        passes: 3,
+        // Агрессивные оптимизации
+        unused: true,
+        dead_code: true,
+        toplevel: true,
+      },
+      mangle: {
+        safari10: false,
+        toplevel: true,
       },
     },
     // Code splitting для лучшей производительности
     rollupOptions: {
       output: {
         manualChunks: {
-          // Выделяем vendor chunks отдельно
-          'react-vendor': ['react', 'react-dom'],
+          // Критические зависимости - загружаются первыми
+          'react-vendor': ['react', 'react-dom/client'],
+          // Ant Design - большой чанк, загружается отдельно
           'antd-vendor': ['antd', '@ant-design/icons'],
+          // TinyMCE - только когда нужен
           'tinymce-vendor': ['@tinymce/tinymce-react', 'tinymce'],
         },
         // Разделяем чанки по размеру
         chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/index-[hash].js',
         assetFileNames: ({ name }) => {
           if (/\.(css)$/.test(name ?? '')) {
             return 'assets/css/[name]-[hash].css';
@@ -56,27 +69,46 @@ export default defineConfig({
       },
     },
     // Ограничения на размер чанков
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 300,
     // Включаем sourcemap только для production отладки (опционально)
     sourcemap: false,
     // Оптимизация для таргетирования современных браузеров
-    target: 'es2020',
+    target: 'esnext',
+    // Увеличиваем размер chunk для лучшей производительности
+    cssCodeSplit: true,
+    // Предзагрузка модулей
+    modulePreload: {
+      polyfill: true,
+    },
   },
   // Оптимизация зависимостей
   optimizeDeps: {
-    include: ['react', 'react-dom', 'antd', '@ant-design/icons', 'axios'],
+    include: ['react', 'react-dom/client', 'antd', '@ant-design/icons', 'axios'],
     esbuildOptions: {
-      target: 'es2020',
+      target: 'esnext',
+      // Более агрессивная оптимизация
+      minify: true,
     },
   },
   // Улучшаем производительность dev сервера
   esbuild: {
-    target: 'es2020',
+    target: 'esnext',
     legalComments: 'none',
+    // Агрессивная минификация
+    minify: true,
+    // Убираем console
+    pure: ['console.log', 'console.info', 'console.warn'],
   },
   server: {
     port: 5173,
     open: false,
+    // Сжимаем ответы в dev режиме
+    cors: true,
+    // Оптимизация WebSocket для HMR
+    hmr: {
+      protocol: 'ws',
+      port: 5173,
+    },
     proxy: {
       "/api": {
         // khural-backend now listens on 4000 by default
@@ -126,6 +158,18 @@ export default defineConfig({
             delete proxyRes.headers["X-Frame-Options"];
           });
         },
+      },
+    },
+  },
+  // Оптимизация для production
+  preview: {
+    port: 5173,
+    cors: true,
+    // Включаем сжатие
+    proxy: {
+      "/api": {
+        target: "http://localhost:3004",
+        changeOrigin: true,
       },
     },
   },

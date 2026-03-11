@@ -1,5 +1,4 @@
 import React from "react";
-import { message } from "antd";
 import {
   AuthApi,
   setAuthToken,
@@ -216,11 +215,11 @@ export default function AuthProvider({ children }) {
           }
         }
       }
-      message.success("Регистрация выполнена");
+      // Message notification is handled by the calling component to avoid context warnings
       return res;
     } catch (e) {
       const errorMessage = friendlyAuthError(e, "Ошибка регистрации");
-      message.error(errorMessage);
+      // Error notification is handled by the calling component to avoid context warnings
       if (e && typeof e === "object") e.message = errorMessage;
       throw e;
     }
@@ -246,8 +245,7 @@ export default function AuthProvider({ children }) {
           return { token: "dev-fake-token" };
         }
         const errorMessage = friendlyAuthError(e, "Ошибка входа");
-        // In admin area, UI already shows its own notifications; avoid duplicates.
-        if (!isInAdminArea()) message.error(errorMessage);
+        // Error notification is handled by the calling component to avoid context warnings
         if (e && typeof e === "object") e.message = errorMessage;
         throw e;
       }
@@ -264,8 +262,7 @@ export default function AuthProvider({ children }) {
       } catch {
         // ignore; token may still be valid, user will be loaded by effect
       }
-      // In admin area, UI already shows its own notifications; avoid duplicates.
-      if (!isInAdminArea()) message.success("Вход выполнен");
+      // Success notification is handled by the calling component to avoid context warnings
       // Return user info for immediate role-based routing in UI
       return { ...(res || {}), user: meUser || resUser || null };
     },

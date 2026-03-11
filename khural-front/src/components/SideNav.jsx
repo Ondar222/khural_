@@ -255,38 +255,26 @@ export default function SideNav({
       try {
         const res = await AboutApi.listPagesTree({ publishedOnly: true }).catch(() => []);
         const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
-        
-        console.log('[SideNav] === ЗАГРУЗКА СТРАНИЦ ===');
-        console.log('[SideNav] Все страницы:', arr.map(p => ({ slug: p.slug, title: p.title, children: p.children?.length || 0 })));
-        console.log('[SideNav] Текущий route:', route);
-        console.log('[SideNav] pathname:', route?.split('?')[0]);
-        console.log('[SideNav] Раздел (detectedSection):', detectedSection);
-        
+
         if (alive) {
           // Фильтруем страницы по разделу, если указан
           const filtered = detectedSection ? filterPagesBySection(arr, detectedSection) : arr;
-          console.log('[SideNav] Отфильтрованные страницы (раздел=' + detectedSection + '):', filtered.map(p => ({ slug: p.slug, title: p.title })));
-          
           const links = pagesToLinks(applyPagesOverridesToTree(filtered), locale);
-          console.log('[SideNav] Ссылки для меню:', links);
-          console.log('[SideNav] =========================');
           setPagesLinks(links);
         }
       } catch (err) {
-        console.error('[SideNav] Error loading pages:', err);
         if (alive) setPagesLinks([]);
       }
     };
     fetchPages();
-    
+
     // Слушаем событие перезагрузки страниц
     const onPagesReload = () => {
-      console.log('[SideNav] Получено событие khural:pages-reload');
       fetchPages();
     };
     window.addEventListener("khural:pages-reload", onPagesReload);
-    
-    return () => { 
+
+    return () => {
       alive = false;
       window.removeEventListener("khural:pages-reload", onPagesReload);
     };

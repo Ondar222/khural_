@@ -318,10 +318,7 @@ export async function tryApiFetch(path, options) {
   try {
     return await apiFetch(path, options);
   } catch (error) {
-    // Логируем только для отладки в DEV, не показываем пользователю
-    if (import.meta.env.DEV && error?.status === 404) {
-      console.warn(`API endpoint не найден (404): ${path}. Используется fallback.`);
-    }
+    // Тихо игнорируем ошибки - эта функция для оптимистичных запросов
     return null;
   }
 }
@@ -655,7 +652,23 @@ export const AboutApi = {
     qs.set("tree", "true");
     if (publishedOnly) qs.set("publishedOnly", "true");
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return apiFetch(`/pages${suffix}`, { method: "GET", auth: false });
+    try {
+      return await apiFetch(`/pages${suffix}`, { method: "GET", auth: false });
+    } catch (e) {
+      // 403 Forbidden и 404 Not Found - нормальная ситуация, если бэкенд не поддерживает этот endpoint
+      if (e?.status === 403 || e?.status === 404) {
+        return [];
+      }
+      // Fallback на старый endpoint при других ошибках
+      try {
+        const qsLegacy = new URLSearchParams();
+        if (publishedOnly) qsLegacy.set("publishedOnly", "true");
+        const suffixLegacy = qsLegacy.toString() ? `?${qsLegacy.toString()}` : "";
+        return await apiFetch(`/about/pages${suffixLegacy}`, { method: "GET", auth: false });
+      } catch {
+        return [];
+      }
+    }
   },
   async getPageBySlug(slug, { locale } = {}) {
     try {
@@ -1213,30 +1226,42 @@ export const SettingsApi = {
   },
   /** Список ссылок на архив трансляций (публичный запрос, без auth). При 401/404 возвращает null. */
   async getBroadcastLinksPublic() {
-    const raw = await tryApiFetch("/settings/broadcast_links", { method: "GET", auth: false });
-    if (raw == null) return null;
-    if (Array.isArray(raw)) return raw.every((x) => typeof x === "string") ? raw : null;
-    if (typeof raw === "string") {
-      try {
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) && arr.every((x) => typeof x === "string") ? arr : null;
-      } catch {
-        return null;
-      }
-    }
-    if (raw?.value != null) {
-      const v = raw.value;
-      if (Array.isArray(v) && v.every((x) => typeof x === "string")) return v;
-      if (typeof v === "string") {
+    // Используем прямой fetch без apiFetch, чтобы избежать логов 401 в консоли браузера
+    // Этот endpoint может требовать auth на некоторых бэкендах, поэтому тихо игнорируем ошибки
+    try {
+      const url = API_BASE_URL.replace(/\/+$/, "") + "/settings/broadcast_links";
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) return null;
+      const raw = await res.json().catch(() => null);
+      if (raw == null) return null;
+      if (Array.isArray(raw)) return raw.every((x) => typeof x === "string") ? raw : null;
+      if (typeof raw === "string") {
         try {
-          const arr = JSON.parse(v);
+          const arr = JSON.parse(raw);
           return Array.isArray(arr) && arr.every((x) => typeof x === "string") ? arr : null;
         } catch {
           return null;
         }
       }
+      if (raw?.value != null) {
+        const v = raw.value;
+        if (Array.isArray(v) && v.every((x) => typeof x === "string")) return v;
+        if (typeof v === "string") {
+          try {
+            const arr = JSON.parse(v);
+            return Array.isArray(arr) && arr.every((x) => typeof x === "string") ? arr : null;
+          } catch {
+            return null;
+          }
+        }
+      }
+      return null;
+    } catch {
+      return null;
     }
-    return null;
   },
 };
 

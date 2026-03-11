@@ -1,5 +1,5 @@
 import React from "react";
-import { Form, Input, Button, Alert } from "antd";
+import { Form, Input, Button, Alert, App } from "antd";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 import AccountInfo from "../components/AccountInfo.jsx";
@@ -7,17 +7,20 @@ import AccountInfo from "../components/AccountInfo.jsx";
 export default function Register() {
   const { register, login, isAuthenticated, user } = useAuth();
   const { navigate } = useHashRoute();
+  const { message } = App.useApp();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
   const onFinish = async (values) => {
     // Предотвращаем повторную отправку, если уже идет загрузка
     if (loading) return;
-    
+
     setError("");
     setLoading(true);
     try {
       await register(values);
+      // Показываем сообщение об успешной регистрации
+      message.success("Регистрация выполнена успешно");
       // Try to log in immediately after successful registration
       try {
         await login({ email: values.email, password: values.password });

@@ -1,5 +1,5 @@
 import React from "react";
-import { Form, Input, Button, Alert } from "antd";
+import { Form, Input, Button, Alert, App } from "antd";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 import AccountInfo from "../components/AccountInfo.jsx";
@@ -7,6 +7,7 @@ import AccountInfo from "../components/AccountInfo.jsx";
 export default function Login() {
   const { login, isAuthenticated, user } = useAuth();
   const { route, navigate } = useHashRoute();
+  const { message } = App.useApp();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [loginUser, setLoginUser] = React.useState(null);
@@ -54,17 +55,19 @@ export default function Login() {
   const onFinish = async (values) => {
     // Предотвращаем повторную отправку, если уже идет загрузка
     if (loading) return;
-    
+
     setError("");
     setLoading(true);
     try {
       const res = await login(values);
       if (res?.user) setLoginUser(res.user);
+      // Показываем сообщение об успешном входе
+      message.success("Вход выполнен успешно");
       // Navigation will happen automatically via useEffect when isAuthenticated becomes true
       // Убираем дублирующий navigate здесь - пусть срабатывает только через useEffect
     } catch (e) {
       let errorMessage = e?.message || "Ошибка входа";
-      
+
       // Более понятные сообщения для пользователя
       if (e?.status === 403) {
         errorMessage = "Неверный email или пароль. Проверьте правильность введенных данных.";
@@ -77,10 +80,10 @@ export default function Login() {
       } else if (errorMessage.includes("VITE_API_BASE_URL") || errorMessage.includes("API base URL")) {
         errorMessage = "Ошибка конфигурации сервера. Пожалуйста, обратитесь к администратору.";
       }
-      
+
       setError(errorMessage);
       hasNavigatedRef.current = false;
-      
+
       // Логируем детали для отладки (только в dev режиме)
       if (import.meta.env.DEV) {
         console.error("Login error:", e);

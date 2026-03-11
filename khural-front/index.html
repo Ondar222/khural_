@@ -4,39 +4,85 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <!-- Оптимизация производительности -->
+    
+    <!-- SEO и метаданные -->
     <meta name="description" content="Официальный сайт Верховного Хурала (парламента) Республики Тыва" />
     <meta name="theme-color" content="#003366" />
-    <!-- Предзагрузка критических ресурсов -->
+    
+    <!-- Оптимизация загрузки ресурсов -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://khural.rtyva.ru" crossorigin />
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
     <link rel="dns-prefetch" href="https://khural.rtyva.ru" />
+    
+    <!-- Предзагрузка критических шрифтов -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Merriweather:wght@700;900&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Merriweather:wght@700;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+    
     <title>Верховный Хурал РТ</title>
-    <!-- API и календарь: при сборке подставляется VITE_API_BASE_URL (напр. https://someshit.yurta.site/api), иначе запросы идут на /api текущего домена -->
+    
+    <!-- API base URL -->
     <meta name="api-base" content="%VITE_API_BASE_URL%" />
+    
+    <!-- Иконка -->
     <link
       rel="icon"
       href="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Merriweather:wght@700;900&display=swap"
-      rel="stylesheet"
-    />
-    <!-- Мониторинг stats.vk-portal.net: если скрипт добавляется сюда, подключать только когда доступен (prod/allowlist).
-         Иначе возможен 403 Forbidden. Вариант: проверять VITE_ENABLE_STATS или домен и грузить скрипт условно. -->
+    
+    <!-- Inline critical CSS для мгновенной отрисовки -->
+    <style>
+      /* Critical CSS для предотвращения layout shift */
+      body{margin:0;font-family:Manrope,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+      #root{min-height:100vh;display:flex;flex-direction:column}
+      .layout{display:flex;flex-direction:column;min-height:100vh}
+      .main-content{flex:1}
+      /* Спиннер загрузки */
+      .loading-spinner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+      .loading-spinner__icon{width:40px;height:40px;border:4px solid #e5e7eb;border-top-color:#003366;border-radius:50%;animation:spin 1s linear infinite}
+      .loading-spinner__text{margin-top:16px;color:#1e3a8a;font-weight:700;font-size:16px}
+      @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+    
+    <!-- Скрипт для мгновенного показа спиннера -->
+    <script>
+      // Показываем спиннер до загрузки React
+      (function() {
+        const spinner = document.createElement('div');
+        spinner.className = 'loading-spinner';
+        spinner.innerHTML = '<div class="loading-spinner__icon"></div><div class="loading-spinner__text">Загрузка...</div>';
+        document.body.appendChild(spinner);
+        
+        // Убираем спиннер после загрузки
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            if (spinner.parentNode) spinner.parentNode.removeChild(spinner);
+          }, 100);
+        });
+      })();
+    </script>
+    
+    <!-- Мониторинг stats.vk-portal.net: отключен для производительности -->
+    <!-- Скрипт версии для слабовидящих -->
     <script src="https://lidrekon.ru/slep/js/jquery.js"></script>
     <script>
-      // Предотвращаем автоматическую активацию плагина при загрузке
-      // Плагин будет активироваться только при явном запросе через URL параметр
+      // Загружаем плагин только если пользователь явно запросил версию для слабовидящих
       (function() {
-        // Проверяем наличие параметра special_version=Y в URL
         const urlParams = new URLSearchParams(window.location.search);
         const shouldActivate = urlParams.get('special_version') === 'Y';
-
         if (shouldActivate) {
-          // Загружаем плагин только если пользователь явно запросил версию для слабовидящих
           const script = document.createElement('script');
           script.src = 'https://lidrekon.ru/slep/js/uhpv-full.min.js';
           script.async = true;
@@ -47,6 +93,7 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Модуль загружается асинхронно (type="module" уже подразумевает defer) -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
