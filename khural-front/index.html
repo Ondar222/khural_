@@ -60,17 +60,20 @@
     <script>
       // Показываем спиннер до загрузки React
       (function() {
-        const spinner = document.createElement('div');
-        spinner.className = 'loading-spinner';
-        spinner.innerHTML = '<div class="loading-spinner__icon"></div><div class="loading-spinner__text">Загрузка...</div>';
-        document.body.appendChild(spinner);
-        
-        // Убираем спиннер после загрузки
-        window.addEventListener('load', function() {
-          setTimeout(function() {
-            if (spinner.parentNode) spinner.parentNode.removeChild(spinner);
-          }, 100);
-        });
+        // Проверяем, что document.body существует перед добавлением спиннера
+        if (document.body) {
+          const spinner = document.createElement('div');
+          spinner.className = 'loading-spinner';
+          spinner.innerHTML = '<div class="loading-spinner__icon"></div><div class="loading-spinner__text">Загрузка...</div>';
+          document.body.appendChild(spinner);
+
+          // Убираем спиннер после загрузки
+          window.addEventListener('load', function() {
+            setTimeout(function() {
+              if (spinner.parentNode) spinner.parentNode.removeChild(spinner);
+            }, 100);
+          });
+        }
       })();
     </script>
     

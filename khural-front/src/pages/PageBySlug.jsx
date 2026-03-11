@@ -1602,6 +1602,58 @@ export default function PageBySlug() {
 
   React.useEffect(() => {
     if (!slug) return;
+    
+    // Проверяем, является ли страница статической (не нужно делать запрос к API)
+    const isStaticPage = [
+      CODE_OF_HONOR_SLUG,
+      MOTHERS_COMMANDMENTS_SLUG,
+      FOR_MEDIA_SLUG,
+      FEDERATION_COUNCIL_SLUG,
+      INFO_INDEX_SLUG,
+      INFO_FINANCE_SLUG,
+      INFO_FINANCE_CHECKS_SLUG,
+      INFO_FINANCE_CHECKS_2016_SLUG,
+      INFO_FINANCE_CHECKS_2018_SLUG,
+      INFO_FINANCE_CHECKS_2019_SLUG,
+      INFO_FINANCE_CHECKS_2020_SLUG,
+      INFO_FINANCE_PROCUREMENT_SLUG,
+      INFO_FINANCE_REPORTS_SLUG,
+      INFO_FINANCE_REPORTS_2015_SLUG,
+      INFO_FINANCE_REPORTS_2016_SLUG,
+      INFO_FINANCE_REPORTS_2017_SLUG,
+      INFO_FINANCE_REPORTS_2018_SLUG,
+      INFO_FINANCE_REPORTS_2019_SLUG,
+      INFO_FINANCE_REPORTS_2020_SLUG,
+      INFO_FINANCE_REPORTS_2021_SLUG,
+      INFO_FINANCE_REPORTS_2022_SLUG,
+      INFO_FINANCE_REPORTS_2023_SLUG,
+      INFO_BUDGET_SLUG,
+      INFO_DISTRICTS_SLUG,
+      INFO_LAWMAP_SLUG,
+      INFO_HISTORY_SLUG,
+      INFO_POLNOMOCHIYA_SLUG,
+      OPENDATA_SLUG,
+      INFO_OMBUDSMAN_HUMAN_SLUG,
+      INFO_OMBUDSMAN_CHILD_SLUG,
+      INFO_PERSONNEL_SLUG,
+      INFO_PERSONNEL_GOSLUZHPBA_SLUG,
+      INFO_PERSONNEL_PORYADOK_SLUG,
+      INFO_PERSONNEL_LAW58FZ_SLUG,
+      INFO_PERSONNEL_LAW79FZ_SLUG,
+      INFO_PERSONNEL_LAW112_SLUG,
+      INFO_PERSONNEL_TELEFON_SLUG,
+      INFO_PERSONNEL_OBZHALOVANIE_SLUG,
+      INFO_PERSONNEL_PENSION_SLUG,
+      INFO_PERSONNEL_OTPUSK_SLUG,
+    ].includes(slug);
+    
+    // Для статических страниц не делаем запрос к API
+    if (isStaticPage) {
+      setPage(null);
+      setLoading(false);
+      return;
+    }
+    
     const locale = getPreferredLocaleToken(lang);
     let alive = true;
     (async () => {
