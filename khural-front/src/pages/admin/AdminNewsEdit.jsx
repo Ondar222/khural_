@@ -651,6 +651,8 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         <div className="admin-news-editor__grid">
           <div className="admin-card">
             <div className="admin-news-editor__section-title">Основное</div>
+            {/* Поле категории скрыто, пока категории не будут приведены в порядок */}
+            {/*
             <Form.Item
               label="Категория"
               name="categoryId"
@@ -695,6 +697,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
                 }))}
               />
             </Form.Item>
+            */}
             <Form.Item
               label="Slug (URL-адрес)"
               name="slug"

@@ -8,45 +8,11 @@ import { formatNewsDateTime } from "../utils/dateFormat.js";
 export default function NewsBlock() {
   const { news, loading, errors, reload } = useData();
   const { t, lang } = useI18n();
-  const [category, setCategory] = React.useState("Все");
   const maxItems = 6; // На главной только последние 6, остальные — на странице /news
 
-  const normalizeCategoryKey = React.useCallback((v) => {
-    return String(v ?? "")
-      .replace(/\u00A0/g, " ") // NBSP
-      .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g, "-") // unicode dashes -> '-'
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase();
-  }, []);
-  
-  const categories = React.useMemo(
-    () => {
-      const byKey = new Map();
-      (news || []).forEach((n) => {
-        const raw = String(n?.category ?? "").trim();
-        const key = normalizeCategoryKey(raw);
-        if (!key || key === "все") return;
-        if (!byKey.has(key)) byKey.set(key, raw);
-      });
-      return ["Все", ...Array.from(byKey.values())];
-    },
-    [news, normalizeCategoryKey]
-  );
-  
-  const allFiltered = React.useMemo(
-    () =>
-      category === "Все"
-        ? news
-        : (news || []).filter(
-            (n) => normalizeCategoryKey(n?.category) === normalizeCategoryKey(category)
-          ),
-    [news, category, normalizeCategoryKey]
-  );
-  
   const filtered = React.useMemo(
-    () => (allFiltered || []).slice(0, maxItems),
-    [allFiltered, maxItems]
+    () => (news || []).slice(0, maxItems),
+    [news, maxItems]
   );
 
   return (
@@ -69,37 +35,7 @@ export default function NewsBlock() {
           empty={!loading?.news && (!news || news.length === 0)}
           emptyDescription="Новостей пока нет"
         >
-          {/* Десктоп: табы-пилюли. Адаптив: те же табы, компактно */}
-          <div className="news-cats news-cats--select">
-            <label className="news-filter">
-              <span className="news-filter__label">Категория</span>
-              <select
-                className="news-filter-select"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                aria-label="Фильтр новостей по категории"
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="news-cats news-cats--pills news-block__pills">
-            {categories.map((c) => (
-              <button
-                key={c}
-                onClick={() => setCategory(c)}
-                className="btn news-block__pill"
-                style={{ background: c === category ? "#eef2ff" : "#fff" }}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+          {/* Фильтр по категориям скрыт, пока категории не будут приведены в порядок */}
           <div className="home-news__scroller news-block__scroller">
             <div className="grid cols-3 home-news__list news-block__list">
               {filtered.map((n, i) => (
@@ -121,7 +57,6 @@ export default function NewsBlock() {
                     </div>
                   ) : null}
                   <div className="news-block__card-body">
-                    <span className="news-block__card-cat">{n.category}</span>
                     <div className="news-block__card-title">{(lang === "ty" && n.titleTy) ? n.titleTy : n.title}</div>
                     <div className="news-block__card-date">{formatNewsDateTime(n.date)}</div>
                   </div>

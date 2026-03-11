@@ -443,29 +443,34 @@ export default function Deputies() {
                               alt={d.name || ""}
                               loading="lazy"
                               decoding="async"
+                              fetchPriority="low"
                               onError={(e) => {
-                                // Если фото не загрузилось, заменяем на placeholder
                                 const img = e.target;
                                 const currentSrc = img.src || photo;
-                                
+
                                 // Если это URL с khural.rtyva.ru и мы еще не пробовали прокси
                                 if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
                                   img.dataset.proxyTried = "true";
                                   const proxyUrl = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
-                                  // Пробуем загрузить через прокси
                                   img.src = proxyUrl;
-                                } else {
-                                  // Если прокси не помог, заменяем картинку на плейсхолдер, а не скрываем
-                                  img.style.display = "";
-                                  img.removeAttribute("src");
-                                  img.classList.remove("gov-card__avatar");
-                                  img.classList.add("gov-card__avatar-placeholder");
+                                } else if (!img.dataset.placeholderTried) {
+                                  // Если прокси не помог или не требуется, используем плейсхолдер
+                                  img.dataset.placeholderTried = "true";
+                                  img.style.display = "none";
+                                  const placeholder = img.parentElement.querySelector(".gov-card__avatar-placeholder");
+                                  if (placeholder) placeholder.style.display = "flex";
                                 }
                               }}
                             />
-                          ) : (
-                            <div className="gov-card__avatar" aria-hidden="true" />
-                          )}
+                          ) : null}
+                          {!photo || String(photo).trim() === "" || String(photo).trim() === "undefined" || String(photo).trim() === "null" ? (
+                            <div className="gov-card__avatar-placeholder" aria-hidden="true" style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#f3f4f6", borderRadius: "50%", width: "120px", height: "120px", margin: "0 auto" }}>
+                              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5">
+                                <circle cx="12" cy="8" r="4" />
+                                <path d="M20 21a8 8 0 1 0-16 0" />
+                              </svg>
+                            </div>
+                          ) : null}
                         </div>
                       <div className="gov-card__body">
                         <div className="gov-card__name">{d.name}</div>

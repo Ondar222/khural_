@@ -1,5 +1,5 @@
 import React from "react";
-import { Input, Select, DatePicker, message, Pagination } from "antd";
+import { DatePicker, message, Pagination } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
@@ -39,14 +39,6 @@ export default function NewsArchive() {
   };
   const [currentPage, setCurrentPage] = React.useState(getInitialPage);
 
-  const getInitialCategory = () => {
-    const categoryParam = new URLSearchParams(window.location.search || "").get("category");
-    const speakerParam = new URLSearchParams(window.location.search || "").get("speaker");
-    if (speakerParam === "true") return "Председатель";
-    return categoryParam || "Все";
-  };
-  const [category, setCategory] = React.useState(getInitialCategory);
-
   const getInitialDate = () => {
     const dateParam = new URLSearchParams(window.location.search || "").get("date");
     return dateParam || "";
@@ -62,15 +54,9 @@ export default function NewsArchive() {
     const onNav = () => {
       const params = new URLSearchParams(window.location.search || "");
       const id = params.get("id");
-      const categoryParam = params.get("category");
       const dateParam = params.get("date");
       const pageParam = params.get("page");
       setSelected(id || null);
-      if (categoryParam && !id) {
-        setCategory(categoryParam);
-      } else if (!categoryParam && !id) {
-        setCategory("Все");
-      }
       if (dateParam && !id) setDate(dateParam);
       if (!dateParam && !id) setDate("");
       const p = parseInt(pageParam, 10);
@@ -84,30 +70,6 @@ export default function NewsArchive() {
       window.removeEventListener("app:navigate", onNav);
     };
   }, []);
-
-  const categories = React.useMemo(
-    () => {
-      // Собираем все категории из новостей
-      const rawCategories = Array.from(new Set((news || []).map((n) => n.category).filter(Boolean)));
-      
-      // Нормализуем названия категорий (объединяем похожие)
-      const normalizedCategories = rawCategories.map((cat) => {
-        const lowerCat = String(cat).toLowerCase();
-        // Объединяем варианты "Председатель", "Новости Председателя", "Председатель ВХ РТ" и т.д.
-        if (lowerCat.includes("председатель") || lowerCat.includes("speaker") || lowerCat.includes("chairman")) {
-          return "Председатель";
-        }
-        return cat;
-      });
-      
-      // Убираем дубликаты после нормализации
-      const uniqueCategories = Array.from(new Set(normalizedCategories));
-      
-      // "Все" всегда первая, остальные по алфавиту
-      return ["Все", ...uniqueCategories.filter((c) => c !== "Все").sort()];
-    },
-    [news]
-  );
 
   // Пункты бокового меню «Новости» — только фиксированные и доп. ссылки, без категорий (История, Сессия и т.д.)
   const newsMenuLinks = React.useMemo(
@@ -128,30 +90,6 @@ export default function NewsArchive() {
     () => {
       let result = news || [];
 
-      // Фильтр по новостям председателя
-      if (category === "Председатель") {
-        const speakerKeywords = ["председатель", "председателя", "председателю", "speaker", "chairman"];
-        result = result.filter((n) => {
-          const title = String(n?.title || "").toLowerCase();
-          const category = String(n?.category || "").toLowerCase();
-          // Ищем только в заголовке и категории, НЕ в содержимом
-          return speakerKeywords.some((keyword) =>
-            title.includes(keyword) || category.includes(keyword)
-          );
-        });
-      } else if (category !== "Все") {
-        // Для других категорий - точное совпадение
-        result = result.filter((n) => {
-          const newsCat = String(n.category || "");
-          // Нормализуем категорию новости для сравнения
-          const lowerNewsCat = newsCat.toLowerCase();
-          if (lowerNewsCat.includes("председатель") || lowerNewsCat.includes("speaker") || lowerNewsCat.includes("chairman")) {
-            return false; // Это новости председателя, они фильтруются отдельно
-          }
-          return newsCat === category;
-        });
-      }
-
       // Фильтр по дате
       if (date) {
         result = result.filter((n) => String(n.date || "").slice(0, 10) === date);
@@ -159,7 +97,7 @@ export default function NewsArchive() {
 
       return result;
     },
-    [news, category, date]
+    [news, date]
   );
 
   const totalNews = filtered.length;
@@ -180,18 +118,6 @@ export default function NewsArchive() {
   const setPageAndUrl = React.useCallback((page) => {
     const h = window.location.pathname;
     const params = new URLSearchParams(window.location.search || "");
-    if (category && category !== "Все") {
-      if (category === "Председатель") {
-        params.set("speaker", "true");
-        params.delete("category");
-      } else {
-        params.set("category", category);
-        params.delete("speaker");
-      }
-    } else {
-      params.delete("category");
-      params.delete("speaker");
-    }
     if (date) params.set("date", date);
     if (page > 1) params.set("page", String(page));
     else params.delete("page");
@@ -199,7 +125,7 @@ export default function NewsArchive() {
     window.history.pushState({}, "", newUrl);
     setCurrentPage(page);
     window.dispatchEvent(new Event("app:navigate"));
-  }, [category, date]);
+  }, [date]);
 
   if (selected) {
     const idx = (news || []).findIndex((n) => String(n.id) === String(selected));
@@ -276,7 +202,7 @@ export default function NewsArchive() {
               <div>
                 <h1 style={{ marginBottom: 8, display: "block" }}>{localized.title || item.title}</h1>
                 <div style={{ color: "#6b7280", marginBottom: 16 }}>
-                  {formatNewsDateTime(item.date)} · {item.category}
+                  {formatNewsDateTime(item.date)}
                 </div>
               </div>
             </div>
@@ -485,41 +411,6 @@ export default function NewsArchive() {
             >
               <div className="filters filters--news">
                 <div className="filters__field">
-                  <label className="filters__label">Категория</label>
-                    <Select
-                      value={category}
-                      onChange={(newCategory) => {
-                        setCategory(newCategory);
-                        setCurrentPage(1);
-                        const h = window.location.pathname;
-                        const params = new URLSearchParams(window.location.search || "");
-                        params.delete("page");
-                        if (newCategory === "Все") {
-                          params.delete("category");
-                          params.delete("speaker");
-                        } else if (newCategory === "Председатель") {
-                          params.set("speaker", "true");
-                          params.delete("category");
-                        } else {
-                          params.set("category", newCategory);
-                          params.delete("speaker");
-                        }
-                        if (date) params.set("date", date);
-                        const newHash = params.toString() ? `${h}?${params.toString()}` : h;
-                        window.history.pushState({}, "", newHash);
-                        window.dispatchEvent(new Event("app:navigate"));
-                      }}
-                      placeholder="Выберите категорию"
-                      showSearch
-                      popupMatchSelectWidth={false}
-                      style={{ width: "100%" }}
-                      filterOption={(input, option) =>
-                        String(option?.label || "").toLowerCase().includes(String(input || "").toLowerCase())
-                      }
-                      options={categories.map((c) => ({ value: c, label: c }))}
-                    />
-                </div>
-                <div className="filters__field">
                   <label className="filters__label">Дата</label>
                     <DatePicker
                       value={date ? dayjs(date) : null}
@@ -583,7 +474,6 @@ export default function NewsArchive() {
                       ) : null}
 
                       <div className="news-archive__card-body">
-                        <span className="news-archive__card-cat">{n.category}</span>
                         <div className="news-archive__card-title">{localizeNewsItem(n, lang).title || n.title}</div>
                         <div className="news-archive__card-date">{formatNewsDateTime(n.date)}</div>
                       </div>
