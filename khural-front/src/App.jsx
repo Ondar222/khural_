@@ -99,6 +99,19 @@ import NewsWeekHighlights from "./pages/NewsWeekHighlights.jsx";
 import CabinetHome from "./pages/cabinet/CabinetHome.jsx";
 import CabinetAppeals from "./pages/cabinet/CabinetAppeals.jsx";
 import CabinetAccount from "./pages/cabinet/CabinetAccount.jsx";
+import YouthParliament from "./pages/YouthParliament.jsx";
+import YouthParliamentRegulation from "./pages/youth-parliament/Regulation.jsx";
+import YouthParliamentComposition from "./pages/youth-parliament/Composition.jsx";
+import YouthParliamentReports from "./pages/youth-parliament/Reports.jsx";
+import YouthParliamentReports2015 from "./pages/youth-parliament/reports/2015.jsx";
+import YouthParliamentReports2016 from "./pages/youth-parliament/reports/2016.jsx";
+import YouthParliamentReports2017 from "./pages/youth-parliament/reports/2017.jsx";
+import YouthParliamentReports2018 from "./pages/youth-parliament/reports/2018.jsx";
+import YouthParliamentReports2020 from "./pages/youth-parliament/reports/2020.jsx";
+import YouthParliamentContacts from "./pages/youth-parliament/Contacts.jsx";
+import YouthParliamentAgendas from "./pages/youth-parliament/Agendas.jsx";
+import YouthParliamentDuzaProject from "./pages/youth-parliament/DuzaProject.jsx";
+import YouthParliamentRules from "./pages/youth-parliament/Rules.jsx";
 
 /** Редирект на панель управления (страница «Обращения» временно скрыта). */
 function AdminRedirectToDashboard() {
@@ -346,6 +359,20 @@ export default function App() {
                           "/cabinet": UserProtected(CabinetHome),
                           "/cabinet/appeals": UserProtected(CabinetAppeals),
                           "/cabinet/account": UserProtected(CabinetAccount),
+                          "/youth-parliament": YouthParliament,
+                          "/youth-parliament/regulation": YouthParliamentRegulation,
+                          "/youth-parliament/composition": YouthParliamentComposition,
+                          "/youth-parliament/reports": YouthParliamentReports,
+                          "/youth-parliament/reports/2015": YouthParliamentReports2015,
+                          "/youth-parliament/reports/2016": YouthParliamentReports2016,
+                          "/youth-parliament/reports/2017": YouthParliamentReports2017,
+                          "/youth-parliament/reports/2018": YouthParliamentReports2018,
+                          "/youth-parliament/reports/2020": YouthParliamentReports2020,
+                          "/youth-parliament/contacts": YouthParliamentContacts,
+                          "/youth-parliament/agendas": YouthParliamentAgendas,
+                          "/youth-parliament/duza-project": YouthParliamentDuzaProject,
+                          "/youth-parliament/rules": YouthParliamentRules,
+                          "/youth-parliament/:slug": PageBySlug,
                           "/pd-policy": PdPolicy,
                           "/license": License,
                           "/sitemap": Sitemap,

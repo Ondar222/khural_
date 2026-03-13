@@ -2185,24 +2185,14 @@ export default function SectionPage() {
     }
 
     if (title === "Молодежный Хурал") {
-      return (
-        <section className="section section-page">
-          <div className="container">
-            <div className="page-grid">
-              <div className="page-grid__main">
-                <h1 className="no-gold-underline">{title}</h1>
-               
-                <DeputyGrid
-                  deputies={deputies}
-                  structureType="youth_khural"
-                  backHref={`/section?title=${encodeURIComponent("Молодежный Хурал")}`}
-                />
-              </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
-            </div>
-          </div>
-        </section>
-      );
+      // Перенаправление на новую страницу /youth-parliament
+      React.useEffect(() => {
+        if (typeof window !== "undefined") {
+          window.history.replaceState({}, "", "/youth-parliament");
+          window.dispatchEvent(new Event("app:navigate"));
+        }
+      }, []);
+      return null;
     }
 
     const councilBackHref = `/section?title=${encodeURIComponent(COUNCIL_BASE_TITLE)}`;

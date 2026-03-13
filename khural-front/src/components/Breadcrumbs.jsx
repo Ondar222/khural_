@@ -40,7 +40,7 @@ export default function Breadcrumbs() {
   const { route, navigate } = useHashRoute();
   const base = getRouteBase(route);
   const { committees, slides } = useData();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   // Build hierarchical trail
   const trail = React.useMemo(() => {
@@ -270,6 +270,46 @@ export default function Breadcrumbs() {
       return crumbs;
     }
     
+    // Handle /youth-parliament routes
+    if (base === "/youth-parliament" || base.startsWith("/youth-parliament/")) {
+      crumbs.push({ 
+        label: lang === "ty" ? "Аныяктар Хуралы" : lang === "ru" ? "Молодежный Хурал" : "Youth Parliament", 
+        href: "/youth-parliament" 
+      });
+      if (base !== "/youth-parliament") {
+        const slug = base.slice(16); // Remove "/youth-parliament/"
+        const firstSegment = slug.split("/")[0];
+        const titles = {
+          "regulation": lang === "ty" ? "Дүрүм" : lang === "ru" ? "Положение" : "Regulation",
+          "composition": lang === "ty" ? "Тургузуу" : lang === "ru" ? "Состав" : "Composition",
+          "reports": lang === "ty" ? "Отчеттар" : lang === "ru" ? "Отчеты" : "Reports",
+          "contacts": lang === "ty" ? "Харылзаа" : lang === "ru" ? "Контакты" : "Contacts",
+          "agendas": lang === "ty" ? "Повесткалар" : lang === "ru" ? "Повестки заседаний" : "Agendas",
+          "duza-project": lang === "ty" ? "\"Дуза\" төлевилел" : lang === "ru" ? "Проект \"Дуза\"" : "Duza Project",
+          "rules": lang === "ty" ? "Регламент" : lang === "ru" ? "Регламент" : "Rules",
+        };
+
+        if (firstSegment === "reports" && slug.includes("/")) {
+          // Sub-page like /youth-parliament/reports/2015
+          const year = slug.split("/")[1];
+          crumbs.push({ 
+            label: lang === "ty" ? "Отчеттар" : lang === "ru" ? "Отчеты" : "Reports", 
+            href: "/youth-parliament/reports" 
+          });
+          crumbs.push({ 
+            label: lang === "ty" 
+              ? `${year} чылда отчет` 
+              : lang === "ru" 
+                ? `Отчет за ${year} год` 
+                : `Report for ${year}` 
+          });
+        } else {
+          crumbs.push({ label: titles[firstSegment] || firstSegment });
+        }
+      }
+      return crumbs;
+    }
+
     // Handle /struct/* routes
     if (base.startsWith("/struct/")) {
       const slug = base.slice(8);
@@ -279,7 +319,6 @@ export default function Breadcrumbs() {
         "predstavitelstvo": t("Представительство"),
         "deputatskie-fraktsii": t("Депутатские фракции"),
         "komissii": t("Комиссии"),
-        "molodezhnyy-khural": t("Молодежный Хурал"),
         "council": t("Представительство в Совете Федерации"),
       };
       crumbs.push({ label: titles[slug] || slug });

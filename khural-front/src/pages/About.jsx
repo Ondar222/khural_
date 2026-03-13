@@ -384,7 +384,7 @@ export default function About() {
               { label: t("Комиссии"), href: "/about?tab=structure&focus=commissions" },
               { label: t("Депутатские фракции"), href: "/about?tab=structure&focus=factions" },
               { label: t("Представительство в Совете Федерации"), href: "/struct/council" },
-              { label: t("Молодежный Хурал"), href: "/section?title=" + encodeURIComponent("Молодежный Хурал") },
+              { label: t("Молодежный Хурал"), href: "/youth-parliament" },
             ]}
             loadPages={true}
             autoSection={true}

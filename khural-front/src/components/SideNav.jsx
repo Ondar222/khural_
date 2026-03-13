@@ -73,7 +73,7 @@ const defaultLinks = [
   { label: "Структура Аппарата", href: "/section?title=" + encodeURIComponent("Структура Аппарата") },
   {
     label: "Молодежный Хурал",
-    href: "/section?title=" + encodeURIComponent("Молодежный Хурал"),
+    href: "/youth-parliament",
   },
   // Информация
   { label: "Финансы", href: "/info/finansy" },
