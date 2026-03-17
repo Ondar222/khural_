@@ -75,7 +75,7 @@ export default function Broadcast() {
             </div>
 
             {/* Архив трансляций */}
-            <div className="card" style={{ marginTop: 24 }}>
+            <div className="card" style={{ padding: "20px 20px" }}>
               <h2 className="h2-compact" style={{ marginBottom: 16 }}>
                 Архив трансляций
               </h2>

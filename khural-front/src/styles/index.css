@@ -6829,7 +6829,7 @@ body:has(.auth-page) {
   padding-right: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  min-height: 200px;
+
 }
 .sidenav--card .tile.link,
 .sidenav--about .tile.link {
