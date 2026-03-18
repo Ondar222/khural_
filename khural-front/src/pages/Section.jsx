@@ -2856,7 +2856,8 @@ export default function SectionPage() {
 
     // Special handling for "Отчеты всех Созывов" page
     if (title === "Отчеты всех Созывов") {
-      return <ReportsAllConvocationsPage />;
+      // return <ReportsAllConvocationsPage />; // Скрыто временно
+      return null; // Return null to hide the page
     }
 
     // Special handling for "Отчеты о деятельности комитетов X созыва" pages

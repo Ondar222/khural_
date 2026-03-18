@@ -55,7 +55,7 @@ const defaultLinks = [
   { label: "Депутаты", href: "/deputies?convocation=VIII" },
   { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
   { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
-  { label: "Отчеты всех Созывов", href: "/section?title=" + encodeURIComponent("Отчеты всех Созывов") },
+  // { label: "Отчеты всех Созывов", href: "/section?title=" + encodeURIComponent("Отчеты всех Созывов") }, // Скрыто временно
   { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
   {
     label: "Представительство в Совете Федерации",
