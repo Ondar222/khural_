@@ -1,5 +1,6 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
+import SideNav from "../components/SideNav.jsx";
 
 export default function LegislativeMap() {
   const { t, lang } = useI18n();
@@ -234,56 +235,61 @@ export default function LegislativeMap() {
   return (
     <section className="section">
       <div className="container">
-        <h1 className="page-title">{t("Законодательная карта сайта")}</h1>
+        <div className="page-grid">
+          <div>
+            <h1 className="page-title">{t("Законодательная карта сайта")}</h1>
 
-        <div className="card" style={{ padding: 20, marginBottom: 24 }}>
-          <p style={{ marginBottom: 0, lineHeight: 1.6 }}>
-            {lang === "ty" ? (
-              <>
-                Тыва Республиканың Дээди Хуралының (парламентизиниң) ажыл-чорудулгазының дугайында медээлер
-                <a
-                  className="link"
-                  href="http://base.garant.ru/194874/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  «9 февраль 2009 чылда РФ-тиң № 8-ФЗ «Күрүне органнары болгаш тус чер бот-башкарылга органнарының ажыл-чорудулгазының дугайында медээлерге чедирерин хандырарының дугайында» Хоойлузунуң 13 дугаар чүүлүнге дүүштүр
-                </a>
-                , хоойлу-дүрүм картазы хевиринде көргүскен.
-              </>
-            ) : (
-              <>
-                Информация о деятельности Верховного Хурала (парламента) Республики Тыва в соответствии
-                со <a className="link" href="http://base.garant.ru/194874/" target="_blank" rel="noopener noreferrer">ст.13 Федерального закона Российской Федерации от 9 февраля 2009 г. № 8-ФЗ «Об обеспечении доступа к информации о деятельности государственных органов и органов местного самоуправления»</a>,
-                представленная в виде законодательной карты.
-              </>
-            )}
-          </p>
-        </div>
+            <div className="card" style={{ padding: 20, marginBottom: 24 }}>
+              <p style={{ marginBottom: 0, lineHeight: 1.6 }}>
+                {lang === "ty" ? (
+                  <>
+                    Тыва Республиканың Дээди Хуралының (парламентизиниң) ажыл-чорудулгазының дугайында медээлер
+                    <a
+                      className="link"
+                      href="http://base.garant.ru/194874/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      «9 февраль 2009 чылда РФ-тиң № 8-ФЗ «Күрүне органнары болгаш тус чер бот-башкарылга органнарының ажыл-чорудулгазының дугайында медээлерге чедирерин хандырарының дугайында» Хоойлузунуң 13 дугаар чүүлүнге дүүштүр
+                    </a>
+                    , хоойлу-дүрүм картазы хевиринде көргүскен.
+                  </>
+                ) : (
+                  <>
+                    Информация о деятельности Верховного Хурала (парламента) Республики Тыва в соответствии
+                    со <a className="link" href="http://base.garant.ru/194874/" target="_blank" rel="noopener noreferrer">ст.13 Федерального закона Российской Федерации от 9 февраля 2009 г. № 8-ФЗ «Об обеспечении доступа к информации о деятельности государственных органов и органов местного самоуправления»</a>,
+                    представленная в виде законодательной карты.
+                  </>
+                )}
+              </p>
+            </div>
 
-        <div className="card legislative-map-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div className="table-responsive">
-            <table className="legislative-map-table">
-              <thead>
-                <tr>
-                  <th className="col-point">{t("Пункт")}</th>
-                  <th className="col-content">{t("Содержание пункта")}</th>
-                  <th className="col-links">{t("Разделы сайта")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableData.map((row, index) => (
-                  <tr key={index} className={index % 2 === 0 ? "row-even" : "row-odd"}>
-                    <td className="cell-point">{row.point}</td>
-                    <td className="cell-content">{row.text}</td>
-                    <td className="cell-links">
-                      {row.links || <span className="no-links">—</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="card legislative-map-card" style={{ padding: 0, overflow: "hidden" }}>
+              <div className="table-responsive">
+                <table className="legislative-map-table">
+                  <thead>
+                    <tr>
+                      <th className="col-point">{t("Пункт")}</th>
+                      <th className="col-content">{t("Содержание пункта")}</th>
+                      <th className="col-links">{t("Разделы сайта")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableData.map((row, index) => (
+                      <tr key={index} className={index % 2 === 0 ? "row-even" : "row-odd"}>
+                        <td className="cell-point">{row.point}</td>
+                        <td className="cell-content">{row.text}</td>
+                        <td className="cell-links">
+                          {row.links || <span className="no-links">—</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
+          <SideNav loadPages={true} autoSection={true} />
         </div>
       </div>
 

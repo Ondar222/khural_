@@ -1767,6 +1767,44 @@ export default function PageBySlug() {
     isFederationCouncil ||
     shouldUseInfoFallback;
 
+  // Определяем, является ли страница разделом "Общие сведения" (/info/*)
+  const isInfoSection = isInfoIndex ||
+    isInfoFinance ||
+    isInfoFinanceChecks ||
+    isInfoFinanceChecks2016 ||
+    isInfoFinanceChecks2018 ||
+    isInfoFinanceChecks2019 ||
+    isInfoFinanceChecks2020 ||
+    isInfoFinanceProcurement ||
+    isInfoFinanceReports ||
+    isInfoFinanceReports2015 ||
+    isInfoFinanceReports2016 ||
+    isInfoFinanceReports2017 ||
+    isInfoFinanceReports2018 ||
+    isInfoFinanceReports2019 ||
+    isInfoFinanceReports2020 ||
+    isInfoFinanceReports2021 ||
+    isInfoFinanceReports2022 ||
+    isInfoFinanceReports2023 ||
+    isInfoBudget ||
+    isInfoDistricts ||
+    isInfoLawmap ||
+    isInfoHistory ||
+    isInfoPolnomochiya ||
+    isOpenData ||
+    isInfoOmbHuman ||
+    isInfoOmbChild ||
+    isInfoPersonnel ||
+    isInfoPersonnelGossluzhba ||
+    isInfoPersonnelPoryadok ||
+    isInfoPersonnelLaw58fz ||
+    isInfoPersonnelLaw79fz ||
+    isInfoPersonnelLaw112 ||
+    isInfoPersonnelTelefon ||
+    isInfoPersonnelObzhalovanie ||
+    isInfoPersonnelPension ||
+    isInfoPersonnelOtpusk;
+
   // Определяем URL для кнопки "Назад"
   const backUrl = isInfoFinanceChecks2016 || isInfoFinanceChecks2018 || isInfoFinanceChecks2019 || isInfoFinanceChecks2020
     ? "/info/finansy/rezultaty-proverok"
@@ -2043,7 +2081,11 @@ export default function PageBySlug() {
               )}
             </DataState>
           </div>
-          <SideNav title={title} loadPages={true} autoSection={true} />
+          <SideNav
+            title={isInfoSection ? undefined : title}
+            loadPages={true}
+            autoSection={true}
+          />
         </div>
       </div>
     </section>

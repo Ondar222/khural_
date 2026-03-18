@@ -112,6 +112,17 @@ const defaultLinksNews = [
   { label: "Медиа", href: "/news?section=media" },
 ];
 
+// Стандартные ссылки для раздела "Общие сведения"
+const defaultLinksCommon = [
+  { label: "Финансы", href: "/info/finansy" },
+  { label: "Избирательные округа", href: "/info/iokrug" },
+  { label: "Законодательная карта", href: "/info/zakon-karta" },
+  { label: "Открытые данные", href: "/opendata" },
+  { label: "Уполномоченный по правам человека", href: "/info/upoln-po-prav" },
+  { label: "Уполномоченный по правам ребенка", href: "/info/upoln-po-reb" },
+  { label: "Кадровое обеспечение", href: "/info/personnel" },
+];
+
 // Отдельный мемоизированный компонент ссылки
 const LinkItem = React.memo(function LinkItem({
   href,
@@ -236,8 +247,8 @@ export default function SideNav({
       "^/contacts$": "contacts",
       "^/appeals": "appeals",
       "^/broadcast": "broadcast",
-      "^/info/finansy": "finansy",
-      "^/info/iokrug": "iokrug",
+      "^/info": "common",
+      "^/opendata": "common",
       "^/youth-parliament": "youth",
     };
 
@@ -253,7 +264,7 @@ export default function SideNav({
   // Автоматически определяем заголовок на основе раздела
   const autoTitle = React.useMemo(() => {
     if (!detectedSection) return "Разделы";
-    
+
     const titleMap = {
       news: "Новости",
       deputies: "Депутаты",
@@ -265,11 +276,10 @@ export default function SideNav({
       contacts: "Контакты",
       appeals: "Обращения",
       broadcast: "Трансляция",
-      finansy: "Финансы",
-      iokrug: "Избирательные округа",
+      common: "Общие сведения",
       youth: "Молодежный Хурал",
     };
-    
+
     return titleMap[detectedSection] || "Разделы";
   }, [detectedSection]);
   
@@ -335,6 +345,8 @@ export default function SideNav({
       sectionDefaultLinks = defaultLinksAppeals;
     } else if (detectedSection === 'news') {
       sectionDefaultLinks = defaultLinksNews;
+    } else if (detectedSection === 'common') {
+      sectionDefaultLinks = defaultLinksCommon;
     }
     
     // Если загружаем страницы, добавляем их к стандартным ссылкам

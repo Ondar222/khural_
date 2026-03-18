@@ -296,7 +296,31 @@ export default function Header() {
                 <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
                   {t("factions")}
                 </a>
-                <hr />
+                <a href="/struct/council">
+                  {t("senateRep")}
+                </a>
+                <a href="/apparatus">{t("apparatus")}</a>
+              </div>
+            </div>
+            <div
+              className={`dropdown ${openMenu === "deputies" ? "open" : ""}`}
+              onMouseEnter={() => setOpenMenu("deputies")}
+              onMouseLeave={() => setOpenMenu(null)}
+            >
+              <Link to="/deputies">{t("deputies")} ▾</Link>
+              <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("deputies")}>
+                <a href="/deputies">{t("Действующие депутаты") || "Действующие депутаты"}</a>
+                <a href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5">{t("deputiesAll") || "Депутаты всех созывов"}</a>
+                <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты прекратившие полномочия") || "Депутаты прекратившие полномочия"}</a>
+              </div>
+            </div>
+            <div
+              className={`dropdown ${openMenu === "info" ? "open" : ""}`}
+              onMouseEnter={() => setOpenMenu("info")}
+              onMouseLeave={() => setOpenMenu(null)}
+            >
+              <Link to="/info/finansy">{t("Общие сведения") || "Общие сведения"} ▾</Link>
+              <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("info")}>
                 <a href="/info/finansy">{t("Финансы") || "Финансы"}</a>
                 <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
                 <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
@@ -304,18 +328,7 @@ export default function Header() {
                 <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
                 <a href="/info/upoln-po-reb">{t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}</a>
                 <a href="/info/personnel">{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
-                <hr />
-                <a
-                  href="/struct/council"
-                >
-                  {t("senateRep")}
-                </a>
-                <a href="/apparatus">{t("apparatus")}</a>
-                <a href="/contacts">{t("contacts")}</a>
               </div>
-            </div>
-            <div>
-              <Link to="/deputies">{t("deputies")}</Link>
             </div>
             <div
               className={`dropdown ${openMenu === "docs" ? "open" : ""}`}
@@ -516,6 +529,8 @@ export default function Header() {
           <div className="sheet-col">
             <h3>{t("aboutVH")}</h3>
             <a href="/about">{t("aboutVH")}</a>
+            <a href="/about/istoriya-parlamentarizma">История парламентаризма в Республике Тыва</a>
+            <a href="/about/polnomochiya">Полномочия Верховного Хурала</a>
             <a href="/section">{t("structure")}</a>
             <a href="/committee">{t("committees")}</a>
             {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
@@ -523,7 +538,13 @@ export default function Header() {
             <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
               {t("factions")}
             </a>
-            <hr />
+            <a href="/struct/council">
+              {t("senateRep")}
+            </a>
+            <a href="/apparatus">{t("apparatus")}</a>
+          </div>
+          <div className="sheet-col">
+            <h3>{t("Общие сведения") || "Общие сведения"}</h3>
             <a href="/info/finansy">{t("Финансы") || "Финансы"}</a>
             <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
             <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
@@ -531,12 +552,6 @@ export default function Header() {
             <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
             <a href="/info/upoln-po-reb">{t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}</a>
             <a href="/info/personnel">{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
-            <hr />
-            <a href="/struct/council">
-              {t("senateRep")}
-            </a>
-            <a href="/apparatus">{t("apparatus")}</a>
-            <a href="/contacts">{t("contacts")}</a>
           </div>
           <div className="sheet-col">
             <h3>{t("deputies")}</h3>
@@ -727,6 +742,12 @@ export default function Header() {
                   <RightOutlined aria-hidden="true" />
                 </span>
               </button>
+              <button className="tile link" onClick={() => setMobileSection("info")}>
+                <span className="mobile-menu-link-content">
+                  {t("Общие сведения") || "Общие сведения"}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </button>
               <Link to="/deputies" onClick={() => setMobileOpen(false)} className="tile link">
                 <span className="mobile-menu-link-content">
                   {t("deputies")}
@@ -790,12 +811,6 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <a className="tile link" href="/convocations" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("convocations") || "Созывы"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
             <a
               className="tile link"
               href={"/section?title=" + encodeURIComponent("Комиссии")}
@@ -816,8 +831,26 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <div style={{ height: 8 }} />
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>Общие сведения</div>
+            <a className="tile link" href="/struct/council" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("senateRep")}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/apparatus" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("apparatus")}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+          </>
+        )}
+        {mobileSection === "info" && (
+          <>
+            <button className="btn" onClick={() => setMobileSection(null)}>
+              {t("back")}
+            </button>
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("Общие сведения") || "Общие сведения"}</div>
             <a className="tile link" href="/info/finansy" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("Финансы") || "Финансы"}
@@ -857,28 +890,6 @@ export default function Header() {
             <a className="tile link" href="/info/personnel" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("Кадровое обеспечение") || "Кадровое обеспечение"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a
-              className="tile link"
-              href="/struct/council"
-              onClick={() => setMobileOpen(false)}
-            >
-              <span className="mobile-menu-link-content">
-                {t("senateRep")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/apparatus" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("apparatus")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/contacts" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("contacts")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
