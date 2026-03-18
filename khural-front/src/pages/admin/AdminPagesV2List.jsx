@@ -127,9 +127,9 @@ export default function AdminPagesV2List({
       // чтобы страница не была пустой, если токен/права не настроены.
       const res = await listPagesWithFallback({ locale: localeMode === "all" ? undefined : localeMode, authPreferred: false });
       const arr = Array.isArray(res) ? res : [];
-      
+
       console.log('[AdminPagesV2List] Loaded pages:', arr.length, arr.map(p => ({ slug: p.slug, title: p.title, id: p.id })));
-      
+
       // dedupe by slug
       const bySlug = new Map();
       for (const p of arr) {
@@ -139,9 +139,13 @@ export default function AdminPagesV2List({
       }
       console.log('[AdminPagesV2List] After dedup:', bySlug.size, Array.from(bySlug.keys()));
       setItems(Array.from(bySlug.values()));
+      
+      if (arr.length === 0) {
+        onMessage?.("warning", "Страницы не найдены в API. Нажмите 'Создать страницу' для добавления.");
+      }
     } catch (e) {
       console.error('[AdminPagesV2List] Error loading pages:', e);
-      onMessage?.("error", e?.message || "Не удалось загрузить страницы");
+      onMessage?.("error", e?.message || "Не удалось загрузить страницы. Проверьте подключение к API.");
       setItems([]);
     } finally {
       setBusy(false);
@@ -369,6 +373,15 @@ export default function AdminPagesV2List({
       width: isTablet ? 380 : 460,
       render: (_, row) => (
         <Space wrap className="admin-pages-list__actions">
+          {/* Кнопка "Редактировать" - для всех страниц, где есть id */}
+          <Button 
+            size={isTablet ? "small" : "middle"} 
+            onClick={() => onEdit?.(row.id)} 
+            disabled={!canWrite || !row.id}
+          >
+            Редактировать
+          </Button>
+          
           {row?.__isFixed ? (
             <>
               <Button
@@ -431,6 +444,9 @@ export default function AdminPagesV2List({
               >
                 📋 Подстраницы
               </Button>
+              <Button size={isTablet ? "small" : "middle"} onClick={() => onPreview?.(row.slug)} disabled={!row.slug}>
+                Открыть
+              </Button>
             </>
           ) : (
             <>
@@ -443,9 +459,6 @@ export default function AdminPagesV2List({
                 disabled={!canWrite || !row.slug}
               >
                 + Подстраница
-              </Button>
-              <Button size={isTablet ? "small" : "middle"} onClick={() => onEdit?.(row.id)} disabled={!canWrite || !row.id}>
-                Редактировать
               </Button>
               <Popconfirm
                 title="Удалить страницу?"
@@ -562,6 +575,15 @@ export default function AdminPagesV2List({
                 </div>
 
                 <div className="admin-pages-list__card-actions">
+                  {/* Кнопка "Редактировать" - для всех страниц, где есть id */}
+                  <Button 
+                    onClick={() => onEdit?.(row.id)} 
+                    disabled={!canWrite || !row.id} 
+                    block
+                  >
+                    Редактировать
+                  </Button>
+                  
                   {row?.__isFixed ? (
                     <>
                       <Button
@@ -591,9 +613,6 @@ export default function AdminPagesV2List({
                     <>
                       <Button onClick={() => onPreview?.(row.slug)} disabled={!row.slug} block>
                         Открыть
-                      </Button>
-                      <Button onClick={() => onEdit?.(row.id)} disabled={!canWrite} block>
-                        Редактировать
                       </Button>
                       <Button onClick={() => onCreate?.(row.slug)} disabled={!canWrite || !row.slug} block>
                         + Подстраница
