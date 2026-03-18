@@ -11030,3 +11030,83 @@ body.a11y-brown .btn {
   color: #78350f !important;
   border-color: #ffffff !important;
 }
+
+/* Mobile header overflow fix - 2026 */
+@media (max-width: 959px) {
+  .site-header .row {
+    height: 70px !important;
+    padding: 6px 10px !important;
+    gap: 4px !important;
+  }
+  .brand {
+    gap: 4px !important;
+  }
+  .brand .logo {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  .brand .logo img {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  .brand .brand-mobile-title {
+    max-width: 100px !important;
+  }
+  .brand-mobile-title__top {
+    font-size: 8px !important;
+  }
+  .brand-mobile-title__mid {
+    font-size: 7px !important;
+  }
+  .brand-mobile-title__bottom {
+    font-size: 9px !important;
+  }
+  .header-actions {
+    gap: 4px !important;
+    margin-bottom: 0 !important;
+  }
+  .header-actions .icon-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+  .site-header #specialButton {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+  }
+  .burger span {
+    width: 14px !important;
+  }
+}
+
+/* Fix horizontal overflow on mobile - 2026 */
+@media (max-width: 959px) {
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+  .container {
+    padding: 0 10px !important;
+    max-width: 100% !important;
+  }
+  .site-header .container {
+    padding: 0 8px !important;
+  }
+  .row {
+    flex-wrap: nowrap !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+  .main-nav {
+    max-width: none !important;
+  }
+  /* Ensure brand doesn't grow too large */
+  .brand {
+    max-width: 45% !important;
+  }
+  /* Ensure header actions stay compact */
+  .header-actions {
+    max-width: 120px !important;
+  }
+}

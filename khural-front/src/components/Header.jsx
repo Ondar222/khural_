@@ -233,15 +233,9 @@ export default function Header() {
               <a href="/" className="brand-mobile-title" style={{ textDecoration: "none" }}>
                 {tyBrandLines ? (
                   <>
-                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
-                      {tyBrandLines[0]}
-                    </div>
-                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "var(--primary)" }}>
-                      {tyBrandLines[1]}
-                    </div>
-                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "var(--muted)" }}>
-                      {tyBrandLines[2]}
-                    </div>
+                    <div className="brand-mobile-title__top">{tyBrandLines[0]}</div>
+                    <div className="brand-mobile-title__mid">{tyBrandLines[1]}</div>
+                    <div className="brand-mobile-title__bottom">{tyBrandLines[2]}</div>
                   </>
                 ) : (
                   <>
