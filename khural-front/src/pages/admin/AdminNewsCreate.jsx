@@ -345,9 +345,12 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       
       // Формируем FormData для multipart/form-data
       const formData = new FormData();
-      
+
       // Добавляем JSON поля
-      formData.append("categoryId", String(values.categoryId));
+      // categoryId - необязательное поле, отправляем только если выбрано
+      if (values.categoryId !== undefined && values.categoryId !== null && values.categoryId !== '') {
+        formData.append("categoryId", String(values.categoryId));
+      }
       if (values.publishedAt) {
         const timestamp = values.publishedAt && typeof values.publishedAt.valueOf === 'function' 
           ? values.publishedAt.valueOf() 
@@ -603,12 +606,10 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         <div className="admin-news-editor__grid">
           <div className="admin-card">
             <div className="admin-news-editor__section-title">Основное</div>
-            {/* Поле категории скрыто, пока категории не будут приведены в порядок */}
-            {/*
             <Form.Item
-              label="Категория"
+              label="Категория (необязательно)"
               name="categoryId"
-              rules={[{ required: true, message: "Выберите категорию" }]}
+              rules={[{ required: false }]}
             >
               <Select
                 placeholder="Выберите категорию"
@@ -649,7 +650,6 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
                 }))}
               />
             </Form.Item>
-            */}
           </div>
 
           <div className="admin-card">

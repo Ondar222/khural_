@@ -425,7 +425,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       }
 
       payload = {
-        categoryId: values.categoryId,
+        ...(values.categoryId !== undefined && values.categoryId !== null && values.categoryId !== '' ? { categoryId: values.categoryId } : {}),
         slug: values.slug || undefined,
         ...(publishedAtValue !== undefined ? { publishedAt: publishedAtValue } : { publishedAt: null }),
         isPublished: values.isPublished ?? false,
@@ -651,12 +651,10 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         <div className="admin-news-editor__grid">
           <div className="admin-card">
             <div className="admin-news-editor__section-title">Основное</div>
-            {/* Поле категории скрыто, пока категории не будут приведены в порядок */}
-            {/*
             <Form.Item
-              label="Категория"
+              label="Категория (необязательно)"
               name="categoryId"
-              rules={[{ required: true, message: "Выберите категорию" }]}
+              rules={[{ required: false }]}
             >
               <Select
                 placeholder="Выберите категорию"
@@ -697,7 +695,6 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
                 }))}
               />
             </Form.Item>
-            */}
             <Form.Item
               label="Slug (URL-адрес)"
               name="slug"
