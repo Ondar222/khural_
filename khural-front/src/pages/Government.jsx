@@ -773,7 +773,7 @@ export default function Government() {
               </>
             )}
           </div>
-          <SideNav title="Разделы" />
+          <SideNav />
         </div>
       </div>
     </section>

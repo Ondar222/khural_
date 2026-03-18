@@ -107,9 +107,9 @@ const defaultLinksAppeals = [
 // Стандартные ссылки для раздела "Новости"
 const defaultLinksNews = [
   { label: "Главные события", href: "/news/week" },
-  { label: "Актуальные новости", href: "/news" },
-  { label: "Все новости", href: "/news" },
-  { label: "Медиа", href: "/news" },
+  { label: "Актуальные новости", href: "/news?section=actual" },
+  { label: "Все новости", href: "/news?section=all" },
+  { label: "Медиа", href: "/news?section=media" },
 ];
 
 // Отдельный мемоизированный компонент ссылки
@@ -201,7 +201,7 @@ function filterPagesBySection(pages, section) {
 
 // Reusable right-side navigation with links to key subpages
 export default function SideNav({
-  title = "Разделы",
+  title, // Заголовок (если не указан, определяется автоматически)
   links: overrideLinks,
   className = "sidenav--card",
   loadPages = false, // Новый проп: если true, загружать страницы из админки
@@ -217,9 +217,9 @@ export default function SideNav({
   const detectedSection = React.useMemo(() => {
     if (!autoSection) return section;
     if (section) return section; // Явно указанный section имеет приоритет
-    
+
     const pathname = route?.split("?")[0] || "";
-    
+
     // Сопоставляем пути с разделами
     const sectionMap = {
       "^/news$": "news",
@@ -236,16 +236,44 @@ export default function SideNav({
       "^/contacts$": "contacts",
       "^/appeals": "appeals",
       "^/broadcast": "broadcast",
+      "^/info/finansy": "finansy",
+      "^/info/iokrug": "iokrug",
+      "^/youth-parliament": "youth",
     };
-    
+
     for (const [pattern, sectionName] of Object.entries(sectionMap)) {
       if (new RegExp(pattern).test(pathname)) {
         return sectionName;
       }
     }
-    
+
     return null;
   }, [autoSection, section, route]);
+
+  // Автоматически определяем заголовок на основе раздела
+  const autoTitle = React.useMemo(() => {
+    if (!detectedSection) return "Разделы";
+    
+    const titleMap = {
+      news: "Новости",
+      deputies: "Депутаты",
+      documents: "Документы",
+      about: "О Хурале",
+      committees: "Комитеты",
+      commissions: "Комиссии",
+      activity: "Деятельность",
+      contacts: "Контакты",
+      appeals: "Обращения",
+      broadcast: "Трансляция",
+      finansy: "Финансы",
+      iokrug: "Избирательные округа",
+      youth: "Молодежный Хурал",
+    };
+    
+    return titleMap[detectedSection] || "Разделы";
+  }, [detectedSection]);
+  
+  const titleText = title ? (typeof title === "string" ? t(title) : title) : autoTitle;
 
   // Загружаем страницы из админки, если loadPages = true
   React.useEffect(() => {
@@ -314,12 +342,10 @@ export default function SideNav({
       // Добавляем загруженные страницы в начало списка
       return [...pagesLinks, ...sectionDefaultLinks];
     }
-    
+
     // Иначе используем стандартные ссылки раздела
     return sectionDefaultLinks;
   }, [overrideLinks, loadPages, pagesLinks, detectedSection]);
-
-  const titleText = typeof title === "string" ? t(title) : title;
 
   // Обработчик клика без создания новой функции на каждый рендер
   const handleLinkClick = React.useCallback((e, onClick) => {

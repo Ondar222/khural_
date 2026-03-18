@@ -120,7 +120,7 @@ export default function Commission() {
               <h1>Комиссия</h1>
               <p>Укажите комиссию в адресе: /commission?id=...</p>
             </div>
-            <SideNav title="Разделы" />
+            <SideNav />
           </div>
         </div>
       </section>
@@ -136,7 +136,7 @@ export default function Commission() {
               <h1>Комиссия</h1>
               <p>Комиссия не найдена.</p>
             </div>
-            <SideNav title="Разделы" />
+            <SideNav />
           </div>
         </div>
       </section>
@@ -162,7 +162,7 @@ export default function Commission() {
               <p>Здесь будет содержимое страницы «{title}». Добавьте его в админ-панели.</p>
             )}
           </div>
-          <SideNav title="Разделы" />
+          <SideNav />
         </div>
       </div>
     </section>

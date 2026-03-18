@@ -55,7 +55,7 @@ export default function News() {
               />
             </div>
           </div>
-          <SideNav title="Разделы" loadPages={true} autoSection={true} />
+          <SideNav loadPages={true} autoSection={true} />
         </div>
       </div>
     </section>

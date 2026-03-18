@@ -45,6 +45,12 @@ export default function NewsArchive() {
   };
   const [date, setDate] = React.useState(getInitialDate);
 
+  const getInitialSection = () => {
+    const sectionParam = new URLSearchParams(window.location.search || "").get("section");
+    return sectionParam || "all";
+  };
+  const [section, setSection] = React.useState(getInitialSection);
+
   const [selected, setSelected] = React.useState(() => {
     const id = new URLSearchParams(window.location.search || "").get("id");
     return id || null;
@@ -55,10 +61,13 @@ export default function NewsArchive() {
       const params = new URLSearchParams(window.location.search || "");
       const id = params.get("id");
       const dateParam = params.get("date");
+      const sectionParam = params.get("section");
       const pageParam = params.get("page");
       setSelected(id || null);
       if (dateParam && !id) setDate(dateParam);
       if (!dateParam && !id) setDate("");
+      if (sectionParam) setSection(sectionParam);
+      else if (!id) setSection("all");
       const p = parseInt(pageParam, 10);
       if (Number.isFinite(p) && p >= 1) setCurrentPage(p);
       else if (!id) setCurrentPage(1);
@@ -75,9 +84,9 @@ export default function NewsArchive() {
   const newsMenuLinks = React.useMemo(
     () => [
       { label: "Главные события", href: "/news/week" },
-      { label: "Актуальные новости", href: "/news" },
-      { label: "Все новости", href: "/news" },
-      { label: "Медиа", href: "/news" },
+      { label: "Актуальные новости", href: "/news?section=actual" },
+      { label: "Все новости", href: "/news?section=all" },
+      { label: "Медиа", href: "/news?section=media" },
       ...NEWS_EXTRA_LINKS.map((item) => ({
         label: item.labelKey ? t(item.labelKey) : item.labelRu,
         href: item.href,
@@ -95,9 +104,23 @@ export default function NewsArchive() {
         result = result.filter((n) => String(n.date || "").slice(0, 10) === date);
       }
 
+      // Фильтр по разделу (секции)
+      if (section === "actual") {
+        // Актуальные новости - показываем только последние (с категорией или без special фильтрации)
+        // Можно фильтровать по категории или показывать все
+      } else if (section === "media") {
+        // Медиа - показываем новости с изображениями или видео
+        result = result.filter((n) => {
+          const hasImages = Array.isArray(n.images) && n.images.length > 0;
+          const hasImage = !!n.image;
+          return hasImages || hasImage;
+        });
+      }
+      // section === "all" - показываем все новости (без дополнительной фильтрации)
+
       return result;
     },
-    [news, date]
+    [news, date, section]
   );
 
   const totalNews = filtered.length;
@@ -119,13 +142,15 @@ export default function NewsArchive() {
     const h = window.location.pathname;
     const params = new URLSearchParams(window.location.search || "");
     if (date) params.set("date", date);
+    if (section && section !== "all") params.set("section", section);
+    else params.delete("section");
     if (page > 1) params.set("page", String(page));
     else params.delete("page");
     const newUrl = params.toString() ? `${h}?${params.toString()}` : h;
     window.history.pushState({}, "", newUrl);
     setCurrentPage(page);
     window.dispatchEvent(new Event("app:navigate"));
-  }, [date]);
+  }, [date, section]);
 
   if (selected) {
     const idx = (news || []).findIndex((n) => String(n.id) === String(selected));
@@ -421,13 +446,8 @@ export default function NewsArchive() {
                         const h = window.location.pathname;
                         const params = new URLSearchParams(window.location.search || "");
                         params.delete("page");
-                        if (category && category !== "Все") {
-                          if (category === "Председатель") {
-                            params.set("speaker", "true");
-                          } else {
-                            params.set("category", category);
-                          }
-                        }
+                        if (section && section !== "all") params.set("section", section);
+                        else params.delete("section");
                         if (newDate) params.set("date", newDate);
                         else params.delete("date");
                         const next = params.toString() ? `${h}?${params.toString()}` : h;

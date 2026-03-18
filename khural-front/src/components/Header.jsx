@@ -346,9 +346,9 @@ export default function Header() {
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("news")}>
                 <a href="/news/week">{t("Главные события") || "Главные события"}</a>
                 <hr />
-                <a href="/news">{lang === "ty" ? t("hotNews") : t("Актуальные новости") || "Актуальные новости"}</a>
-                <a href="/news">{lang === "ty" ? t("allNews") : t("Все новости") || "Все новости"}</a>
-                <a href="/news">{lang === "ty" ? t("media") : t("Медиа") || "Медиа"}</a>
+                <a href="/news?section=actual">{lang === "ty" ? t("hotNews") : t("Актуальные новости") || "Актуальные новости"}</a>
+                <a href="/news?section=all">{lang === "ty" ? t("allNews") : t("Все новости") || "Все новости"}</a>
+                <a href="/news?section=media">{lang === "ty" ? t("media") : t("Медиа") || "Медиа"}</a>
                 <hr />
                 {NEWS_EXTRA_LINKS.map((item) => (
                   <a key={item.href} href={item.href}>
@@ -547,9 +547,9 @@ export default function Header() {
           <div className="sheet-col">
             <h3>{t("news")}</h3>
             <a href="/news/week">{t("Главные события недели") || "Главные события недели"}</a>
-            <a href="/news">{t("hotNews")}</a>
-            <a href="/news">{t("allNews")}</a>
-            <a href="/news">{t("media")}</a>
+            <a href="/news?section=actual">{t("hotNews")}</a>
+            <a href="/news?section=all">{t("allNews")}</a>
+            <a href="/news?section=media">{t("media")}</a>
             {NEWS_EXTRA_LINKS.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.labelKey ? t(item.labelKey) : t(item.labelRu) || item.labelRu}

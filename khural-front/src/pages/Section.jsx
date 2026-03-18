@@ -125,7 +125,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
                 </a>
               </div>
             </div>
-            <SideNav title="Разделы" loadPages={true} autoSection={true} />
+            <SideNav loadPages={true} autoSection={true} />
           </div>
         </div>
       </section>
@@ -141,7 +141,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
               <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
               <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
             </div>
-            <SideNav title="Разделы" loadPages={true} autoSection={true} />
+            <SideNav loadPages={true} autoSection={true} />
           </div>
         </div>
       </section>
@@ -168,7 +168,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
                 <div dangerouslySetInnerHTML={{ __html: staticHtml }} />
               </div>
             </div>
-            <SideNav title="Разделы" loadPages={true} autoSection={true} />
+            <SideNav loadPages={true} autoSection={true} />
           </div>
         </div>
       </section>
@@ -648,7 +648,7 @@ function ReportsAllConvocationsPage() {
               </div>
             )}
           </div>
-          <SideNav title="Разделы" loadPages={true} autoSection={true} />
+          <SideNav loadPages={true} autoSection={true} />
         </div>
       </div>
     </section>
@@ -949,7 +949,7 @@ function ConvocationReportsPage({ convocationNumber }) {
               <h1>Отчеты о деятельности комитетов {convocationNumber} созыва</h1>
               <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
             </div>
-            <SideNav title="Разделы" loadPages={true} autoSection={true} />
+            <SideNav loadPages={true} autoSection={true} />
           </div>
         </div>
       </section>
@@ -967,7 +967,7 @@ function ConvocationReportsPage({ convocationNumber }) {
                 <p style={{ marginTop: 0 }}>Созыв {convocationNumber} не найден.</p>
               </div>
             </div>
-            <SideNav title="Разделы" loadPages={true} autoSection={true} />
+            <SideNav loadPages={true} autoSection={true} />
           </div>
         </div>
       </section>
@@ -1144,7 +1144,7 @@ function ConvocationReportsPage({ convocationNumber }) {
                 </div>
               )}
             </div>
-            <SideNav title="Разделы" loadPages={true} autoSection={true} />
+            <SideNav loadPages={true} autoSection={true} />
           </div>
         </div>
       </section>
@@ -1232,7 +1232,7 @@ function ConvocationReportsPage({ convocationNumber }) {
                 </div>
               )}
             </div>
-            <SideNav title="Разделы" loadPages={true} autoSection={true} />
+            <SideNav loadPages={true} autoSection={true} />
           </div>
         </div>
       </section>
@@ -1367,7 +1367,7 @@ function ConvocationReportsPage({ convocationNumber }) {
               </div>
             )}
           </div>
-          <SideNav title="Разделы" loadPages={true} autoSection={true} />
+          <SideNav loadPages={true} autoSection={true} />
         </div>
       </div>
     </section>
@@ -1821,7 +1821,7 @@ export default function SectionPage() {
                   })}
                 </div>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -1932,7 +1932,7 @@ export default function SectionPage() {
                   </div>
                 )}
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -1992,7 +1992,7 @@ export default function SectionPage() {
                   </p>
                 </div>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2047,7 +2047,7 @@ export default function SectionPage() {
                   <span aria-hidden="true">→</span>
                 </a>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2122,7 +2122,7 @@ export default function SectionPage() {
                     backHref="/deputies"
                   />
                 </div>
-                <SideNav title="Разделы" loadPages={true} autoSection={true} />
+                <SideNav loadPages={true} autoSection={true} />
               </div>
             </div>
           </section>
@@ -2156,7 +2156,7 @@ export default function SectionPage() {
                     backHref="/deputies"
                   />
                 </div>
-                <SideNav title="Разделы" loadPages={true} autoSection={true} />
+                <SideNav loadPages={true} autoSection={true} />
               </div>
             </div>
           </section>
@@ -2177,7 +2177,7 @@ export default function SectionPage() {
                   </p>
                 </div>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2220,7 +2220,7 @@ export default function SectionPage() {
                 <p style={{ marginTop: 24 }}>{R.signatory}</p>
                 <p style={{ color: "#374151", marginTop: 4 }}>{R.placeDate}</p>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2247,7 +2247,7 @@ export default function SectionPage() {
                   ))}
                 </ul>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2293,7 +2293,7 @@ export default function SectionPage() {
                   </p>
                 </div>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2322,7 +2322,7 @@ export default function SectionPage() {
                   ))}
                 </ul>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2405,7 +2405,7 @@ export default function SectionPage() {
                   </div>
                 </div>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2437,7 +2437,7 @@ export default function SectionPage() {
                   ))}
                 </div>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2469,7 +2469,7 @@ export default function SectionPage() {
                   ))}
                 </ul>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2622,7 +2622,7 @@ export default function SectionPage() {
                 </p>
                 <DeputyGrid deputies={deputies} structureType="parliament_leadership" backHref={back} />
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2659,7 +2659,7 @@ export default function SectionPage() {
                   ))}
                 </ul>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2719,7 +2719,7 @@ export default function SectionPage() {
                     </div>
                   </div>
                 </div>
-                <SideNav title="Разделы" loadPages={true} autoSection={true} />
+                <SideNav loadPages={true} autoSection={true} />
               </div>
             </div>
           </section>
@@ -2757,7 +2757,7 @@ export default function SectionPage() {
                   ) : null}
                 </p>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2817,7 +2817,7 @@ export default function SectionPage() {
                     </div>
                   </div>
                 </div>
-                <SideNav title="Разделы" loadPages={true} autoSection={true} />
+                <SideNav loadPages={true} autoSection={true} />
               </div>
             </div>
           </section>
@@ -2847,7 +2847,7 @@ export default function SectionPage() {
                   ))}
                 </ul>
               </div>
-              <SideNav title="Разделы" loadPages={true} autoSection={true} />
+              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -3010,7 +3010,7 @@ export default function SectionPage() {
               </div>
             </div>
           </div>
-          <SideNav title="Разделы" loadPages={true} autoSection={true} />
+          <SideNav loadPages={true} autoSection={true} />
         </div>
       </div>
     </section>

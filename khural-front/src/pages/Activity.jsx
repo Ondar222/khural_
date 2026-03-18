@@ -53,7 +53,7 @@ export default function ActivityPage() {
               ))}
             </div>
           </div>
-          <SideNav title="Разделы" links={sidebarLinks} />
+          <SideNav links={sidebarLinks} />
         </div>
       </div>
     </section>
