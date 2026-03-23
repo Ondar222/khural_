@@ -1219,16 +1219,19 @@ export function useAdminData() {
         message.success("Успешно удалено");
       }
       addDeletedEventId(String(id));
-      
-      // Оптимистично удаляем событие из DataContext
+
+      // Оптимистично удаляем событие из локального состояния, чтобы UI сразу обновился
       if (dataContextEvents) {
         const filteredEvents = dataContextEvents.filter((e) => String(e.id) !== String(id));
         setDataContextEvents(filteredEvents);
       }
-      
+
+      // Перезагружаем данные, чтобы синхронизироваться с бэкендом
       await reload();
-      // Обновляем DataContext, чтобы календарь обновился после удаления (если API работает)
-      reloadDataContext();
+      await reloadDataContext();
+    } catch (e) {
+      console.error("Ошибка при удалении события:", e);
+      message.error("Не удалось удалить событие");
     } finally {
       setBusy(false);
     }

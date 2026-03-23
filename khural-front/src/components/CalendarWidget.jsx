@@ -3,7 +3,6 @@ import { useData } from "../context/DataContext.jsx";
 import EventModal from "./EventModal.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "./DataState.jsx";
-import { Empty } from "antd";
 
 function parseEventDate(raw) {
   if (raw === undefined || raw === null) return new Date(NaN);
@@ -67,9 +66,6 @@ export default function CalendarWidget() {
           error={errors?.events}
           onRetry={reload}
         >
-          {!loading?.events && (!events || events.length === 0) ? (
-            <Empty description="Событий пока нет" />
-          ) : (
           <div className="calendar">
             <div className="calendar__header">
               <button
@@ -125,7 +121,6 @@ export default function CalendarWidget() {
               })}
             </div>
           </div>
-          )}
         </DataState>
 
         <EventModal
