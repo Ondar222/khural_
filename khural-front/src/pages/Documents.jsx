@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useHashRoute } from "../Router.jsx";
 import { Input, Select, Space, Switch, Pagination } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
@@ -32,7 +33,21 @@ function renderDocDesc(raw) {
 
 export default function Documents() {
   const { t } = useI18n();
+  const { route } = useHashRoute();
   const { documents, loading, errors, reload } = useData();
+
+  // Динамический заголовок на основе URL
+  const pageTitle = React.useMemo(() => {
+    const pathname = route?.split("?")[0] || "";
+    if (pathname === '/docs/laws') return "Законы Республики Тыва";
+    if (pathname === '/docs/resolutions') return "Постановления ВХ РТ";
+    if (pathname === '/docs/initiatives') return "Законодательные инициативы";
+    if (pathname === '/docs/civic') return "Законодательная инициатива гражданами";
+    if (pathname === '/docs/constitution') return "Реализация поправок в Конституцию РФ";
+    if (pathname === '/docs/bills') return "Законопроекты";
+    return t("Документы");
+  }, [route, t]);
+
   const [cat, setCat] = React.useState("Все");
   const [year, setYear] = React.useState("Все");
   const [q, setQ] = React.useState("");
@@ -145,7 +160,7 @@ export default function Documents() {
       <div className="container">
         <div className="page-grid">
           <div>
-            <h1>{t("Документы") || "Документы"}</h1>
+            <h1>{pageTitle}</h1>
             <DataState
               loading={Boolean(loading?.documents) && (!documents || documents.length === 0)}
               error={errors?.documents}
@@ -328,7 +343,6 @@ export default function Documents() {
             </DataState>
           </div>
           <SideNav
-            title="Документы"
             loadPages={true}
             autoSection={true}
             links={[

@@ -466,6 +466,17 @@ export default function SideNav({
       return "О Хурале";
     }
 
+    // Специфичные заголовки для раздела "Документы"
+    if (detectedSection === 'documents') {
+      if (pathname === '/docs/laws') return "Законы Республики Тыва";
+      if (pathname === '/docs/resolutions') return "Постановления ВХ РТ";
+      if (pathname === '/docs/initiatives') return "Законодательные инициативы";
+      if (pathname === '/docs/civic') return "Законодательная инициатива гражданами";
+      if (pathname === '/docs/constitution') return "Реализация поправок в Конституцию РФ";
+      if (pathname === '/docs/bills') return "Законопроекты";
+      return "Документы";
+    }
+
     if (detectedSection === 'broadcast') {
       return "Трансляция";
     }
