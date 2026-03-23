@@ -198,6 +198,7 @@ const defaultLinksCommittees = [
   { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
   { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
   { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
+  { label: "Повестки комитетов", href: "/section?title=" + encodeURIComponent("Повестки комитетов") },
   { label: "Представительство в Совете Федерации", href: "/struct/council" },
 ];
 

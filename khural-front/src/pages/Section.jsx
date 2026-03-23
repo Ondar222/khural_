@@ -110,11 +110,22 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
     const locale = getPreferredLocaleToken(lang);
     const html = extractPageHtml(pageFromAdmin, locale);
     const pageTitle = extractPageTitle(pageFromAdmin, locale, title);
+    const shouldHideSidebar = title === "Повестки комитетов" || title === "Отчеты комитетов" || title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва";
+    const backButtonHref = title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва"
+      ? "/section?title=Отчеты%20комитетов"
+      : "/committee";
     return (
       <section className="section section-page">
         <div className="container">
           <div className="page-grid">
-            <div>
+            <div style={shouldHideSidebar ? { gridColumn: '1 / -1' } : undefined}>
+              {shouldHideSidebar && (
+                <div style={{ marginBottom: 16 }}>
+                  <a href={backButtonHref} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                    ← Назад
+                  </a>
+                </div>
+              )}
               <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{pageTitle}</h1>
               <div className="card" style={{ padding: 18, marginTop: 20 }}>
                 {html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <div>—</div>}
@@ -125,7 +136,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
                 </a>
               </div>
             </div>
-            <SideNav loadPages={true} autoSection={true} />
+            {!shouldHideSidebar && <SideNav loadPages={true} autoSection={true} />}
           </div>
         </div>
       </section>
@@ -179,7 +190,14 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
     <section className="section section-page">
       <div className="container">
         <div className="page-grid">
-          <div>
+          <div style={title === "Повестки комитетов" || title === "Отчеты комитетов" || title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва" ? { gridColumn: '1 / -1' } : undefined}>
+            {(title === "Повестки комитетов" || title === "Отчеты комитетов" || title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва") && (
+              <div style={{ marginBottom: 16 }}>
+                <a href={title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва" ? "/section?title=Отчеты%20комитетов" : "/committee"} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                  ← Назад
+                </a>
+              </div>
+            )}
             <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
             <div className="card" style={{ padding: 24, marginTop: 20 }}>
               <p style={{ marginTop: 0, marginBottom: 16 }}>
@@ -210,7 +228,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
               </div>
             </div>
           </div>
-          <SideNav title="Разделы" loadPages={true} />
+          {title !== "Повестки комитетов" && <SideNav title="Разделы" loadPages={true} />}
         </div>
       </div>
     </section>
@@ -1785,6 +1803,10 @@ export default function SectionPage() {
       title === "Фракции в Верховном Хурале" ||
       title === "Комиссии" ||
       title === "Молодежный Хурал" ||
+      title === "Повестки комитетов" ||
+      title === "Отчеты комитетов" ||
+      title === "Отчеты комитетов 3 созыва" ||
+      title === "Отчеты комитетов 4 созыва" ||
       title.startsWith("Подробнее о:");
 
     // Committees list page
@@ -2639,7 +2661,12 @@ export default function SectionPage() {
         <section className="section section-page">
           <div className="container">
             <div className="page-grid">
-              <div className="page-grid__main">
+              <div className="page-grid__main" style={{ gridColumn: '1 / -1' }}>
+                <div style={{ marginBottom: 16 }}>
+                  <a href="/committee" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                    ← Назад к комитетам
+                  </a>
+                </div>
                 <h1 className="no-gold-underline">Отчеты комитетов</h1>
                 <p style={{ marginTop: 8, color: "#6b7280" }}>
                   Выберите созыв для просмотра отчётов комитетов.
@@ -2659,7 +2686,6 @@ export default function SectionPage() {
                   ))}
                 </ul>
               </div>
-              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2699,7 +2725,12 @@ export default function SectionPage() {
           <section className="section section-page">
             <div className="container">
               <div className="page-grid">
-                <div className="page-grid__main">
+                <div className="page-grid__main" style={{ gridColumn: '1 / -1' }}>
+                  <div style={{ marginBottom: 16 }}>
+                    <a href="/section?title=Отчеты%20комитетов" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                      ← Назад
+                    </a>
+                  </div>
                   <a href={baseHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
                     ← Отчеты о деятельности комитетов 3 созыва
                   </a>
@@ -2719,7 +2750,6 @@ export default function SectionPage() {
                     </div>
                   </div>
                 </div>
-                <SideNav loadPages={true} autoSection={true} />
               </div>
             </div>
           </section>
@@ -2730,14 +2760,12 @@ export default function SectionPage() {
         <section className="section section-page">
           <div className="container">
             <div className="page-grid">
-              <div className="page-grid__main">
-                <a
-                  href={`/section?title=${encodeURIComponent("Отчеты комитетов")}`}
-                  className="link"
-                  style={{ display: "inline-block", marginBottom: 16 }}
-                >
-                  ← Отчеты комитетов
-                </a>
+              <div className="page-grid__main" style={{ gridColumn: '1 / -1' }}>
+                <div style={{ marginBottom: 16 }}>
+                  <a href="/section?title=Отчеты%20комитетов" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                    ← Назад к отчетам комитетов
+                  </a>
+                </div>
                 <h1 className="no-gold-underline">Отчеты о деятельности комитетов 3 созыва</h1>
                 <ul className="section-list" style={{ marginTop: 20, paddingLeft: 24 }}>
                   {committees3.map((name, i) => (
@@ -2757,7 +2785,6 @@ export default function SectionPage() {
                   ) : null}
                 </p>
               </div>
-              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>
@@ -2797,7 +2824,12 @@ export default function SectionPage() {
           <section className="section section-page">
             <div className="container">
               <div className="page-grid">
-                <div className="page-grid__main">
+                <div className="page-grid__main" style={{ gridColumn: '1 / -1' }}>
+                  <div style={{ marginBottom: 16 }}>
+                    <a href="/section?title=Отчеты%20комитетов" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                      ← Назад
+                    </a>
+                  </div>
                   <a href={baseHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
                     ← Отчеты о деятельности комитетов 4 созыва
                   </a>
@@ -2817,7 +2849,6 @@ export default function SectionPage() {
                     </div>
                   </div>
                 </div>
-                <SideNav loadPages={true} autoSection={true} />
               </div>
             </div>
           </section>
@@ -2828,15 +2859,13 @@ export default function SectionPage() {
         <section className="section section-page">
           <div className="container">
             <div className="page-grid">
-              <div className="page-grid__main">
-                <a
-                  href={`/section?title=${encodeURIComponent("Отчеты комитетов")}`}
-                  className="link"
-                  style={{ display: "inline-block", marginBottom: 16 }}
-                >
-                  ← Отчеты комитетов
-                </a>
-                <h1 className="no-gold-underline">Отчеты о деят��льности комитетов 4 ��озыва</h1>
+              <div className="page-grid__main" style={{ gridColumn: '1 / -1' }}>
+                <div style={{ marginBottom: 16 }}>
+                  <a href="/section?title=Отчеты%20комитетов" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                    ← Назад к отчетам комитетов
+                  </a>
+                </div>
+                <h1 className="no-gold-underline">Отчеты о деятельности комитетов 4 созыва</h1>
                 <ul className="section-list" style={{ marginTop: 20, paddingLeft: 24 }}>
                   {committees4.map((name, i) => (
                     <li key={i} style={{ marginBottom: 10 }}>
@@ -2847,7 +2876,6 @@ export default function SectionPage() {
                   ))}
                 </ul>
               </div>
-              <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
         </section>

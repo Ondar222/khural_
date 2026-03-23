@@ -110,9 +110,10 @@ const FEDERATION_COUNCIL_HTML = `
   <div class="federation-council__header">
     <img
       class="federation-council__photo"
-      src="https://khural.rtyva.ru/docs/%D0%9A%D1%83%D0%B6%D1%83%D0%B3%D0%B5%D1%82.jfif"
+      src="/img-proxy/docs/%D0%9A%D1%83%D0%B6%D1%83%D0%B3%D0%B5%D1%82.jfif"
       alt="Кужугет Шолбан Артемович"
       loading="lazy"
+      onerror="this.src='https://khural.rtyva.ru/docs/%D0%9A%D1%83%D0%B6%D1%83%D0%B3%D0%B5%D1%82.jfif'"
     />
     <div class="federation-council__titles">
       <div class="federation-council__title">${FEDERATION_COUNCIL_TITLE}</div>
