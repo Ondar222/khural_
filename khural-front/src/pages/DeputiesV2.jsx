@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useHashRoute } from "../Router.jsx";
 import { Select, Pagination } from "antd";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
@@ -344,6 +345,40 @@ export default function DeputiesV2() {
     reload,
   } = useData();
   const { t } = useI18n();
+  const { route } = useHashRoute();
+
+  // Динамический заголовок на основе URL
+  const pageTitle = React.useMemo(() => {
+    const pathname = route?.split("?")[0] || "";
+    const queryString = route?.split("?")[1] || "";
+    const params = new URLSearchParams(queryString);
+    const convocation = params.get("convocation");
+    const status = params.get("status");
+
+    if (pathname === '/deputies/ended') return "Депутаты (завершившие полномочия)";
+    
+    if (pathname === '/deputies') {
+      if (status === 'ended') return "Депутаты прекратившие полномочия";
+      if (status === 'active') return "Действующие депутаты";
+      // Если явно выбраны "Все" созывы
+      if (convocation === 'Все') return "Депутаты всех созывов";
+      // Если выбран конкретный созыв (не Все и не пустой)
+      if (convocation && convocation !== 'Все') {
+        const convocationDecoded = decodeURIComponent(convocation);
+        if (convocationDecoded === 'VIII') return "Депутаты VIII созыва";
+        if (convocationDecoded === 'VII') return "Депутаты VII созыва";
+        if (convocationDecoded === 'VI') return "Депутаты VI созыва";
+        if (convocationDecoded === 'V') return "Депутаты V созыва";
+        if (convocationDecoded === 'IV') return "Депутаты IV созыва";
+        if (convocationDecoded === 'III') return "Депутаты III созыва";
+        if (convocationDecoded === 'II') return "Депутаты II созыва";
+        if (convocationDecoded === 'I') return "Депутаты I созыва";
+      }
+      // По умолчанию (без параметров) — просто "Депутаты"
+    }
+    
+    return t("deputies");
+  }, [route, t]);
 
   const [overrides, setOverrides] = React.useState(() => readOverrides());
   const [apiDeputies, setApiDeputies] = React.useState([]);
@@ -739,7 +774,7 @@ export default function DeputiesV2() {
       <div className="container">
         <div className="page-grid">
           <div className="page-grid__main">
-            <h1>{t("deputies")}</h1>
+            <h1>{pageTitle}</h1>
             <div style={{ marginTop: -6, marginBottom: 14, color: "var(--muted, #6b7280)" }}>
               {status === "ended"
                 ? "Раздел: Депутаты прекратившие полномочия"

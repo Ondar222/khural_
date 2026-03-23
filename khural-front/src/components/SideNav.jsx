@@ -142,6 +142,33 @@ const defaultLinksCommon = [
   { label: "Кадровое обеспечение", href: "/info/personnel" },
 ];
 
+// Стандартные ссылки для раздела "Депутаты" (без дублирования с "Общими сведениями")
+const defaultLinksDeputies = [
+  { label: "Депутаты", href: "/deputies" },
+  { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
+  { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
+];
+
+// Стандартные ссылки для раздела "О Хурале" (без дублирования с "Общими сведениями")
+const defaultLinksAbout = [
+  { label: "Общие сведения", href: "/about" },
+  { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
+  { label: "Руководство", href: "/government" },
+  { label: "Представительство в Совете Федерации", href: "/struct/council" },
+  { label: "История парламентаризма", href: "/about/istoriya-parlamentarizma" },
+  { label: "Полномочия", href: "/info/polnomochiya" },
+];
+
+// Стандартные ссылки для раздела "Деятельность"
+const defaultLinksActivity = [
+  { label: "Деятельность", href: "/activity" },
+  { label: "Законотворчество", href: "/activity?tab=legislation" },
+  { label: "Контрольная деятельность", href: "/activity?tab=control" },
+  { label: "Кадровая деятельность", href: "/activity?tab=personnel" },
+  { label: "Международная деятельность", href: "/activity?tab=international" },
+  { label: "Взаимодействие с НКО", href: "/activity?tab=ngo" },
+];
+
 // Отдельный мемоизированный компонент ссылки
 const LinkItem = React.memo(function LinkItem({
   href,
@@ -342,7 +369,37 @@ export default function SideNav({
       if (pathname === '/info/polnomochiya') return "Полномочия";
       return "Общие сведения";
     }
-    
+
+    // Специфичные заголовки для раздела "Депутаты"
+    if (detectedSection === 'deputies') {
+      if (pathname === '/deputies/ended') return "Депутаты (завершившие полномочия)";
+      const queryString = route?.split("?")[1] || "";
+      const params = new URLSearchParams(queryString);
+      const convocation = params.get("convocation");
+      const status = params.get("status");
+      
+      if (pathname === '/deputies') {
+        if (status === 'ended') return "Депутаты прекратившие полномочия";
+        if (status === 'active') return "Действующие депутаты";
+        // Если явно выбраны "Все" созывы
+        if (convocation === 'Все') return "Депутаты всех созывов";
+        // Если выбран конкретный созыв (не Все и не пустой)
+        if (convocation && convocation !== 'Все') {
+          const convocationDecoded = decodeURIComponent(convocation);
+          if (convocationDecoded === 'VIII') return "Депутаты VIII созыва";
+          if (convocationDecoded === 'VII') return "Депутаты VII созыва";
+          if (convocationDecoded === 'VI') return "Депутаты VI созыва";
+          if (convocationDecoded === 'V') return "Депутаты V созыва";
+          if (convocationDecoded === 'IV') return "Депутаты IV созыва";
+          if (convocationDecoded === 'III') return "Депутаты III созыва";
+          if (convocationDecoded === 'II') return "Депутаты II созыва";
+          if (convocationDecoded === 'I') return "Депутаты I созыва";
+        }
+        // По умолчанию (без параметров) — просто "Депутаты"
+      }
+      return "Депутаты";
+    }
+
     if (detectedSection === 'broadcast') {
       return "Трансляция";
     }
@@ -421,7 +478,8 @@ export default function SideNav({
     if (Array.isArray(overrideLinks) && overrideLinks.length) return overrideLinks;
 
     // Определяем стандартные ссылки для текущего раздела
-    let sectionDefaultLinks = defaultLinks;
+    // Для большинства разделов используем специфичные ссылки (без дублирования с "Общими сведениями")
+    let sectionDefaultLinks = [];
     if (detectedSection === 'appeals') {
       sectionDefaultLinks = defaultLinksAppeals;
     } else if (detectedSection === 'news') {
@@ -431,7 +489,14 @@ export default function SideNav({
       // Для раздела трансляции - фиксированное меню (не зависит от загруженных страниц)
       sectionDefaultLinks = defaultLinksBroadcast;
     } else if (detectedSection === 'common') {
+      // Только для раздела "Общие сведения" показываем ссылки на финансы и т.д.
       sectionDefaultLinks = defaultLinksCommon;
+    } else if (detectedSection === 'deputies') {
+      sectionDefaultLinks = defaultLinksDeputies;
+    } else if (detectedSection === 'about') {
+      sectionDefaultLinks = defaultLinksAbout;
+    } else if (detectedSection === 'activity') {
+      sectionDefaultLinks = defaultLinksActivity;
     }
 
     // Если загружаем страницы И это не раздел новостей/трансляций, добавляем их к стандартным ссылкам
@@ -440,7 +505,7 @@ export default function SideNav({
       return [...pagesLinks, ...sectionDefaultLinks];
     }
 
-    // Иначе используем стандартные ссылки раздела
+    // Иначе используем стандартные ссылки раздела (или пустой массив для разделов без специфичных ссылок)
     return sectionDefaultLinks;
   }, [overrideLinks, loadPages, pagesLinks, detectedSection]);
 
