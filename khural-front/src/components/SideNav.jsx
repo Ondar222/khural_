@@ -368,11 +368,18 @@ export default function SideNav({
 
     // Специфичные заголовки для страниц новостей
     if (detectedSection === 'news') {
+      const queryString = route?.split("?")[1] || "";
+      const params = new URLSearchParams(queryString);
+      const sectionParam = params.get("section");
+      const categoryParam = params.get("category");
+
       if (pathname === '/news/week') return "Главные события";
+      if (pathname === '/code-of-honor') return "Кодекс чести мужчины Тувы";
+      if (pathname === '/mothers-commandments') return "Свод заповедей матерей Тувы";
       if (sectionParam === 'actual') return "Актуальные новости";
       if (sectionParam === 'all') return "Все новости";
       if (sectionParam === 'media') return "Медиа";
-      if (categoryParam && categoryParam.includes('новости председателя')) return "Новости председателя";
+      if (categoryParam && String(categoryParam).toLowerCase().includes('новости председателя')) return "Новости председателя";
       return "Новости";
     }
     

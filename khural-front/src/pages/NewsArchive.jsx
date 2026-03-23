@@ -519,7 +519,7 @@ export default function NewsArchive() {
               </DataState>
               </DataState>
           </div>
-          <SideNav title="Новости" links={newsMenuLinks} />
+          <SideNav links={newsMenuLinks} />
         </div>
       </div>
       <ScrollToTop />
