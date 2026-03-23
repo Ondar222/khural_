@@ -151,56 +151,12 @@ export default function App() {
     return ProtectedComponent;
   }, []);
 
+  /**
+   * DataGate больше не блокирует рендеринг.
+   * Данные загружаются асинхронно, компоненты показывают скелетоны.
+   */
   const DataGate = ({ children }) => {
-    const { loading } = useData();
-    const isBootLoading =
-      !isAdmin &&
-      !isSectionWithDetail &&
-      loading &&
-      Object.values(loading).some(Boolean);
-
-    if (isBootLoading) {
-      return (
-        <div
-          style={{
-            minHeight: "60vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
-            gap: "16px",
-          }}
-        >
-          {/* Простой CSS-спиннер без лишних зависимостей */}
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              border: "4px solid #e5e7eb",
-              borderTop: "4px solid #003366",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite",
-            }}
-          />
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-          <div
-            style={{
-              color: "#1e3a8a",
-              fontWeight: 700,
-              fontSize: 16,
-            }}
-          >
-            Загрузка...
-          </div>
-        </div>
-      );
-    }
-    return children;
+    return <>{children}</>;
   };
 
   return (

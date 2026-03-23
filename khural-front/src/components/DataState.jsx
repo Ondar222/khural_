@@ -1,5 +1,6 @@
 import React from "react";
-import { Alert, Button, Empty, Spin } from "antd";
+import { Alert, Button, Empty } from "antd";
+import Skeleton, { SkeletonList } from "./Skeleton.jsx";
 
 export default function DataState({
   loading,
@@ -8,11 +9,12 @@ export default function DataState({
   emptyDescription = "Нет данных",
   onRetry,
   children,
+  skeletonCount = 3,
 }) {
   if (loading) {
     return (
       <div style={{ padding: "18px 0" }}>
-        <Spin />
+        <SkeletonList count={skeletonCount} />
       </div>
     );
   }
@@ -46,6 +48,3 @@ export default function DataState({
 
   return <>{children}</>;
 }
-
-
-

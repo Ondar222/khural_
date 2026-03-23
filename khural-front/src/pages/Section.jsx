@@ -9,6 +9,14 @@ import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../u
 import { getApparatusNavLinks } from "../utils/apparatusLinks.js";
 import { APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
 import { normalizeBool } from "../utils/bool.js";
+
+// CSS для loader-анимации
+const loaderStyles = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
 import {
   DEFAULT_STRUCTURE_COMMITTEES,
   COMMITTEE_DEFAULT_CONVOCATION,
@@ -1726,6 +1734,18 @@ export default function SectionPage() {
   const { t } = useI18n();
   const focus = q.get("focus");
 
+  // Inject loader styles on mount
+  React.useEffect(() => {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'loader-styles';
+    styleEl.textContent = loaderStyles;
+    document.head.appendChild(styleEl);
+    return () => {
+      const el = document.getElementById('loader-styles');
+      if (el) el.remove();
+    };
+  }, []);
+
   const navLinks = React.useMemo(() => getApparatusNavLinks(t), [t]);
 
   const committeesDeduped = React.useMemo(
@@ -2699,9 +2719,31 @@ export default function SectionPage() {
       const hasCommittee = Number.isInteger(committeeIndex) && committeeIndex >= 0 && committeeIndex < committees3.length;
       const baseHref = `/section?title=${encodeURIComponent("Отчеты комитетов 3 созыва")}`;
 
+      // Индикатор загрузки для данных комитета
+      const [docsLoading, setDocsLoading] = React.useState(hasCommittee);
+      const [docsData, setDocsData] = React.useState(null);
+
+      React.useEffect(() => {
+        if (!hasCommittee) return;
+        let alive = true;
+        // Асинхронная загрузка данных комитета
+        setDocsLoading(true);
+        const timer = setTimeout(() => {
+          if (alive) {
+            try {
+              const { agendas, reports } = getConv3DocsByCommittee(committeeIndex);
+              setDocsData({ agendas, reports });
+            } catch (e) {
+              console.error('Failed to load committee docs:', e);
+            }
+            setDocsLoading(false);
+          }
+        }, 0);
+        return () => { alive = false; clearTimeout(timer); };
+      }, [hasCommittee, committeeIndex]);
+
       if (hasCommittee) {
         const committeeName = committees3[committeeIndex];
-        const { agendas, reports } = getConv3DocsByCommittee(committeeIndex);
         const reportYears = [2023, 2022, 2021, 2020, 2019];
         const renderYearDocs = (list, year) => {
           const docs = list[year] || [];
@@ -2721,6 +2763,35 @@ export default function SectionPage() {
             </li>
           );
         };
+
+        // Показываем loader пока данные загружаются
+        if (docsLoading) {
+          return (
+            <section className="section section-page">
+              <div className="container">
+                <div className="page-grid">
+                  <div className="page-grid__main" style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ marginBottom: 16 }}>
+                      <a href="/section?title=Отчеты%20комитетов" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                        ← Назад
+                      </a>
+                    </div>
+                    <a href={baseHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                      ← Отчеты о деятельности комитетов 3 созыва
+                    </a>
+                    <h1 className="no-gold-underline">{committeeName}</h1>
+                    <div style={{ marginTop: 32, textAlign: "center", color: "#6b7280" }}>
+                      <div style={{ display: "inline-block", width: 40, height: 40, border: "4px solid #e5e7eb", borderTop: "4px solid #003366", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                      <p style={{ marginTop: 16 }}>Загрузка документов...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          );
+        }
+
+        const { agendas, reports } = docsData || { agendas: {}, reports: {} };
         return (
           <section className="section section-page">
             <div className="container">
@@ -2799,9 +2870,31 @@ export default function SectionPage() {
       const baseHref = `/section?title=${encodeURIComponent("Отчеты комитетов 4 созыва")}`;
       const reportYears4 = [2025, 2024];
 
+      // Индикатор загрузки для данных комитета
+      const [docsLoading, setDocsLoading] = React.useState(hasCommittee);
+      const [docsData, setDocsData] = React.useState(null);
+
+      React.useEffect(() => {
+        if (!hasCommittee) return;
+        let alive = true;
+        // Асинхронная загрузка данных комитета
+        setDocsLoading(true);
+        const timer = setTimeout(() => {
+          if (alive) {
+            try {
+              const { agendas, reports } = getConv4DocsByCommittee(committeeIndex);
+              setDocsData({ agendas, reports });
+            } catch (e) {
+              console.error('Failed to load committee docs:', e);
+            }
+            setDocsLoading(false);
+          }
+        }, 0);
+        return () => { alive = false; clearTimeout(timer); };
+      }, [hasCommittee, committeeIndex]);
+
       if (hasCommittee) {
         const committeeName = committees4[committeeIndex];
-        const { agendas, reports } = getConv4DocsByCommittee(committeeIndex);
         const renderYearDocs = (list, year) => {
           const docs = list[year] || [];
           if (docs.length === 0) return <li key={year} style={{ marginBottom: 8 }}>{year} год</li>;
@@ -2820,6 +2913,35 @@ export default function SectionPage() {
             </li>
           );
         };
+
+        // Показываем loader пока данные загружаются
+        if (docsLoading) {
+          return (
+            <section className="section section-page">
+              <div className="container">
+                <div className="page-grid">
+                  <div className="page-grid__main" style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ marginBottom: 16 }}>
+                      <a href="/section?title=Отчеты%20комитетов" className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                        ← Назад
+                      </a>
+                    </div>
+                    <a href={baseHref} className="link" style={{ display: "inline-block", marginBottom: 16 }}>
+                      ← Отчеты о деятельности комитетов 4 созыва
+                    </a>
+                    <h1 className="no-gold-underline">{committeeName}</h1>
+                    <div style={{ marginTop: 32, textAlign: "center", color: "#6b7280" }}>
+                      <div style={{ display: "inline-block", width: 40, height: 40, border: "4px solid #e5e7eb", borderTop: "4px solid #003366", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                      <p style={{ marginTop: 16 }}>Загрузка документов...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          );
+        }
+
+        const { agendas, reports } = docsData || { agendas: {}, reports: {} };
         return (
           <section className="section section-page">
             <div className="container">
