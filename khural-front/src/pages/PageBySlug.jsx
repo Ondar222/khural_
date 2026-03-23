@@ -1809,13 +1809,15 @@ export default function PageBySlug() {
   // Определяем URL для кнопки "Назад"
   const backUrl = isInfoFinanceChecks2016 || isInfoFinanceChecks2018 || isInfoFinanceChecks2019 || isInfoFinanceChecks2020
     ? "/info/finansy/rezultaty-proverok"
-    : isInfoFinanceReports2015 || isInfoFinanceReports2016 || isInfoFinanceReports2017 || 
+    : isInfoFinanceReports2015 || isInfoFinanceReports2016 || isInfoFinanceReports2017 ||
       isInfoFinanceReports2018 || isInfoFinanceReports2019 || isInfoFinanceReports2020 ||
       isInfoFinanceReports2021 || isInfoFinanceReports2022 || isInfoFinanceReports2023
     ? "/info/finansy/otcheti"
     : isInfoFinanceChecks || isInfoFinanceProcurement || isInfoFinanceReports || isInfoBudget
     ? "/info/finansy"
-    : isInfoDistricts || isInfoLawmap || isInfoHistory || isInfoPolnomochiya || isOpenData ||
+    : isInfoHistory || isInfoPolnomochiya
+    ? "/about"
+    : isInfoDistricts || isInfoLawmap || isOpenData ||
       isInfoOmbHuman || isInfoOmbChild
     ? "/info"
     : isInfoPersonnelGossluzhba || isInfoPersonnelPoryadok || isInfoPersonnelLaw58fz ||
@@ -1835,13 +1837,15 @@ export default function PageBySlug() {
   // Определяем текст для кнопки "Назад"
   const backText = isInfoFinanceChecks2016 || isInfoFinanceChecks2018 || isInfoFinanceChecks2019 || isInfoFinanceChecks2020
     ? t("← Назад к результатам проверок")
-    : isInfoFinanceReports2015 || isInfoFinanceReports2016 || isInfoFinanceReports2017 || 
+    : isInfoFinanceReports2015 || isInfoFinanceReports2016 || isInfoFinanceReports2017 ||
       isInfoFinanceReports2018 || isInfoFinanceReports2019 || isInfoFinanceReports2020 ||
       isInfoFinanceReports2021 || isInfoFinanceReports2022 || isInfoFinanceReports2023
     ? t("← Назад к отчетам")
     : isInfoFinanceChecks || isInfoFinanceProcurement || isInfoFinanceReports || isInfoBudget
     ? t("← Назад к финансам")
-    : isInfoDistricts || isInfoLawmap || isInfoHistory || isInfoPolnomochiya || isOpenData ||
+    : isInfoHistory || isInfoPolnomochiya
+    ? t("← Назад к сведениям о Хурале")
+    : isInfoDistricts || isInfoLawmap || isOpenData ||
       isInfoOmbHuman || isInfoOmbChild
     ? t("← Назад к информации")
     : isInfoPersonnelGossluzhba || isInfoPersonnelPoryadok || isInfoPersonnelLaw58fz ||
@@ -2057,7 +2061,7 @@ export default function PageBySlug() {
     <section className="section">
       <div className="container">
         <div className="page-grid">
-          <div style={!isInfoHistory ? undefined : { gridColumn: '1 / -1' }}>
+          <div style={!isInfoHistory && !isInfoPolnomochiya ? undefined : { gridColumn: '1 / -1' }}>
             <div style={{ marginBottom: 16 }}>
               <a href={backUrl} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
                 {backText}
@@ -2082,7 +2086,7 @@ export default function PageBySlug() {
               )}
             </DataState>
           </div>
-          {!isInfoHistory && (
+          {!isInfoHistory && !isInfoPolnomochiya && (
             <SideNav
               title={isFederationCouncil ? undefined : (isInfoSection ? undefined : (isCodeOfHonor || isMothersCommandments ? undefined : title))}
               links={isFederationCouncil ? [

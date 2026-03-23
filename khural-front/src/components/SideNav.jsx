@@ -505,8 +505,11 @@ export default function SideNav({
 
     return titleMap[detectedSection] || "Новости";
   }, [detectedSection, route]);
-  
-  const titleText = title ? (typeof title === "string" ? t(title) : title) : autoTitle;
+
+  // Применяем перевод к autoTitle
+  const titleText = title
+    ? (typeof title === "string" ? t(title) : title)
+    : t(autoTitle);
 
   // Загружаем страницы из админки, если loadPages = true
   React.useEffect(() => {

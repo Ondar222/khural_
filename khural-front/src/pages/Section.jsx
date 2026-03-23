@@ -78,11 +78,13 @@ function titleToCmsSlug(title) {
 }
 
 function SectionCmsDetail({ title, noGoldUnderline }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [pageFromAdmin, setPageFromAdmin] = React.useState(null);
   const [loadingPage, setLoadingPage] = React.useState(true);
 
   const cmsSlug = React.useMemo(() => titleToCmsSlug(title), [title]);
+  // Переводим заголовок
+  const translatedTitle = React.useMemo(() => t(title), [title, t]);
 
   React.useEffect(() => {
     let alive = true;
@@ -157,7 +159,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
         <div className="container">
           <div className="page-grid">
             <div>
-              <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
+              <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{translatedTitle}</h1>
               <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
             </div>
             <SideNav loadPages={true} autoSection={true} />
@@ -182,7 +184,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
         <div className="container">
           <div className="page-grid">
             <div>
-              <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
+              <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{translatedTitle}</h1>
               <div className="card" style={{ padding: 18, marginTop: 20 }}>
                 <div dangerouslySetInnerHTML={{ __html: staticHtml }} />
               </div>
@@ -206,10 +208,10 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
                 </a>
               </div>
             )}
-            <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
+            <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{translatedTitle}</h1>
             <div className="card" style={{ padding: 24, marginTop: 20 }}>
               <p style={{ marginTop: 0, marginBottom: 16 }}>
-                Раздел «{title}» пока не заполнен. Вы можете создать страницу в админке.
+                Раздел «{translatedTitle}» пока не заполнен. Вы можете создать страницу в админке.
               </p>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <a
