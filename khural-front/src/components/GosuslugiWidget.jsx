@@ -85,7 +85,7 @@ export default function GosuslugiWidget() {
                 </div>
               </div>
               <div style="opacity:.95;font-size:15px;line-height:1.4;">Не убран снег, яма на дороге? Столкнулись с проблемой — сообщите о ней!</div>
-              <a href="https://pos.gosuslugi.ru" target="_blank" rel="noopener noreferrer" style="align-self:flex-start;background:#fff;color:#1e40af;padding:10px 14px;border-radius:12px;text-decoration:none;font-weight:700;margin-top:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Сообщить о проблеме</a>
+              <a href="https://pos.gosuslugi.ru/form" target="_blank" rel="noopener noreferrer" style="align-self:flex-start;background:#fff;color:#1e40af;padding:10px 14px;border-radius:12px;text-decoration:none;font-weight:700;margin-top:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Сообщить о проблеме</a>
             </div>
           `;
         }

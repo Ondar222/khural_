@@ -106,6 +106,15 @@
   `;
   container.appendChild(wrapper);
 
+  // Добавляем обработчик клика на кнопку
+  var button = wrapper.querySelector('.pos-banner-btn_2');
+  if (button) {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      window.open('https://pos.gosuslugi.ru/form', '_blank', 'noopener,noreferrer');
+    });
+  }
+
   // Инициализация адаптивности
   (function(widgetElement){
     "use strict";
