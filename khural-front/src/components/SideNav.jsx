@@ -329,6 +329,20 @@ export default function SideNav({
       return "Обращения";
     }
     
+    // Специфичные заголовки для раздела "Общие сведения"
+    if (detectedSection === 'common') {
+      if (pathname === '/info') return "Общие сведения";
+      if (pathname === '/info/finansy') return "Финансы";
+      if (pathname === '/info/iokrug') return "Избирательные округа";
+      if (pathname === '/info/zakon-karta') return "Законодательная карта";
+      if (pathname === '/opendata') return "Открытые данные";
+      if (pathname === '/info/upoln-po-prav') return "Уполномоченный по правам человека";
+      if (pathname === '/info/upoln-po-reb') return "Уполномоченный по правам ребенка";
+      if (pathname === '/info/personnel') return "Кадровое обеспечение";
+      if (pathname === '/info/polnomochiya') return "Полномочия";
+      return "Общие сведения";
+    }
+    
     if (detectedSection === 'broadcast') {
       return "Трансляция";
     }
