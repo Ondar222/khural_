@@ -313,6 +313,22 @@ export default function SideNav({
       return "Новости";
     }
     
+    // Специфичные заголовки для раздела "Обращения"
+    if (detectedSection === 'appeals') {
+      if (pathname === '/appeals') return "Обращения граждан";
+      if (pathname === '/appeals/letter') return "Письменное обращение";
+      if (pathname === '/appeals/online') return "Электронная приемная";
+      if (pathname === '/appeals/status') return "Проверить статус обращения";
+      if (pathname === '/appeals/review') return "Порядок рассмотрения обращений";
+      if (pathname === '/appeals/complaints') return "Порядок обжалования";
+      if (pathname === '/appeals/overview') return "Обзор обращений граждан";
+      if (pathname === '/appeals/public-interests') return "Ответы на обращения";
+      if (pathname === '/appeals/legal') return "Правовое регулирование";
+      if (pathname === '/appeals/schedule') return "График приема граждан";
+      if (pathname === '/appeals/minyust') return "Минюст России";
+      return "Обращения";
+    }
+    
     if (detectedSection === 'broadcast') {
       return "Трансляция";
     }
