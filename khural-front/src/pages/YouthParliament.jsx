@@ -107,7 +107,6 @@ export default function YouthParliament() {
             </div>
           </div>
           <SideNav
-            title={lang === "ty" ? "Аныяктар Хуралы" : "Молодежный Хурал"}
             links={[
               { label: "Общие сведения", href: "/about" },
               { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },

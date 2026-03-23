@@ -2083,7 +2083,7 @@ export default function PageBySlug() {
           </div>
           {!isInfoHistory && (
             <SideNav
-              title={isInfoSection ? undefined : (isCodeOfHonor || isMothersCommandments ? undefined : title)}
+              title={isFederationCouncil ? undefined : (isInfoSection ? undefined : (isCodeOfHonor || isMothersCommandments ? undefined : title))}
               links={isFederationCouncil ? [
                 { label: "Общие сведения", href: "/about" },
                 { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },

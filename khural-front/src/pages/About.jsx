@@ -374,7 +374,6 @@ export default function About() {
           </div>
           <SideNav
             className="sidenav--about"
-            title={t("О Верховном Хурале")}
             links={[
               { label: t("Общие сведения"), href: "/about" },
               { label: t("Структура парламента"), href: "/about?tab=structure&focus=overview" },

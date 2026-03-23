@@ -333,6 +333,8 @@ export default function SideNav({
       "^/info": "common",
       "^/opendata": "common",
       "^/youth-parliament": "youth",
+      "^/struct/council": "about",
+      "^/government": "about",
     };
 
     for (const [pattern, sectionName] of Object.entries(sectionMap)) {
@@ -438,6 +440,29 @@ export default function SideNav({
     if (detectedSection === 'committees' || detectedSection === 'commissions') {
       if (pathname.includes('/commission')) return "Комиссии";
       if (pathname.includes('/committee')) return "Комитеты";
+      return "О Хурале";
+    }
+
+    // Специфичные заголовки для раздела "О Хурале" (about)
+    if (detectedSection === 'about') {
+      const queryString = route?.split("?")[1] || "";
+      const params = new URLSearchParams(queryString);
+      const focus = params.get("focus");
+      const tab = params.get("tab");
+
+      if (pathname === '/government') return "Руководство";
+      if (pathname === '/struct/council') return "Представительство в Совете Федерации";
+      if (pathname === '/youth-parliament') return "Молодежный Хурал";
+      if (pathname === '/about/istoriya-parlamentarizma') return "История парламентаризма";
+      
+      // Проверяем query параметры для страницы /about
+      if (pathname === '/about' || pathname === '/about/') {
+        if (focus === 'committees') return "Комитеты";
+        if (focus === 'commissions') return "Комиссии";
+        if (focus === 'factions') return "Депутатские фракции";
+        if (focus === 'overview') return "Структура парламента";
+      }
+      
       return "О Хурале";
     }
 
