@@ -238,10 +238,10 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
           slug: news.slug,
           publishedAt: publishedAtValue,
           isPublished: news.isPublished ?? false,
-          shortDescriptionRu: stripHtmlTags(ruContent.shortDescription || ""),
+          shortDescriptionRu: ruContent.shortDescription || "",
           titleRu: ruContent.title || "",
           contentRu: decodeHtmlEntities(ruContent.content || ""),
-          shortDescriptionTy: stripHtmlTags(tyvContent.shortDescription || ""),
+          shortDescriptionTy: tyvContent.shortDescription || "",
           titleTy: tyvContent.title || "",
           contentTy: decodeHtmlEntities(tyvContent.content || ""),
         });
@@ -748,16 +748,18 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               label="Краткое описание (TY)"
               name="shortDescriptionTy"
               tooltip="Краткое описание новости на тувинском языке"
+              getValueFromEvent={(value) => value}
             >
-              <Input.TextArea
+              <TinyMCEEditor
                 placeholder="Краткое описание новости"
-                autoSize={{ minRows: 2, maxRows: 4 }}
+                height={300}
               />
             </Form.Item>
             <Form.Item
               label="Подробное описание (TY)"
               name="contentTy"
               rules={[{ required: false, message: "Укажите контент" }]}
+              getValueFromEvent={(value) => value}
             >
               <TinyMCEEditor
                 placeholder="Контент на тувинском языке"
@@ -792,10 +794,11 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               label="Краткое описание (RU)"
               name="shortDescriptionRu"
               tooltip="Краткое описание новости на русском языке"
+              getValueFromEvent={(value) => value}
             >
-              <Input.TextArea
+              <TinyMCEEditor
                 placeholder="Краткое описание новости"
-                autoSize={{ minRows: 2, maxRows: 4 }}
+                height={300}
               />
             </Form.Item>
 
@@ -803,6 +806,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               label="Подробное описание (RU) *"
               name="contentRu"
               rules={[{ required: true, message: "Укажите контент" }]}
+              getValueFromEvent={(value) => value}
             >
               <TinyMCEEditor
                 placeholder="Контент на русском языке"

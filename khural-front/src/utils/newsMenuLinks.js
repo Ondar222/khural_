@@ -4,6 +4,7 @@
 
 /** Дополнительные ссылки раздела «Новости» (страницы и трансляции) — в конце меню */
 export const NEWS_EXTRA_LINKS = [
+  { labelRu: "Новости председателя", href: "/news?category=новости председателя" },
   { labelRu: "Кодекс чести мужчины Тувы", href: "/code-of-honor" },
   { labelRu: "Свод заповедей матерей Тувы", href: "/mothers-commandments" },
   { labelRu: "Для СМИ", href: "/for-media" },

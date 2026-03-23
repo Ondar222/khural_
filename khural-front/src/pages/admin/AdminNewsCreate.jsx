@@ -403,9 +403,9 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       
       await onCreate(formData);
       antdMessage.success("Новость успешно создана");
-      // Перенаправляем на публичную страницу новостей
+      // Перенаправляем на список новостей в админке
       setTimeout(() => {
-        window.location.href = "/news";
+        navigate("/admin/news");
       }, 1000);
     } catch (error) {
       if (error?.errorFields) return;

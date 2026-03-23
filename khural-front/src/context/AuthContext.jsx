@@ -104,6 +104,30 @@ export default function AuthProvider({ children }) {
   const [user, setUser] = React.useState(null);
   const isAuthenticated = Boolean(token);
 
+  // Отслеживание активности пользователя для keep-alive
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    const updateLastActivity = () => {
+      sessionStorage.setItem("user_last_activity", String(Date.now()));
+    };
+    
+    // Устанавливаем начальное значение
+    updateLastActivity();
+    
+    // Отслеживаем события активности
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"];
+    events.forEach(event => {
+      window.addEventListener(event, updateLastActivity, { passive: true, capture: true });
+    });
+    
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, updateLastActivity, { capture: true });
+      });
+    };
+  }, []);
+
   const applySessionFromResponse = React.useCallback((payload) => {
     const p = payload?.data ? payload.data : payload;
     const newToken = p?.access_token || p?.accessToken || p?.token || p?.jwt || "";
@@ -197,6 +221,46 @@ export default function AuthProvider({ children }) {
       }
     })();
   }, [token]);
+
+  // Keep-alive механизм: обновляем токен каждые 10 минут при активности пользователя
+  React.useEffect(() => {
+    if (!token || !refreshToken) return;
+    
+    // Интервал обновления токена (10 минут)
+    const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000;
+    
+    const keepAliveTimer = setInterval(async () => {
+      // Проверяем активность пользователя (движение мыши, клики, скролл)
+      const lastActivity = sessionStorage.getItem("user_last_activity");
+      const now = Date.now();
+      
+      // Если пользователь был активен в последние 5 минут, обновляем токен
+      if (lastActivity && (now - parseInt(lastActivity, 10)) < 5 * 60 * 1000) {
+        try {
+          const refreshed = await refreshAccessToken();
+          if (refreshed) {
+            const newToken = refreshed?.access_token || refreshed?.accessToken || refreshed?.token || "";
+            const newRefresh = refreshed?.refresh_token || refreshed?.refreshToken || "";
+            if (newToken) {
+              setToken(newToken);
+              setAuthToken(newToken);
+              if (newRefresh) {
+                setRefresh(newRefresh);
+                setRefreshToken(newRefresh);
+              }
+            }
+          }
+        } catch (e) {
+          // Тихо игнорируем ошибки обновления токена
+          console.warn("Keep-alive token refresh failed:", e);
+        }
+      }
+    }, KEEP_ALIVE_INTERVAL);
+
+    return () => {
+      clearInterval(keepAliveTimer);
+    };
+  }, [token, refreshToken]);
 
   const register = React.useCallback(async (form) => {
     try {
