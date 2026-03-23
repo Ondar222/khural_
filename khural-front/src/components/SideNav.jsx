@@ -110,6 +110,25 @@ const defaultLinksNews = [
   { label: "Актуальные новости", href: "/news?section=actual" },
   { label: "Все новости", href: "/news?section=all" },
   { label: "Медиа", href: "/news?section=media" },
+  // Дополнительные ссылки новостей (фиксированные)
+  { label: "Новости председателя", href: "/news?category=новости председателя" },
+  { label: "Кодекс чести мужчины Тувы", href: "/code-of-honor" },
+  { label: "Свод заповедей матерей Тувы", href: "/mothers-commandments" },
+  { label: "Для СМИ", href: "/for-media" },
+  { label: "Трансляции", href: "/broadcast" },
+];
+
+// Стандартные ссылки для раздела "Трансляции" (фиксированное меню)
+const defaultLinksBroadcast = [
+  { label: "Главные события", href: "/news/week" },
+  { label: "Актуальные новости", href: "/news?section=actual" },
+  { label: "Все новости", href: "/news?section=all" },
+  { label: "Медиа", href: "/news?section=media" },
+  { label: "Новости председателя", href: "/news?category=новости председателя" },
+  { label: "Кодекс чести мужчины Тувы", href: "/code-of-honor" },
+  { label: "Свод заповедей матерей Тувы", href: "/mothers-commandments" },
+  { label: "Для СМИ", href: "/for-media" },
+  { label: "Трансляции", href: "/broadcast" },
 ];
 
 // Стандартные ссылки для раздела "Общие сведения"
@@ -234,15 +253,18 @@ export default function SideNav({
     // Сопоставляем пути с разделами
     const sectionMap = {
       "^/news$": "news",
-      "^/news/": "news",
+      "^/news/.*": "news",
+      "^/code-of-honor$": "news",
+      "^/mothers-commandments$": "news",
+      "^/for-media$": "news",
       "^/deputies$": "deputies",
-      "^/deputies/": "deputies",
+      "^/deputies/.*": "deputies",
       "^/documents$": "documents",
-      "^/docs/": "documents",
+      "^/docs/.*": "documents",
       "^/about$": "about",
       "^/section$": "about",
-      "^/committee": "committees",
-      "^/commission": "commissions",
+      "^/committee.*": "committees",
+      "^/commission.*": "commissions",
       "^/activity": "activity",
       "^/contacts$": "contacts",
       "^/appeals": "appeals",
@@ -261,9 +283,39 @@ export default function SideNav({
     return null;
   }, [autoSection, section, route]);
 
-  // Автоматически определяем заголовок на основе раздела
+  // Автоматически определяем заголовок на основе раздела и конкретной страницы
   const autoTitle = React.useMemo(() => {
-    if (!detectedSection) return "Разделы";
+    if (!detectedSection) return "Новости";
+
+    const pathname = route?.split("?")[0] || "";
+    const queryString = route?.split("?")[1] || "";
+    
+    console.log('[SideNav autoTitle] route:', route, 'pathname:', pathname, 'queryString:', queryString, 'detectedSection:', detectedSection);
+    
+    // Парсим query параметры вручную для надёжности
+    const getQueryParam = (name) => {
+      const params = new URLSearchParams(queryString);
+      const value = params.get(name);
+      console.log('[SideNav autoTitle] getQueryParam', name, '=', value);
+      return value;
+    };
+    
+    const sectionParam = getQueryParam("section");
+    const categoryParam = getQueryParam("category");
+
+    // Специфичные заголовки для страниц новостей
+    if (detectedSection === 'news') {
+      if (pathname === '/news/week') return "Главные события";
+      if (sectionParam === 'actual') return "Актуальные новости";
+      if (sectionParam === 'all') return "Все новости";
+      if (sectionParam === 'media') return "Медиа";
+      if (categoryParam && categoryParam.includes('новости председателя')) return "Новости председателя";
+      return "Новости";
+    }
+    
+    if (detectedSection === 'broadcast') {
+      return "Трансляция";
+    }
 
     const titleMap = {
       news: "Новости",
@@ -275,13 +327,12 @@ export default function SideNav({
       activity: "Деятельность",
       contacts: "Контакты",
       appeals: "Обращения",
-      broadcast: "Трансляция",
       common: "Общие сведения",
       youth: "Молодежный Хурал",
     };
 
-    return titleMap[detectedSection] || "Разделы";
-  }, [detectedSection]);
+    return titleMap[detectedSection] || "Новости";
+  }, [detectedSection, route]);
   
   const titleText = title ? (typeof title === "string" ? t(title) : title) : autoTitle;
 
@@ -338,19 +389,23 @@ export default function SideNav({
   const links = React.useMemo(() => {
     // Если переданы свои ссылки вручную, используем их
     if (Array.isArray(overrideLinks) && overrideLinks.length) return overrideLinks;
-    
+
     // Определяем стандартные ссылки для текущего раздела
     let sectionDefaultLinks = defaultLinks;
     if (detectedSection === 'appeals') {
       sectionDefaultLinks = defaultLinksAppeals;
     } else if (detectedSection === 'news') {
+      // Для раздела новостей - фиксированное меню (не зависит от загруженных страниц)
       sectionDefaultLinks = defaultLinksNews;
+    } else if (detectedSection === 'broadcast') {
+      // Для раздела трансляции - фиксированное меню (не зависит от загруженных страниц)
+      sectionDefaultLinks = defaultLinksBroadcast;
     } else if (detectedSection === 'common') {
       sectionDefaultLinks = defaultLinksCommon;
     }
-    
-    // Если загружаем страницы, добавляем их к стандартным ссылкам
-    if (loadPages && pagesLinks.length > 0) {
+
+    // Если загружаем страницы И это не раздел новостей/трансляций, добавляем их к стандартным ссылкам
+    if (loadPages && pagesLinks.length > 0 && detectedSection !== 'news' && detectedSection !== 'broadcast') {
       // Добавляем загруженные страницы в начало списка
       return [...pagesLinks, ...sectionDefaultLinks];
     }

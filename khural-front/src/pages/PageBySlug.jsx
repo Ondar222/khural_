@@ -2082,7 +2082,7 @@ export default function PageBySlug() {
             </DataState>
           </div>
           <SideNav
-            title={isInfoSection ? undefined : title}
+            title={isInfoSection ? undefined : (isCodeOfHonor || isMothersCommandments ? undefined : title)}
             loadPages={true}
             autoSection={true}
           />

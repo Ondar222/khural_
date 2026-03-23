@@ -2,6 +2,7 @@ import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "../components/DataState.jsx";
+import SideNav from "../components/SideNav.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 function stripHtmlToText(input) {
@@ -51,57 +52,65 @@ export default function NewsWeekHighlights() {
   return (
     <section className="section news-week">
       <div className="container">
-        <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
-          <a className="btn btn-back" href="/news" style={{ display: "inline-block", width: "fit-content" }}>
-            {t("backToNewsList")}
-          </a>
-          <h1 className="no-gold-underline" style={{ margin: 0 }}>
-            Главные события
-          </h1>
-        </div>
+        <div className="page-grid">
+          <div className="page-grid__main">
+            <div style={{ display: "grid", gap: 10, marginBottom: 12 }}>
+              <a className="btn btn-back" href="/news" style={{ display: "inline-block", width: "fit-content" }}>
+                {t("backToNewsList")}
+              </a>
+              <h1 className="no-gold-underline" style={{ margin: 0 }}>
+                Главные события
+              </h1>
+            </div>
 
-        <DataState
-          loading={Boolean(loading?.slides) && (!slides || slides.length === 0)}
-          error={errors?.slides}
-          onRetry={reload}
-          empty={!loading?.slides && items.length === 0}
-          emptyDescription="Пока нет слайдов"
-        >
-          <div className="grid cols-3 news-week__grid" style={{ marginTop: 16 }}>
-            {items.map((s) => {
-              const id = String(s?.id ?? "").trim();
-              const useTy = (lang === "ty" || lang === "tyv") && (s?.titleTy || s?.descTy || s?.descriptionTy);
-              const title = (useTy && s?.titleTy) ? String(s.titleTy).trim() : String(s?.title || "").trim();
-              const descSource = useTy && (s?.descTy || s?.descriptionTy) ? (s.descTy ?? s.descriptionTy ?? "") : (s?.desc ?? s?.description ?? s?.subtitle ?? "");
-              const raw = stripHtmlToText(descSource);
-              const { date, description } = splitDateAndDescription(raw);
-              const subtitle = String(description || "").trim();
-              const subtitlePreview = truncateWords(subtitle, 30);
-              const preview = `${subtitlePreview}${subtitlePreview && date ? " " : ""}${date || ""}`.trim();
-              const href = id ? `/news/slider/${encodeURIComponent(id)}` : "/news";
-              return (
-                <a key={id || title || Math.random()} className="tile news-week__card" href={href}>
-                  {s?.image ? (
-                    <div className="news-week__media">
-                      <img
-                        src={normalizeFilesUrl(s.image)}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="news-week__img"
-                      />
-                    </div>
-                  ) : null}
-                  <div className="news-week__body">
-                    <div className="news-week__title">{title || "—"}</div>
-                    {preview ? <div className="news-week__preview">{preview}</div> : null}
-                    <div className="news-week__more">Подробнее →</div>
-                  </div>
-                </a>
-              );
-            })}
+            <DataState
+              loading={Boolean(loading?.slides) && (!slides || slides.length === 0)}
+              error={errors?.slides}
+              onRetry={reload}
+              empty={!loading?.slides && items.length === 0}
+              emptyDescription="Пока нет слайдов"
+            >
+              <div className="grid cols-3 news-week__grid" style={{ marginTop: 16 }}>
+                {items.map((s) => {
+                  const id = String(s?.id ?? "").trim();
+                  const useTy = (lang === "ty" || lang === "tyv") && (s?.titleTy || s?.descTy || s?.descriptionTy);
+                  const title = (useTy && s?.titleTy) ? String(s.titleTy).trim() : String(s?.title || "").trim();
+                  const descSource = useTy && (s?.descTy || s?.descriptionTy) ? (s.descTy ?? s.descriptionTy ?? "") : (s?.desc ?? s?.description ?? s?.subtitle ?? "");
+                  const raw = stripHtmlToText(descSource);
+                  const { date, description } = splitDateAndDescription(raw);
+                  const subtitle = String(description || "").trim();
+                  const subtitlePreview = truncateWords(subtitle, 30);
+                  const preview = `${subtitlePreview}${subtitlePreview && date ? " " : ""}${date || ""}`.trim();
+                  const href = id ? `/news/slider/${encodeURIComponent(id)}` : "/news";
+                  return (
+                    <a key={id || title || Math.random()} className="tile news-week__card" href={href}>
+                      {s?.image ? (
+                        <div className="news-week__media">
+                          <img
+                            src={normalizeFilesUrl(s.image)}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="news-week__img"
+                          />
+                        </div>
+                      ) : null}
+                      <div className="news-week__body">
+                        <div className="news-week__title">{title || "—"}</div>
+                        {preview ? <div className="news-week__preview">{preview}</div> : null}
+                        <div className="news-week__more">Подробнее →</div>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            </DataState>
           </div>
-        </DataState>
+          <SideNav
+            loadPages={true}
+            autoSection={true}
+          />
+        </div>
       </div>
     </section>
   );
