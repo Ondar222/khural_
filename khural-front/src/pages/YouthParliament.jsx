@@ -108,8 +108,16 @@ export default function YouthParliament() {
           </div>
           <SideNav
             title={lang === "ty" ? "Аныяктар Хуралы" : "Молодежный Хурал"}
-            loadPages={true}
-            autoSection={true}
+            links={[
+              { label: "Общие сведения", href: "/about" },
+              { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
+              { label: "Руководство", href: "/government" },
+              { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
+              { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
+              { label: "Депутатские фракции", href: "/about?tab=structure&focus=factions" },
+              { label: "Представительство в Совете Федерации", href: "/struct/council" },
+              { label: "Молодежный Хурал", href: "/youth-parliament" },
+            ]}
           />
         </div>
       </div>

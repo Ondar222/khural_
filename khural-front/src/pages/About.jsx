@@ -379,7 +379,6 @@ export default function About() {
               { label: t("Общие сведения"), href: "/about" },
               { label: t("Структура парламента"), href: "/about?tab=structure&focus=overview" },
               { label: t("Руководство"), href: "/government" },
-              { label: t("Депутаты"), href: "/deputies?convocation=VIII" },
               { label: t("Комитеты"), href: "/about?tab=structure&focus=committees" },
               { label: t("Комиссии"), href: "/about?tab=structure&focus=commissions" },
               { label: t("Депутатские фракции"), href: "/about?tab=structure&focus=factions" },

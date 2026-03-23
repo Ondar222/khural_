@@ -2056,7 +2056,7 @@ export default function PageBySlug() {
     <section className="section">
       <div className="container">
         <div className="page-grid">
-          <div>
+          <div style={!isInfoHistory ? undefined : { gridColumn: '1 / -1' }}>
             <div style={{ marginBottom: 16 }}>
               <a href={backUrl} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
                 {backText}
@@ -2081,11 +2081,23 @@ export default function PageBySlug() {
               )}
             </DataState>
           </div>
-          <SideNav
-            title={isInfoSection ? undefined : (isCodeOfHonor || isMothersCommandments ? undefined : title)}
-            loadPages={true}
-            autoSection={true}
-          />
+          {!isInfoHistory && (
+            <SideNav
+              title={isInfoSection ? undefined : (isCodeOfHonor || isMothersCommandments ? undefined : title)}
+              links={isFederationCouncil ? [
+                { label: "Общие сведения", href: "/about" },
+                { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
+                { label: "Руководство", href: "/government" },
+                { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
+                { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
+                { label: "Депутатские фракции", href: "/about?tab=structure&focus=factions" },
+                { label: "Представительство в Совете Федерации", href: "/struct/council" },
+                { label: "Молодежный Хурал", href: "/youth-parliament" },
+              ] : undefined}
+              loadPages={true}
+              autoSection={true}
+            />
+          )}
         </div>
       </div>
     </section>

@@ -17,13 +17,21 @@ function normalizeRoute(pathname, search) {
   return qs ? `${path}?${qs}` : path;
 }
 
+// Извлекает hash из href
+function getHashFromHref(href) {
+  if (!href || typeof href !== "string") return null;
+  const hashIndex = href.indexOf("#");
+  if (hashIndex === -1) return null;
+  return href.substring(hashIndex);
+}
+
 // Проверяет, совпадает ли текущий маршрут с href ссылки (с кэшированием)
-function isRouteActive(currentPathname, currentSearch, href) {
+function isRouteActive(currentPathname, currentSearch, currentHash, href) {
   if (!href || typeof href !== "string") return false;
   const current = normalizeRoute(currentPathname, currentSearch);
 
   // Проверяем кэш
-  const cacheKey = `${href}__${current}`;
+  const cacheKey = `${href}__${current}__${currentHash || ""}`;
   if (hrefCache.has(cacheKey)) {
     return hrefCache.get(cacheKey);
   }
@@ -33,8 +41,21 @@ function isRouteActive(currentPathname, currentSearch, href) {
     const base = typeof window !== "undefined" ? window.location.origin : "http://localhost";
     const u = new URL(href, base + "/");
     const link = normalizeRoute(u.pathname, u.search);
-    result = current === link;
-  } catch {
+    const linkHash = getHashFromHref(href);
+    
+    // Сравниваем pathname+search и hash (если он есть в href)
+    const pathsMatch = current === link;
+    if (!pathsMatch) {
+      result = false;
+    } else if (linkHash) {
+      // Если в ссылке есть hash, сравниваем его с текущим hash
+      result = currentHash === linkHash;
+    } else {
+      // Если в ссылке нет hash, сравниваем только пути
+      result = true;
+    }
+  } catch (err) {
+    // Если URL невалидный, сравниваем как строки
     result = current === href;
   }
 
@@ -169,18 +190,30 @@ const defaultLinksActivity = [
   { label: "Взаимодействие с НКО", href: "/activity?tab=ngo" },
 ];
 
+// Стандартные ссылки для раздела "Комитеты" и "Комиссии" (как в разделе "О Хурале")
+const defaultLinksCommittees = [
+  { label: "Общие сведения", href: "/about" },
+  { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
+  { label: "Руководство", href: "/government" },
+  { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
+  { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
+  { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
+  { label: "Представительство в Совете Федерации", href: "/struct/council" },
+];
+
 // Отдельный мемоизированный компонент ссылки
 const LinkItem = React.memo(function LinkItem({
   href,
   label,
   pathname,
   search,
+  hash,
   isChild,
   onClick,
   t,
 }) {
   // Вычисляем isActive внутри компонента на основе пропсов
-  const active = href && pathname != null ? isRouteActive(pathname, search, href) : false;
+  const active = href && pathname != null ? isRouteActive(pathname, search, hash, href) : false;
   const className = `tile link ${active ? "active" : ""} ${isChild ? "sidenav__sublink" : ""}`;
 
   return (
@@ -203,6 +236,7 @@ const LinkItem = React.memo(function LinkItem({
     prev.label === next.label &&
     prev.pathname === next.pathname &&
     prev.search === next.search &&
+    prev.hash === next.hash &&
     prev.isChild === next.isChild &&
     prev.onClick === next.onClick &&
     prev.t === next.t
@@ -400,6 +434,13 @@ export default function SideNav({
       return "Депутаты";
     }
 
+    // Специфичные заголовки для раздела "Комитеты/Комиссии"
+    if (detectedSection === 'committees' || detectedSection === 'commissions') {
+      if (pathname.includes('/commission')) return "Комиссии";
+      if (pathname.includes('/committee')) return "Комитеты";
+      return "О Хурале";
+    }
+
     if (detectedSection === 'broadcast') {
       return "Трансляция";
     }
@@ -464,12 +505,31 @@ export default function SideNav({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Мемоизируем pathname и search
-  const [pathname, search] = React.useMemo(() => {
+  // Мемоизируем pathname, search и hash
+  const [pathname, search, hash] = React.useMemo(() => {
     const r = route || "/";
     const q = r.indexOf("?");
-    if (q === -1) return [r || "/", ""];
-    return [r.slice(0, q) || "/", "?" + r.slice(q + 1)];
+    const h = r.indexOf("#");
+    
+    // Извлекаем pathname
+    const pathEnd = q === -1 ? (h === -1 ? r.length : h) : q;
+    const path = r.slice(0, pathEnd) || "/";
+    
+    // Извлекаем search
+    let searchStr = "";
+    if (q !== -1) {
+      const searchStart = q;
+      const searchEnd = h === -1 ? r.length : h;
+      searchStr = r.slice(searchStart, searchEnd);
+    }
+    
+    // Извлекаем hash
+    let hashStr = "";
+    if (h !== -1) {
+      hashStr = r.slice(h);
+    }
+    
+    return [path, searchStr, hashStr];
   }, [route]);
 
   // Мемоизируем ссылки: приоритет - overrideLinks, затем загруженные страницы + defaultLinks, затем defaultLinks
@@ -497,6 +557,8 @@ export default function SideNav({
       sectionDefaultLinks = defaultLinksAbout;
     } else if (detectedSection === 'activity') {
       sectionDefaultLinks = defaultLinksActivity;
+    } else if (detectedSection === 'committees') {
+      sectionDefaultLinks = defaultLinksCommittees;
     }
 
     // Если загружаем страницы И это не раздел новостей/трансляций, добавляем их к стандартным ссылкам
@@ -531,6 +593,7 @@ export default function SideNav({
                     label={l.label}
                     pathname={pathname}
                     search={search}
+                    hash={hash}
                     onClick={(e) => handleLinkClick(e, l.onClick)}
                     t={t}
                   />
@@ -550,6 +613,7 @@ export default function SideNav({
                       label={sub.label}
                       pathname={pathname}
                       search={search}
+                      hash={hash}
                       isChild
                       onClick={(e) => handleLinkClick(e, sub.onClick)}
                       t={t}
@@ -566,6 +630,7 @@ export default function SideNav({
               label={l.label}
               pathname={pathname}
               search={search}
+              hash={hash}
               onClick={(e) => handleLinkClick(e, l.onClick)}
               t={t}
             />

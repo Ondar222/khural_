@@ -4,7 +4,8 @@ function getRouteFromLocation() {
   if (typeof window === "undefined") return "/";
   const pathname = window.location.pathname || "/";
   const search = window.location.search || "";
-  return `${pathname}${search}`;
+  const hash = window.location.hash || "";
+  return `${pathname}${search}${hash}`;
 }
 
 function normalizeHashToHistory() {
