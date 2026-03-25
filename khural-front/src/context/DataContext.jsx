@@ -1518,6 +1518,12 @@ export default function DataProvider({ children }) {
               const localPhoto = localResolved?.photo;
               const pPhoto = p.photo;
               
+              // Если localResolved не найден, пробуем найти фото по имени через localByNameMatch
+              const localByNameMatchForPhoto = !localResolved && apiNameRaw
+                ? localByName.get(normalizePersonName(apiNameRaw))
+                : null;
+              const localPhotoByName = localByNameMatchForPhoto?.photo;
+
               // Пробуем каждый источник по очереди и нормализуем сразу
               let photo = "";
               if (imgLink && String(imgLink).trim() !== "" && String(imgLink).trim() !== "undefined" && String(imgLink).trim() !== "null") {
@@ -1526,6 +1532,8 @@ export default function DataProvider({ children }) {
                 photo = normalizePhotoUrl(photoUrl);
               } else if (localPhoto && String(localPhoto).trim() !== "" && String(localPhoto).trim() !== "undefined" && String(localPhoto).trim() !== "null") {
                 photo = normalizePhotoUrl(localPhoto);
+              } else if (localPhotoByName && String(localPhotoByName).trim() !== "" && String(localPhotoByName).trim() !== "undefined" && String(localPhotoByName).trim() !== "null") {
+                photo = normalizePhotoUrl(localPhotoByName);
               } else if (pPhoto && String(pPhoto).trim() !== "" && String(pPhoto).trim() !== "undefined" && String(pPhoto).trim() !== "null") {
                 photo = normalizePhotoUrl(pPhoto);
               } else {
@@ -1544,7 +1552,7 @@ export default function DataProvider({ children }) {
                   photo = normalizePhotoUrl(`/files/v2/${String(mediaId).trim()}`);
                 }
               }
-              
+
               return photo;
             })(),
             contacts: {
@@ -1597,14 +1605,16 @@ export default function DataProvider({ children }) {
           const info = personInfoMap.byName.get(normalizePersonName(d.name));
           const enrichedDep = enrichDeputyWithPersonInfo(d, info);
           // Гарантируем нормализацию фото после обогащения
-          // Проверяем все возможные источники фото (включая imageId из API)
+          // Проверяем все возможные источники фото (включая imageId из API и info из persons_info)
           const photoSources = [];
           if (enrichedDep.photo) photoSources.push(enrichedDep.photo);
           if (enrichedDep.image?.link) photoSources.push(enrichedDep.image.link);
           if (enrichedDep.image?.url) photoSources.push(enrichedDep.image.url);
           if (enrichedDep.photoUrl) photoSources.push(enrichedDep.photoUrl);
           if (enrichedDep.photo_url) photoSources.push(enrichedDep.photo_url);
-          
+          // Добавляем фото из persons_info (info)
+          if (info?.photo) photoSources.push(info.photo);
+
           // Если прямых URL нет, пробуем собрать URL по идентификатору файла (как в normalizeDeputyItem)
           if (!photoSources.length) {
             const mediaId =
@@ -1625,7 +1635,7 @@ export default function DataProvider({ children }) {
               photoSources.push(`/files/v2/${String(mediaId).trim()}`);
             }
           }
-          
+
           if (photoSources.length > 0) {
             // Берем первое доступное фото и нормализуем
             const photoToUse = photoSources[0];
