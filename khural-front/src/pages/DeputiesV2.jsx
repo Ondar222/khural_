@@ -202,6 +202,7 @@ function normalizeApiDeputy(p) {
         v.file?.url ||
         v.image?.link ||
         v.image?.url ||
+        v.previewPictureUrl ||
         "";
       if (direct) return String(direct).trim();
       const id = v.id || v.file?.id || v.imageId || v.image_id || v.photoId || v.photo_id || v.avatarId || v.avatar_id;
@@ -243,7 +244,7 @@ function normalizeApiDeputy(p) {
       toLink(p?.media) ||
       toLink(p?.files) ||
       toLink(p?.attachments) ||
-      toText(p?.photoUrl || p?.photo_url) ||
+      toText(p?.photoUrl || p?.photo_url || p?.previewPictureUrl) ||
       ""
   );
   // В карточках не показываем длинный текст/биографию в должности — только короткая должность или пусто («Депутат»)

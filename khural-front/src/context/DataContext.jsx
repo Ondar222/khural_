@@ -1516,10 +1516,10 @@ export default function DataProvider({ children }) {
             // Важно: нормализуем каждый источник отдельно, чтобы не потерять фото
             photo: (() => {
               const imgLink = firstFileLink(p.image);
-              const photoUrl = pick(p.photoUrl, p.photo_url);
+              const photoUrl = pick(p.photoUrl, p.photo_url, p.previewPictureUrl);
               const localPhoto = localResolved?.photo;
               const pPhoto = p.photo;
-              
+
               // Если localResolved не найден, пробуем найти фото по имени через localByNameMatch
               const localByNameMatchForPhoto = !localResolved && apiNameRaw
                 ? localByName.get(normalizePersonName(apiNameRaw))

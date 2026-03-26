@@ -91,7 +91,7 @@ function normalizeApiDeputyForDetail(p) {
       pickFirstLink(p.media) ||
       pickFirstLink(p.files) ||
       pickFirstLink(p.attachments) ||
-      String(p.photoUrl || p.photo_url || "").trim()
+      String(p.photoUrl || p.photo_url || p.previewPictureUrl || "").trim()
   );
 
   return {
