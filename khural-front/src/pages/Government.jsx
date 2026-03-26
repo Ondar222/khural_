@@ -91,7 +91,7 @@ function normalizeApiDeputyForDetail(p) {
       pickFirstLink(p.media) ||
       pickFirstLink(p.files) ||
       pickFirstLink(p.attachments) ||
-      String(p.photoUrl || p.photo_url || p.previewPictureUrl || "").trim()
+      String(p.photoUrl || p.photo_url || p.previewPictureUrl || p.IE_PREVIEW_PICTURE || "").trim()
   );
 
   return {
@@ -659,10 +659,10 @@ export default function Government() {
                   {filteredDeps.map((d) => (
                     <div key={d.id} className="gov-card">
                       <div className="gov-card__top">
-                        {normalizeFilesUrl(d.photo || (d.image && d.image.link) || d.previewPictureUrl) ? (
+                        {normalizeFilesUrl(d.photo || (d.image && d.image.link) || d.previewPictureUrl || d.IE_PREVIEW_PICTURE) ? (
                           <img
                             className="gov-card__avatar"
-                            src={normalizeFilesUrl(d.photo || (d.image && d.image.link) || d.previewPictureUrl)}
+                            src={normalizeFilesUrl(d.photo || (d.image && d.image.link) || d.previewPictureUrl || d.IE_PREVIEW_PICTURE)}
                             alt=""
                             loading="lazy"
                             decoding="async"

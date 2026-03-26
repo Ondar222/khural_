@@ -203,6 +203,7 @@ function normalizeApiDeputy(p) {
         v.image?.link ||
         v.image?.url ||
         v.previewPictureUrl ||
+        v.IE_PREVIEW_PICTURE ||
         "";
       if (direct) return String(direct).trim();
       const id = v.id || v.file?.id || v.imageId || v.image_id || v.photoId || v.photo_id || v.avatarId || v.avatar_id;
@@ -244,7 +245,7 @@ function normalizeApiDeputy(p) {
       toLink(p?.media) ||
       toLink(p?.files) ||
       toLink(p?.attachments) ||
-      toText(p?.photoUrl || p?.photo_url || p?.previewPictureUrl) ||
+      toText(p?.photoUrl || p?.photo_url || p?.previewPictureUrl || p?.IE_PREVIEW_PICTURE) ||
       ""
   );
   // В карточках не показываем длинный текст/биографию в должности — только короткая должность или пусто («Депутат»)
@@ -867,7 +868,7 @@ export default function DeputiesV2() {
                     const photoRaw =
                       typeof d.photo === "string"
                         ? d.photo
-                        : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || d.previewPictureUrl || "";
+                        : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || d.previewPictureUrl || d.IE_PREVIEW_PICTURE || "";
                     const photo = normalizeFilesUrl(photoRaw);
                     const ended = isEndedDeputy(d);
                     const convs = getDeputyConvocations(d);

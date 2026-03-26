@@ -1511,10 +1511,10 @@ function DeputyGrid({ deputies, structureType, backHref }) {
       {filtered.map((d) => (
         <div key={d.id} className="gov-card">
           <div className="gov-card__top">
-            {normalizeFilesUrl(d.photo || (d.image && d.image.link) || d.previewPictureUrl || "") ? (
+            {normalizeFilesUrl(d.photo || (d.image && d.image.link) || d.previewPictureUrl || d.IE_PREVIEW_PICTURE || "") ? (
               <img
                 className="gov-card__avatar"
-                src={normalizeFilesUrl(d.photo || (d.image && d.image.link) || d.previewPictureUrl || "")}
+                src={normalizeFilesUrl(d.photo || (d.image && d.image.link) || d.previewPictureUrl || d.IE_PREVIEW_PICTURE || "")}
                 alt=""
                 loading="lazy"
                 decoding="async"

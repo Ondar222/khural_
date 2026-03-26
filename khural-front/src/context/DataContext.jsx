@@ -429,6 +429,7 @@ function normalizeDeputyItem(d) {
   if (d.photoUrl) photoSources.push(d.photoUrl);
   if (d.photo_url) photoSources.push(d.photo_url);
   if (d.previewPictureUrl) photoSources.push(d.previewPictureUrl);
+  if (d.IE_PREVIEW_PICTURE) photoSources.push(d.IE_PREVIEW_PICTURE);
 
   // Если прямых URL нет, пробуем собрать URL по идентификатору файла (как в Government.jsx / normalizeApiDeputyForDetail)
   if (!photoSources.length) {
@@ -878,6 +879,7 @@ function enrichDeputyWithPersonInfo(dep, info) {
           if (out.photoUrl) depPhotoSources.push(out.photoUrl);
           if (out.photo_url) depPhotoSources.push(out.photo_url);
           if (out.previewPictureUrl) depPhotoSources.push(out.previewPictureUrl);
+          if (out.IE_PREVIEW_PICTURE) depPhotoSources.push(out.IE_PREVIEW_PICTURE);
 
           // Если прямых URL нет, проверяем imageId из API
           if (!depPhotoSources.length) {
@@ -1516,7 +1518,7 @@ export default function DataProvider({ children }) {
             // Важно: нормализуем каждый источник отдельно, чтобы не потерять фото
             photo: (() => {
               const imgLink = firstFileLink(p.image);
-              const photoUrl = pick(p.photoUrl, p.photo_url, p.previewPictureUrl);
+              const photoUrl = pick(p.photoUrl, p.photo_url, p.previewPictureUrl, p.IE_PREVIEW_PICTURE);
               const localPhoto = localResolved?.photo;
               const pPhoto = p.photo;
 
@@ -1615,6 +1617,7 @@ export default function DataProvider({ children }) {
           if (enrichedDep.photoUrl) photoSources.push(enrichedDep.photoUrl);
           if (enrichedDep.photo_url) photoSources.push(enrichedDep.photo_url);
           if (enrichedDep.previewPictureUrl) photoSources.push(enrichedDep.previewPictureUrl);
+          if (enrichedDep.IE_PREVIEW_PICTURE) photoSources.push(enrichedDep.IE_PREVIEW_PICTURE);
           // Добавляем фото из persons_info (info)
           if (info?.photo) photoSources.push(info.photo);
 
