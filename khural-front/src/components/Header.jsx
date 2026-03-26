@@ -49,7 +49,7 @@ export default function Header() {
   const localeToken = getPreferredLocaleToken(lang);
   const brandLine1 = lang === "ru" ? "Верховный Хурал" : t("brandTop");
   const brandLine2 = lang === "ru" ? "(парламент)" : t("brandParliament");
-  const brandLine3 = lang === "ru" ? "Республика Тыва" : t("brandBottom");
+  const brandLine3 = lang === "ru" ? "Республики Тыва" : t("brandBottom");
   // Для тувинского языка - три строки
   const tyBrandLines = lang === "ty" 
     ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"] 

@@ -189,7 +189,7 @@ export default function HeroCarousel() {
               ></path>
             </svg>
           </a>
-       
+
           <a
             className="sbtn sbtn--tg"
             href="https://t.me/s/tuva_parlament"
@@ -220,9 +220,9 @@ export default function HeroCarousel() {
               ></path>
             </svg>
           </a>
-          {/* <a className="sbtn sbtn--mx" href="#" aria-label="MAX">
-            <img src="/img/max.png" alt="" />
-          </a> */}
+          <a className="sbtn sbtn--mx" href="https://t.me/s/tuva_parlament" target="_blank" rel="noreferrer" aria-label="MAX">
+            <img src="/img/max.png" alt="MAX" />
+          </a>
         </div>
         <div className="dots center">
           {slides.map((_, i) => (

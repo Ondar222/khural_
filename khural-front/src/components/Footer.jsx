@@ -6,9 +6,12 @@ export default function Footer() {
   const { lang, t } = useI18n();
   const phoneIconStyle = { transform: "scaleX(-1)" };
   // Для тувинского языка - три строки
-  const tyBrandLines = lang === "ty" 
-    ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"] 
+  const tyBrandLines = lang === "ty"
+    ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"]
     : null;
+  const brandLine1 = lang === "ru" ? "Верховный Хурал" : t("brandTop");
+  const brandLine2 = lang === "ru" ? "(парламент)" : t("brandParliament");
+  const brandLine3 = lang === "ru" ? "Республики Тыва" : t("brandBottom");
   return (
     <footer className="site-footer">
       <div className="container">
@@ -41,20 +44,20 @@ export default function Footer() {
                 ) : (
                   <>
                     <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 900, color: "#fff", opacity: 0.9 }}>
-                      {t("brandTop")}
+                      {brandLine1}
                     </div>
                     <div style={{ fontSize: 14, lineHeight: 1.1, color: "#fff", opacity: 0.9 }}>
-                      {t("brandParliament")}
+                      {brandLine2}
                     </div>
                     <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
-                      {t("brandBottom")}
+                      {brandLine3}
                     </div>
                   </>
                 )}
               </div>
             </div>
             <div className="footer-copyright">
-              <p>{t("© 2025 ВЕРХОВНЫЙ ХУРАЛ РТ.")}</p>
+              <p>{t("© 2026 ВЕРХОВНЫЙ ХУРАЛ РТ.")}</p>
               <p>{t("ВСЕ ПРАВА ЗАЩИЩЕНЫ.")}</p>
               <p className="footer-dev">{t("Разработано Lana Soft")}</p>
             </div>
@@ -92,6 +95,9 @@ export default function Footer() {
                 </a>
                 <a href="https://t.me/s/tuva_parlament" target="_blank" rel="noreferrer">
                   {t("telegram")}
+                </a>
+                <a href="https://t.me/s/tuva_parlament" target="_blank" rel="noreferrer">
+                  Макс
                 </a>
               </nav>
             </div>
