@@ -428,6 +428,7 @@ function normalizeDeputyItem(d) {
   if (d.image?.url) photoSources.push(d.image.url);
   if (d.photoUrl) photoSources.push(d.photoUrl);
   if (d.photo_url) photoSources.push(d.photo_url);
+  if (d.previewPictureUrl) photoSources.push(d.previewPictureUrl);
 
   // Если прямых URL нет, пробуем собрать URL по идентификатору файла (как в Government.jsx / normalizeApiDeputyForDetail)
   if (!photoSources.length) {
@@ -876,7 +877,8 @@ function enrichDeputyWithPersonInfo(dep, info) {
           if (out.image?.url) depPhotoSources.push(out.image.url);
           if (out.photoUrl) depPhotoSources.push(out.photoUrl);
           if (out.photo_url) depPhotoSources.push(out.photo_url);
-          
+          if (out.previewPictureUrl) depPhotoSources.push(out.previewPictureUrl);
+
           // Если прямых URL нет, проверяем imageId из API
           if (!depPhotoSources.length) {
             const mediaId =
@@ -1612,6 +1614,7 @@ export default function DataProvider({ children }) {
           if (enrichedDep.image?.url) photoSources.push(enrichedDep.image.url);
           if (enrichedDep.photoUrl) photoSources.push(enrichedDep.photoUrl);
           if (enrichedDep.photo_url) photoSources.push(enrichedDep.photo_url);
+          if (enrichedDep.previewPictureUrl) photoSources.push(enrichedDep.previewPictureUrl);
           // Добавляем фото из persons_info (info)
           if (info?.photo) photoSources.push(info.photo);
 

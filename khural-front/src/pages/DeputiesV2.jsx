@@ -866,7 +866,7 @@ export default function DeputiesV2() {
                     const photoRaw =
                       typeof d.photo === "string"
                         ? d.photo
-                        : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || "";
+                        : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || d.previewPictureUrl || "";
                     const photo = normalizeFilesUrl(photoRaw);
                     const ended = isEndedDeputy(d);
                     const convs = getDeputyConvocations(d);

@@ -329,6 +329,7 @@ export default function Deputies() {
                         d.image?.url,
                         d.photoUrl,
                         d.photo_url,
+                        d.previewPictureUrl,
                       ].filter(Boolean);
                       if (altSources.length > 0) {
                         photo = normalizeFilesUrl(altSources[0]);
