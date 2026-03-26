@@ -15,6 +15,10 @@
       "destination": "https://someshit.yurta.site/files/:path*"
     },
     {
+      "source": "/upload/:path*",
+      "destination": "https://someshit.yurta.site/upload/:path*"
+    },
+    {
       "source": "/img-proxy/:path*",
       "destination": "https://khural.rtyva.ru/:path*"
     },

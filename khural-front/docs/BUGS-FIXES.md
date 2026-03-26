@@ -6,7 +6,7 @@
 |--------|----------------|--------|
 | `chrome-extension://invalid/` net::ERR_FAILED | Не в приложении — расширение браузера | Игнорировать |
 | `someshit.yurta.site/settings/broadcast_links` 401 | Бэкенд: разрешить GET без auth | См. раздел ниже |
-| CORS: `cache-control` not allowed | Фронт: убраны заголовки у calendar fetch | **Исправлено** |
+| CORS: `khural.yurta.site` → `someshit.yurta.site` | Бэкенд: настроить CORS | См. раздел ниже |
 | `stats.vk-portal.net` 403 | Внешний скрипт / VK Portal | См. BUG-3 ниже |
 
 ---
@@ -36,6 +36,62 @@
 В `src/api/client.js` у вызовов **EventsApi.list**, **getByMonth**, **getByYear** убраны заголовки `Cache-Control` и `Pragma`. Запрос к календарю стал «простым» (GET без кастомных заголовков), preflight не требует разрешения этих полей — CORS для calendar больше не должен падать.
 
 Если позже понадобится кэширование — на бэкенде нужно добавить в CORS заголовок `Access-Control-Allow-Headers` значение `Cache-Control` (и при необходимости `Pragma`).
+
+---
+
+## CORS: доступ с khural.yurta.site к someshit.yurta.site
+
+### В чём ошибка
+
+Фронтенд размещён на `https://khural.yurta.site`, а бэкенд (API и файлы) — на `https://someshit.yurta.site`. Браузер блокирует запросы к API и файлам из-за CORS.
+
+### Исправление (бэкенд)
+
+**На бэкенде (someshit.yurta.site)** нужно добавить CORS заголовки для домена `https://khural.yurta.site`:
+
+```javascript
+// Node.js / Express пример
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://khural.yurta.site');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+```
+
+Или для nginx:
+
+```nginx
+location / {
+    add_header 'Access-Control-Allow-Origin' 'https://khural.yurta.site' always;
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
+    add_header 'Access-Control-Allow-Headers' '*' always;
+    add_header 'Access-Control-Allow-Credentials' 'true' always;
+    
+    if ($request_method = 'OPTIONS') {
+        return 200;
+    }
+}
+```
+
+### Временное решение (для тестов)
+
+Для `/files` endpoint можно разрешить все домены:
+
+```javascript
+app.use('/files', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', '*');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+```
 
 ---
 
