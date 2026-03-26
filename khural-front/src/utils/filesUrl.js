@@ -2,13 +2,15 @@ const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
 
 /**
  * Оставляем только путь к файлу: /upload/iblock/.../имя.расширение — без query, hash и символов после .pdf (и т.д.).
+ * Учитываем пробелы в имени файла.
  */
 function onlyUploadPathToFile(str) {
   const s = String(str || "").trim();
   if (!s) return "";
   const noHash = s.replace(/#.*$/, "").trim();
   const noQuery = noHash.replace(/\?.*$/, "").trim();
-  const m = noQuery.match(/\/upload\/iblock\/[^#?]*?\.(pdf|doc|docx|xls|xlsx|jpg|jpeg|png|gif|rtf|txt)/i);
+  // Учитываем пробелы в имени файла, ищем по расширению
+  const m = noQuery.match(/\/upload\/iblock\/[^"']*?\.(pdf|doc|docx|xls|xlsx|jpg|jpeg|png|gif|rtf|txt)/i);
   return m ? m[0] : noQuery;
 }
 
@@ -156,7 +158,7 @@ export function normalizeFilesUrl(src) {
             out = buildUploadUrl(onlyUploadPathToFile(url.pathname) || url.pathname);
           }
         } catch {
-          const uploadMatch = unDouble.match(/(\/upload\/iblock\/[^#?]*?\.(?:pdf|doc|docx|xls|xlsx|jpg|jpeg|png|gif|rtf|txt))/i);
+          const uploadMatch = unDouble.match(/(\/upload\/iblock\/[^"']*?\.(?:pdf|doc|docx|xls|xlsx|jpg|jpeg|png|gif|rtf|txt))/i);
           if (uploadMatch) out = buildUploadUrl(uploadMatch[1].trim());
         }
       }
@@ -167,7 +169,7 @@ export function normalizeFilesUrl(src) {
   } else if (sClean.startsWith("/upload/") || sClean.startsWith("upload/")) {
     out = buildUploadUrl(sClean.startsWith("/") ? sClean : `/${sClean}`);
   } else {
-    const uploadMatch = sClean.match(/(\/upload\/iblock\/[^#?]*?\.(?:pdf|doc|docx|xls|xlsx|jpg|jpeg|png|gif|rtf|txt))/i);
+    const uploadMatch = sClean.match(/(\/upload\/iblock\/[^"']*?\.(?:pdf|doc|docx|xls|xlsx|jpg|jpeg|png|gif|rtf|txt))/i);
     if (uploadMatch) {
       out = buildUploadUrl(uploadMatch[1].trim());
     } else {

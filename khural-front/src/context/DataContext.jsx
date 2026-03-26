@@ -594,14 +594,15 @@ function normalizePhotoUrl(pic) {
     const encodedPath = encodeUrlPathname(path);
     return `${KHURAL_UPLOAD_BASE}${encodedPath}`;
   }
-  
+
   // Если путь содержит /upload/iblock/ где-то внутри, извлекаем его
-  const uploadMatch = s.match(/(\/upload\/iblock\/[^\s"']*)/i) || s.match(/(\/upload\/[^\s"']*)/i);
+  // Учитываем пробелы в имени файла (например, "019  3х4.jpg")
+  const uploadMatch = s.match(/(\/upload\/iblock\/[^"']*?\.(?:jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|rtf|txt))/i) || s.match(/(\/upload\/[^"']*?\.(?:jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|rtf|txt))/i);
   if (uploadMatch) {
     const encodedPath = encodeUrlPathname(uploadMatch[1]);
     return `${KHURAL_UPLOAD_BASE}${encodedPath}`;
   }
-  
+
   // Для других путей добавляем / если нужно
   return s.startsWith("/") ? s : `/${s}`;
 }
