@@ -23,6 +23,7 @@ import Documents from "./pages/Documents.jsx";
 import DocumentDetail from "./pages/DocumentDetail.jsx";
 import Broadcast from "./pages/Broadcast.jsx";
 import Deputies from "./pages/DeputiesV2.jsx";
+import DebugPersons from "./pages/DebugPersons.jsx";
 import DeputiesEnded from "./pages/DeputiesEnded.jsx";
 import DeputiesHistoryRedirect from "./pages/DeputiesHistoryRedirect.jsx";
 // import Convocations from "./pages/Convocations.jsx"; // Скрыто временно
@@ -229,6 +230,7 @@ export default function App() {
                           "/deputies": Deputies,
                           "/deputies/ended": DeputiesEnded,
                           "/deputies/history/:convocationToken": DeputiesHistoryRedirect,
+                          "/debug/persons": DebugPersons,
                           "/pages": PagesIndex,
                           "/p/:slug": PageBySlug,
                           "/code-of-honor": PageBySlug,
