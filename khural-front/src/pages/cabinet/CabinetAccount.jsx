@@ -119,7 +119,7 @@ export default function CabinetAccount() {
       </Card>
 
       <Card title="Настройки доступности" loading={loading}>
-        <Form layout="vertical" form={form} name="accessibilitySettings">
+        <Form form={form} layout="vertical" name="accessibilitySettings">
           <Form.Item
             label="Размер шрифта"
             name="fontSize"

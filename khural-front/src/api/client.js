@@ -265,7 +265,10 @@ export async function apiFetch(
         console.error(`[API] Response data:`, data);
       }
       
-      if (data?.message) {
+      if (Array.isArray(data?.message)) {
+        // Сообщение - массив ошибок (например: ["Неверный email или пароль"])
+        errorMessage = data.message.join(", ");
+      } else if (data?.message) {
         errorMessage = `Ошибка валидации: ${data.message}`;
       } else if (data?.error) {
         errorMessage = `Ошибка валидации: ${data.error}`;
