@@ -88,15 +88,18 @@ export default function HeroCarousel() {
   const baseSlides = React.useMemo(() => {
     // Slider must come from backend/admin only (no code fallbacks)
     const base = Array.isArray(dataSlides) ? dataSlides : [];
-    return base.map((s) => ({
-      id: String(s?.id ?? "").trim(),
-      title: String(s?.title || "").trim(),
-      titleTy: String(s?.titleTy ?? "").trim(),
-      desc: String(s?.desc ?? s?.description ?? s?.subtitle ?? "").trim(),
-      descTy: String(s?.descTy ?? s?.descriptionTy ?? "").trim(),
-      link: s?.link ? String(s.link) : "/news",
-      image: s?.image || "",
-    }));
+    return base.map((s) => {
+      const slide = {
+        id: String(s?.id ?? "").trim(),
+        title: String(s?.title || "").trim(),
+        titleTy: String(s?.titleTy ?? s?.title_ty ?? "").trim(),
+        desc: String(s?.desc ?? s?.description ?? s?.subtitle ?? "").trim(),
+        descTy: String(s?.descTy ?? s?.descriptionTy ?? s?.description_ty ?? "").trim(),
+        link: s?.link ? String(s.link) : "/news",
+        image: s?.image || "",
+      };
+      return slide;
+    });
   }, [dataSlides]);
 
   const slides = React.useMemo(

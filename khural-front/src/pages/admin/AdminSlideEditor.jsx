@@ -53,6 +53,8 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
       const values = form.getFieldsValue();
       const title = String(values.title || "").trim();
       const description = String(values.description || "").trim();
+      console.log("[Slider Translate] Input:", { title: title.substring(0, 50), description: description.substring(0, 50) });
+      
       if (!title && !description) {
         message.warning("Заполните заголовок или описание (RU) для перевода");
         return;
@@ -61,8 +63,12 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
         title ? translate(title, "ru", "tyv") : Promise.resolve({ translated: "" }),
         description ? translate(description, "ru", "tyv") : Promise.resolve({ translated: "" }),
       ]);
+      console.log("[Slider Translate] Results:", { titleResult, descResult });
+      
       const translatedTitle = String(titleResult?.translated ?? "").trim();
       const translatedDesc = String(descResult?.translated ?? "").trim();
+      console.log("[Slider Translate] Setting values:", { titleTy: translatedTitle, descriptionTy: translatedDesc });
+      
       form.setFieldsValue({
         titleTy: translatedTitle,
         descriptionTy: translatedDesc,
@@ -70,6 +76,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
       message.success("Перевод выполнен");
     } catch (err) {
       console.error("Slider translate error:", err);
+      message.error("Ошибка перевода: " + (err?.message || "Неизвестная ошибка"));
     }
   };
 
