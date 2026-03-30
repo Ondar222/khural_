@@ -88,6 +88,7 @@ export default function HeroCarousel() {
   const baseSlides = React.useMemo(() => {
     // Slider must come from backend/admin only (no code fallbacks)
     const base = Array.isArray(dataSlides) ? dataSlides : [];
+    console.log("[HeroCarousel] Raw slides from DataContext:", base);
     return base.map((s) => {
       const slide = {
         id: String(s?.id ?? "").trim(),
@@ -98,6 +99,7 @@ export default function HeroCarousel() {
         link: s?.link ? String(s.link) : "/news",
         image: s?.image || "",
       };
+      console.log("[HeroCarousel] Mapped slide:", slide);
       return slide;
     });
   }, [dataSlides]);
@@ -126,6 +128,16 @@ export default function HeroCarousel() {
   if (!slides.length) return null;
 
   const current = slides[active] || slides[0];
+  console.log("[HeroCarousel] Current slide:", current);
+  console.log("[HeroCarousel] Lang:", lang);
+  console.log("[HeroCarousel] useTy check:", {
+    isTy: lang === "ty" || lang === "tyv",
+    hasTitleTy: !!current?.titleTy,
+    hasDescTy: !!current?.descTy,
+    titleTy: current?.titleTy?.substring(0, 50),
+    descTy: current?.descTy?.substring(0, 50),
+  });
+  
   const useTy = (lang === "ty" || lang === "tyv") && (current?.titleTy || current?.descTy);
   const desc = useTy && current?.descTy
     ? String(current.descTy).trim()
