@@ -136,14 +136,33 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
     setSaving(true);
     try {
       const values = await form.validateFields();
+      
+      // Формируем payload с content[] для локализации
       const payload = {
         title: values.title,
         description: joinDateAndDescription(values.date, values.description || ""),
         url: values.url,
         isActive: values.isActive,
-        titleTy: values.titleTy != null ? String(values.titleTy).trim() : "",
-        descriptionTy: values.descriptionTy != null ? String(values.descriptionTy).trim() : "",
+        // Отправляем тувинский перевод в формате content[] с locale: "tyv"
+        content: [
+          {
+            locale: "ru",
+            title: values.title || "",
+            description: joinDateAndDescription(values.date, values.description || ""),
+          },
+        ],
       };
+      
+      // Добавляем тувинскую локаль, если есть перевод
+      const titleTy = values.titleTy != null ? String(values.titleTy).trim() : "";
+      const descriptionTy = values.descriptionTy != null ? String(values.descriptionTy).trim() : "";
+      if (titleTy || descriptionTy) {
+        payload.content.push({
+          locale: "tyv",
+          title: titleTy,
+          description: descriptionTy,
+        });
+      }
 
       if (mode === "create") {
         const existingCount = Array.isArray(items) ? items.length : 0;

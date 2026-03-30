@@ -1283,17 +1283,26 @@ export function useAdminData() {
   }, [message, reload, reloadDataContext, slider]);
 
   const updateSlide = React.useCallback(async (id, body) => {
-    const { title, description, url, isActive, titleTy, descriptionTy } = body || {};
+    const { title, description, url, isActive, titleTy, descriptionTy, content } = body || {};
     setBusy(true);
     try {
+      // Формируем payload с content[] для локализации
       const payload = {
         title: title || "",
         description: description || "",
         url: url || "",
         isActive: isActive ?? true,
       };
-      if (titleTy != null) payload.titleTy = String(titleTy).trim();
-      if (descriptionTy != null) payload.descriptionTy = String(descriptionTy).trim();
+      
+      // Если есть content[] (с локалями), отправляем его
+      if (Array.isArray(content) && content.length > 0) {
+        payload.content = content;
+      } else {
+        // Fallback на старый формат с titleTy/descriptionTy
+        if (titleTy != null) payload.titleTy = String(titleTy).trim();
+        if (descriptionTy != null) payload.descriptionTy = String(descriptionTy).trim();
+      }
+      
       const looksLocal = String(id || "").startsWith("imp-") || String(id || "").startsWith("local-");
       if (!looksLocal) {
         try {
