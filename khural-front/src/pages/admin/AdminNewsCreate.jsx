@@ -242,42 +242,52 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       const values = form.getFieldsValue();
       const titleField = fromLang === "tyv" ? "titleTy" : "titleRu";
       const contentField = fromLang === "tyv" ? "contentTy" : "contentRu";
-      
+      const shortDescField = fromLang === "tyv" ? "shortDescriptionTy" : "shortDescriptionRu";
+
       const titleTarget = toLang === "tyv" ? "titleTy" : "titleRu";
       const contentTarget = toLang === "tyv" ? "contentTy" : "contentRu";
-      
+      const shortDescTarget = toLang === "tyv" ? "shortDescriptionTy" : "shortDescriptionRu";
+
       const title = String(values[titleField] || "");
       const content = String(values[contentField] || "");
-      
-      if (!title && !content) {
+      const shortDesc = String(values[shortDescField] || "");
+
+      if (!title && !content && !shortDesc) {
         antdMessage.warning("Заполните поля для перевода");
         return;
       }
-      
-      // Используем хук для перевода
+
+      // Используем хук для перевода всех трёх полей
       const translations = await Promise.all([
         title ? translate(title, fromLang, toLang) : Promise.resolve({ translated: "" }),
         content ? translate(content, fromLang, toLang) : Promise.resolve({ translated: "" }),
+        shortDesc ? translate(shortDesc, fromLang, toLang) : Promise.resolve({ translated: "" }),
       ]);
-      
+
       // Убеждаемся, что извлекаем строку, а не объект
       const translatedTitle = String(
-        translations[0]?.translated || 
-        (typeof translations[0] === "string" ? translations[0] : "") || 
+        translations[0]?.translated ||
+        (typeof translations[0] === "string" ? translations[0] : "") ||
         ""
       );
       const translatedContent = String(
-        translations[1]?.translated || 
-        (typeof translations[1] === "string" ? translations[1] : "") || 
+        translations[1]?.translated ||
+        (typeof translations[1] === "string" ? translations[1] : "") ||
         ""
       );
-      
+      const translatedShortDesc = String(
+        translations[2]?.translated ||
+        (typeof translations[2] === "string" ? translations[2] : "") ||
+        ""
+      );
+
       // Устанавливаем значения в форму
       form.setFieldsValue({
         [titleTarget]: translatedTitle,
         [contentTarget]: translatedContent,
+        [shortDescTarget]: translatedShortDesc,
       });
-      
+
       antdMessage.success("Перевод выполнен");
     } catch (error) {
       console.error("Translation error:", error);
