@@ -411,30 +411,86 @@ export const PublicApi = {
   /** Таймаут для запросов перевода (5 мин): сервис перевода может отвечать долго при больших текстах. */
   TRANSLATION_TIMEOUT_MS: 300000,
 
+  /**
+   * Перевод через Google Translate (fallback, если бэкенд не работает)
+   */
+  async translateWithGoogle(text, from, to) {
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      // Google возвращает массив вида [[["перевод","оригинал",...]],...]
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        return data[0].filter(segment => Array.isArray(segment)).map(segment => segment[0]).join('');
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
   async translate(text, from, to) {
-    const opts = { method: "POST", body: { text, from, to }, auth: true, timeout: PublicApi.TRANSLATION_TIMEOUT_MS };
+    // Пробуем без авторизации сначала (для публичного доступа)
+    const opts = { method: "POST", body: { text, from, to }, auth: false, timeout: PublicApi.TRANSLATION_TIMEOUT_MS };
     try {
       const result = await apiFetch("/translation/translate", opts);
-      // 204 No Content или пустой ответ — бэкенд не вернул тело
-      if (result == null || (typeof result === "object" && result.translated === undefined && !("translated" in result))) {
-        return { original: text, translated: text, from, to };
+      // Проверяем, вернулся ли реальный перевод (не тот же ли самый текст)
+      if (result && result.translated && result.translated !== text) {
+        return { original: text, translated: result.translated, from, to };
       }
-      const translated = result?.translated ?? text;
-      return { original: text, translated, from, to };
-    } catch {
-      try {
-        const result = await apiFetch("/translation/translate-batch", {
-          method: "POST",
-          body: { texts: [text], from, to },
-          auth: true,
-          timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
-        });
-        const translated = Array.isArray(result?.translated) ? result.translated[0] : text;
-        return { original: text, translated: translated ?? text, from, to };
-      } catch {
-        return { original: text, translated: text, from, to };
-      }
+    } catch (err) {
+      console.log("[translate] First attempt failed:", err?.status, err?.message);
     }
+    
+    // Если бэкенд вернул оригинал или ошибка - пробуем с авторизацией
+    const token = getAuthToken();
+    if (token) {
+      const authOpts = { method: "POST", body: { text, from, to }, auth: true, timeout: PublicApi.TRANSLATION_TIMEOUT_MS };
+      try {
+        const result = await apiFetch("/translation/translate", authOpts);
+        if (result && result.translated && result.translated !== text) {
+          console.log("[translate] Translation successful with auth");
+          return { original: text, translated: result.translated, from, to };
+        }
+      } catch (authErr) {
+        console.log("[translate] Auth attempt failed:", authErr?.status, authErr?.message);
+      }
+    } else {
+      console.warn("[translate] No auth token found");
+    }
+    
+    // Пробуем batch API
+    try {
+      const batchResult = await apiFetch("/translation/translate-batch", {
+        method: "POST",
+        body: { texts: [text], from, to },
+        auth: token ? true : false,
+        timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
+      });
+      const translated = Array.isArray(batchResult?.translated) ? batchResult.translated[0] : null;
+      if (translated && translated !== text) {
+        console.log("[translate] Batch translation successful");
+        return { original: text, translated, from, to };
+      }
+    } catch (batchErr) {
+      console.log("[translate] Batch attempt failed:", batchErr?.status, batchErr?.message);
+    }
+    
+    // Fallback на Google Translate
+    console.log("[translate] Using Google Translate fallback");
+    const googleTranslated = await PublicApi.translateWithGoogle(text, from, to);
+    if (googleTranslated && googleTranslated !== text) {
+      return { original: text, translated: googleTranslated, from, to };
+    }
+    
+    // Если ничего не помогло - возвращаем оригинал
+    return { original: text, translated: text, from, to };
   },
 
   /**

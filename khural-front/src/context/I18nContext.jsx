@@ -1,6 +1,4 @@
 import React from "react";
-import { PublicApi } from "../api/client.js";
-import { useAuth } from "./AuthContext.jsx";
 
 // Переводы, выгруженные из таблиц (ключ — русский текст, значение — тувинский)
 const sheetTranslations = {
@@ -688,7 +686,6 @@ export function useI18n() {
 }
 
 export default function I18nProvider({ children }) {
-  const { isAuthenticated } = useAuth();
   const [lang, setLang] = React.useState(() => {
     try {
       const saved = localStorage.getItem("site_lang");
@@ -702,8 +699,6 @@ export default function I18nProvider({ children }) {
     return nav.startsWith("ty") ? "ty" : "ru";
   });
 
-  // Кэш для переводов через API
-  const translationCache = React.useRef(new Map());
   const [apiTranslations, setApiTranslations] = React.useState({});
 
   React.useEffect(() => {
@@ -717,7 +712,8 @@ export default function I18nProvider({ children }) {
     }
   }, [lang]);
 
-  // Предзагрузка переводов: статический словарь всегда; API — только для авторизованных (иначе 401)
+  // Загрузка переводов: используем статический словарь + sheetTranslations
+  // API-переводы отключены, так как бэкенд не поддерживает endpoint /translation/translate-batch
   React.useEffect(() => {
     if (lang === "ty" && dict.ru) {
       const staticTranslations = {};
@@ -725,73 +721,18 @@ export default function I18nProvider({ children }) {
         staticTranslations[key] = dict.ty && dict.ty[key] ? dict.ty[key] : dict.ru[key];
       });
       setApiTranslations(staticTranslations);
-
-      if (!isAuthenticated) return;
-
-      const loadTranslations = async () => {
-        const newTranslations = { ...staticTranslations };
-        const keys = Object.keys(dict.ru);
-
-        const keysToFetch = keys.filter((key) => {
-          const cacheKey = `ru-ty-${dict.ru[key]}`;
-          if (translationCache.current.has(cacheKey)) {
-            newTranslations[key] = translationCache.current.get(cacheKey);
-            return false;
-          }
-          if (dict.ty?.[key] && dict.ty[key] !== dict.ru[key]) return false;
-          return true;
-        });
-
-        const BATCH_SIZE = 15;
-        const DELAY_MS = 800;
-
-        for (let i = 0; i < keysToFetch.length; i += BATCH_SIZE) {
-          const batchKeys = keysToFetch.slice(i, i + BATCH_SIZE);
-          const texts = batchKeys.map((k) => dict.ru[k]);
-
-          const { translated: translatedArr, rateLimited } = await PublicApi.translateBatch(
-            texts,
-            "ru",
-            "ty"
-          );
-
-          if (rateLimited) break;
-
-          batchKeys.forEach((key, idx) => {
-            const translated = translatedArr[idx];
-            if (translated && translated !== dict.ru[key] && String(translated).trim()) {
-              const cacheKey = `ru-ty-${dict.ru[key]}`;
-              translationCache.current.set(cacheKey, translated);
-              newTranslations[key] = translated;
-            }
-          });
-
-          setApiTranslations({ ...newTranslations });
-          if (i + BATCH_SIZE < keysToFetch.length) {
-            await new Promise((r) => setTimeout(r, DELAY_MS));
-          }
-        }
-      };
-
-      loadTranslations();
     } else {
       setApiTranslations({});
     }
-  }, [lang, isAuthenticated]);
-
-  // Мемоизируем функцию перевода с использованием ref для apiTranslations
-  // чтобы избежать пересоздания функции при каждом обновлении переводов
-  const apiTranslationsRef = React.useRef(apiTranslations);
-  apiTranslationsRef.current = apiTranslations;
+  }, [lang]);
 
   const t = React.useCallback(
     (key) => {
-      const currentApiTranslations = apiTranslationsRef.current;
       // Если язык тувинский
       if (lang === "ty") {
-        // Сначала проверяем переводы через API
-        if (currentApiTranslations[key]) {
-          return currentApiTranslations[key];
+        // Сначала проверяем переводы через API (если есть)
+        if (apiTranslations[key]) {
+          return apiTranslations[key];
         }
         // Затем статический словарь
         if (dict.ty && dict.ty[key]) {
@@ -809,7 +750,7 @@ export default function I18nProvider({ children }) {
       // Fallback на русский или ключ
       return dict.ru && dict.ru[key] ? dict.ru[key] : key;
     },
-    [lang]
+    [lang, apiTranslations]
   );
 
   const value = React.useMemo(() => ({ lang, setLang, t }), [lang, t]);
