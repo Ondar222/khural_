@@ -142,13 +142,12 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
     try {
       const values = await form.validateFields();
       
-      // Формируем payload с content[] для локализации
+      // Формируем payload с content[] для локализации — так бэкенд сохраняет переводы в БД
       const payload = {
         title: values.title,
         description: joinDateAndDescription(values.date, values.description || ""),
         url: values.url,
         isActive: values.isActive,
-        // Отправляем тувинский перевод в формате content[] с locale: "tyv"
         content: [
           {
             locale: "ru",
@@ -176,7 +175,6 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
           return;
         }
         const created = await onCreate?.(payload);
-        // If API returned created object with id - upload image
         const createdId = created?.id;
         if (createdId && imageFile) await onUploadImage?.(createdId, imageFile);
         message.success("Слайд создан");

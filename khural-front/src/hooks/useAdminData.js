@@ -1286,7 +1286,7 @@ export function useAdminData() {
     const { title, description, url, isActive, titleTy, descriptionTy, content } = body || {};
     setBusy(true);
     try {
-      // Формируем payload с content[] для локализации
+      // Формируем payload с content[] для локализации — так бэкенд сохраняет переводы в БД
       const payload = {
         title: title || "",
         description: description || "",
@@ -1298,26 +1298,33 @@ export function useAdminData() {
       if (Array.isArray(content) && content.length > 0) {
         payload.content = content;
       } else {
-        // Fallback на старый формат с titleTy/descriptionTy
-        if (titleTy != null) payload.titleTy = String(titleTy).trim();
-        if (descriptionTy != null) payload.descriptionTy = String(descriptionTy).trim();
+        // Fallback: формируем content[] из titleTy/descriptionTy
+        payload.content = [
+          {
+            locale: "ru",
+            title: title || "",
+            description: description || "",
+          },
+        ];
+        if (titleTy || descriptionTy) {
+          payload.content.push({
+            locale: "tyv",
+            title: titleTy || "",
+            description: descriptionTy || "",
+          });
+        }
       }
       
       const looksLocal = String(id || "").startsWith("imp-") || String(id || "").startsWith("local-");
       if (!looksLocal) {
         try {
           await SliderApi.patch(id, payload);
-          // Сохраняем TY в overrides, чтобы на сайте показывался перевод даже если API в списке его не отдаёт
-          updateSlideOverride(String(id), {
-            id: String(id),
-            titleTy: payload.titleTy ?? "",
-            descTy: payload.descriptionTy ?? "",
-          });
           message.success("Слайд обновлён");
           await reload();
           reloadDataContext();
           return;
-        } catch {
+        } catch (err) {
+          console.error("Slider update error:", err);
           // fall back below
         }
       }
@@ -1325,8 +1332,8 @@ export function useAdminData() {
         id: String(id),
         title: String(payload.title),
         desc: String(payload.description),
-        titleTy: payload.titleTy ?? "",
-        descTy: payload.descriptionTy ?? "",
+        titleTy: titleTy || "",
+        descTy: descriptionTy || "",
         link: String(payload.url),
         isActive: payload.isActive,
       });
@@ -1337,8 +1344,8 @@ export function useAdminData() {
                 ...s,
                 title: String(payload.title),
                 description: String(payload.description),
-                titleTy: payload.titleTy ?? "",
-                descTy: payload.descriptionTy ?? "",
+                titleTy: titleTy || "",
+                descTy: descriptionTy || "",
                 url: String(payload.url),
                 isActive: payload.isActive,
               }
