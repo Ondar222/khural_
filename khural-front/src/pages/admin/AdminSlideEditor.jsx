@@ -53,21 +53,26 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
       const values = form.getFieldsValue();
       const title = String(values.title || "").trim();
       const description = String(values.description || "").trim();
-      console.log("[Slider Translate] Input:", { title: title.substring(0, 50), description: description.substring(0, 50) });
+      
+      // Не переводим, если это URL или пусто
+      const isUrl = /^(https?:\/\/|www\.|\/)/i.test(title);
+      if (isUrl) {
+        message.warning("Заголовок похож на ссылку — перевод не требуется");
+        return;
+      }
       
       if (!title && !description) {
         message.warning("Заполните заголовок или описание (RU) для перевода");
         return;
       }
+      
       const [titleResult, descResult] = await Promise.all([
-        title ? translate(title, "ru", "tyv") : Promise.resolve({ translated: "" }),
+        title && !isUrl ? translate(title, "ru", "tyv") : Promise.resolve({ translated: "" }),
         description ? translate(description, "ru", "tyv") : Promise.resolve({ translated: "" }),
       ]);
-      console.log("[Slider Translate] Results:", { titleResult, descResult });
       
       const translatedTitle = String(titleResult?.translated ?? "").trim();
       const translatedDesc = String(descResult?.translated ?? "").trim();
-      console.log("[Slider Translate] Setting values:", { titleTy: translatedTitle, descriptionTy: translatedDesc });
       
       form.setFieldsValue({
         titleTy: translatedTitle,
