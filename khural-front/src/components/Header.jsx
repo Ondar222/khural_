@@ -313,8 +313,9 @@ export default function Header() {
               onMouseEnter={() => setOpenMenu("info")}
               onMouseLeave={() => setOpenMenu(null)}
             >
-              <Link to="/info/finansy">{t("Общие сведения") || "Общие сведения"} ▾</Link>
+              <Link to="/info">{t("Общие сведения") || "Общие сведения"} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("info")}>
+                <a href="/info">{t("Общие сведения") || "Общие сведения"}</a>
                 <a href="/info/finansy">{t("Финансы") || "Финансы"}</a>
                 <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
                 <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
@@ -539,6 +540,7 @@ export default function Header() {
           </div>
           <div className="sheet-col">
             <h3>{t("Общие сведения") || "Общие сведения"}</h3>
+            <a href="/info">{t("Общие сведения") || "Общие сведения"}</a>
             <a href="/info/finansy">{t("Финансы") || "Финансы"}</a>
             <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
             <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
@@ -845,6 +847,12 @@ export default function Header() {
               {t("back")}
             </button>
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("Общие сведения") || "Общие сведения"}</div>
+            <a className="tile link" href="/info" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("Общие сведения") || "Общие сведения"}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
             <a className="tile link" href="/info/finansy" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("Финансы") || "Финансы"}

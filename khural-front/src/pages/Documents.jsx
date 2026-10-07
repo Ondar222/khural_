@@ -8,6 +8,7 @@ import DataState from "../components/DataState.jsx";
 import ScrollToTop from "../components/ScrollToTop.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
+import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 
 function norm(v) {
   return String(v ?? "")
@@ -55,6 +56,7 @@ export default function Documents() {
   const [qDate, setQDate] = React.useState("");
   const [groupByCategory, setGroupByCategory] = React.useState(true);
   const [page, setPage] = React.useState(1);
+  const [preview, setPreview] = React.useState(null); // { url, title } — модальный предпросмотр
   const PAGE_SIZE = 10;
 
   const cats = React.useMemo(
@@ -261,7 +263,16 @@ export default function Documents() {
                                     </div>
                                   </div>
                                 </div>
-                                <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+                                <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
+                                  {url && (
+                                    <button
+                                      type="button"
+                                      className="btn"
+                                      onClick={() => setPreview({ url, title: d.title })}
+                                    >
+                                      👁 Просмотр
+                                    </button>
+                                  )}
                                   <a
                                     className="btn btn--primary"
                                     href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
@@ -298,7 +309,16 @@ export default function Documents() {
                                 </div>
                               </div>
                             </div>
-                            <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+                            <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
+                              {url && (
+                                <button
+                                  type="button"
+                                  className="btn"
+                                  onClick={() => setPreview({ url, title: d.title })}
+                                >
+                                  👁 Просмотр
+                                </button>
+                              )}
                               <a
                                 className="btn btn--primary"
                                 href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
@@ -366,6 +386,12 @@ export default function Documents() {
         </div>
       </div>
       <ScrollToTop />
+      <PdfPreviewModal
+        open={Boolean(preview)}
+        onClose={() => setPreview(null)}
+        url={preview?.url}
+        title={preview?.title}
+      />
     </section>
   );
 }

@@ -7,6 +7,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
 import { getDocumentLinkedEntities } from "../../utils/documentMentions.js";
+import PdfPreviewModal from "../../components/PdfPreviewModal.jsx";
 import { Pagination } from "antd";
 
 function looksLikeHtml(s) {
@@ -55,6 +56,7 @@ export default function DocsPage() {
   const [filterEntity, setFilterEntity] = React.useState(null); // { type: 'deputy'|'committee'|'convocation', id }
   const [page, setPage] = React.useState(1);
   const [subCategory, setSubCategory] = React.useState("all"); // Для раздела constitution: 'all', 'federal', 'regional'
+  const [preview, setPreview] = React.useState(null); // { url, title } — модальный предпросмотр документа
   const PAGE_SIZE = 10;
 
   const slug = React.useMemo(() => {
@@ -414,15 +416,27 @@ export default function DocsPage() {
                         )}
                       </div>
                     </div>
-                    <a
-                      className="btn btn--primary"
-                      href={d.url || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download={d.url ? true : undefined}
-                    >
-                      Открыть
-                    </a>
+                    <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
+                      {d.url && (
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => setPreview({ url: d.url, title: d.title })}
+                          style={{ textDecoration: "none" }}
+                        >
+                          👁 Просмотр
+                        </button>
+                      )}
+                      <a
+                        className="btn btn--primary"
+                        href={d.url || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={d.url ? true : undefined}
+                      >
+                        Открыть
+                      </a>
+                    </div>
                   </div>
                 );
               })}
@@ -462,6 +476,12 @@ export default function DocsPage() {
         </div>
       </div>
       <ScrollToTop />
+      <PdfPreviewModal
+        open={Boolean(preview)}
+        onClose={() => setPreview(null)}
+        url={preview?.url}
+        title={preview?.title}
+      />
     </section>
   );
 }
