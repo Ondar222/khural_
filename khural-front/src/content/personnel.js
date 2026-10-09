@@ -15,6 +15,11 @@ export const INFO_PERSONNEL_TELEFON_SLUG = "info/personnel/telefon-spravok";
 export const INFO_PERSONNEL_OBZHALOVANIE_SLUG = "info/personnel/poryadok-obzhalovaniya";
 export const INFO_PERSONNEL_PENSION_SLUG = "info/personnel/pensionnoe-obespechenie";
 export const INFO_PERSONNEL_OTPUSK_SLUG = "info/personnel/otpusk-sluzhaschih";
+export const INFO_PERSONNEL_VAKANSII_SLUG = "info/personnel/vakansii";
+export const INFO_PERSONNEL_KONKURSY_SLUG = "info/personnel/konkursy";
+export const INFO_PERSONNEL_METODIKA_SLUG = "info/personnel/metodika-konkursa";
+export const INFO_PERSONNEL_KOMISSII_SLUG = "info/personnel/komissii";
+export const INFO_PERSONNEL_DOKUMENTY_SLUG = "info/personnel/dokumenty-pri-postuplenii";
 /** Корневой путь раздела — единственное место, где он задан литералом. */
 export const PERSONNEL_ROOT_PATH = "/" + INFO_PERSONNEL_SLUG;
 
