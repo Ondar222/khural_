@@ -4,6 +4,7 @@ import { DocumentsApi } from "../api/client.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
 import DataState from "../components/DataState.jsx";
+import DocumentActions from "../components/DocumentActions.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 
 function looksLikePdf(url) {
@@ -243,25 +244,12 @@ export default function DocumentDetail() {
           {/* Actions */}
           <div style={{ display: "flex", gap: 12, marginBottom: 32, flexWrap: "wrap" }}>
             {pdfUrl && (
-              <a
-                href={pdfUrl}
-                download
-                className="btn btn--primary"
-                style={{ textDecoration: "none" }}
-              >
-                📥 Скачать документ
-              </a>
-            )}
-            {isPdf && pdfUrl && (
-              <a
-                href={pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn"
-                style={{ textDecoration: "none" }}
-              >
-                Открыть в новой вкладке ↗
-              </a>
+              <DocumentActions
+                url={pdfUrl}
+                title={doc?.title}
+                openLabel="Открыть документ"
+                openInNewTab
+              />
             )}
           </div>
 

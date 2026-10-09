@@ -2,6 +2,8 @@ import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
+import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
+import DocumentActions from "../components/DocumentActions.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { CommitteesApi, ConvocationsApi } from "../api/client.js";
 import {
@@ -150,6 +152,7 @@ export default function Committee() {
   const [committee, setCommittee] = React.useState(null);
   const [apiCommittees, setApiCommittees] = React.useState(null);
   const [overridesSeq, setOverridesSeq] = React.useState(0);
+  const [docPreview, setDocPreview] = React.useState(null); // { url, title } — предпросмотр документа на странице
 
   React.useEffect(() => {
     let alive = true;
@@ -359,7 +362,14 @@ export default function Committee() {
     };
     handleHashChange(); // Call immediately to set initial state
     window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
+    // SPA-навигация (pushState) не вызывает hashchange — синхронизируем секцию и по нашим событиям
+    window.addEventListener("app:navigate", handleHashChange);
+    window.addEventListener("popstate", handleHashChange);
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+      window.removeEventListener("app:navigate", handleHashChange);
+      window.removeEventListener("popstate", handleHashChange);
+    };
   }, []);
   
   // Прокручиваем вверх при загрузке страницы комитета
@@ -586,6 +596,21 @@ export default function Committee() {
         ? DEFAULT_MOCK_ACTIVITIES
         : [];
   const staff = committee ? (Array.isArray(committee.staff) ? committee.staff : []) : [];
+
+  // Боковое меню страницы комитета: разделы самого комитета (состав, планы, повестки, отчеты)
+  const committeeNavLinks = React.useMemo(() => {
+    if (!committee) return null;
+    const base = `/committee?id=${encodeURIComponent(String(committee.id))}`;
+    return [
+      { label: "Состав", href: `${base}#about` },
+      { label: "Планы комитета", href: `${base}#plans` },
+      { label: "Повестки", href: `${base}#agendas` },
+      { label: "Отчеты комитета", href: `${base}#reports` },
+      { label: "Документы комитета", href: `${base}#documents` },
+      ...(staff.length > 0 ? [{ label: "Сотрудники комитета", href: `${base}#staff` }] : []),
+      { label: "Все комитеты", href: "/committee" },
+    ];
+  }, [committee, staff.length]);
 
   // Group by year (must be before early return)
   const { grouped: agendasByYear, sortedYears: agendaYears } = groupByYear(agendas);
@@ -1087,14 +1112,22 @@ export default function Committee() {
                                       DOC
                                     </span>
                                     <div style={{ flex: 1 }}>
-                                      <a
-                                        href={agenda.fileLink ? normalizeFilesUrl(agenda.fileLink) : (agenda.fileId ? normalizeFilesUrl(`/files/v2/${agenda.fileId}`) : "#")}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setDocPreview({
+                                            url: agenda.fileLink
+                                              ? normalizeFilesUrl(agenda.fileLink)
+                                              : agenda.fileId
+                                                ? normalizeFilesUrl(`/files/v2/${agenda.fileId}`)
+                                                : "",
+                                            title: agenda.title || "Повестка заседания комитета",
+                                          })
+                                        }
+                                        style={{ color: "#2563eb", textDecoration: "underline", fontSize: 15, fontWeight: 500, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", lineHeight: 1.4 }}
                                       >
                                         {agenda.title || `Повестка заседания комитета от ${agenda.date || ""} г.`}
-                                      </a>
+                                      </button>
                                       {agenda.size && (
                                         <span style={{ marginLeft: 8, fontSize: 13, color: "#6b7280" }}>
                                           ({agenda.size})
@@ -1115,14 +1148,22 @@ export default function Committee() {
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                               <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", padding: "4px 8px", background: "#fff", borderRadius: 4 }}>DOC</span>
                               <div style={{ flex: 1 }}>
-                                <a
-                                  href={agenda.fileLink ? normalizeFilesUrl(agenda.fileLink) : (agenda.fileId ? normalizeFilesUrl(`/files/v2/${agenda.fileId}`) : "#")}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDocPreview({
+                                      url: agenda.fileLink
+                                        ? normalizeFilesUrl(agenda.fileLink)
+                                        : agenda.fileId
+                                          ? normalizeFilesUrl(`/files/v2/${agenda.fileId}`)
+                                          : "",
+                                      title: agenda.title || "Повестка",
+                                    })
+                                  }
+                                  style={{ color: "#2563eb", textDecoration: "underline", fontSize: 15, fontWeight: 500, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", lineHeight: 1.4 }}
                                 >
                                   {agenda.title || `Повестка от ${agenda.date || ""} г.`}
-                                </a>
+                                </button>
                                 {agenda.size && <span style={{ marginLeft: 8, fontSize: 13, color: "#6b7280" }}>({agenda.size})</span>}
                               </div>
                             </div>
@@ -1190,14 +1231,22 @@ export default function Committee() {
                                       DOC
                                     </span>
                                     <div style={{ flex: 1 }}>
-                                      <a
-                                        href={report.fileLink ? normalizeFilesUrl(report.fileLink) : (report.fileId ? normalizeFilesUrl(`/files/v2/${report.fileId}`) : "#")}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setDocPreview({
+                                            url: report.fileLink
+                                              ? normalizeFilesUrl(report.fileLink)
+                                              : report.fileId
+                                                ? normalizeFilesUrl(`/files/v2/${report.fileId}`)
+                                                : "",
+                                            title: report.title || "Отчет комитета",
+                                          })
+                                        }
+                                        style={{ color: "#2563eb", textDecoration: "underline", fontSize: 15, fontWeight: 500, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", lineHeight: 1.4 }}
                                       >
                                         {report.title || `Отчет от ${report.date || ""} г.`}
-                                      </a>
+                                      </button>
                                       {report.size && (
                                         <span style={{ marginLeft: 8, fontSize: 13, color: "#6b7280" }}>
                                           ({report.size})
@@ -1218,14 +1267,22 @@ export default function Committee() {
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                               <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", padding: "4px 8px", background: "#fff", borderRadius: 4 }}>DOC</span>
                               <div style={{ flex: 1 }}>
-                                <a
-                                  href={report.fileLink ? normalizeFilesUrl(report.fileLink) : (report.fileId ? normalizeFilesUrl(`/files/v2/${report.fileId}`) : "#")}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  style={{ color: "#2563eb", textDecoration: "none", fontSize: 15, fontWeight: 500 }}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDocPreview({
+                                      url: report.fileLink
+                                        ? normalizeFilesUrl(report.fileLink)
+                                        : report.fileId
+                                          ? normalizeFilesUrl(`/files/v2/${report.fileId}`)
+                                          : "",
+                                      title: report.title || "Отчет комитета",
+                                    })
+                                  }
+                                  style={{ color: "#2563eb", textDecoration: "underline", fontSize: 15, fontWeight: 500, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", lineHeight: 1.4 }}
                                 >
                                   {report.title || `Отчет от ${report.date || ""} г.`}
-                                </a>
+                                </button>
                                 {report.size && <span style={{ marginLeft: 8, fontSize: 13, color: "#6b7280" }}>({report.size})</span>}
                               </div>
                             </div>
@@ -1273,14 +1330,19 @@ export default function Committee() {
                           </div>
                         )}
                         {(plan.fileLink || plan.fileId) && (
-                          <a
-                            href={plan.fileLink || `/files/${plan.fileId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn--primary"
-                          >
-                            Скачать план
-                          </a>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <DocumentActions
+                              url={normalizeFilesUrl(plan.fileLink || `/files/${plan.fileId}`)}
+                              title={plan.title || "План комитета"}
+                              openLabel="Открыть план"
+                              onPreview={() =>
+                                setDocPreview({
+                                  url: normalizeFilesUrl(plan.fileLink || `/files/${plan.fileId}`),
+                                  title: plan.title || "План комитета",
+                                })
+                              }
+                            />
+                          </div>
                         )}
                       </div>
                     ))}
@@ -1510,14 +1572,13 @@ export default function Committee() {
                                   <div key={doc.id || idx} className="law-item" style={{ marginBottom: 16 }}>
                                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                                       {fileUrl ? (
-                                        <a
-                                          href={fileUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          style={{ color: "#2563eb", textDecoration: "none", fontWeight: 600 }}
+                                        <button
+                                          type="button"
+                                          onClick={() => setDocPreview({ url: fileUrl, title: doc.title || "Документ комитета" })}
+                                          style={{ color: "#2563eb", textDecoration: "underline", fontWeight: 600, background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", lineHeight: 1.4 }}
                                         >
                                           {doc.title || "Документ без названия"}
-                                        </a>
+                                        </button>
                                       ) : (
                                         <span style={{ color: "#6b7280", fontWeight: 600 }}>
                                           {doc.title || "Документ без названия"}
@@ -1559,9 +1620,13 @@ export default function Committee() {
                                   {doc.number && <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>№ {doc.number}</div>}
                                 </div>
                                 {fileUrl ? (
-                                  <a className="btn btn--primary" href={fileUrl} target="_blank" rel="noopener noreferrer" download style={{ flexShrink: 0 }}>
-                                    Открыть
-                                  </a>
+                                  <span style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
+                                    <DocumentActions
+                                      url={fileUrl}
+                                      title={doc.title || "Документ"}
+                                      onPreview={() => setDocPreview({ url: fileUrl, title: doc.title || "Документ" })}
+                                    />
+                                  </span>
                                 ) : null}
                               </div>
                             );
@@ -1587,9 +1652,13 @@ export default function Committee() {
                               {doc.number && <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>№ {doc.number}</div>}
                             </div>
                             {fileUrl ? (
-                              <a className="btn btn--primary" href={fileUrl} target="_blank" rel="noopener noreferrer" download style={{ flexShrink: 0 }}>
-                                Открыть
-                              </a>
+                              <span style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
+                                <DocumentActions
+                                  url={fileUrl}
+                                  title={doc.title || "Документ"}
+                                  onPreview={() => setDocPreview({ url: fileUrl, title: doc.title || "Документ" })}
+                                />
+                              </span>
                             ) : null}
                           </div>
                         );
@@ -1604,9 +1673,15 @@ export default function Committee() {
               </div>
             )}
           </div>
-          <SideNav />
+          <SideNav links={committeeNavLinks} />
         </div>
       </div>
+      <PdfPreviewModal
+        open={Boolean(docPreview)}
+        onClose={() => setDocPreview(null)}
+        url={docPreview?.url}
+        title={docPreview?.title}
+      />
     </section>
   );
 }

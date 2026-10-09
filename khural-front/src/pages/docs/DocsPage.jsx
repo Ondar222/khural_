@@ -8,6 +8,7 @@ import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
 import { getDocumentLinkedEntities } from "../../utils/documentMentions.js";
 import PdfPreviewModal from "../../components/PdfPreviewModal.jsx";
+import DocumentActions from "../../components/DocumentActions.jsx";
 import { Pagination } from "antd";
 
 function looksLikeHtml(s) {
@@ -418,24 +419,12 @@ export default function DocsPage() {
                     </div>
                     <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
                       {d.url && (
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={() => setPreview({ url: d.url, title: d.title })}
-                          style={{ textDecoration: "none" }}
-                        >
-                          👁 Просмотр
-                        </button>
+                        <DocumentActions
+                          url={d.url}
+                          title={d.title}
+                          onPreview={() => setPreview({ url: d.url, title: d.title })}
+                        />
                       )}
-                      <a
-                        className="btn btn--primary"
-                        href={d.url || "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download={d.url ? true : undefined}
-                      >
-                        Открыть
-                      </a>
                     </div>
                   </div>
                 );

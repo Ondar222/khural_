@@ -9,6 +9,7 @@ import ScrollToTop from "../components/ScrollToTop.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
+import DocumentActions from "../components/DocumentActions.jsx";
 
 function norm(v) {
   return String(v ?? "")
@@ -265,23 +266,12 @@ export default function Documents() {
                                 </div>
                                 <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
                                   {url && (
-                                    <button
-                                      type="button"
-                                      className="btn"
-                                      onClick={() => setPreview({ url, title: d.title })}
-                                    >
-                                      👁 Просмотр
-                                    </button>
+                                    <DocumentActions
+                                      url={url}
+                                      title={d.title}
+                                      onPreview={() => setPreview({ url, title: d.title })}
+                                    />
                                   )}
-                                  <a
-                                    className="btn btn--primary"
-                                    href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    download={url && !url.includes(".pdf") ? true : undefined}
-                                  >
-                                    Открыть ↗
-                                  </a>
                                 </div>
                               </div>
                             );
@@ -311,23 +301,12 @@ export default function Documents() {
                             </div>
                             <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
                               {url && (
-                                <button
-                                  type="button"
-                                  className="btn"
-                                  onClick={() => setPreview({ url, title: d.title })}
-                                >
-                                  👁 Просмотр
-                                </button>
+                                <DocumentActions
+                                  url={url}
+                                  title={d.title}
+                                  onPreview={() => setPreview({ url, title: d.title })}
+                                />
                               )}
-                              <a
-                                className="btn btn--primary"
-                                href={url || (d.id && !d.id.startsWith("zakony-") && !d.id.startsWith("postamovleniya-") ? `#/documents/${d.id}` : "#")}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                download={url && !url.includes(".pdf") ? true : undefined}
-                              >
-                                Открыть ↗
-                              </a>
                             </div>
                           </div>
                         );
