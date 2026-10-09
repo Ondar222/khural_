@@ -3,6 +3,11 @@ import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import Link from "./Link.jsx";
+import {
+  PERSONNEL_ROOT_PATH,
+  PERSONNEL_TITLE,
+  getPersonnelPage,
+} from "../content/personnel.js";
 
 // Static titles for base pages (will be translated via t())
 const TITLES_KEYS = {
@@ -28,7 +33,7 @@ const TITLES_KEYS = {
   "/contacts": "Контакты",
   "/info": "Информация",
   "/info/finansy": "Финансы",
-  "/info/personnel": "Кадровое обеспечение",
+  [PERSONNEL_ROOT_PATH]: PERSONNEL_TITLE,
 };
 
 function getRouteBase(route) {
@@ -222,24 +227,17 @@ export default function Breadcrumbs() {
         return crumbs;
       }
 
-      // Handle /info/personnel/*
+      // Handle /info/personnel/* — подписи берём из данных раздела (единый источник)
       if (firstPart === "personnel") {
+        const page = getPersonnelPage(base.slice(1));
         if (pathParts.length === 1) {
-          crumbs.push({ label: t("Кадровое обеспечение") });
+          crumbs.push({ label: t(PERSONNEL_TITLE) || PERSONNEL_TITLE });
         } else {
-          crumbs.push({ label: t("Кадровое обеспечение"), href: "/info/personnel" });
-          const titles = {
-            "gossluzhba": t("Государственная служба"),
-            "poryadok-postupleniya": t("Порядок поступления"),
-            "law-58fz": t("Федеральный закон № 58-ФЗ"),
-            "law-79fz": t("Федеральный закон № 79-ФЗ"),
-            "law-112": t("Указ Президента № 112"),
-            "telefon-spravok": t("Телефон для справок"),
-            "poryadok-obzhalovaniya": t("Порядок обжалования"),
-            "pensionnoe-obespechenie": t("Пенсионное обеспечение"),
-            "otpusk-sluzhaschih": t("Отпуска служащих"),
-          };
-          crumbs.push({ label: titles[pathParts[1]] || pathParts[1] });
+          crumbs.push({
+            label: t(PERSONNEL_TITLE) || PERSONNEL_TITLE,
+            href: PERSONNEL_ROOT_PATH,
+          });
+          crumbs.push({ label: page?.title ? t(page.title) || page.title : pathParts.slice(1).join("/") });
         }
         return crumbs;
       }
@@ -333,7 +331,7 @@ export default function Breadcrumbs() {
         if (slug.startsWith("info/finansy/")) {
           crumbs.push({ label: t("Финансы"), href: "/info/finansy" });
         } else if (slug.startsWith("info/personnel/")) {
-          crumbs.push({ label: t("Кадровое обеспечение"), href: "/info/personnel" });
+          crumbs.push({ label: t(PERSONNEL_TITLE) || PERSONNEL_TITLE, href: PERSONNEL_ROOT_PATH });
         }
       } else if (slug.startsWith("about/")) {
         crumbs.push({ label: t("О парламенте"), href: "/about" });

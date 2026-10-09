@@ -4,6 +4,12 @@ import { useHashRoute } from "../Router.jsx";
 import { AboutApi } from "../api/client.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import { pickMenuLabel, applyPagesOverridesToTree } from "../utils/pagesOverrides.js";
+import {
+  PERSONNEL_ROOT_PATH,
+  PERSONNEL_TITLE,
+  PERSONNEL_NAV_LINKS,
+  getPersonnelPage,
+} from "../content/personnel.js";
 
 // Кэшируем URL для ссылок, чтобы не создавать их каждый раз
 const hrefCache = new Map();
@@ -101,7 +107,7 @@ const defaultLinks = [
   { label: "Избирательные округа", href: "/info/iokrug" },
   { label: "Уполномоченный по правам человека", href: "/info/upoln-po-prav" },
   { label: "Уполномоченный по правам ребенка", href: "/info/upoln-po-reb" },
-  { label: "Кадровое обеспечение", href: "/info/personnel" },
+  PERSONNEL_NAV_LINKS,
   { label: "Законодательная карта", href: "/info/zakon-karta" },
   { label: "История парламентаризма", href: "/about/istoriya-parlamentarizma" },
   { label: "Полномочия", href: "/info/polnomochiya" },
@@ -160,7 +166,7 @@ const defaultLinksCommon = [
   { label: "Открытые данные", href: "/opendata" },
   { label: "Уполномоченный по правам человека", href: "/info/upoln-po-prav" },
   { label: "Уполномоченный по правам ребенка", href: "/info/upoln-po-reb" },
-  { label: "Кадровое обеспечение", href: "/info/personnel" },
+  PERSONNEL_NAV_LINKS,
 ];
 
 // Стандартные ссылки для раздела "Депутаты" (без дублирования с "Общими сведениями")
@@ -409,7 +415,10 @@ export default function SideNav({
       if (pathname === '/opendata') return "Открытые данные";
       if (pathname === '/info/upoln-po-prav') return "Уполномоченный по правам человека";
       if (pathname === '/info/upoln-po-reb') return "Уполномоченный по правам ребенка";
-      if (pathname === '/info/personnel') return "Кадровое обеспечение";
+      // Названия страниц «Кадрового обеспечения» берём из данных раздела, а не хардкодом
+      if (pathname === PERSONNEL_ROOT_PATH || pathname.startsWith(PERSONNEL_ROOT_PATH + "/")) {
+        return getPersonnelPage(pathname.slice(1))?.title || PERSONNEL_TITLE;
+      }
       if (pathname === '/info/polnomochiya') return "Полномочия";
       return "Общие сведения";
     }

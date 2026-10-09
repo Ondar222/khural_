@@ -1,6 +1,10 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
+import {
+  PERSONNEL_ROOT_PATH,
+  INFO_PERSONNEL_PORYADOK_SLUG,
+} from "../content/personnel.js";
 
 export default function LegislativeMap() {
   const { t, lang } = useI18n();
@@ -171,14 +175,14 @@ export default function LegislativeMap() {
       point: "8",
       text: t("информацию о кадровом обеспечении государственного органа, органа местного самоуправления, в том числе:"),
       links: (
-        <div><a className="link" href="/info/kadry">{t("Кадровое обеспечение")}</a></div>
+        <div><a className="link" href={PERSONNEL_ROOT_PATH}>{t("Кадровое обеспечение")}</a></div>
       ),
     },
     {
       point: "а)",
       text: t("порядок поступления граждан на государственную службу, муниципальную службу;"),
       links: (
-        <div><a className="link" href="/info/kadry/poryadok">{t("Порядок поступления на гражданскую государственную службу")}</a></div>
+        <div><a className="link" href={"/" + INFO_PERSONNEL_PORYADOK_SLUG}>{t("Порядок поступления на гражданскую государственную службу")}</a></div>
       ),
     },
     {

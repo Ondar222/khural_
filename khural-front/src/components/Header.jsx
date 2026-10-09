@@ -6,6 +6,7 @@ import { useHashRoute } from "../Router.jsx";
 import Link from "./Link.jsx";
 import { RightOutlined } from "@ant-design/icons";
 import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
+import { PERSONNEL_ROOT_PATH } from "../content/personnel.js";
 import { AboutApi } from "../api/client.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import {
@@ -322,7 +323,7 @@ export default function Header() {
                 <a href="/opendata">{t("Открытые данные") || "Открытые данные"}</a>
                 <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
                 <a href="/info/upoln-po-reb">{t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}</a>
-                <a href="/info/personnel">{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
+                <a href={PERSONNEL_ROOT_PATH}>{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
               </div>
             </div>
             <div
@@ -547,7 +548,7 @@ export default function Header() {
             <a href="/opendata">{t("Открытые данные") || "Открытые данные"}</a>
             <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
             <a href="/info/upoln-po-reb">{t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}</a>
-            <a href="/info/personnel">{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
+            <a href={PERSONNEL_ROOT_PATH}>{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
           </div>
           <div className="sheet-col">
             <h3>{t("deputies")}</h3>
@@ -889,7 +890,7 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <a className="tile link" href="/info/personnel" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href={PERSONNEL_ROOT_PATH} onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("Кадровое обеспечение") || "Кадровое обеспечение"}
                 <RightOutlined aria-hidden="true" />
