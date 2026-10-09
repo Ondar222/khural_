@@ -2,6 +2,7 @@ import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import GosuslugiWidget from "../components/GosuslugiWidget.jsx";
+import { MailIcon } from "../components/icons/LinearIcons.jsx";
 
 export default function Appeals() {
   const { t } = useI18n();
@@ -70,7 +71,7 @@ export default function Appeals() {
           <h2 className="appeals-page__heading">Способы подачи обращения</h2>
           <div className="appeals-page__cards">
             <div className="appeals-page__card appeals-page__card--online">
-              <h3 className="appeals-page__card-title">📧 Электронная приемная</h3>
+              <h3 className="appeals-page__card-title">Электронная приемная</h3>
               <p className="appeals-page__card-desc">
                 Отправьте обращение через официальный сайт в электронном виде
               </p>
@@ -79,7 +80,7 @@ export default function Appeals() {
               </a>
             </div>
             <div className="appeals-page__card appeals-page__card--letter">
-              <h3 className="appeals-page__card-title">✉️ Письменное обращение</h3>
+              <h3 className="appeals-page__card-title"><MailIcon size={17} /> Письменное обращение</h3>
               <p className="appeals-page__card-desc">
                 Информация о подаче письменного обращения по почте или лично
               </p>

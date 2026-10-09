@@ -1,4 +1,5 @@
 import React from "react";
+import { VideoIcon, RssIcon } from "./icons/LinearIcons.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 
@@ -232,7 +233,7 @@ export default function BroadcastWidget() {
                   </a>
                 ) : (
                   <div style={{ color: "#fff", textAlign: "center", padding: 40 }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>📺</div>
+                    <div style={{ marginBottom: 16 }}><VideoIcon size={48} /></div>
                     <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
                       Трансляция VK
                     </div>
@@ -245,7 +246,7 @@ export default function BroadcastWidget() {
             ) : streamType === "obs" ? (
               <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#1a1a1a" }}>
                 <div style={{ color: "#fff", textAlign: "center", padding: 40 }}>
-                  <div style={{ fontSize: 48, marginBottom: 16 }}>📡</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 16, color: "#94a3b8" }}><RssIcon size={48} /></div>
                   <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
                     OBS Трансляция
                   </div>

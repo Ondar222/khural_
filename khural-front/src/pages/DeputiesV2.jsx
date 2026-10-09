@@ -18,6 +18,7 @@ import {
   buildDistrictOptions,
 } from "../utils/deputyFilterOptions.js";
 import { formatConvocationLabelWithYears, normalizeConvocationToCanonical, CANONICAL_CONVOCATIONS, mapOldSiteConvocationIdToCanonical } from "../utils/convocationLabels.js";
+import { MailIcon, PhoneIcon } from "../components/icons/LinearIcons.jsx";
 
 function deputyMatchesFaction(deputy, factionName) {
   if (!factionName || factionName === "Все") return true;
@@ -911,13 +912,13 @@ export default function DeputiesV2() {
                           <ul className="gov-meta">
                             {d.contacts?.phone && (
                               <li>
-                                <span>📞</span>
+                                <span><PhoneIcon size={15} /></span>
                                 <span>{toDisplay(d.contacts.phone)}</span>
                               </li>
                             )}
                             {d.contacts?.email && (
                               <li>
-                                <span>✉️</span>
+                                <span><MailIcon size={15} /></span>
                                 <span>{toDisplay(d.contacts.email)}</span>
                               </li>
                             )}

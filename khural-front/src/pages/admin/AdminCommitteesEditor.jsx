@@ -5,6 +5,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import { DocumentsApi, API_BASE_URL } from "../../api/client.js";
+import { MailIcon, PhoneIcon, PinIcon, UserIcon, AlertIcon, GlobeIcon } from "../../components/icons/LinearIcons.jsx";
 
 export default function AdminCommitteesEditor({
   mode,
@@ -709,7 +710,7 @@ export default function AdminCommitteesEditor({
                         </Form.Item>
                         {!selectedConvocation && (
                           <div style={{ fontSize: 12, color: "#faad14", padding: "4px 8px", background: "rgba(250, 173, 20, 0.1)", borderRadius: 6 }}>
-                            ⚠️ Выберите созыв комитета, чтобы выбрать депутата из соответствующего созыва
+                            <AlertIcon size={13} /> Выберите созыв комитета, чтобы выбрать депутата из соответствующего созыва
                           </div>
                         )}
 
@@ -924,7 +925,7 @@ export default function AdminCommitteesEditor({
                   placeholder="+7 (3012) 21-47-47" 
                   disabled={loading || saving}
                   size="large"
-                  prefix={<span style={{ opacity: 0.5 }}>📞</span>}
+                  prefix={<PhoneIcon size={15} style={{ opacity: 0.5 }} />}
                 />
               </Form.Item>
               <Form.Item 
@@ -937,7 +938,7 @@ export default function AdminCommitteesEditor({
                   disabled={loading || saving}
                   size="large"
                   type="email"
-                  prefix={<span style={{ opacity: 0.5 }}>✉️</span>}
+                  prefix={<MailIcon size={15} style={{ opacity: 0.5 }} />}
                 />
               </Form.Item>
             </div>
@@ -951,7 +952,7 @@ export default function AdminCommitteesEditor({
                 placeholder="г. Кызыл, ул. Ленина, 54" 
                 disabled={loading || saving}
                 size="large"
-                prefix={<span style={{ opacity: 0.5 }}>📍</span>}
+                prefix={<PinIcon size={15} style={{ opacity: 0.5 }} />}
               />
             </Form.Item>
             <Form.Item 
@@ -964,7 +965,7 @@ export default function AdminCommitteesEditor({
                 disabled={loading || saving}
                 size="large"
                 type="url"
-                prefix={<span style={{ opacity: 0.5 }}>🌐</span>}
+                prefix={<GlobeIcon size={15} style={{ opacity: 0.5 }} />}
               />
             </Form.Item>
             <Form.Item 
@@ -976,7 +977,7 @@ export default function AdminCommitteesEditor({
                 placeholder="Иванов Иван Иванович" 
                 disabled={loading || saving}
                 size="large"
-                prefix={<span style={{ opacity: 0.5 }}>👤</span>}
+                prefix={<UserIcon size={15} style={{ opacity: 0.5 }} />}
               />
             </Form.Item>
           </div>

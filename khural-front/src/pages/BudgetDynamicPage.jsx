@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { DocumentsApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
+import DocumentActions from "../components/DocumentActions.jsx";
+import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
+import { BUDGET_DOCS_ARCHIVE } from "../data/budgetDocsArchive.js";
+import { DocumentIcon } from "../components/icons/LinearIcons.jsx";
 
 function getSlugFromPath() {
   // Сначала пробуем взять из routeParams от роутера
@@ -52,6 +56,7 @@ export default function BudgetDynamicPage() {
   const [loading, setLoading] = useState(true);
   const [pageSlug, setPageSlug] = useState("");
   const [slug, setSlug] = useState(getSlugFromPath());
+  const [previewDoc, setPreviewDoc] = useState(null); // { url, title } — предпросмотр на сайте
 
   useEffect(() => {
     const update = () => setSlug(getSlugFromPath());
@@ -80,9 +85,22 @@ export default function BudgetDynamicPage() {
         const pageDocs = (Array.isArray(docs) ? docs : []).filter(
           (d) => d.page_slug === pageSlug
         );
-        if (alive) setDocuments(pageDocs);
+        // Слияние с архивом со старого сайта: CMS-документы приоритетны,
+        // архивные добавляются, если такая же ссылка/название ещё не заведена в CMS.
+        const norm = (s) => String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+        const archive = BUDGET_DOCS_ARCHIVE[slug]?.docs || [];
+        const seenUrl = new Set(pageDocs.map((d) => norm(d.file_url || d.url)));
+        const seenTitle = new Set(pageDocs.map((d) => norm(d.title)));
+        const extraArchive = archive
+          .filter((a) => !seenUrl.has(norm(a.url)) && !seenTitle.has(norm(a.title)))
+          .map((a, i) => ({ id: `archive-${i}`, title: a.title, file_url: a.url }));
+        if (alive) setDocuments([...pageDocs, ...extraArchive]);
       } catch (e) {
         console.error("Failed to load budget documents:", e);
+        if (alive) {
+          const archive = BUDGET_DOCS_ARCHIVE[slug]?.docs || [];
+          setDocuments(archive.map((a, i) => ({ id: `archive-${i}`, title: a.title, file_url: a.url })));
+        }
       } finally {
         if (alive) setLoading(false);
       }
@@ -127,21 +145,25 @@ export default function BudgetDynamicPage() {
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 24 }}>📄</span>
+                        <span style={{ display: "inline-flex", color: "#003366" }}><DocumentIcon size={24} /></span>
                         <div style={{ flex: 1, minWidth: 200 }}>
                           <div style={{ fontWeight: 600, color: "#111827" }}>
-                            <a
-                              href={doc.file_url || doc.url || "#"}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ color: "#003366", textDecoration: "underline" }}
-                            >
-                              {doc.title || "Документ"}
-                            </a>
+                            {doc.title || "Документ"}
                           </div>
                           {doc.description && (
                             <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
                               {doc.description}
+                            </div>
+                          )}
+                          {(doc.file_url || doc.url) && (
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                              <DocumentActions
+                                url={doc.file_url || doc.url}
+                                title={doc.title}
+                                onPreview={() =>
+                                  setPreviewDoc({ url: doc.file_url || doc.url, title: doc.title })
+                                }
+                              />
                             </div>
                           )}
                         </div>
@@ -159,6 +181,13 @@ export default function BudgetDynamicPage() {
           <SideNav title="Финансы" loadPages={true} autoSection={true} />
         </div>
       </div>
+
+      <PdfPreviewModal
+        open={Boolean(previewDoc)}
+        onClose={() => setPreviewDoc(null)}
+        url={previewDoc?.url}
+        title={previewDoc?.title}
+      />
     </section>
   );
 }

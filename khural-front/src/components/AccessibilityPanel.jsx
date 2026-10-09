@@ -1,4 +1,5 @@
 import React from "react";
+import { EyeIcon } from "./icons/LinearIcons.jsx";
 
 export default function AccessibilityPanel() {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -85,7 +86,7 @@ export default function AccessibilityPanel() {
           boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
         }}
       >
-        👁️
+        <EyeIcon size={15} />
       </button>
 
       {/* Панель настроек */}

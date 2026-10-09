@@ -24,7 +24,7 @@ function slugify(input) {
     .map(char => translitMap[char] || char)
     .join('')
     .replace(/[\s_]+/g, "-")
-    .replace(/[^a-z0-9\-]+/gi, "")
+    .replace(/[^a-z0-9-]+/gi, "")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
@@ -119,25 +119,25 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       // Static options for main site sections
       const staticOptions = [
         { value: "", label: "— Главная страница —", isGroup: true },
-        { value: "header", label: "📍 Header (Главное меню)", isStatic: true },
-        { value: "footer", label: "📍 Footer (Подвал сайта)", isStatic: true },
-        { value: "news", label: "📰 Новости", isStatic: true },
-        { value: "deputies", label: "👥 Депутаты", isStatic: true },
-        { value: "documents", label: "📄 Документы", isStatic: true },
-        { value: "about", label: "ℹ️ О Хурале", isStatic: true },
-        { value: "committees", label: "🏛️ Комитеты", isStatic: true },
-        { value: "commissions", label: "⚖️ Комиссии", isStatic: true },
-        { value: "activity", label: "📊 Деятельность", isStatic: true },
-        { value: "contacts", label: "📞 Контакты", isStatic: true },
-        { value: "appeals", label: "✉️ Обращения", isStatic: true },
-        { value: "broadcast", label: "📺 Трансляция", isStatic: true },
+        { value: "header", label: "Header (Главное меню)", isStatic: true },
+        { value: "footer", label: "Footer (Подвал сайта)", isStatic: true },
+        { value: "news", label: "Новости", isStatic: true },
+        { value: "deputies", label: "Депутаты", isStatic: true },
+        { value: "documents", label: "Документы", isStatic: true },
+        { value: "about", label: "О Хурале", isStatic: true },
+        { value: "committees", label: "Комитеты", isStatic: true },
+        { value: "commissions", label: "Комиссии", isStatic: true },
+        { value: "activity", label: "Деятельность", isStatic: true },
+        { value: "contacts", label: "Контакты", isStatic: true },
+        { value: "appeals", label: "Обращения", isStatic: true },
+        { value: "broadcast", label: "Трансляция", isStatic: true },
       ];
 
       // Dynamic options from existing pages
       const dynamicOptions = Array.from(slugMap.values())
         .map((p) => ({
           value: String(p.slug).replace(/^\/+|\/+$/g, ""),
-          label: `📄 ${p.title} (${p.slug})`,
+          label: `${p.title} (${p.slug})`,
           isStatic: false,
         }))
         .sort((a, b) => a.label.localeCompare(b.label, "ru"));
@@ -187,7 +187,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
         "broadcast": "broadcast",
       };
       
-      if (staticSectionMap.hasOwnProperty(parentSlug)) {
+      if (Object.prototype.hasOwnProperty.call(staticSectionMap, parentSlug)) {
         const mappedSlug = staticSectionMap[parentSlug];
         // For static sections, use the mapped slug as parent
         parentSlug = mappedSlug;

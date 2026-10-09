@@ -12,7 +12,7 @@ export default [
   js.configs.recommended,
   prettier,
   {
-    files: ["**/*.{js,jsx}"],
+    files: ["**/*.{js,jsx,cjs}"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -40,12 +40,22 @@ export default [
       "no-empty": ["warn", { allowEmptyCatch: true }],
       "no-irregular-whitespace": "warn",
       "no-constant-binary-expression": "warn",
+      "no-constant-condition": "warn",
       "react/no-unescaped-entities": "off",
       "react-hooks/rules-of-hooks": "warn",
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
       // Not critical for this project (we export hooks from some files)
       "react-refresh/only-export-components": "off",
+    },
+  },
+  {
+    // Node-скрипты (сборка/импорт данных) используют Node.js API, а не браузерные глобалы.
+    files: ["**/*.cjs", "scripts/**/*.js", "vite.config.js", "eslint.config.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
     },
   },
 ];

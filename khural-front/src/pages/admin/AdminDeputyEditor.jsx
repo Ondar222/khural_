@@ -9,6 +9,7 @@ import { readDeputiesOverrides, writeDeputiesOverrides } from "./deputiesOverrid
 import { decodeHtmlEntities } from "../../utils/html.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
+import { AlertIcon } from "../../components/icons/LinearIcons.jsx";
 import {
   COMMITTEES_OVERRIDES_EVENT_NAME,
   COMMITTEES_OVERRIDES_STORAGE_KEY,
@@ -1116,7 +1117,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
                     fontSize: 13,
                     color: "#d46b08"
                   }}>
-                    ⚠️ Комитеты не загружены. Проверьте, существует ли файл /data/committees.json или доступен ли API комитетов.
+                    <AlertIcon size={14} /> Комитеты не загружены. Проверьте, существует ли файл /data/committees.json или доступен ли API комитетов.
                   </div>
                 ) : null}
 

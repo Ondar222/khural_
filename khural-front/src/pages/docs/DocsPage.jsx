@@ -10,6 +10,7 @@ import { getDocumentLinkedEntities } from "../../utils/documentMentions.js";
 import PdfPreviewModal from "../../components/PdfPreviewModal.jsx";
 import DocumentActions from "../../components/DocumentActions.jsx";
 import { Pagination } from "antd";
+import { DocumentIcon, UserIcon, ClipboardIcon, CalendarIcon } from "../../components/icons/LinearIcons.jsx";
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
@@ -386,7 +387,7 @@ export default function DocsPage() {
                 return (
                   <div key={key} className="law-item card">
                     <div className="law-left">
-                      <div className="law-ico">📄</div>
+                      <div className="law-ico"><DocumentIcon size={20} /></div>
                       <div>
                         <div className="law-title">{d.title}</div>
                         {d.desc ? (
@@ -405,13 +406,13 @@ export default function DocsPage() {
                           <div className="law-linked" style={{ marginTop: 10, fontSize: 12, display: "flex", flexWrap: "wrap", gap: "6px 12px", alignItems: "center" }}>
                             <span style={{ color: "#6b7280" }}>Связано:</span>
                             {linked.deputies.map((x) => (
-                              <span key={`d-${x.id}`} style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 6 }} title="Депутат">👤 {x.label}</span>
+                              <span key={`d-${x.id}`} style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 4 }} title="Депутат"><UserIcon size={12} /> {x.label}</span>
                             ))}
                             {linked.committees.map((x) => (
-                              <span key={`c-${x.id}`} style={{ background: "#fef3c7", color: "#b45309", padding: "2px 8px", borderRadius: 6 }} title="Комитет">📋 {x.label}</span>
+                              <span key={`c-${x.id}`} style={{ background: "#fef3c7", color: "#b45309", padding: "2px 8px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 4 }} title="Комитет"><ClipboardIcon size={12} /> {x.label}</span>
                             ))}
                             {linked.convocations.map((x) => (
-                              <span key={`v-${x.id}`} style={{ background: "#e0e7ff", color: "#3730a3", padding: "2px 8px", borderRadius: 6 }} title="Созыв">📅 {x.label}</span>
+                              <span key={`v-${x.id}`} style={{ background: "#e0e7ff", color: "#3730a3", padding: "2px 8px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 4 }} title="Созыв"><CalendarIcon size={12} /> {x.label}</span>
                             ))}
                           </div>
                         )}

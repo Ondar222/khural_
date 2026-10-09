@@ -13,6 +13,7 @@ import {
 } from "../utils/committeesOverrides.js";
 import { toCommitteeHtml } from "../utils/committeeHtml.js";
 import { getDocumentLinkedEntities } from "../utils/documentMentions.js";
+import { MailIcon, PhoneIcon, PinIcon, GlobeIcon } from "../components/icons/LinearIcons.jsx";
 
 function mergeCommitteesWithOverrides(base, overrides) {
   const created = Array.isArray(overrides?.created) ? overrides.created : [];
@@ -844,25 +845,25 @@ export default function Committee() {
                     <ul className="gov-meta" style={{ marginTop: 0 }}>
                       {committee.phone ? (
                         <li>
-                          <span>📞</span>
+                          <span><PhoneIcon size={15} /></span>
                           <span>{committee.phone}</span>
                         </li>
                       ) : null}
                       {committee.email ? (
                         <li>
-                          <span>✉️</span>
+                          <span><MailIcon size={15} /></span>
                           <span>{committee.email}</span>
                         </li>
                       ) : null}
                       {committee.address ? (
                         <li>
-                          <span>📍</span>
+                          <span><PinIcon size={15} /></span>
                           <span>{committee.address}</span>
                         </li>
                       ) : null}
                       {committee.website ? (
                         <li>
-                          <span>🌐</span>
+                          <span><GlobeIcon size={15} /></span>
                           <span>{committee.website}</span>
                         </li>
                       ) : null}
@@ -918,9 +919,9 @@ export default function Committee() {
                       <div className="person-card__name">{leader.name}</div>
                       <div className="person-card__role">{leader.role || "Председатель Комитета"}</div>
                       <ul className="person-card__meta">
-                        {leader.phone && <li>📞 {leader.phone}</li>}
-                        {leader.email && <li>✉️ {leader.email}</li>}
-                        {leader.address && <li>📍 {leader.address}</li>}
+                        {leader.phone && <li><PhoneIcon size={15} /> {leader.phone}</li>}
+                        {leader.email && <li><MailIcon size={15} /> {leader.email}</li>}
+                        {leader.address && <li><PinIcon size={15} /> {leader.address}</li>}
                       </ul>
                       {leader.id && (
                         <a
@@ -977,13 +978,13 @@ export default function Committee() {
                         <ul className="gov-meta">
                           {m.phone && (
                             <li>
-                              <span>📞</span>
+                              <span><PhoneIcon size={15} /></span>
                               <span>{m.phone}</span>
                             </li>
                           )}
                           {m.email && (
                             <li>
-                              <span>✉️</span>
+                              <span><MailIcon size={15} /></span>
                               <span>{m.email}</span>
                             </li>
                           )}
@@ -1406,7 +1407,7 @@ export default function Committee() {
                           {s.phone && (
                             <ul className="gov-meta">
                               <li>
-                                <span>📞</span>
+                                <span><PhoneIcon size={15} /></span>
                                 <span>{s.phone}</span>
                               </li>
                             </ul>
@@ -1414,7 +1415,7 @@ export default function Committee() {
                           {s.email && (
                             <ul className="gov-meta">
                               <li>
-                                <span>✉️</span>
+                                <span><MailIcon size={15} /></span>
                                 <span>{s.email}</span>
                               </li>
                             </ul>

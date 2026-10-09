@@ -110,7 +110,7 @@ export function setRefreshToken(token) {
 
 let refreshInFlight = null;
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   const refresh = getRefreshToken();
   if (!refresh) return null;
   if (refreshInFlight) return refreshInFlight;

@@ -49,6 +49,7 @@ import {
   CONV4_COMMITTEES,
   getConv4DocsByCommittee,
 } from "../data/committeeReportsConv4.js";
+import { MailIcon, PhoneIcon, ClipboardIcon } from "../components/icons/LinearIcons.jsx";
 import {
   CODE_OF_HONOR_HTML,
   CODE_OF_HONOR_TITLE,
@@ -1543,13 +1544,13 @@ function DeputyGrid({ deputies, structureType, backHref }) {
             <ul className="gov-meta">
               {d.contacts?.phone && (
                 <li>
-                  <span>📞</span>
+                  <span><PhoneIcon size={15} /></span>
                   <span>{d.contacts.phone}</span>
                 </li>
               )}
               {d.contacts?.email && (
                 <li>
-                  <span>✉️</span>
+                  <span><MailIcon size={15} /></span>
                   <span>{d.contacts.email}</span>
                 </li>
               )}
@@ -1938,7 +1939,7 @@ export default function SectionPage() {
                               justifyContent: "center",
                               flexShrink: 0,
                             }}>
-                              <span style={{ fontSize: 20, color: "#fff" }}>📋</span>
+                              <span style={{ display: "inline-flex", color: "#fff" }}><ClipboardIcon size={20} /></span>
                             </div>
                             <div style={{
                               flex: 1,
@@ -1969,7 +1970,7 @@ export default function SectionPage() {
                   </div>
                 ) : (
                   <div className="card" style={{ marginTop: 32, padding: 40, textAlign: "center" }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+                    <div style={{ marginBottom: 16, color: "#9ca3af" }}><ClipboardIcon size={48} /></div>
                     <p style={{ margin: 0, fontSize: 16, color: "#6b7280" }}>
                       Список комиссий пока не заполнен. Добавьте комиссии в админ-панели.
                     </p>

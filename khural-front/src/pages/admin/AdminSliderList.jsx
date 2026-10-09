@@ -4,6 +4,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { SliderApi } from "../../api/client.js";
 import { stripHtmlTags } from "../../utils/html.js";
+import { CameraIcon } from "../../components/icons/LinearIcons.jsx";
 
 /** Показ только текста без тегов и сущностей (<p>, &ndash; и т.д.) */
 function plainText(html) {
@@ -340,7 +341,7 @@ export default function AdminSliderList({
                         }}
                       />
                     ) : (
-                      <span style={{ fontSize: '20px', opacity: 0.3 }}>📷</span>
+                        <span style={{ display: "inline-flex", opacity: 0.3 }}><CameraIcon size={20} /></span>
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>

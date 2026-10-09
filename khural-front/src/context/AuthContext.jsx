@@ -5,6 +5,7 @@ import {
   getAuthToken,
   setRefreshToken,
   getRefreshToken,
+  refreshAccessToken,
 } from "../api/client.js";
 
 const AuthContext = React.createContext({

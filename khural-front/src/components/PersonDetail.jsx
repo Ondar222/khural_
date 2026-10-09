@@ -4,6 +4,7 @@ import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/ic
 import { decodeHtmlEntities } from "../utils/html.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { formatConvocationLabelWithYears } from "../utils/convocationLabels.js";
+import { DocumentIcon, FolderIcon } from "./icons/LinearIcons.jsx";
 
 function stripTags(v) {
   return String(v ?? "").replace(/<[^>]*>/g, "").trim();
@@ -345,7 +346,7 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
                 {laws.map((entry, i) => (
                   <div key={entry.id || entry.number || i} className="law-item tile">
                     <div className="law-left">
-                      <div className="law-ico">📄</div>
+                      <div className="law-ico"><DocumentIcon size={20} /></div>
                       <div className="law-text">
                         <div className="law-title">{entry.title || entry.number || `Документ ${i + 1}`}</div>
                         {entry.title && entry.number && (
@@ -388,7 +389,7 @@ export default function PersonDetail({ item, type, backHref, committees = [] }) 
                 {incomeDocs.map((doc, i) => (
                   <div key={doc.year || doc.title || i} className="doc-card tile">
                     <div className="doc-header">
-                      <div className="doc-ico">🗂</div>
+                      <div className="doc-ico"><FolderIcon size={20} /></div>
                       <div>
                         <div className="doc-title">{doc.title || (doc.year ? `Декларация за ${doc.year} год` : `Документ ${i + 1}`)}</div>
                         <div className="doc-meta">PDF{doc.size ? `, ${doc.size}` : ""}</div>

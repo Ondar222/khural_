@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "antd";
 import { readAdminAvatar } from "./adminAvatar.js";
+import { MoonIcon, SunIcon } from "../../components/icons/LinearIcons.jsx";
 
 const BRAND_LOGO_SRC =
   "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg";
@@ -144,7 +145,7 @@ export default function AdminShell({
               title={themeMode === "light" ? "Тёмная тема" : "Светлая тема"}
             >
               <span style={{ fontSize: 18, lineHeight: 1, display: "inline-block", transform: "translateY(1px)" }}>
-                {themeMode === "light" ? "☾" : "☀"}
+                {themeMode === "light" ? <MoonIcon size={15} /> : <SunIcon size={15} />}
               </span>
             </button>
             <button

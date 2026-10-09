@@ -4,6 +4,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
 import { CommitteesApi } from "../../api/client.js";
 import { SYSTEM_COMMITTEE_IDS, COMMITTEE_DEFAULT_CONVOCATION } from "../../utils/committeesOverrides.js";
+import { MailIcon, PhoneIcon, PinIcon, GlobeIcon } from "../../components/icons/LinearIcons.jsx";
 
 function normalizeCommitteeName(value) {
   return String(value ?? "")
@@ -476,10 +477,10 @@ export default function AdminCommitteesList({
                     ) : null}
                     {phone || email || address || website ? (
                       <div className="admin-committee-card__contacts">
-                        {phone ? <div>📞 {phone}</div> : null}
-                        {email ? <div>✉️ {email}</div> : null}
-                        {address ? <div>📍 {address}</div> : null}
-                        {website ? <div>🌐 {website}</div> : null}
+                        {phone ? <div><PhoneIcon size={14} /> {phone}</div> : null}
+                        {email ? <div><MailIcon size={14} /> {email}</div> : null}
+                        {address ? <div><PinIcon size={14} /> {address}</div> : null}
+                        {website ? <div><GlobeIcon size={14} /> {website}</div> : null}
                       </div>
                     ) : null}
                     <div className="admin-committee-card__actions">

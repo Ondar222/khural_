@@ -566,7 +566,7 @@ const INFO_FINANCE_REPORTS_2019_HTML = `
 
     <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <span style="font-size: 24px;">📄</span>
+        <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
             <a href="https://khural.rtyva.ru/upload/iblock/178/ix4d70jwylfahx5ibn11bie0yutb17n0/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202019%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
@@ -588,7 +588,7 @@ const INFO_FINANCE_REPORTS_2020_HTML = `
 
     <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <span style="font-size: 24px;">📄</span>
+        <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
             <a href="https://khural.rtyva.ru/upload/iblock/cde/xascukpwi7wd04xxgi9p8znj1np0qoax/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202020%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
@@ -612,7 +612,7 @@ const INFO_FINANCE_REPORTS_2021_HTML = `
 
     <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <span style="font-size: 24px;">📄</span>
+        <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
             <a href="https://khural.rtyva.ru/upload/iblock/443/za4cch1k67p410j47y1fo7do1x8xp8bg/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202021%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
@@ -636,7 +636,7 @@ const INFO_FINANCE_REPORTS_2022_HTML = `
 
     <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <span style="font-size: 24px;">📄</span>
+        <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
             <a href="https://khural.rtyva.ru/upload/iblock/fc5/bzgwyoh85eb6w2igz5utd915zp5lu5k8/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202022%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
@@ -660,7 +660,7 @@ const INFO_FINANCE_REPORTS_2023_HTML = `
 
     <div style="margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
       <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-        <span style="font-size: 24px;">📄</span>
+        <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
             <a href="https://khural.rtyva.ru/upload/iblock/1b9/o51ka03fkpt5rsf6ozzgxl55vcvjv9vu/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202023%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
@@ -999,7 +999,7 @@ const INFO_POLNOMOCHIYA_HTML = `
       <div style="margin-top: 16px; display: grid; gap: 12px;">
         <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <span style="font-size: 24px;">📄</span>
+            <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
             <div style="flex: 1; min-width: 200px;">
               <div style="font-weight: 600; color: #111827;">
                 <a href="https://khural.rtyva.ru/docs/%D0%9A%D0%BE%D0%BD%D1%81%D1%82%D0%B8%D1%82%D1%83%D1%86%D0%B8%D1%8F%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B8%20%D0%A2%D1%8B%D0%B2%D0%B0.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
@@ -1013,7 +1013,7 @@ const INFO_POLNOMOCHIYA_HTML = `
         
         <div style="padding: 16px; background: #fff; border: 1px solid #dfe3eb; border-radius: 8px;">
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <span style="font-size: 24px;">📄</span>
+            <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
             <div style="flex: 1; min-width: 200px;">
               <div style="font-weight: 600; color: #111827;">
                 <a href="https://khural.rtyva.ru/docs/%D0%A0%D0%B5%D0%B3%D0%BB%D0%B0%D0%BC%D0%B5%D0%BD%D1%82%20%D0%92%D0%A5%20%D0%A0%D0%A2.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">

@@ -76,7 +76,7 @@ export default function GosuslugiWidget() {
           widgetRef.current.innerHTML = `
             <div style="height:200px;border-radius:16px;background:linear-gradient(135deg,#2b6cb0,#60a5fa);color:#fff;padding:20px;display:flex;flex-direction:column;justify-content:space-between;">
               <div style="display:flex;align-items:center;gap:12px;">
-                <div style="width:48px;height:48px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;">👍</div>
+                <div style="width:48px;height:48px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0066cc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></div>
                 <div>
                   <div style="font-weight:800;font-size:18px;margin-bottom:4px;line-height:1.2;">
                     <span style="color:#fff;">гос</span><span style="color:#ff4444;">услуги</span>

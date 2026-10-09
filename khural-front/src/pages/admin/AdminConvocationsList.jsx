@@ -4,6 +4,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
 import { CommitteesApi } from "../../api/client.js";
 import { useAdminData } from "../../hooks/useAdminData.js";
+import { ClipboardIcon } from "../../components/icons/LinearIcons.jsx";
 
 export default function AdminConvocationsList({ items, onDelete, busy, canWrite }) {
   const adminData = useAdminData();
@@ -384,7 +385,7 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
               textAlign: 'center',
               color: 'rgba(0,0,0,0.45)',
             }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+              <div style={{ marginBottom: 16 }}><ClipboardIcon size={48} /></div>
               <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>Нет созывов</div>
               <div style={{ fontSize: 14 }}>Создайте первый созыв</div>
             </div>

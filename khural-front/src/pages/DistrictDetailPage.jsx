@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
+import { UserIcon } from "../components/icons/LinearIcons.jsx";
 
 const DISTRICTS_DATA = {
   "1": {
@@ -206,7 +207,7 @@ export default function DistrictDetailPage() {
                           gap: 12,
                         }}
                       >
-                        <span style={{ fontSize: 20 }}>👤</span>
+                        <span style={{ display: "inline-flex", color: "#003366" }}><UserIcon size={20} /></span>
                         <span style={{ fontWeight: 500, color: "#111827" }}>{deputy}</span>
                       </div>
                     ))}

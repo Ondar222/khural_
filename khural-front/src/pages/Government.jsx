@@ -8,6 +8,7 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { formatConvocationLabelWithYears } from "../utils/convocationLabels.js";
 import { PersonsApi } from "../api/client.js";
 import { useHashRoute } from "../Router.jsx";
+import { MailIcon, PhoneIcon, BuildingIcon } from "../components/icons/LinearIcons.jsx";
 
 function nonBlank(x) {
   return x != null && String(x).trim() !== "";
@@ -691,13 +692,13 @@ export default function Government() {
                         <ul className="gov-meta">
                           {d.contacts?.phone && (
                             <li>
-                              <span>📞</span>
+                              <span><PhoneIcon size={15} /></span>
                               <span>{d.contacts.phone}</span>
                             </li>
                           )}
                           {d.contacts?.email && (
                             <li>
-                              <span>✉️</span>
+                              <span><MailIcon size={15} /></span>
                               <span>{d.contacts.email}</span>
                             </li>
                           )}
@@ -736,7 +737,7 @@ export default function Government() {
                         <ul className="gov-meta">
                           {p.agency && (
                             <li>
-                              <span>🏛️</span>
+                              <span><BuildingIcon size={15} /></span>
                               <span>{p.agency}</span>
                             </li>
                           )}
@@ -750,13 +751,13 @@ export default function Government() {
                           )}
                           {p.phone && (
                             <li>
-                              <span>📞</span>
+                              <span><PhoneIcon size={15} /></span>
                               <span>{p.phone}</span>
                             </li>
                           )}
                           {p.email && (
                             <li>
-                              <span>✉️</span>
+                              <span><MailIcon size={15} /></span>
                               <span>{p.email}</span>
                             </li>
                           )}

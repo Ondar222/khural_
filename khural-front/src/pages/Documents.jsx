@@ -10,6 +10,7 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import DocumentActions from "../components/DocumentActions.jsx";
+import { DocumentIcon } from "../components/icons/LinearIcons.jsx";
 
 function norm(v) {
   return String(v ?? "")
@@ -253,7 +254,7 @@ export default function Documents() {
                             return (
                               <div key={d.id || url || d.title} className="law-item card">
                                 <div className="law-left">
-                                  <div className="law-ico">📄</div>
+                                  <div className="law-ico"><DocumentIcon size={20} /></div>
                                   <div>
                                     <div className="law-title">{d.title}</div>
                                     {renderDocDesc(d.desc)}
@@ -288,7 +289,7 @@ export default function Documents() {
                         return (
                           <div key={d.id || url || d.title} className="law-item card">
                             <div className="law-left">
-                              <div className="law-ico">📄</div>
+                              <div className="law-ico"><DocumentIcon size={20} /></div>
                               <div>
                                 <div className="law-title">{d.title}</div>
                                 {renderDocDesc(d.desc)}

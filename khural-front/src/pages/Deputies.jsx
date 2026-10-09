@@ -15,6 +15,7 @@ import {
   buildDistrictOptions,
 } from "../utils/deputyFilterOptions.js";
 import { formatConvocationLabelWithYears, CANONICAL_CONVOCATIONS } from "../utils/convocationLabels.js";
+import { MailIcon, PhoneIcon } from "../components/icons/LinearIcons.jsx";
 
 const DEPUTIES_PAGE_SIZE = 12;
 
@@ -480,13 +481,13 @@ export default function Deputies() {
                         <ul className="gov-meta">
                           {(d.contacts?.phone || d.phoneNumber || d.phone) && (
                             <li>
-                              <span>📞</span>
+                              <span><PhoneIcon size={15} /></span>
                               <span>{String(d.contacts?.phone || d.phoneNumber || d.phone || "").trim()}</span>
                             </li>
                           )}
                           {(d.contacts?.email || d.email) && (
                             <li>
-                              <span>✉️</span>
+                              <span><MailIcon size={15} /></span>
                               <span>{String(d.contacts?.email || d.email || "").trim()}</span>
                             </li>
                           )}

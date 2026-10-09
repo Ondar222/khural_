@@ -2,6 +2,7 @@ import React from "react";
 import { Button, Input, Space, Table, Popconfirm, Tag } from "antd";
 import { AboutApi, apiFetch } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
+import { FolderIcon, ClipboardIcon } from "../../components/icons/LinearIcons.jsx";
 import {
   getPageOverrideById,
   PAGES_OVERRIDES_EVENT_NAME,
@@ -303,12 +304,12 @@ export default function AdminPagesV2List({
           <div className="admin-pages-list__titleline">
             {row.__depth ? <span className="admin-pages-list__indent">{"— ".repeat(row.__depth)}</span> : null}
             <span className="admin-pages-list__title">
-              {row.__isStatic ? "📁 " : ""}
+              {row.__isStatic ? <FolderIcon size={14} style={{ marginRight: 4 }} /> : ""}
               {row.title || row.name || "—"}
             </span>
             {row.__hasChildren && (
               <Tag color="green" style={{ marginLeft: 8 }}>
-                📁 Есть подстраницы
+                <FolderIcon size={13} style={{ marginRight: 4 }} /> Есть подстраницы
               </Tag>
             )}
             {row.__isStatic && (
@@ -442,7 +443,7 @@ export default function AdminPagesV2List({
                   setQ(row.slug);
                 }}
               >
-                📋 Подстраницы
+                <ClipboardIcon size={14} style={{ marginRight: 4 }} /> Подстраницы
               </Button>
               <Button size={isTablet ? "small" : "middle"} onClick={() => onPreview?.(row.slug)} disabled={!row.slug}>
                 Открыть

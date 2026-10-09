@@ -4,6 +4,7 @@ import { useData } from "../context/DataContext.jsx";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { CommitteesApi } from "../api/client.js";
+import { MailIcon, PhoneIcon, PinIcon, BuildingIcon } from "../components/icons/LinearIcons.jsx";
 import {
   COMMITTEES_OVERRIDES_EVENT_NAME,
   COMMITTEES_OVERRIDES_STORAGE_KEY,
@@ -174,10 +175,10 @@ export default function CommitteeStaffDetail() {
                   <div className="person-card__role">{staff.role}</div>
                 )}
                 <ul className="person-card__meta">
-                  {staff.phone && <li>📞 {staff.phone}</li>}
-                  {staff.email && <li>✉️ {staff.email}</li>}
-                  {staff.address && <li>📍 {staff.address}</li>}
-                  {staff.department && <li>🏛️ {staff.department}</li>}
+                  {staff.phone && <li><PhoneIcon size={14} /> {staff.phone}</li>}
+                  {staff.email && <li><MailIcon size={14} /> {staff.email}</li>}
+                  {staff.address && <li><PinIcon size={14} /> {staff.address}</li>}
+                  {staff.department && <li><BuildingIcon size={14} /> {staff.department}</li>}
                 </ul>
                 {staff.biography && (
                   <div style={{ marginTop: 20, lineHeight: 1.6 }}>

@@ -4,6 +4,7 @@ import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { SearchApi } from "../api/client.js";
 import { formatNewsDateTime } from "../utils/dateFormat.js";
+import { SearchIcon } from "./icons/LinearIcons.jsx";
 
 export default function SearchModal({ open, onClose }) {
   const { news, documents } = useData();
@@ -140,7 +141,7 @@ export default function SearchModal({ open, onClose }) {
               aria-label={t("search")}
             />
             <button className="btn" onClick={() => inputRef.current && inputRef.current.focus()}>
-              🔍
+              <SearchIcon size={16} />
             </button>
           </div>
           <div style={{ marginTop: 12 }}>
