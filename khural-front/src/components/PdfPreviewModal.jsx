@@ -34,6 +34,7 @@ function getFetchUrl(pdfUrl) {
 }
 
 const FETCH_TIMEOUT_MS = 25000;
+const PROBE_TIMEOUT_MS = 12000;
 
 function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
   const controller = new AbortController();
@@ -41,9 +42,40 @@ function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
 }
 
+/** Запрос к файлу через прокси /pdf-proxy, если он лежит на khural.rtyva.ru (обход CORS). */
+function toProxyUrl(url) {
+  if (url.includes("khural.rtyva.ru")) return url.replace("https://khural.rtyva.ru", "/pdf-proxy");
+  return getFetchUrl(url);
+}
+
+/**
+ * Проверяем доступность файла: "ok" — отдаётся сервером, "missing" — явный 404/410,
+ * "unknown" — сеть/CORS/таймаут (в этом случае предпросмотр всё равно пробуем показать).
+ */
+async function probeFile(url) {
+  const opts = { method: "GET", mode: "cors", credentials: "omit", headers: { Range: "bytes=0-0" } };
+  const candidates = [...new Set([toProxyUrl(url), url].filter(Boolean))];
+  let sawMissing = false;
+  for (const candidate of candidates) {
+    try {
+      const res = await fetchWithTimeout(candidate, opts, PROBE_TIMEOUT_MS);
+      if (res.status === 200 || res.status === 206) return "ok";
+      if (res.status === 404 || res.status === 410) sawMissing = true;
+    } catch (_) {
+      /* пробуем следующий вариант */
+    }
+  }
+  return sawMissing ? "missing" : "unknown";
+}
+
 // Используем Google Docs Viewer как fallback для обхода X-Frame-Options
 function getGoogleDocsViewerUrl(pdfUrl) {
   return `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
+}
+
+/** Определяем, является ли ссылка PDF (по расширению в пути). */
+function isPdfUrl(url) {
+  return /\.pdf(?:$|\?|#)/i.test(String(url || ""));
 }
 
 export default function PdfPreviewModal({ open, onClose, url, title }) {
@@ -51,11 +83,13 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
   const [blobSrc, setBlobSrc] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [useGoogleViewer, setUseGoogleViewer] = React.useState(false);
+  const [unavailable, setUnavailable] = React.useState(false);
 
   React.useEffect(() => {
     if (!open) {
       setBlobSrc("");
       setUseGoogleViewer(false);
+      setUnavailable(false);
       return;
     }
     if (!pdfSrc) return;
@@ -67,12 +101,26 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
       setLoading(true);
       setBlobSrc("");
       setUseGoogleViewer(false);
+      setUnavailable(false);
+
+      // Документы Word/Excel/др. нельзя отрисовать в <iframe> как PDF —
+      // для них используем внешний просмотрщик, но только если файл реально доступен.
+      if (!isPdfUrl(pdfSrc)) {
+        const reachability = await probeFile(pdfSrc);
+        if (cancelled) return;
+        if (reachability === "missing") {
+          setUnavailable(true);
+          setLoading(false);
+          return;
+        }
+        setUseGoogleViewer(true);
+        setBlobSrc(getGoogleDocsViewerUrl(pdfSrc));
+        setLoading(false);
+        return;
+      }
 
       const isKhuralDomain = pdfSrc.includes("khural.rtyva.ru");
-      const fetchUrl =
-        isKhuralDomain
-          ? pdfSrc.replace("https://khural.rtyva.ru", "/pdf-proxy")
-          : getFetchUrl(pdfSrc);
+      const fetchUrl = isKhuralDomain ? pdfSrc.replace("https://khural.rtyva.ru", "/pdf-proxy") : getFetchUrl(pdfSrc);
 
       const opts = {
         method: "GET",
@@ -88,16 +136,23 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
-        if (blob.type !== "application/pdf" && !String(pdfSrc).toLowerCase().includes(".pdf")) {
+        if (blob.type !== "application/pdf") {
           throw new Error("Not a PDF file");
         }
         objectUrl = URL.createObjectURL(blob);
         if (!cancelled) setBlobSrc(objectUrl);
       } catch (e) {
         if (!cancelled) {
-          console.warn("Failed to load PDF as blob, using Google Docs Viewer:", e);
-          setUseGoogleViewer(true);
-          setBlobSrc(getGoogleDocsViewerUrl(pdfSrc));
+          const reachability = await probeFile(pdfSrc);
+          if (cancelled) return;
+          if (reachability === "missing") {
+            console.warn("Документ недоступен на сервере:", e);
+            setUnavailable(true);
+          } else {
+            console.warn("Failed to load PDF as blob, using Google Docs Viewer:", e);
+            setUseGoogleViewer(true);
+            setBlobSrc(getGoogleDocsViewerUrl(pdfSrc));
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -130,10 +185,22 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
                   <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>
                     Загрузка документа…
                   </div>
+                ) : unavailable ? (
+                  <div style={{ padding: 40, textAlign: "center", color: "#b91c1c" }}>
+                    Документ недоступен на сервере: файл не найден или был удалён.
+                    <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                      <a href={pdfSrc} target="_blank" rel="noopener noreferrer" className="btn">
+                        Попробовать открыть в новой вкладке ↗
+                      </a>
+                      <button type="button" className="btn" onClick={onClose}>
+                        Закрыть
+                      </button>
+                    </div>
+                  </div>
                 ) : blobSrc ? (
                   <iframe
                     key={blobSrc}
-                    title="PDF preview"
+                    title="Предварительный просмотр документа"
                     src={blobSrc}
                     style={{
                       border: "1px solid #e5e7eb",
@@ -153,16 +220,18 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
                   </div>
                 )}
               </div>
-              {useGoogleViewer && (
+              {useGoogleViewer && !unavailable && (
                 <div style={{ fontSize: 12, color: "#6b7280", padding: "8px 0", borderTop: "1px solid #e5e7eb" }}>
                   Используется внешний просмотрщик для обхода ограничений сервера
                 </div>
               )}
-              <div style={{ fontSize: 13, color: "#555" }}>
-                <a href={pdfSrc} target="_blank" rel="noopener noreferrer">
-                  Открыть в новой вкладке ↗
-                </a>
-              </div>
+              {!unavailable && (
+                <div style={{ fontSize: 13, color: "#555" }}>
+                  <a href={pdfSrc} target="_blank" rel="noopener noreferrer">
+                    Открыть в новой вкладке ↗
+                  </a>
+                </div>
+              )}
             </>
           ) : (
             <div style={{ color: "#b91c1c" }}>Ссылка на документ отсутствует.</div>
