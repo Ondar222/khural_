@@ -3,7 +3,7 @@ import GosWidget from "./GosWidget.jsx";
 import BroadcastWidget from "./BroadcastWidget.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
-import { getBroadcastUrls } from "../content/broadcasts.js";
+import { getBroadcastUrls, getBroadcastTitle } from "../content/broadcasts.js";
 import {
   readPortalsOverrides,
   mergePortalsWithOverrides,
@@ -160,13 +160,14 @@ export default function Resources() {
                 {last4.map((url, index) => {
                   const { embedUrl, watchUrl } = getBroadcastUrls(url);
                   const num = broadcastLinks.length - 4 + index + 1;
+                  const title = getBroadcastTitle(url) || `${t("Трансляция")} ${num}`;
                   return (
                     <div key={url} className="broadcasts-home__item">
                       <div className="broadcasts-home__video">
                         {embedUrl ? (
                           <iframe
                             src={embedUrl}
-                            title={t("Трансляция") + ` ${num}`}
+                            title={title}
                             style={{
                               position: "absolute",
                               top: 0,
@@ -206,7 +207,7 @@ export default function Resources() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {t("Трансляция")} {num} →
+                          {title}
                         </a>
                       </div>
                     </div>

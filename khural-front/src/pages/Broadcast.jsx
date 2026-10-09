@@ -6,7 +6,7 @@ import DataState from "../components/DataState.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
-import { getBroadcastUrls } from "../content/broadcasts.js";
+import { getBroadcastUrls, getBroadcastTitle } from "../content/broadcasts.js";
 
 export default function Broadcast() {
   const { t } = useI18n();
@@ -88,6 +88,7 @@ export default function Broadcast() {
               >
                 {broadcastLinks.map((url, index) => {
                   const { embedUrl, watchUrl } = getBroadcastUrls(url);
+                  const title = getBroadcastTitle(url) || `Трансляция ${index + 1}`;
                   return (
                     <div
                       key={url}
@@ -102,7 +103,7 @@ export default function Broadcast() {
                         {embedUrl ? (
                           <iframe
                             src={embedUrl}
-                            title={`Трансляция ${index + 1}`}
+                            title={title}
                             style={{
                               position: "absolute",
                               top: 0,
@@ -140,9 +141,9 @@ export default function Broadcast() {
                           href={watchUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ fontWeight: 600, fontSize: 14 }}
+                          style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4, display: "block" }}
                         >
-                          Трансляция {index + 1} →
+                          {title}
                         </a>
                       </div>
                     </div>
