@@ -173,19 +173,21 @@ export function VideoIcon({ size, style }) {
   );
 }
 
+export function RssIcon({ size, style }) {
+  return (
+    <Svg size={size} style={style}>
+      <path d="M4 11a9 9 0 0 1 9 9" />
+      <path d="M4 4a16 16 0 0 1 16 16" />
+      <circle cx="5" cy="19" r="1" />
+    </Svg>
+  );
+}
+
 export function CameraIcon({ size, style }) {
   return (
     <Svg size={size} style={style}>
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
       <circle cx="12" cy="13" r="4" />
-    </Svg>
-  );
-}
-
-export function MoonIcon({ size, style }) {
-  return (
-    <Svg size={size} style={style}>
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </Svg>
   );
 }
@@ -206,21 +208,19 @@ export function SunIcon({ size, style }) {
   );
 }
 
-export function EyeIcon({ size, style }) {
+export function MoonIcon({ size, style }) {
   return (
     <Svg size={size} style={style}>
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </Svg>
   );
 }
 
-export function RssIcon({ size, style }) {
+export function EyeIcon({ size, style }) {
   return (
     <Svg size={size} style={style}>
-      <path d="M4 11a9 9 0 0 1 9 9" />
-      <path d="M4 4a16 16 0 0 1 16 16" />
-      <circle cx="5" cy="19" r="1" />
+      <path d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12z" />
+      <circle cx="12" cy="12" r="3.2" />
     </Svg>
   );
 }

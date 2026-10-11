@@ -1,0 +1,6 @@
+URL /info/personnel/755/ -> final https://khural.rtyva.ru/info/personnel/755/ len 28896
+URL /info/personnel/2/755/index.php -> final https://khural.rtyva.ru/info/personnel/2/755/ len 39365
+URL /info/personnel/2/755/ -> final https://khural.rtyva.ru/info/personnel/2/755/ len 39365
+URL /info/personnel/108/ -> final https://khural.rtyva.ru/info/personnel/108/ len 28896
+URL /info/personnel/32/108/ -> final https://khural.rtyva.ru/info/personnel/32/108/ len 39128
+URL /info/personnel/879/ -> final https://khural.rtyva.ru/info/personnel/879/ len 28896

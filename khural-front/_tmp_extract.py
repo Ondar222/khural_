@@ -1,45 +1,55 @@
-import re, os, json, html as H
+# -*- coding: utf-8 -*-
+"""Извлечение контента подстраниц /info/personnel/* из скачанного HTML."""
+import re, os, json
 
-SRC = "/tmp/pers"
-OUT = os.path.join(os.path.dirname(__file__), "_tmp_personnel_content.json")
+SRC = os.path.join(os.path.dirname(__file__), "_tmp_pers")
+OUT = os.path.join(os.path.dirname(__file__), "_tmp_pers_content.json")
+
+IDS = ["2", "32", "33", "159", "171", "456"]
 
 def article_of(raw):
     m = re.search(r"<article[^>]*>(.*?)</article>", raw, re.S)
-    return m.group(1) if m else None
+    return m.group(1) if m else ""
 
-def tidy(block):
-    # обрезаем aside/side-menu если попал
-    block = re.split(r"<aside", block)[0]
-    # убрать пустые таблицы-заглушки
-    block = re.sub(r"<table[^>]*>\s*<tbody>\s*</tbody>\s*</table>", "", block, flags=re.S)
-    block = re.sub(r"<table[^>]*>\s*</table>", "", block, flags=re.S)
-    # нормализуем относительные ссылки/картинки на полные
-    block = re.sub(r'href="/', 'href="https://khural.rtyva.ru/', block)
-    block = re.sub(r'src="/', 'src="https://khural.rtyva.ru/', block)
-    return block.strip()
+def title_of(art):
+    m = re.search(r"<h2[^>]*>(.*?)</h2>", art, re.S)
+    return re.sub(r"<[^>]+>", "", m.group(1)).strip() if m else ""
 
-def title_of(block):
-    m = re.search(r"<h2[^>]*>(.*?)</h2>", block, re.S)
-    return H.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip() if m else ""
+def body_of(art):
+    body = re.sub(r"<h2[^>]*>.*?</h2>", "", art, count=1, flags=re.S)
+    body = re.split(r"<aside", body)[0]
+    body = re.sub(r"<table[^>]*>\s*(?:<tbody>\s*</tbody>\s*)?</table>", "", body, flags=re.S)
+    return body.strip()
+
+def file_links(body):
+    """Ссылки на файлы/bitrix-загрузки."""
+    out = []
+    for m in re.finditer(r'href="([^"]+)"', body):
+        h = m.group(1)
+        if re.search(r"\.(pdf|docx?|xlsx?|rtf|zip|rar|odt|xls)\b", h, re.I) or "/upload/" in h or "/storedir/" in h:
+            out.append(h)
+    return out
 
 res = {}
-for fn in sorted(os.listdir(SRC)):
-    if not fn.endswith(".html"):
+all_links = []
+for pid in IDS:
+    p = os.path.join(SRC, pid + ".html")
+    if not os.path.exists(p):
         continue
-    pid = fn[:-5]
-    raw = open(os.path.join(SRC, fn), encoding="utf-8", errors="replace").read()
+    raw = open(p, encoding="utf-8", errors="replace").read()
     art = article_of(raw)
-    if not art:
-        res[pid] = {"title": "", "html": "", "error": "no article"}
-        continue
-    art = tidy(art)
-    # убираем сам h2 (заголовок отдаём отдельно)
-    body = re.sub(r"<h2[^>]*>.*?</h2>", "", art, count=1, flags=re.S).strip()
+    body = body_of(art)
     res[pid] = {"title": title_of(art), "html": body}
+    all_links += file_links(body)
 
 json.dump(res, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-for pid in sorted(res, key=lambda x: int(x) if x.isdigit() else 0):
-    t = res[pid]["title"]
-    n = len(res[pid]["html"])
-    links = len(re.findall(r"<a ", res[pid]["html"]))
-    print("%-5s len=%-6d links=%-3d %s" % (pid, n, links, t[:70]))
+
+# Вывод только ASCII-безопасно (терминал портит кириллицу)
+print("pages:", [(k, len(v["html"])) for k, v in res.items()])
+print("FILE LINKS:")
+seen = set()
+for h in all_links:
+    if h in seen:
+        continue
+    seen.add(h)
+    print("  ", h.encode("unicode_escape").decode()[:160])
