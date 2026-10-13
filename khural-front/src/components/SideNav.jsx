@@ -8,6 +8,7 @@ import {
   PERSONNEL_ROOT_PATH,
   PERSONNEL_TITLE,
   PERSONNEL_NAV_LINKS,
+  PERSONNEL_SIDE_NAV,
   getPersonnelPage,
 } from "../content/personnel.js";
 
@@ -166,6 +167,11 @@ const defaultLinksCommon = [
   { label: "Открытые данные", href: "/opendata" },
   { label: "Уполномоченный по правам человека", href: "/info/upoln-po-prav" },
   { label: "Уполномоченный по правам ребенка", href: "/info/upoln-po-reb" },
+  { label: "Полномочия Председателя", href: "/info/polnomochiya-spikera" },
+  { label: "Противодействие коррупции", href: "/info/protivodeystvie-korrupcii" },
+  { label: "Контактная информация", href: "/info/contacts" },
+  { label: "Государственные символы", href: "/info/gosudarstvennye-simvoly" },
+  { label: "Приграничный субъект", href: "/info/prigranichny-subekt" },
   PERSONNEL_NAV_LINKS,
 ];
 
@@ -415,6 +421,29 @@ export default function SideNav({
       if (pathname === '/opendata') return "Открытые данные";
       if (pathname === '/info/upoln-po-prav') return "Уполномоченный по правам человека";
       if (pathname === '/info/upoln-po-reb') return "Уполномоченный по правам ребенка";
+      if (pathname === '/info/polnomochiya-spikera') return "Полномочия Председателя";
+      if (pathname === '/info/protivodeystvie-korrupcii') return "Противодействие коррупции";
+      if (pathname === '/info/protivodeystvie-korrupcii/normativnye-akty') return "Нормативные правовые акты";
+      if (pathname === '/info/protivodeystvie-korrupcii/komissiya-deputatov') return "Комиссия депутатов";
+      if (pathname === '/info/protivodeystvie-korrupcii/komissiya-deputatov/vypiski-protokoly') return "Выписки, протоколы, решения";
+      if (pathname === '/info/protivodeystvie-korrupcii/komissiya-deputatov/informatsiya') return "Информация о деятельности Комиссии";
+      if (pathname === '/info/protivodeystvie-korrupcii/metodicheskie-materialy') return "Методические материалы";
+      if (pathname === '/info/protivodeystvie-korrupcii/obratnaya-svyaz') return "Обратная связь";
+      if (pathname === '/info/protivodeystvie-korrupcii/formy-dokumentov') return "Формы документов";
+      if (pathname === '/info/protivodeystvie-korrupcii/spavki-bk') return 'СПО "Справки БК"';
+      if (pathname === '/info/protivodeystvie-korrupcii/protivodeystvie-korrupcii-plan') return "План противодействия коррупции";
+      if (pathname === '/info/contacts') return "Контактная информация";
+      if (pathname === '/info/gosudarstvennye-simvoly') return "Государственные символы";
+      if (pathname === '/info/prigranichny-subekt') return "Приграничный субъект";
+      if (pathname === '/info/prigranichny-subekt/shablony') return "Шаблоны заявлений";
+      if (pathname === '/info/prigranichny-subekt/shema-uslugi') return "Схема предоставления услуги";
+      if (pathname === '/info/prigranichny-subekt/individualny-propusk') return "Индивидуальный пропуск";
+      if (pathname === '/info/prigranichny-subekt/kollektivny-propusk') return "Коллективный пропуск";
+      if (pathname === '/info/prigranichny-subekt/zayavlenie-zakonnogo-predstavitelya') return "Заявление законного представителя";
+      if (pathname === '/info/prigranichny-subekt/zayavlenie-individualny-propusk') return "Заявление на индивидуальный пропуск";
+      if (pathname === '/info/prigranichny-subekt/zayavlenie-kollektivny-propusk') return "Заявление на коллективный пропуск";
+      if (pathname === '/info/prigranichny-subekt/zayavlenie-promyslovaya-deyatelnost') return "Заявление на промысловую деятельность";
+      if (pathname === '/info/prigranichny-subekt/zayavlenie-hoz-deyatelnost') return "Заявление на разрешение хоз. деятельности";
       // Названия страниц «Кадрового обеспечения» берём из данных раздела, а не хардкодом
       if (pathname === PERSONNEL_ROOT_PATH || pathname.startsWith(PERSONNEL_ROOT_PATH + "/")) {
         return getPersonnelPage(pathname.slice(1))?.title || PERSONNEL_TITLE;
@@ -627,6 +656,16 @@ export default function SideNav({
     return sectionDefaultLinks;
   }, [overrideLinks, loadPages, pagesLinks, detectedSection]);
 
+  // Ссылки для подстраниц раздела «Кадровое обеспечение»
+  const personnelLinks = React.useMemo(() => {
+    const pathname = route?.split("?")[0] || "";
+    const isPersonnelSubPage = pathname.startsWith(PERSONNEL_ROOT_PATH + "/");
+    return isPersonnelSubPage ? PERSONNEL_SIDE_NAV : [];
+  }, [route]);
+
+  // Итоговые ссылки: если это подстраница персонала, используем её ссылки
+  const finalLinks = personnelLinks.length > 0 ? personnelLinks : links;
+
   // Обработчик клика без создания новой функции на каждый рендер
   const handleLinkClick = React.useCallback((e, onClick) => {
     if (onClick) {
@@ -638,7 +677,7 @@ export default function SideNav({
     <aside className={`sidenav ${className || ""}`.trim()} aria-label="Ссылки раздела">
       <h3 style={{ marginTop: 0 }}>{titleText}</h3>
       <div className="sidenav__list">
-        {links.map((l, i) => {
+        {finalLinks.map((l, i) => {
           if (Array.isArray(l.children) && l.children.length > 0) {
             return (
               <div key={i} className="sidenav__group">

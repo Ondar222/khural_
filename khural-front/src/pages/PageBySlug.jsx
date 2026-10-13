@@ -32,6 +32,48 @@ import {
   INFO_PERSONNEL_OTPUSK_SLUG,
   INFO_PERSONNEL_OTPUSK_TITLE,
   INFO_PERSONNEL_OTPUSK_HTML,
+  INFO_PERSONNEL_VAKANSII_SLUG,
+  INFO_PERSONNEL_VAKANSII_TITLE,
+  INFO_PERSONNEL_VAKANSII_HTML,
+  INFO_PERSONNEL_KONKURSY_SLUG,
+  INFO_PERSONNEL_KONKURSY_TITLE,
+  INFO_PERSONNEL_KONKURSY_HTML,
+  INFO_PERSONNEL_METODIKA_SLUG,
+  INFO_PERSONNEL_METODIKA_TITLE,
+  INFO_PERSONNEL_METODIKA_HTML,
+  INFO_PERSONNEL_KOMISSII_SLUG,
+  INFO_PERSONNEL_KOMISSII_TITLE,
+  INFO_PERSONNEL_KOMISSII_HTML,
+  INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_SLUG,
+  INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_TITLE,
+  INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_HTML,
+  INFO_PERSONNEL_KOMISSII_POLOZENIE_SLUG,
+  INFO_PERSONNEL_KOMISSII_POLOZENIE_TITLE,
+  INFO_PERSONNEL_KOMISSII_POLOZENIE_HTML,
+  INFO_PERSONNEL_KOMISSII_SOSTAV_SLUG,
+  INFO_PERSONNEL_KOMISSII_SOSTAV_TITLE,
+  INFO_PERSONNEL_KOMISSII_SOSTAV_HTML,
+  INFO_PERSONNEL_KOMISSII_RESHENIYA_SLUG,
+  INFO_PERSONNEL_KOMISSII_RESHENIYA_TITLE,
+  INFO_PERSONNEL_KOMISSII_RESHENIYA_HTML,
+  INFO_PERSONNEL_DOKUMENTY_SLUG,
+  INFO_PERSONNEL_DOKUMENTY_TITLE,
+  INFO_PERSONNEL_DOKUMENTY_HTML,
+  INFO_PERSONNEL_KONKURSY_PROTOKOL_SLUG,
+  INFO_PERSONNEL_KONKURSY_PROTOKOL_TITLE,
+  INFO_PERSONNEL_KONKURSY_PROTOKOL_HTML,
+  INFO_PERSONNEL_KONKURSY_PROTOKOL_1_SLUG,
+  INFO_PERSONNEL_KONKURSY_PROTOKOL_1_TITLE,
+  INFO_PERSONNEL_KONKURSY_PROTOKOL_1_HTML,
+  INFO_PERSONNEL_KONKURSY_PROTOKOL_2_SLUG,
+  INFO_PERSONNEL_KONKURSY_PROTOKOL_2_TITLE,
+  INFO_PERSONNEL_KONKURSY_PROTOKOL_2_HTML,
+  INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_SLUG,
+  INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_TITLE,
+  INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_HTML,
+  INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_KOMISSII_SLUG,
+  INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_KOMISSII_TITLE,
+  INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_KOMISSII_HTML,
   PERSONNEL_ROOT_PATH,
 } from "../content/personnel.js";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
@@ -181,18 +223,6 @@ const INFO_INDEX_HTML = `
       <p style="margin:0 0 12px 0;">Законотворческая деятельность Верховного Хурала (парламента) Республики Тыва осуществляется в тесном и плодотворном взаимодействии со всеми субъектами законодательной инициативы и, прежде всего с Правительством Республики Тыва.</p>
       <p style="margin:0 0 12px 0;">Кроме основной деятельности по совершенствованию законодательства, депутаты Верховного Хурала (парламента) Республики Тыва активно участвуют практически во всех социально значимых мероприятиях, благотворительных акциях, марафонах. Работу с избирателями, выезды в избирательные участки, рабочие командировками депутаты всегда стараются совместить с оказанием практической помощи: медицинской, консультационной.</p>
       <p style="margin:0 0 12px 0;">Главной целью депутатов Верховного Хурала (парламента) Республики Тыва является совершенствование регионального законодательства, представление интересов избирателей во властных структурах и защита их конституционных прав. В этом направлении депутаты Верховного Хурала (парламента) Республики Тыва действуют единой сплоченной командой.</p>
-    </div>
-  </div>
-  <div class="card" style="padding: 20px;">
-    <h2 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700;">Разделы</h2>
-    <div style="display:grid; gap:8px;">
-      <a href="/info/finansy" style="color: #003366;">Финансы</a>
-      <a href="/info/iokrug" style="color: #003366;">Избирательные округа</a>
-      <a href="/info/zakon-karta" style="color: #003366;">Законодательная карта сайта</a>
-      <a href="/opendata" style="color: #003366;">Открытые данные</a>
-      <a href="/info/upoln-po-prav" style="color: #003366;">Уполномоченный по правам человека</a>
-      <a href="/info/upoln-po-reb" style="color: #003366;">Уполномоченный по правам ребенка</a>
-      <a href="${PERSONNEL_ROOT_PATH}" style="color: #003366;">Кадровое обеспечение</a>
     </div>
   </div>
 </div>
@@ -1230,6 +1260,423 @@ const INFO_OMBUDSMAN_CHILD_HTML = `
 </div>
 `;
 
+// === Полномочия Председателя ===
+const INFO_POLNOMOCHIYA_SPEAKER_SLUG = "info/polnomochiya-spikera";
+const INFO_POLNOMOCHIYA_SPEAKER_TITLE = "Полномочия Председателя";
+const INFO_POLNOMOCHIYA_SPEAKER_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px; line-height: 1.8; color: #1f2937;">
+    <h1 style="margin:0 0 20px 0; font-size: 22px; font-weight: 700; color: #111827;">Полномочия Председателя</h1>
+    
+    <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">1. Председатель Верховного Хурала:</h2>
+    <ol style="margin:0 0 16px 0; padding-left: 24px;">
+      <li style="margin-bottom:8px;">представляет Верховный Хурал во взаимоотношениях с федеральными органами государственной власти, органами государственной власти Республики Тыва и других субъектов Российской Федерации, органами местного самоуправления муниципальных образований Республики Тыва, иными государственными органами, общественными объединениями, организациями и гражданами, с иностранными партнерами, а также в межпарламентских связях;</li>
+      <li style="margin-bottom:8px;">обеспечивает взаимодействие Верховного Хурала во взаимоотношениях с федеральными органами государственной власти — Президентом Российской Федерации (в том числе через его полномочных представителей), Государственной Думой и Советом Федерации Федерального Собрания Российской Федерации, депутатами Государственной Думы и членами Совета Федерации Федерального Собрания Российской Федерации, Конституционным Судом Российской Федерации, Верховным Судом Российской Федерации, Высшим Арбитражным Судом Российской Федерации, а также иными федеральными государственными органами и их должностными лицами;</li>
+      <li style="margin-bottom:8px;">обеспечивает взаимодействие Верховного Хурала с Главой Республики Тыва и Правительством Республики Тыва, иными государственными органами Республики Тыва, органами местного самоуправления муниципальных образований Республики Тыва.</li>
+    </ol>
+    
+    <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">2. Председатель Верховного Хурала, осуществляя общее руководство деятельностью Верховного Хурала:</h2>
+    <ol style="margin:0 0 16px 0; padding-left: 24px;">
+      <li style="margin-bottom:8px;">обеспечивает общую координацию деятельности комитетов, комиссий и рабочих групп Верховного Хурала;</li>
+      <li style="margin-bottom:8px;">осуществляет руководство подготовкой заседаний Верховного Хурала и вопросов, выносимых на рассмотрение заседаний Верховного Хурала; созывает заседания Верховного Хурала;</li>
+      <li style="margin-bottom:8px;">председательствует на заседаниях Верховного Хурала;</li>
+      <li style="margin-bottom:8px;">организует работу Совета Верховного Хурала и председательствует на его заседаниях;</li>
+      <li style="margin-bottom:8px;">издает распоряжения и дает поручения по вопросам, отнесенным к его компетенции;</li>
+      <li style="margin-bottom:8px;">подписывает постановления, протоколы заседаний, обращения, заявления, декларации и иные документы Верховного Хурала;</li>
+      <li style="margin-bottom:8px;">направляет Главе Республики Тыва для подписания и обнародования конституционные законы Республики Тыва, законы Республики Тыва, принятые Верховным Хуралом;</li>
+      <li style="margin-bottom:8px;">дает поручения заместителю Председателя Верховного Хурала, председателям постоянных комитетов Верховного Хурала, иных рабочих органов Верховного Хурала; контролирует исполнение указанных поручений;</li>
+      <li style="margin-bottom:8px;">оказывает содействие депутатам Верховного Хурала в осуществлении ими своих полномочий.</li>
+    </ol>
+    
+    <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">3. Председатель Верховного Хурала в целях реализации Верховным Хуралом прав юридического лица и органа государственной власти:</h2>
+    <ol style="margin:0 0 16px 0; padding-left: 24px;">
+      <li style="margin-bottom:8px;">распоряжается финансовыми средствами, предусмотренными в республиканском бюджете на содержание и деятельность Верховного Хурала;</li>
+      <li style="margin-bottom:8px;">заключает государственные контракты и договоры;</li>
+      <li style="margin-bottom:8px;">представляет интересы Верховного Хурала в судах; подписывает от его имени обращения (заявления) в суды; выдает доверенности на ведение дел в судебных органах;</li>
+      <li style="margin-bottom:8px;">осуществляет иные полномочия, связанные с реализацией Верховным Хуралом прав юридического лица.</li>
+    </ol>
+    
+    <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">4. Председатель Верховного Хурала, осуществляя общее руководство организацией и деятельностью Аппарата Верховного Хурала:</h2>
+    <ol style="margin:0 0 16px 0; padding-left: 24px;">
+      <li style="margin-bottom:8px;">утверждает штатное расписание Аппарата Верховного Хурала;</li>
+      <li style="margin-bottom:8px;">назначает на должность и освобождает от должности руководителя Аппарата Верховного Хурала, производит назначение на иные должности государственной гражданской службы Республики Тыва в Аппарате Верховного Хурала и увольнение с указанных должностей; ведает вопросами приема на работу работников на должности в Аппарате Верховного Хурала, не отнесенные к должностям государственной гражданской службы Республики Тыва, и их увольнения;</li>
+      <li style="margin-bottom:8px;">ведает вопросами поощрения и привлечения к дисциплинарной ответственности государственных гражданских служащих Республики Тыва Аппарата Верховного Хурала и других работников Аппарата Верховного Хурала;</li>
+      <li style="margin-bottom:8px;">ведает иными вопросами внутреннего распорядка Верховного Хурала.</li>
+    </ol>
+    
+    <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">5. Председатель Верховного Хурала осуществляет иные полномочия, возложенные на него федеральными законами, Конституцией Республики Тыва, законами Республики Тыва, настоящим Регламентом.</h2>
+    
+    <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">6. Председатель Верховного Хурала вправе делегировать часть своих полномочий по вопросам организации работы депутатов, комитетов, комиссий Верховного Хурала, а также представительских функций заместителю Председателя Верховного Хурала, а по вопросам организации работы Аппарата Верховного Хурала, материально-технического, финансового и правового обеспечения — руководителю Аппарата Верховного Хурала.</h2>
+    
+    <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">7. Верховный Хурал вправе отменить любое распоряжение, поручение Председателя Верховного Хурала, заместителя Председателя Верховного Хурала в случае их противоречия законодательству Российской Федерации и Республики Тыва, а также настоящему Регламенту.</h2>
+  </div>
+</div>
+`;
+
+// === Противодействие коррупции ===
+const INFO_CORRUPTION_SLUG = "info/protivodeystvie-korrupcii";
+const INFO_CORRUPTION_TITLE = "Противодействие коррупции";
+const INFO_CORRUPTION_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px; line-height: 1.8;">
+    <h1 style="margin:0 0 16px 0; font-size: 22px; font-weight: 700; color: #111827;">Противодействие коррупции</h1>
+    <p style="margin:0 0 16px 0; font-size: 14px; color: #6b7280;">Уважаемые посетители сайта! При выборе федеральных нормативных правовых актов осуществляется переход на официальный интернет-портал правовой информации (www.pravo.gov.ru), где действующие федеральные законы, указы Президента Российской Федерации и постановления Правительства Российской Федерации содержатся в актуальном состоянии.</p>
+    <ul style="margin:0; padding-left: 20px;">
+      <li><a href="/${INFO_CORRUPTION_SLUG}/normativnye-akty" style="color: #003366;">Нормативные правовые и иные акты в сфере противодействия коррупции</a></li>
+      <li><a href="/${INFO_CORRUPTION_SLUG}/komissiya-deputatov" style="color: #003366;">Комиссия по контролю за достоверностью сведений, представляемых депутатами</a></li>
+      <li><a href="/${INFO_CORRUPTION_SLUG}/metodicheskie-materialy" style="color: #003366;">Методические материалы</a></li>
+      <li><a href="/${INFO_CORRUPTION_SLUG}/obratnaya-svyaz" style="color: #003366;">Обратная связь для сообщений о фактах коррупции</a></li>
+      <li><a href="/${INFO_CORRUPTION_SLUG}/formy-dokumentov" style="color: #003366;">Формы документов, связанных с противодействием коррупции</a></li>
+      <li><a href="/${INFO_CORRUPTION_SLUG}/spavki-bk" style="color: #003366;">Специальное программное обеспечение «Справки БК»</a></li>
+      <li><a href="/${INFO_CORRUPTION_SLUG}/protivodeystvie-korrupcii-plan" style="color: #003366;">План противодействия коррупции</a></li>
+    </ul>
+  </div>
+</div>
+`;
+
+const INFO_CORRUPTION_NORMATIVERNIE_SLUG = "info/protivodeystvie-korrupcii/normativnye-akty";
+const INFO_CORRUPTION_NORMATIVERNIE_TITLE = "Нормативные правовые и иные акты в сфере противодействия коррупции";
+const INFO_CORRUPTION_NORMATIVERNIE_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Нормативные правовые и иные акты в сфере противодействия коррупции</h1>
+    <ul style="margin:0; padding-left: 20px;">
+      <li style="margin-bottom:8px;"><strong>Федеральные законы</strong></li>
+      <li style="margin-bottom:8px;"><strong>Указы Президента Российской Федерации</strong></li>
+      <li style="margin-bottom:8px;"><strong>Постановления Правительства Российской Федерации</strong></li>
+      <li style="margin-bottom:8px;"><strong>Законы Республики Тыва</strong></li>
+      <li><strong>План мероприятий по противодействию коррупции</strong></li>
+    </ul>
+  </div>
+</div>
+`;
+
+const INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_SLUG = "info/protivodeystvie-korrupcii/komissiya-deputatov";
+const INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_TITLE = "Комиссия по контролю за достоверностью сведений, представляемых депутатами";
+const INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Комиссия по контролю за достоверностью сведений, представляемых депутатами</h1>
+    <ul style="margin:0; padding-left: 20px;">
+      <li style="margin-bottom:8px;"><a href="/${INFO_CORRUPTION_SLUG}/komissiya-deputatov/vypiski-protokoly" style="color: #003366;">Выписки, протокола, решения</a></li>
+      <li><a href="/${INFO_CORRUPTION_SLUG}/komissiya-deputatov/informatsiya" style="color: #003366;">Информация о деятельности Комиссии Верховного Хурала (парламента) Республики Тыва по контролю за достоверностью сведений, представляемых депутатами Верховного Хурала (парламента) Республики Тыва</a></li>
+    </ul>
+  </div>
+</div>
+`;
+
+const INFO_CORRUPTION_KOMISSIYA_VYPISKI_SLUG = "info/protivodeystvie-korrupcii/komissiya-deputatov/vypiski-protokoly";
+const INFO_CORRUPTION_KOMISSIYA_VYPISKI_TITLE = "Выписки, протокола, решения";
+const INFO_CORRUPTION_KOMISSIYA_VYPISKI_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Выписки, протокола, решения</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
+const INFO_CORRUPTION_KOMISSIYA_INFORMACSIYA_SLUG = "info/protivodeystvie-korrupcii/komissiya-deputatov/informatsiya";
+const INFO_CORRUPTION_KOMISSIYA_INFORMACSIYA_TITLE = "Информация о деятельности Комиссии";
+const INFO_CORRUPTION_KOMISSIYA_INFORMACSIYA_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Информация о деятельности Комиссии Верховного Хурала (парламента) Республики Тыва по контролю за достоверностью сведений, представляемых депутатами</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
+const INFO_CORRUPTION_METODICHESKIE_SLUG = "info/protivodeystvie-korrupcii/metodicheskie-materialy";
+const INFO_CORRUPTION_METODICHESKIE_TITLE = "Методические материалы";
+const INFO_CORRUPTION_METODICHESKIE_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Методические материалы</h1>
+    <ul style="margin:0; padding-left: 20px;">
+      <li style="margin-bottom:8px;">Методические материалы, одобренные президиумом Совета при Президенте РФ по противодействию коррупции</li>
+      <li>Методические рекомендации, обзоры, разъяснения и иные документы, подготовленные Минтрудом России и Минздравсоцразвития России</li>
+    </ul>
+  </div>
+</div>
+`;
+
+const INFO_CORRUPTION_OBRATNAYA_SVYAZ_SLUG = "info/protivodeystvie-korrupcii/obratnaya-svyaz";
+const INFO_CORRUPTION_OBRATNAYA_SVYAZ_TITLE = "Обратная связь для сообщений о фактах коррупции";
+const INFO_CORRUPTION_OBRATNAYA_SVYAZ_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px; line-height: 1.8; color: #1f2937;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Обратная связь для сообщений о фактах коррупции</h1>
+    <p style="margin:0 0 16px 0;">Уважаемые посетители сайта!</p>
+    <p style="margin:0 0 16px 0;">Если Вы располагаете сведениями о коррупционных правонарушениях, неправомерных и противоправных действиях, о некорректном поведении лиц, замещающих государственные должности Республики Тыва и государственных гражданских служащих Республики Тыва, Вы можете сообщить об этом следующими способами:</p>
+    <ul style="margin:0; padding-left: 24px;">
+      <li style="margin-bottom:8px;">по телефону начальника отдела кадров и государственной службы управления делами Аппарата Верховного Хурала (парламента) Республики Тыва (39422)-21229;</li>
+      <li style="margin-bottom:8px;">через раздел «интернет-приемная» официального сайта Верховного Хурала (парламента) Республики Тыва;</li>
+      <li style="margin-bottom:8px;">отправив электронное письмо в приемную Председателя Верховного Хурала (парламента) Республики Тыва адресу: <a href="mailto:khural@inbox.ru" style="color: #003366;">khural@inbox.ru</a>;</li>
+      <li>отправив письмо почтой по адресу: 667000, Республика Тыва, г. Кызыл, ул. Ленина, 32.</li>
+    </ul>
+  </div>
+</div>
+`;
+
+const INFO_CORRUPTION_FORMY_DOKUMENTOV_SLUG = "info/protivodeystvie-korrupcii/formy-dokumentov";
+const INFO_CORRUPTION_FORMY_DOKUMENTOV_TITLE = "Формы документов, связанных с противодействием коррупции";
+const INFO_CORRUPTION_FORMY_DOKUMENTOV_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Формы документов, связанных с противодействием коррупции</h1>
+    <ul style="margin:0; padding-left: 20px;">
+      <li style="margin-bottom:8px;"><a href="https://khural.rtyva.ru/upload/docs/188/1.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма справки о доходах, расходах, имуществе и обязательствах имущественного характера <span style="color: #6b7280;">(139 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="https://khural.rtyva.ru/upload/docs/188/2.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма обращения гражданина, юридического лица по фактам коррупционных правонарушений <span style="color: #6b7280;">(28.5 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="https://khural.rtyva.ru/upload/docs/188/3.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма сведений об адресах сайтов и (или) страниц сайтов в информационно-телекоммуникационной сети «Интернет» <span style="color: #6b7280;">(64.5 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="https://khural.rtyva.ru/upload/docs/188/4.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма заявления служащего (работника) о невозможности по объективным причинам представить сведения о доходах, об имуществе и обязательствах имущественного характера своих супруги (супруга) и несовершеннолетних детей <span style="color: #6b7280;">(35.5 КБ)</span></a></li>
+      <li style="margin-top: 16px;"><strong>Специальное программное обеспечение для заполнения справки о доходах, об имуществе и обязательствах имущественного характера</strong></li>
+      <li><a href="https://khural.rtyva.ru/upload/docs/188/5.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма уведомления представителя нанимателя (работодате <span style="color: #6b7280;">(скачать)</span></a></li>
+    </ul>
+  </div>
+</div>
+`;
+
+const INFO_CORRUPTION_SPAVKE_BK_SLUG = "info/protivodeystvie-korrupcii/spavki-bk";
+const INFO_CORRUPTION_SPAVKE_BK_TITLE = 'Специальное программное обеспечение "Справки БК"';
+const INFO_CORRUPTION_SPAVKE_BK_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Специальное программное обеспечение «Справки БК»</h1>
+    <ul style="margin:0; padding-left: 20px;">
+      <li style="margin-bottom:8px;"><a href="https://khural.rtyva.ru/upload/docs/185/spavki_bk.exe" target="_blank" rel="noreferrer" style="color: #003366;">СПО Справки БК (версия 2.5.5) от 31.01.2024 <span style="color: #6b7280;">(20139.1 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="https://khural.rtyva.ru/upload/docs/185/novely.docx" target="_blank" rel="noreferrer" style="color: #003366;">Основные новеллы <span style="color: #6b7280;">(25.6 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="https://khural.rtyva.ru/upload/docs/185/instrukciya.docx" target="_blank" rel="noreferrer" style="color: #003366;">Инструкция о порядке заполнения справок о доходах (в формате doc) <span style="color: #6b7280;">(41.5 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="https://khural.rtyva.ru/upload/docs/185/opisanie.docx" target="_blank" rel="noreferrer" style="color: #003366;">Описание специального программного обеспечения (в формате doc) <span style="color: #6b7280;">(458 КБ)</span></a></li>
+      <li><a href="https://khural.rtyva.ru/upload/docs/185/metod_rekomendacii_2025.pdf" target="_blank" rel="noreferrer" style="color: #003366;">МЕТОДИЧЕСКИЕ РЕКОМЕНДАЦИИ в 2025 году (за отчетный 2024 год) <span style="color: #6b7280;">(163.3 КБ)</span></a></li>
+    </ul>
+  </div>
+</div>
+`;
+
+const INFO_CORRUPTION_PLAN_SLUG = "info/protivodeystvie-korrupcii/protivodeystvie-korrupcii-plan";
+const INFO_CORRUPTION_PLAN_TITLE = "План противодействия коррупции";
+const INFO_CORRUPTION_PLAN_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">План противодействия коррупции</h1>
+    <ul style="margin:0; padding-left: 20px;">
+      <li><a href="https://khural.rtyva.ru/upload/docs/233/protivodeystvie_korrupcii_2018-2020.pdf" target="_blank" rel="noreferrer" style="color: #003366;">План противодействия коррупции в Верховном Хурале (парламенте) Республики Тыва на 2018 – 2020 годы <span style="color: #6b7280;">(105.5 КБ)</span></a></li>
+    </ul>
+  </div>
+</div>
+`;
+
+// === Контактная информация ===
+const INFO_CONTACTS_SLUG = "info/contacts";
+const INFO_CONTACTS_TITLE = "Контактная информация";
+const INFO_CONTACTS_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px; line-height: 1.8; color: #1f2937;">
+    <h1 style="margin:0 0 20px 0; font-size: 22px; font-weight: 700; color: #111827;">Контактная информация</h1>
+    
+    <div style="margin-bottom: 16px;">
+      <strong style="font-size: 16px;">Адрес:</strong><br>
+      667000, Республика Тыва, г. Кызыл, ул. Ленина, 32
+    </div>
+    
+    <div style="margin-bottom: 16px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+      <strong style="font-size: 16px;">Приемная</strong><br>
+      тел/факс: <a href="tel:83942221632" style="color: #003366;">8 (39422) 2-16-32</a><br>
+      e-mail: <a href="mailto:khural@inbox.ru" style="color: #003366;">khural@inbox.ru</a>
+    </div>
+    
+    <div>
+      <strong style="font-size: 16px;">Время работы:</strong><br>
+      понедельник - пятница: 8.30 - 17.30<br>
+      перерыв на обед: 13.00 - 14.00
+    </div>
+  </div>
+</div>
+`;
+
+// === Государственные символы ===
+const INFO_GOSIMVOLI_SLUG = "info/gosudarstvennye-simvoly";
+const INFO_GOSIMVOLI_TITLE = "Государственные символы";
+const INFO_GOSIMVOLI_HTML = `
+<div style="display:grid; gap:16px;">
+  <div class="card" style="padding: 20px; line-height: 1.8; color: #1f2937;">
+    <h1 style="margin:0 0 20px 0; font-size: 22px; font-weight: 700; color: #111827;">Государственные символы</h1>
+    
+    <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">Государственный гимн Республики Тыва</h2>
+    <p style="margin:0 0 16px 0;">Принят Верховным Хуралом (парламентом) Республики Тыва 11 августа 2011 года приложением № 2 к конституционному закону Республики Тыва № 828 ВХ-I «О Государственном гимне Республики Тыва».</p>
+    <p style="margin:0 0 16px 0;">Утверждён Председателем Правительства Республики Тыва Ш. Кара-оолом 11 августа 2011 года.</p>
+    <p style="margin:0 0 16px 0;">Вступил в силу 13 августа 2011 года – в день официального опубликования в газете «Тувинская правда» № 85 от 13 августа 2011 года.</p>
+    
+    <div style="margin: 20px 0; padding: 16px; background: #f9fafb; border-radius: 8px; line-height: 2;">
+      <p style="margin:0 0 8px 0; font-weight: 700; text-align: center;">«Мен – тыва мен»</p>
+      <p style="margin:0 0 4px 0; font-style: italic;">Арт-арттың оваазынга<br>Дажын салып чалбарган<br>Таңды, Саян ыдыынга<br>Агын өргээн тыва мен.</p>
+      <p style="margin:0 0 4px 0; font-weight: 600;">Кожумаа:</p>
+      <p style="margin:0 0 4px 0; font-style: italic;">Мен – тыва мен<br>Мөңге харлыг дагның оглу мен.<br>Мен – тыва мен,<br>Мөңгүн суглуг чурттуң төлу мен.<br>Өгбелерим чуртунда<br>Өлчей тарып иженген,<br>Өткүт хөөмей ырынга<br>Өөрүп талаан тыва мен.</p>
+      <p style="margin:0 0 4px 0; font-weight: 600;">Кожумаа:</p>
+      <p style="margin:0 0 4px 0; font-style: italic;">Мен – тыва мен,<br>Мөңге харлыг дагның оглу мен.<br>Мен – тыва мен,<br>Мөңгүн суглуг чурттуң төлу мен.</p>
+      <p style="margin:0 0 4px 0; font-style: italic;">Аймак чоннар бүлези<br>Акы-дуңма найыралдыг,<br>Депшилгеже чүткүлдүг<br>Демниг чурттуг тыва мен.</p>
+      <p style="margin:0 0 4px 0; font-weight: 600;">Кожумаа:</p>
+      <p style="margin:0; font-style: italic;">Мен – тыва мен,<br>Мөңге харлыг дагның оглу мен.<br>Мен – тыва мен,<br>Мөңгүн суглуг чурттуң төлу мен.</p>
+    </div>
+    
+    <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">Государственная символика Республики Тыва</h2>
+    
+    <h3 style="margin:16px 0 8px 0; font-size: 16px; font-weight: 600; color: #111827;">Герб Республики Тыва</h3>
+    <p style="margin:0 0 12px 0;">Изображение на голубом фоне золотого всадника в национальной тувинской одежде, скачущего на золотой лошади навстречу лучам восходящего солнца. В основании герба на традиционной белой ленте «кадак» надпись золотом «Тыва». Обрамление герба имеет пятилепестковую форму.</p>
+    <p style="margin:0 0 12px 0;">Скачущий на лошади всадник арат — крестьянин-скотовод отражает самобытность этноса тувинцев, их традиционный уклад жизни и основную хозяйственную деятельность на протяжении многих веков. На всаднике национальные костюм «тон» и головной убор, которые носили далекие предки тувинцев. Не случайно он на коне. Жизнь тувинца-кочевника немыслима без него. Конь давал высококалорийную пищу — мясо и кумыс; одежду, обувь, веревки, арканы, нити; служил основным транспортным средством, в случае военных столкновений был боевым другом своего хозяина.</p>
+    <p style="margin:0 0 12px 0;">Изображение всадника — арата, скачущего навстречу золотым лучам солнца, символизирует движение к светлой и счастливой жизни, миру, высоким идеалам. Лента «кадак» — церемониальный шарф, подносится как почетный дар, а также выражает гостеприимство и дружелюбие тувинцев. Пятилепестковое обрамление, придающее гербу неповторимую форму, — стилизованный древнебуддийский знак вечности.</p>
+    
+    <h3 style="margin:16px 0 8px 0; font-size: 16px; font-weight: 600; color: #111827;">Флаг Республики Тыва</h3>
+    <p style="margin:0 0 12px 0;">Голубое прямоугольное полотнище с наклонными белыми и голубыми полосами, исходящими из верхнего и нижнего углов со стороны древка. Голубые полосы соединяются в одну, проходящую посередине флага. Треугольник, образованный белыми полосами на левом крае флага, имеет золотой цвет. Соотношение сторон флага — 1:2.</p>
+    <p style="margin:0 0 12px 0;">Исходящие из верхнего и нижнего углов флага полосы символизируют протекающие по территории Тывы реки Большой Енисей (Бий-Хем) и Малый Енисей (Каа-Хем), а образуемая ими полоса, идущая вдоль полотнища флага, — Верхний Енисей (Улуг-Хем). Этот последний — результат слияния двух первых в месте нахождения Кызыла.</p>
+    <p style="margin:0 0 12px 0;">О цветовом ряде символов. Золотой символизирует богатство, верховенство, величие; голубой — чистое небо, возвышенность целей, взаимоуважение и согласие в обществе; белый — чистоту и благородство общественной морали, он также напоминает о традиционном напитке тувинцев — чае с молоком, который первым делом преподносят гостю, когда он входит в дом.</p>
+    
+    <h3 style="margin:16px 0 8px 0; font-size: 16px; font-weight: 600; color: #111827;">Государственный Герб Российской Федерации</h3>
+    <p style="margin:0 0 8px 0;"><a href="http://www.gov.ru/main/symbols/gsrf2_1.html" target="_blank" rel="noreferrer" style="color: #003366;">Федеральный конституционный закон «О Государственном гербе Российской Федерации»</a></p>
+    
+    <h3 style="margin:16px 0 8px 0; font-size: 16px; font-weight: 600; color: #111827;">Государственный Флаг Российской Федерации</h3>
+    <p style="margin:0 0 8px 0;"><a href="http://www.gov.ru/main/symbols/gsrf3_1.html" target="_blank" rel="noreferrer" style="color: #003366;">Федеральный конституционный закон «О Государственном флаге Российской Федерации»</a></p>
+    
+    <h3 style="margin:16px 0 8px 0; font-size: 16px; font-weight: 600; color: #111827;">Государственный Гимн Российской Федерации</h3>
+    <ul style="margin:0; padding-left: 20px;">
+      <li><a href="http://www.gov.ru/main/symbols/gsrf4_1.html" target="_blank" rel="noreferrer" style="color: #003366;">Федеральный конституционный закон «О Государственном гимне Российской Федерации»</a></li>
+      <li><a href="http://www.gov.ru/main/symbols/gsrf4_4.html" target="_blank" rel="noreferrer" style="color: #003366;">Текст Государственного гимна Российской Федерации</a></li>
+      <li><a href="http://www.gov.ru/main/symbols/gsrf4_5.html" target="_blank" rel="noreferrer" style="color: #003366;">Исполнение Государственного гимна Российской Федерации</a></li>
+    </ul>
+  </div>
+</div>
+`;
+
+// === Приграничный субъект ===
+const INFO_GRANISA_SLUG = "info/prigranichny-subekt";
+const INFO_GRANISA_TITLE = "Приграничный субъект";
+const INFO_GRANISA_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px; line-height: 1.8;">
+    <h1 style="margin:0 0 16px 0; font-size: 22px; font-weight: 700; color: #111827;">Приграничный субъект</h1>
+    <ul style="margin:0; padding-left: 20px;">
+      <li><a href="/${INFO_GRANISA_SLUG}/shablony" style="color: #003366;">Шаблоны заявлений и ходатайств</a></li>
+      <li><a href="/${INFO_GRANISA_SLUG}/shema-uslugi" style="color: #003366;">Схема предоставления услуги</a></li>
+      <li><a href="/${INFO_GRANISA_SLUG}/individualny-propusk" style="color: #003366;">Ходатайство на получение индивидуального пропуска для въезда (прохода) лиц и транспортных средств в пограничную зону</a></li>
+      <li><a href="/${INFO_GRANISA_SLUG}/kollektivny-propusk" style="color: #003366;">Ходатайство на получение коллективного пропуска для въезда (прохода) лиц и транспортных средств в пограничную зону</a></li>
+      <li><a href="/${INFO_GRANISA_SLUG}/zayavlenie-zakonnogo-predstavitelya" style="color: #003366;">Заявление законного представителя</a></li>
+      <li><a href="/${INFO_GRANISA_SLUG}/zayavlenie-individualny-propusk" style="color: #003366;">Заявление на индивидуальный пропуск</a></li>
+      <li><a href="/${INFO_GRANISA_SLUG}/zayavlenie-kollektivny-propusk" style="color: #003366;">Заявление на коллективный пропуск</a></li>
+      <li><a href="/${INFO_GRANISA_SLUG}/zayavlenie-promyslovaya-deyatelnost" style="color: #003366;">Заявление на промысловую деятельность</a></li>
+      <li><a href="/${INFO_GRANISA_SLUG}/zayavlenie-hoz-deyatelnost" style="color: #003366;">Заявление на разрешение хоз. деятельности</a></li>
+    </ul>
+  </div>
+</div>
+`;
+
+const INFO_GRANISA_SHABLONY_SLUG = "info/prigranichny-subekt/shablony";
+const INFO_GRANISA_SHABLONY_TITLE = "Шаблоны заявлений и ходатайств";
+const INFO_GRANISA_SHABLONY_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Шаблоны заявлений и ходатайств</h1>
+    <ul style="margin:0; padding-left: 20px;">
+      <li><a href="https://khural.rtyva.ru/info/granisa/205/" target="_blank" rel="noreferrer" style="color: #003366;">Ходатайство на получение индивидуального пропуска</a></li>
+      <li><a href="https://khural.rtyva.ru/info/granisa/206/" target="_blank" rel="noreferrer" style="color: #003366;">Ходатайство на получение коллективного пропуска</a></li>
+      <li><a href="https://khural.rtyva.ru/info/granisa/207/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление законного представителя</a></li>
+      <li><a href="https://khural.rtyva.ru/info/granisa/208/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на индивидуальный пропуск</a></li>
+      <li><a href="https://khural.rtyva.ru/info/granisa/209/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на коллективный пропуск</a></li>
+      <li><a href="https://khural.rtyva.ru/info/granisa/210/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на промысловую деятельность</a></li>
+      <li><a href="https://khural.rtyva.ru/info/granisa/211/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на разрешение хоз. деятельности</a></li>
+    </ul>
+  </div>
+</div>
+`;
+
+const INFO_GRANISA_SHema_SLUG = "info/prigranichny-subekt/shema-uslugi";
+const INFO_GRANISA_SHema_TITLE = "Схема предоставления услуги";
+const INFO_GRANISA_SHema_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Схема предоставления услуги</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
+const INFO_GRANISA_INDIV_PROPUSK_SLUG = "info/prigranichny-subekt/individualny-propusk";
+const INFO_GRANISA_INDIV_PROPUSK_TITLE = "Ходатайство на получение индивидуального пропуска";
+const INFO_GRANISA_INDIV_PROPUSK_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Ходатайство на получение индивидуального пропуска для въезда (прохода) лиц и транспортных средств в пограничную зону</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
+const INFO_GRANISA_KOL_PROPUSK_SLUG = "info/prigranichny-subekt/kollektivny-propusk";
+const INFO_GRANISA_KOL_PROPUSK_TITLE = "Ходатайство на получение коллективного пропуска";
+const INFO_GRANISA_KOL_PROPUSK_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Ходатайство на получение коллективного пропуска для въезда (прохода) лиц и транспортных средств в пограничную зону</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
+const INFO_GRANISA_ZAYAVLENIE_ZAKON_SLUG = "info/prigranichny-subekt/zayavlenie-zakonnogo-predstavitelya";
+const INFO_GRANISA_ZAYAVLENIE_ZAKON_TITLE = "Заявление законного представителя";
+const INFO_GRANISA_ZAYAVLENIE_ZAKON_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Заявление законного представителя</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
+const INFO_GRANISA_ZAYAVLENIE_INDIV_SLUG = "info/prigranichny-subekt/zayavlenie-individualny-propusk";
+const INFO_GRANISA_ZAYAVLENIE_INDIV_TITLE = "Заявление на индивидуальный пропуск";
+const INFO_GRANISA_ZAYAVLENIE_INDIV_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Заявление на индивидуальный пропуск</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
+const INFO_GRANISA_ZAYAVLENIE_KOL_SLUG = "info/prigranichny-subekt/zayavlenie-kollektivny-propusk";
+const INFO_GRANISA_ZAYAVLENIE_KOL_TITLE = "Заявление на коллективный пропуск";
+const INFO_GRANISA_ZAYAVLENIE_KOL_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Заявление на коллективный пропуск</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
+const INFO_GRANISA_ZAYAVLENIE_PROMYSLOVAYA_SLUG = "info/prigranichny-subekt/zayavlenie-promyslovaya-deyatelnost";
+const INFO_GRANISA_ZAYAVLENIE_PROMYSLOVAYA_TITLE = "Заявление на промысловую деятельность";
+const INFO_GRANISA_ZAYAVLENIE_PROMYSLOVAYA_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Заявление на промысловую деятельность</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
+const INFO_GRANISA_ZAYAVLENIE_HOZ_SLUG = "info/prigranichny-subekt/zayavlenie-hoz-deyatelnost";
+const INFO_GRANISA_ZAYAVLENIE_HOZ_TITLE = "Заявление на разрешение хоз. деятельности";
+const INFO_GRANISA_ZAYAVLENIE_HOZ_HTML = `
+<div style="display:grid; gap:12px;">
+  <div class="card" style="padding: 20px;">
+    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Заявление на разрешение хоз. деятельности</h1>
+    <p style="margin:0;">Сведения отсутствуют.</p>
+  </div>
+</div>
+`;
+
 function getSlugFromPath() {
   const path = typeof window !== "undefined" ? window.location.pathname || "" : "";
 
@@ -1398,6 +1845,43 @@ export default function PageBySlug() {
   const isInfoPersonnelObzhalovanie = slug === INFO_PERSONNEL_OBZHALOVANIE_SLUG;
   const isInfoPersonnelPension = slug === INFO_PERSONNEL_PENSION_SLUG;
   const isInfoPersonnelOtpusk = slug === INFO_PERSONNEL_OTPUSK_SLUG;
+  const isInfoPersonnelVakansii = slug === INFO_PERSONNEL_VAKANSII_SLUG;
+  const isInfoPersonnelKonkursy = slug === INFO_PERSONNEL_KONKURSY_SLUG;
+  const isInfoPersonnelMetodika = slug === INFO_PERSONNEL_METODIKA_SLUG;
+  const isInfoPersonnelKomissii = slug === INFO_PERSONNEL_KOMISSII_SLUG;
+  const isInfoPersonnelDokumenty = slug === INFO_PERSONNEL_DOKUMENTY_SLUG;
+  const isInfoPersonnelKonkursyProtokol = slug === INFO_PERSONNEL_KONKURSY_PROTOKOL_SLUG;
+  const isInfoPersonnelKonkursyProtokol1 = slug === INFO_PERSONNEL_KONKURSY_PROTOKOL_1_SLUG;
+  const isInfoPersonnelKonkursyProtokol2 = slug === INFO_PERSONNEL_KONKURSY_PROTOKOL_2_SLUG;
+  const isInfoPersonnelKonkursyObYavlenie = slug === INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_SLUG;
+  const isInfoPersonnelKonkursyObYavlenieKomissii = slug === INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_KOMISSII_SLUG;
+  const isInfoPersonnelKomissiiRasporyazhenie = slug === INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_SLUG;
+  const isInfoPersonnelKomissiiPolozhenie = slug === INFO_PERSONNEL_KOMISSII_POLOZENIE_SLUG;
+  const isInfoPersonnelKomissiiSostav = slug === INFO_PERSONNEL_KOMISSII_SOSTAV_SLUG;
+  const isInfoPersonnelKomissiiResheniya = slug === INFO_PERSONNEL_KOMISSII_RESHENIYA_SLUG;
+  const isInfoPolnomochiyaSpeaker = slug === INFO_POLNOMOCHIYA_SPEAKER_SLUG;
+  const isInfoCorruption = slug === INFO_CORRUPTION_SLUG;
+  const isInfoCorruptionNormativnye = slug === INFO_CORRUPTION_NORMATIVERNIE_SLUG;
+  const isInfoCorruptionKomissiyaDeputatov = slug === INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_SLUG;
+  const isInfoCorruptionKomissiyaVypiski = slug === INFO_CORRUPTION_KOMISSIYA_VYPISKI_SLUG;
+  const isInfoCorruptionKomissiyaInformaciya = slug === INFO_CORRUPTION_KOMISSIYA_INFORMACSIYA_SLUG;
+  const isInfoCorruptionMetodicheskie = slug === INFO_CORRUPTION_METODICHESKIE_SLUG;
+  const isInfoCorruptionObratnayaSvyaz = slug === INFO_CORRUPTION_OBRATNAYA_SVYAZ_SLUG;
+  const isInfoCorruptionFormyDokumentov = slug === INFO_CORRUPTION_FORMY_DOKUMENTOV_SLUG;
+  const isInfoCorruptionSpavkeBK = slug === INFO_CORRUPTION_SPAVKE_BK_SLUG;
+  const isInfoCorruptionPlan = slug === INFO_CORRUPTION_PLAN_SLUG;
+  const isInfoContacts = slug === INFO_CONTACTS_SLUG;
+  const isInfoGosimvoli = slug === INFO_GOSIMVOLI_SLUG;
+  const isInfoGranisa = slug === INFO_GRANISA_SLUG;
+  const isInfoGranisaShablony = slug === INFO_GRANISA_SHABLONY_SLUG;
+  const isInfoGranisaShema = slug === INFO_GRANISA_SHema_SLUG;
+  const isInfoGranisaIndivPropusk = slug === INFO_GRANISA_INDIV_PROPUSK_SLUG;
+  const isInfoGranisaKolPropusk = slug === INFO_GRANISA_KOL_PROPUSK_SLUG;
+  const isInfoGranisaZayavlenieZakon = slug === INFO_GRANISA_ZAYAVLENIE_ZAKON_SLUG;
+  const isInfoGranisaZayavlenieIndiv = slug === INFO_GRANISA_ZAYAVLENIE_INDIV_SLUG;
+  const isInfoGranisaZayavlenieKol = slug === INFO_GRANISA_ZAYAVLENIE_KOL_SLUG;
+  const isInfoGranisaZayavleniePromyslovaya = slug === INFO_GRANISA_ZAYAVLENIE_PROMYSLOVAYA_SLUG;
+  const isInfoGranisaZayavlenieHoz = slug === INFO_GRANISA_ZAYAVLENIE_HOZ_SLUG;
 
   // Любая подстраница раздела «Кадровое обеспечение», включая страницы из бэкенда
   // (vakansii, konkursy, metodika-konkursa, komissii, dokumenty-pri-postuplenii):
@@ -1444,7 +1928,21 @@ export default function PageBySlug() {
       isInfoPersonnelTelefon ||
       isInfoPersonnelObzhalovanie ||
       isInfoPersonnelPension ||
-      isInfoPersonnelOtpusk);
+      isInfoPersonnelOtpusk ||
+      isInfoPersonnelVakansii ||
+      isInfoPersonnelKonkursy ||
+      isInfoPersonnelMetodika ||
+      isInfoPersonnelKomissii ||
+      isInfoPersonnelDokumenty ||
+      isInfoPersonnelKonkursyProtokol ||
+      isInfoPersonnelKonkursyProtokol1 ||
+      isInfoPersonnelKonkursyProtokol2 ||
+      isInfoPersonnelKonkursyObYavlenie ||
+      isInfoPersonnelKonkursyObYavlenieKomissii ||
+      isInfoPersonnelKomissiiRasporyazhenie ||
+      isInfoPersonnelKomissiiPolozhenie ||
+      isInfoPersonnelKomissiiSostav ||
+      isInfoPersonnelKomissiiResheniya);
 
   const isStaticPage =
     isCodeOfHonor ||
@@ -1489,7 +1987,61 @@ export default function PageBySlug() {
     isInfoPersonnelTelefon ||
     isInfoPersonnelObzhalovanie ||
     isInfoPersonnelPension ||
-    isInfoPersonnelOtpusk;
+    isInfoPersonnelOtpusk ||
+    isInfoPersonnelVakansii ||
+    isInfoPersonnelKonkursy ||
+    isInfoPersonnelMetodika ||
+    isInfoPersonnelKomissii ||
+    isInfoPersonnelDokumenty ||
+    isInfoPersonnelKonkursyProtokol ||
+    isInfoPersonnelKonkursyProtokol1 ||
+    isInfoPersonnelKonkursyProtokol2 ||
+    isInfoPersonnelKonkursyObYavlenie ||
+    isInfoPersonnelKonkursyObYavlenieKomissii ||
+    isInfoPersonnelKomissiiRasporyazhenie ||
+    isInfoPersonnelKomissiiPolozhenie ||
+    isInfoPersonnelKomissiiSostav ||
+    isInfoPersonnelKomissiiResheniya ||
+    isInfoPolnomochiyaSpeaker ||
+    isInfoCorruption ||
+    isInfoCorruptionNormativnye ||
+    isInfoCorruptionKomissiyaDeputatov ||
+    isInfoCorruptionKomissiyaVypiski ||
+    isInfoCorruptionKomissiyaInformaciya ||
+    isInfoCorruptionMetodicheskie ||
+    isInfoCorruptionObratnayaSvyaz ||
+    isInfoCorruptionFormyDokumentov ||
+    isInfoCorruptionSpavkeBK ||
+    isInfoCorruptionPlan ||
+    isInfoContacts ||
+    isInfoGosimvoli ||
+    isInfoGranisa ||
+    isInfoGranisaShablony ||
+    isInfoGranisaShema ||
+    isInfoGranisaIndivPropusk ||
+    isInfoGranisaKolPropusk ||
+    isInfoGranisaZayavlenieZakon ||
+    isInfoGranisaZayavlenieIndiv ||
+    isInfoGranisaZayavlenieKol ||
+    isInfoGranisaZayavleniePromyslovaya ||
+    isInfoGranisaZayavlenieHoz;
+
+  // Подстраницы «Противодействие коррупции» — назад к списку коррупционных разделов
+  const isInfoCorruptionSub = isInfoCorruptionNormativnye || isInfoCorruptionKomissiyaDeputatov ||
+    isInfoCorruptionKomissiyaVypiski || isInfoCorruptionKomissiyaInformaciya ||
+    isInfoCorruptionMetodicheskie || isInfoCorruptionObratnayaSvyaz ||
+    isInfoCorruptionFormyDokumentov || isInfoCorruptionSpavkeBK || isInfoCorruptionPlan;
+  // Подстраницы «Приграничный субъект» — назад к списку документов
+  const isInfoGranisaSub = isInfoGranisaShablony || isInfoGranisaShema || isInfoGranisaIndivPropusk ||
+    isInfoGranisaKolPropusk || isInfoGranisaZayavlenieZakon || isInfoGranisaZayavlenieIndiv ||
+    isInfoGranisaZayavlenieKol || isInfoGranisaZayavleniePromyslovaya || isInfoGranisaZayavlenieHoz;
+
+  // Подстраницы «Результатов проведения конкурсов» — назад к списку конкурсов
+  const isInfoPersonnelKonkursySub = isInfoPersonnelKonkursyProtokol || isInfoPersonnelKonkursyProtokol1 ||
+    isInfoPersonnelKonkursyProtokol2 || isInfoPersonnelKonkursyObYavlenie || isInfoPersonnelKonkursyObYavlenieKomissii;
+  // Подстраницы «Комиссий» — назад к списку комиссий
+  const isInfoPersonnelKomissiiSub = isInfoPersonnelKomissiiRasporyazhenie || isInfoPersonnelKomissiiPolozhenie ||
+    isInfoPersonnelKomissiiSostav || isInfoPersonnelKomissiiResheniya;
 
   // Определяем URL для кнопки "Назад"
   const backUrl = isInfoFinanceChecks2016 || isInfoFinanceChecks2018 || isInfoFinanceChecks2019 || isInfoFinanceChecks2020
@@ -1505,8 +2057,18 @@ export default function PageBySlug() {
     : isInfoDistricts || isInfoLawmap || isOpenData ||
       isInfoOmbHuman || isInfoOmbChild
     ? "/info"
+    : isInfoPersonnelKonkursySub
+    ? "/" + INFO_PERSONNEL_KONKURSY_SLUG
+    : isInfoPersonnelKomissiiSub
+    ? "/" + INFO_PERSONNEL_KOMISSII_SLUG
     : isInfoPersonnelSub
     ? PERSONNEL_ROOT_PATH
+    : isInfoPersonnelVakansii || isInfoPersonnelKonkursy || isInfoPersonnelMetodika || isInfoPersonnelKomissii || isInfoPersonnelDokumenty
+    ? PERSONNEL_ROOT_PATH
+    : isInfoCorruptionSub
+    ? "/" + INFO_CORRUPTION_SLUG
+    : isInfoGranisaSub
+    ? "/" + INFO_GRANISA_SLUG
     : isInfoFinance || isInfoIndex
     ? "/info"
     : isMothersCommandments || isCodeOfHonor
@@ -1531,7 +2093,17 @@ export default function PageBySlug() {
     : isInfoDistricts || isInfoLawmap || isOpenData ||
       isInfoOmbHuman || isInfoOmbChild
     ? t("← Назад к информации")
+    : isInfoPersonnelKomissiiSub
+    ? t("← Назад к комиссиям")
+    : isInfoPersonnelKonkursySub
+    ? t("← Назад к результатам конкурсов")
+    : isInfoCorruptionSub
+    ? t("← Назад к противодействию коррупции")
+    : isInfoGranisaSub
+    ? t("← Назад к приграничному субъекту")
     : isInfoPersonnelSub
+    ? t("← Назад к кадровому обеспечению")
+    : isInfoPersonnelVakansii || isInfoPersonnelKonkursy || isInfoPersonnelMetodika || isInfoPersonnelKomissii || isInfoPersonnelDokumenty
     ? t("← Назад к кадровому обеспечению")
     : isInfoFinance || isInfoIndex
     ? t("← Назад к информации")
@@ -1599,9 +2171,55 @@ export default function PageBySlug() {
                                 ? t(OPENDATA_TITLE) || OPENDATA_TITLE
                                 : isInfoOmbHuman
                                   ? t(INFO_OMBUDSMAN_HUMAN_TITLE) || INFO_OMBUDSMAN_HUMAN_TITLE
-                                  : isInfoOmbChild
-                                    ? t(INFO_OMBUDSMAN_CHILD_TITLE) || INFO_OMBUDSMAN_CHILD_TITLE
-                                    : isInfoPersonnel
+                                    : isInfoOmbChild
+                                      ? t(INFO_OMBUDSMAN_CHILD_TITLE) || INFO_OMBUDSMAN_CHILD_TITLE
+                                      : isInfoPolnomochiyaSpeaker
+                                        ? t(INFO_POLNOMOCHIYA_SPEAKER_TITLE) || INFO_POLNOMOCHIYA_SPEAKER_TITLE
+                                        : isInfoCorruption
+                                          ? t(INFO_CORRUPTION_TITLE) || INFO_CORRUPTION_TITLE
+                                          : isInfoCorruptionNormativnye
+                                            ? t(INFO_CORRUPTION_NORMATIVERNIE_TITLE) || INFO_CORRUPTION_NORMATIVERNIE_TITLE
+                                            : isInfoCorruptionKomissiyaDeputatov
+                                              ? t(INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_TITLE) || INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_TITLE
+                                              : isInfoCorruptionKomissiyaVypiski
+                                                ? t(INFO_CORRUPTION_KOMISSIYA_VYPISKI_TITLE) || INFO_CORRUPTION_KOMISSIYA_VYPISKI_TITLE
+                                                : isInfoCorruptionKomissiyaInformaciya
+                                                  ? t(INFO_CORRUPTION_KOMISSIYA_INFORMACSIYA_TITLE) || INFO_CORRUPTION_KOMISSIYA_INFORMACSIYA_TITLE
+                                                  : isInfoCorruptionMetodicheskie
+                                                    ? t(INFO_CORRUPTION_METODICHESKIE_TITLE) || INFO_CORRUPTION_METODICHESKIE_TITLE
+                                                    : isInfoCorruptionObratnayaSvyaz
+                                                      ? t(INFO_CORRUPTION_OBRATNAYA_SVYAZ_TITLE) || INFO_CORRUPTION_OBRATNAYA_SVYAZ_TITLE
+                                                      : isInfoCorruptionFormyDokumentov
+                                                        ? t(INFO_CORRUPTION_FORMY_DOKUMENTOV_TITLE) || INFO_CORRUPTION_FORMY_DOKUMENTOV_TITLE
+                                                        : isInfoCorruptionSpavkeBK
+                                                          ? t(INFO_CORRUPTION_SPAVKE_BK_TITLE) || INFO_CORRUPTION_SPAVKE_BK_TITLE
+                                                          : isInfoCorruptionPlan
+                                                            ? t(INFO_CORRUPTION_PLAN_TITLE) || INFO_CORRUPTION_PLAN_TITLE
+                                                            : isInfoContacts
+                                                              ? t(INFO_CONTACTS_TITLE) || INFO_CONTACTS_TITLE
+                                                              : isInfoGosimvoli
+                                                                ? t(INFO_GOSIMVOLI_TITLE) || INFO_GOSIMVOLI_TITLE
+                                                                : isInfoGranisa
+                                                                  ? t(INFO_GRANISA_TITLE) || INFO_GRANISA_TITLE
+                                                                  : isInfoGranisaShablony
+                                                                    ? t(INFO_GRANISA_SHABLONY_TITLE) || INFO_GRANISA_SHABLONY_TITLE
+                                                                    : isInfoGranisaShema
+                                                                      ? t(INFO_GRANISA_SHema_TITLE) || INFO_GRANISA_SHema_TITLE
+                                                                      : isInfoGranisaIndivPropusk
+                                                                        ? t(INFO_GRANISA_INDIV_PROPUSK_TITLE) || INFO_GRANISA_INDIV_PROPUSK_TITLE
+                                                                        : isInfoGranisaKolPropusk
+                                                                          ? t(INFO_GRANISA_KOL_PROPUSK_TITLE) || INFO_GRANISA_KOL_PROPUSK_TITLE
+                                                                          : isInfoGranisaZayavlenieZakon
+                                                                            ? t(INFO_GRANISA_ZAYAVLENIE_ZAKON_TITLE) || INFO_GRANISA_ZAYAVLENIE_ZAKON_TITLE
+                                                                            : isInfoGranisaZayavlenieIndiv
+                                                                              ? t(INFO_GRANISA_ZAYAVLENIE_INDIV_TITLE) || INFO_GRANISA_ZAYAVLENIE_INDIV_TITLE
+                                                                              : isInfoGranisaZayavlenieKol
+                                                                                ? t(INFO_GRANISA_ZAYAVLENIE_KOL_TITLE) || INFO_GRANISA_ZAYAVLENIE_KOL_TITLE
+                                                                                : isInfoGranisaZayavleniePromyslovaya
+                                                                                  ? t(INFO_GRANISA_ZAYAVLENIE_PROMYSLOVAYA_TITLE) || INFO_GRANISA_ZAYAVLENIE_PROMYSLOVAYA_TITLE
+                                                                                  : isInfoGranisaZayavlenieHoz
+                                                                                    ? t(INFO_GRANISA_ZAYAVLENIE_HOZ_TITLE) || INFO_GRANISA_ZAYAVLENIE_HOZ_TITLE
+                                                                                    : isInfoPersonnel
                                       ? t(INFO_PERSONNEL_TITLE) || INFO_PERSONNEL_TITLE
                                       : isInfoPersonnelGossluzhba
                                         ? t(INFO_PERSONNEL_GOSLUZHPBA_TITLE) || INFO_PERSONNEL_GOSLUZHPBA_TITLE
@@ -1619,9 +2237,37 @@ export default function PageBySlug() {
                                                     ? t(INFO_PERSONNEL_OBZHALOVANIE_TITLE) || INFO_PERSONNEL_OBZHALOVANIE_TITLE
                                                     : isInfoPersonnelPension
                                                       ? t(INFO_PERSONNEL_PENSION_TITLE) || INFO_PERSONNEL_PENSION_TITLE
-                                                      : isInfoPersonnelOtpusk
-                                                        ? t(INFO_PERSONNEL_OTPUSK_TITLE) || INFO_PERSONNEL_OTPUSK_TITLE
-                                                        : extractPageTitle(page, locale, slug)
+                                                       : isInfoPersonnelOtpusk
+                                                         ? t(INFO_PERSONNEL_OTPUSK_TITLE) || INFO_PERSONNEL_OTPUSK_TITLE
+                                                         : isInfoPersonnelVakansii
+                                                           ? t(INFO_PERSONNEL_VAKANSII_TITLE) || INFO_PERSONNEL_VAKANSII_TITLE
+                                                           : isInfoPersonnelKonkursy
+                                                             ? t(INFO_PERSONNEL_KONKURSY_TITLE) || INFO_PERSONNEL_KONKURSY_TITLE
+                                                             : isInfoPersonnelMetodika
+                                                               ? t(INFO_PERSONNEL_METODIKA_TITLE) || INFO_PERSONNEL_METODIKA_TITLE
+                                                               : isInfoPersonnelKomissii
+                                                                 ? t(INFO_PERSONNEL_KOMISSII_TITLE) || INFO_PERSONNEL_KOMISSII_TITLE
+                                                                  : isInfoPersonnelDokumenty
+                                                                    ? t(INFO_PERSONNEL_DOKUMENTY_TITLE) || INFO_PERSONNEL_DOKUMENTY_TITLE
+                                                                    : isInfoPersonnelKonkursyProtokol
+                                                                      ? t(INFO_PERSONNEL_KONKURSY_PROTOKOL_TITLE) || INFO_PERSONNEL_KONKURSY_PROTOKOL_TITLE
+                                                                      : isInfoPersonnelKonkursyProtokol1
+                                                                        ? t(INFO_PERSONNEL_KONKURSY_PROTOKOL_1_TITLE) || INFO_PERSONNEL_KONKURSY_PROTOKOL_1_TITLE
+                                                                        : isInfoPersonnelKonkursyProtokol2
+                                                                          ? t(INFO_PERSONNEL_KONKURSY_PROTOKOL_2_TITLE) || INFO_PERSONNEL_KONKURSY_PROTOKOL_2_TITLE
+                                                                          : isInfoPersonnelKonkursyObYavlenie
+                                                                            ? t(INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_TITLE) || INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_TITLE
+                                                                            : isInfoPersonnelKonkursyObYavlenieKomissii
+                                                                              ? t(INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_KOMISSII_TITLE) || INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_KOMISSII_TITLE
+                                                                              : isInfoPersonnelKomissiiRasporyazhenie
+                                                                                ? t(INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_TITLE) || INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_TITLE
+                                                                                : isInfoPersonnelKomissiiPolozhenie
+                                                                                  ? t(INFO_PERSONNEL_KOMISSII_POLOZENIE_TITLE) || INFO_PERSONNEL_KOMISSII_POLOZENIE_TITLE
+                                                                                  : isInfoPersonnelKomissiiSostav
+                                                                                    ? t(INFO_PERSONNEL_KOMISSII_SOSTAV_TITLE) || INFO_PERSONNEL_KOMISSII_SOSTAV_TITLE
+                                                                                    : isInfoPersonnelKomissiiResheniya
+                                                                                      ? t(INFO_PERSONNEL_KOMISSII_RESHENIYA_TITLE) || INFO_PERSONNEL_KOMISSII_RESHENIYA_TITLE
+                                                                                      : extractPageTitle(page, locale, slug)
         : extractPageTitle(page, locale, slug);
   const html = isCodeOfHonor
     ? CODE_OF_HONOR_HTML
@@ -1682,9 +2328,55 @@ export default function PageBySlug() {
                                 ? OPENDATA_HTML
                                 : isInfoOmbHuman
                                   ? INFO_OMBUDSMAN_HUMAN_HTML
-                                  : isInfoOmbChild
-                                    ? INFO_OMBUDSMAN_CHILD_HTML
-                                    : isInfoPersonnel
+                                    : isInfoOmbChild
+                                      ? INFO_OMBUDSMAN_CHILD_HTML
+                                      : isInfoPolnomochiyaSpeaker
+                                        ? INFO_POLNOMOCHIYA_SPEAKER_HTML
+                                        : isInfoCorruption
+                                          ? INFO_CORRUPTION_HTML
+                                          : isInfoCorruptionNormativnye
+                                            ? INFO_CORRUPTION_NORMATIVERNIE_HTML
+                                            : isInfoCorruptionKomissiyaDeputatov
+                                              ? INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_HTML
+                                              : isInfoCorruptionKomissiyaVypiski
+                                                ? INFO_CORRUPTION_KOMISSIYA_VYPISKI_HTML
+                                                : isInfoCorruptionKomissiyaInformaciya
+                                                  ? INFO_CORRUPTION_KOMISSIYA_INFORMACSIYA_HTML
+                                                  : isInfoCorruptionMetodicheskie
+                                                    ? INFO_CORRUPTION_METODICHESKIE_HTML
+                                                    : isInfoCorruptionObratnayaSvyaz
+                                                      ? INFO_CORRUPTION_OBRATNAYA_SVYAZ_HTML
+                                                      : isInfoCorruptionFormyDokumentov
+                                                        ? INFO_CORRUPTION_FORMY_DOKUMENTOV_HTML
+                                                        : isInfoCorruptionSpavkeBK
+                                                          ? INFO_CORRUPTION_SPAVKE_BK_HTML
+                                                          : isInfoCorruptionPlan
+                                                            ? INFO_CORRUPTION_PLAN_HTML
+                                                            : isInfoContacts
+                                                              ? INFO_CONTACTS_HTML
+                                                              : isInfoGosimvoli
+                                                                ? INFO_GOSIMVOLI_HTML
+                                                                : isInfoGranisa
+                                                                  ? INFO_GRANISA_HTML
+                                                                  : isInfoGranisaShablony
+                                                                    ? INFO_GRANISA_SHABLONY_HTML
+                                                                    : isInfoGranisaShema
+                                                                      ? INFO_GRANISA_SHema_HTML
+                                                                      : isInfoGranisaIndivPropusk
+                                                                        ? INFO_GRANISA_INDIV_PROPUSK_HTML
+                                                                        : isInfoGranisaKolPropusk
+                                                                          ? INFO_GRANISA_KOL_PROPUSK_HTML
+                                                                          : isInfoGranisaZayavlenieZakon
+                                                                            ? INFO_GRANISA_ZAYAVLENIE_ZAKON_HTML
+                                                                            : isInfoGranisaZayavlenieIndiv
+                                                                              ? INFO_GRANISA_ZAYAVLENIE_INDIV_HTML
+                                                                              : isInfoGranisaZayavlenieKol
+                                                                                ? INFO_GRANISA_ZAYAVLENIE_KOL_HTML
+                                                                                : isInfoGranisaZayavleniePromyslovaya
+                                                                                  ? INFO_GRANISA_ZAYAVLENIE_PROMYSLOVAYA_HTML
+                                                                                  : isInfoGranisaZayavlenieHoz
+                                                                                    ? INFO_GRANISA_ZAYAVLENIE_HOZ_HTML
+                                                                                    : isInfoPersonnel
                                       ? INFO_PERSONNEL_HTML
                                       : isInfoPersonnelGossluzhba
                                         ? INFO_PERSONNEL_GOSLUZHPBA_HTML
@@ -1702,9 +2394,37 @@ export default function PageBySlug() {
                                                     ? INFO_PERSONNEL_OBZHALOVANIE_HTML
                                                     : isInfoPersonnelPension
                                                       ? INFO_PERSONNEL_PENSION_HTML
-                                                      : isInfoPersonnelOtpusk
-                                                        ? INFO_PERSONNEL_OTPUSK_HTML
-                                                        : extractPageHtml(page, locale)
+                                                       : isInfoPersonnelOtpusk
+                                                         ? INFO_PERSONNEL_OTPUSK_HTML
+                                                         : isInfoPersonnelVakansii
+                                                           ? INFO_PERSONNEL_VAKANSII_HTML
+                                                           : isInfoPersonnelKonkursy
+                                                             ? INFO_PERSONNEL_KONKURSY_HTML
+                                                             : isInfoPersonnelMetodika
+                                                               ? INFO_PERSONNEL_METODIKA_HTML
+                                                               : isInfoPersonnelKomissii
+                                                                 ? INFO_PERSONNEL_KOMISSII_HTML
+                                                                  : isInfoPersonnelDokumenty
+                                                                    ? INFO_PERSONNEL_DOKUMENTY_HTML
+                                                                    : isInfoPersonnelKonkursyProtokol
+                                                                      ? INFO_PERSONNEL_KONKURSY_PROTOKOL_HTML
+                                                                      : isInfoPersonnelKonkursyProtokol1
+                                                                        ? INFO_PERSONNEL_KONKURSY_PROTOKOL_1_HTML
+                                                                        : isInfoPersonnelKonkursyProtokol2
+                                                                          ? INFO_PERSONNEL_KONKURSY_PROTOKOL_2_HTML
+                                                                          : isInfoPersonnelKonkursyObYavlenie
+                                                                            ? INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_HTML
+                                                                            : isInfoPersonnelKonkursyObYavlenieKomissii
+                                                                              ? INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_KOMISSII_HTML
+                                                                              : isInfoPersonnelKomissiiRasporyazhenie
+                                                                                ? INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_HTML
+                                                                                : isInfoPersonnelKomissiiPolozhenie
+                                                                                  ? INFO_PERSONNEL_KOMISSII_POLOZENIE_HTML
+                                                                                  : isInfoPersonnelKomissiiSostav
+                                                                                    ? INFO_PERSONNEL_KOMISSII_SOSTAV_HTML
+                                                                                    : isInfoPersonnelKomissiiResheniya
+                                                                                      ? INFO_PERSONNEL_KOMISSII_RESHENIYA_HTML
+                                                                                      : extractPageHtml(page, locale)
           : extractPageHtml(page, locale);
 
   // Определяем slug для админки
