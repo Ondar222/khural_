@@ -537,48 +537,29 @@ export const INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_TITLE = "Распоряже�
 export const INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_HTML = `
 <div class="card" style="padding: 24px; line-height: 1.7; color: #1f2937;">
   <div style="text-align: center; margin-bottom: 24px;">
-    <p style="margin: 0 0 4px 0; font-size: 18px; font-weight: 700;">
-      О комиссии по соблюдению требований к служебному поведению
-    </p>
-    <p style="margin: 0 0 4px 0; font-size: 18px; font-weight: 700;">
-      государственных гражданских служащих Республики Тыва
-    </p>
-    <p style="margin: 0 0 4px 0; font-size: 18px; font-weight: 700;">
-      в Аппарате Верховного Хурала (парламента) Республики Тыва
-    </p>
-    <p style="margin: 0; font-size: 18px; font-weight: 700;">
-      и урегулированию конфликта интересов
+    <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: 700;">РАСПОРЯЖЕНИЕ</p>
+    <p style="margin: 0; font-size: 13px; font-weight: 700;">
+      О СОЗДАНИИ КОМИССИИ ПО СОБЛЮДЕНИЮ ТРЕБОВАНИЙ К СЛУЖЕБНОМУ ПОВЕДЕНИЮ ГОСУДАРСТВЕННЫХ ГРАЖДАНСКИХ СЛУЖАЩИХ РЕСПУБЛИКИ ТЫВА В АППАРАТЕ ВЕРХОВНОГО ХУРАЛА (ПАРЛАМЕНТА) РЕСПУБЛИКИ ТЫВА И УРЕГУЛИРОВАНИЮ КОНФЛИКТА ИНТЕРЕСОВ
     </p>
   </div>
-  <div style="text-align: justify; margin-bottom: 20px;">
-    <p style="margin: 0 0 16px 0;">
-      В соответствии с Федеральным законом от 25 декабря 2008 г. № 273-ФЗ «О противодействии коррупции», Федеральным законом от 27 июля 2004 г. № 79-ФЗ «О государственной гражданской службе Российской Федерации», Законом Республики Тыва от 21 декабря 2018 г. № 453-ЗРТ «О мерах по противодействию коррупции в Республике Тыва» и Указом Председателя Правительства Республики Тыва от 17 ноября 2011 г. № 193 «Об утверждении Положения о комиссиях по соблюдению требований к служебному поведению государственных гражданских служащих Республики Тыва и урегулированию конфликта интересов и внесении изменений в некоторые указы Председателя Правительства Республики Тыва»:
-    </p>
-    <ol style="padding-left: 24px; margin: 0;">
-      <li style="margin-bottom: 12px;">Создать комиссию по соблюдению требований к служебному поведению государственных гражданских служащих Республики Тыва в Аппарате Верховного Хурала (парламента) Республики Тыва и урегулированию конфликта интересов.</li>
-      <li style="margin-bottom: 12px;">
-        Утвердить:
-        <ul style="padding-left: 20px; margin-top: 8px;">
-          <li>Положение о комиссии по соблюдению требований к служебному поведению государственных гражданских служащих Республики Тыва в Аппарате Верховного Хурала (парламента) Республики Тыва и урегулированию конфликта интересов согласно приложению 1 к настоящему распоряжению;</li>
-          <li>Состав комиссии по соблюдению требований к служебному поведению государственных гражданских служащих Республики Тыва в Аппарате Верховного Хурала (парламента) Республики Тыва и урегулированию конфликта интересов согласно приложению 2 к настоящему распоряжению.</li>
-        </ul>
-      </li>
-      <li style="margin-bottom: 12px;">Признать утратившим силу распоряжение Председателя Верховного Хурала (парламента) Республики Тыва от 11 августа 2016 г. № 302-ап «О комиссии по соблюдению требований к служебному поведению государственных гражданских служащих Республики Тыва в Аппарате Верховного Хурала (парламента) Республики Тыва и урегулированию конфликта интересов».</li>
-      <li style="margin-bottom: 12px;">Контроль за исполнением настоящего распоряжения возложить на руководителя Аппарата Верховного Хурала (парламента) Республики Тыва М.И. Успуна.</li>
-    </ol>
-  </div>
-  <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: flex-end;">
-    <div style="font-weight: 700;">
-      Председатель Верховного Хурала<br>
-      (парламента) Республики Тыва
-    </div>
-    <div style="font-weight: 700; font-size: 18px;">К.Т. Даваа</div>
+  <div style="margin: 16px 0; padding: 16px; background: #f9fafb; border-radius: 8px; line-height: 1.8; color: #374151;">
+    <p style="margin: 0 0 12px 0;"><strong>В соответствии</strong> с частями 3, 4 статьи 14.1 Федерального закона от 27 июля 2004 года № 79-ФЗ «О государственной гражданской службе Российской Федерации», пунктом 3 части 1 статьи 20, частями 2, 3 статьи 26, частью 2 статьи 28 Закона Республики Тыва от 24 ноября 2013 года № 13-ВХ «О Государственной гражданской службе Республики Тыва»:</p>
+    <p style="margin: 0 0 12px 0;"><strong>ПОСТАНОВЛЯЮ:</strong></p>
+    <p style="margin: 0 0 12px 0; padding: 8px 0 8px 20px; border-left: 3px solid #003366;">1. Создать комиссию по соблюдению требований к служебному поведению государственных гражданских служащих Республики Тыва в Аппарате Верховного Хурала (парламента) Республики Тыва и урегулированию конфликта интересов (далее — комиссия) в составе:</p>
+    <p style="margin: 0 0 12px 0; padding: 8px 0 8px 20px; border-left: 3px solid #003366;">2. Утвердить положение о комиссии (прилагается).</p>
+    <p style="margin: 0;"><strong>Председатель</strong><br>Комитента Д.</p>
   </div>
   <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
-  <div style="display: flex; gap: 12px;">
-    <a href="https://khural.rtyva.ru/upload/iblock/97f/s7mcx7xxx0vixa6didbho4r2e4apd3x4/%D1%80%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%8F%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5.docx"
-       target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px;">
-      📄 Распоряжение о комиссии
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="https://khural.rtyva.ru/upload/iblock/97f/s7mcx7xxx0vixa6didbho4r2e4apd3x4/%D1%80%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%8F%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5.docx"
+         data-doc-preview="1" data-doc-title="Распоряжение о комиссии"
+         style="display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 14px; background: #f3f4f6; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Предпросмотр
+      </a>
+    <a href="https://khural.rtyva.ru/upload/iblock/97f/s7mcx7xxx0vixa6didbho4r2e4apd3x4/%D1%80%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%8F%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5.docx" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px; border: 1px solid #bfdbfe;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Распоряжение о комиссии
       <span style="color: #6b7280; font-weight: 400; font-size: 13px;">(286.5 КБ)</span>
     </a>
   </div>
@@ -716,10 +697,16 @@ export const INFO_PERSONNEL_KOMISSII_POLOZENIE_HTML = `
     <p style="margin: 0 0 12px 0;"><strong>45.</strong> Организационно-техническое и документационное обеспечение деятельности Комиссии возлагается на отдел кадров и государственной службы управления делами Аппарата Верховного Хурала.</p>
   </div>
   <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
-  <div style="display: flex; gap: 12px;">
-    <a href="https://khural.rtyva.ru/upload/iblock/679/9njgt4tz0oj1abodedmw13jh3tweshfh/%D0%9F%D0%BE%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D1%8F%20%D0%BF%D0%BE%20%D1%81%D0%BE%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B9%20%D0%BA%20%D1%81%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D0%BE%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E.docx"
-       target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px;">
-      📄 Положение о комиссии
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="https://khural.rtyva.ru/upload/iblock/679/9njgt4tz0oj1abodedmw13jh3tweshfh/%D0%9F%D0%BE%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D1%8F%20%D0%BF%D0%BE%20%D1%81%D0%BE%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B9%20%D0%BA%20%D1%81%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D0%BE%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E.docx"
+         data-doc-preview="1" data-doc-title="Положение о комиссии"
+         style="display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 14px; background: #f3f4f6; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Предпросмотр
+      </a>
+    <a href="https://khural.rtyva.ru/upload/iblock/679/9njgt4tz0oj1abodedmw13jh3tweshfh/%D0%9F%D0%BE%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D1%8F%20%D0%BF%D0%BE%20%D1%81%D0%BE%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B9%20%D0%BA%20%D1%81%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D0%BE%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E.docx" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px; border: 1px solid #bfdbfe;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Положение о комиссии
       <span style="color: #6b7280; font-weight: 400; font-size: 13px;">(29.7 КБ)</span>
     </a>
   </div>
@@ -744,10 +731,16 @@ export const INFO_PERSONNEL_KOMISSII_SOSTAV_HTML = `
     <li>Представитель (представители) научных организаций и образовательных учреждений среднего, высшего и дополнительного профессионального образования, деятельность которых связана с государственной службой (по согласованию).</li>
   </ol>
   <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
-  <div style="display: flex; gap: 12px;">
-    <a href="https://khural.rtyva.ru/upload/iblock/023/d5be353cnh69xbxpwh0whksuagfpo7ww/%D1%81%D0%BE%D1%81%D1%82%D0%B0%D0%B2%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D0%B8.docx"
-       target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px;">
-      📄 Состав комиссии
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="https://khural.rtyva.ru/upload/iblock/023/d5be353cnh69xbxpwh0whksuagfpo7ww/%D1%81%D0%BE%D1%81%D1%82%D0%B0%D0%B2%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D0%B8.docx"
+         data-doc-preview="1" data-doc-title="Состав комиссии"
+         style="display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 14px; background: #f3f4f6; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Предпросмотр
+      </a>
+    <a href="https://khural.rtyva.ru/upload/iblock/023/d5be353cnh69xbxpwh0whksuagfpo7ww/%D1%81%D0%BE%D1%81%D1%82%D0%B0%D0%B2%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D0%B8.docx" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px; border: 1px solid #bfdbfe;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Состав комиссии
       <span style="color: #6b7280; font-weight: 400; font-size: 13px;">(12.9 КБ)</span>
     </a>
   </div>
