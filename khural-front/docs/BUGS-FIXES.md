@@ -5,8 +5,8 @@
 | Ошибка | Где исправлять | Статус |
 |--------|----------------|--------|
 | `chrome-extension://invalid/` net::ERR_FAILED | Не в приложении — расширение браузера | Игнорировать |
-| `someshit.yurta.site/settings/broadcast_links` 401 | Бэкенд: разрешить GET без auth | См. раздел ниже |
-| CORS: `khural.yurta.site` → `someshit.yurta.site` | Бэкенд: настроить CORS | См. раздел ниже |
+| `khural.yurta.site/api/settings/broadcast_links` 401 | Бэкенд: разрешить GET без auth | См. раздел ниже |
+| CORS: `khural.yurta.site` → `khural.yurta.site/api` | Бэкенд: настроить CORS | См. раздел ниже |
 | `stats.vk-portal.net` 403 | Внешний скрипт / VK Portal | См. BUG-3 ниже |
 
 ---
@@ -19,7 +19,7 @@
 
 ### Что сделать
 
-**На бэкенде (someshit.yurta.site):** разрешить **GET /settings/broadcast_links** без авторизации (публичный доступ). Либо завести отдельный публичный endpoint (например `GET /public/broadcast-links`), если не хотите открывать весь префикс `/settings/`.
+**На бэкенде (khural.yurta.site/api):** разрешить **GET /settings/broadcast_links** без авторизации (публичный доступ). Либо завести отдельный публичный endpoint (например `GET /public/broadcast-links`), если не хотите открывать весь префикс `/settings/`.
 
 Пока бэкенд не поправлен, в консоли будет «Failed to load resource: 401»; приложение при этом не падает — `tryApiFetch` возвращает `null`, страница трансляций работает без списка архивных ссылок.
 
@@ -29,7 +29,7 @@
 
 ### Было
 
-Запросы к `someshit.yurta.site/calendar` с `https://khural.yurta.site` блокировались CORS: в preflight ответе сервера не было заголовка `Access-Control-Allow-Headers: cache-control`, хотя фронт отправлял `Cache-Control: no-cache`.
+Запросы к `khural.yurta.site/api/calendar` с `https://khural.yurta.site` блокировались CORS: в preflight ответе сервера не было заголовка `Access-Control-Allow-Headers: cache-control`, хотя фронт отправлял `Cache-Control: no-cache`.
 
 ### Исправление (фронт)
 
@@ -39,15 +39,15 @@
 
 ---
 
-## CORS: доступ с khural.yurta.site к someshit.yurta.site
+## CORS: доступ с khural.yurta.site к khural.yurta.site/api
 
 ### В чём ошибка
 
-Фронтенд размещён на `https://khural.yurta.site`, а бэкенд (API и файлы) — на `https://someshit.yurta.site`. Браузер блокирует запросы к API и файлам из-за CORS.
+Фронтенд размещён на `https://khural.yurta.site`, а бэкенд (API и файлы) — на `https://khural.yurta.site/api`. Браузер блокирует запросы к API и файлам из-за CORS.
 
 ### Исправление (бэкенд)
 
-**На бэкенде (someshit.yurta.site)** нужно добавить CORS заголовки для домена `https://khural.yurta.site`:
+**На бэкенде (khural.yurta.site/api)** нужно добавить CORS заголовки для домена `https://khural.yurta.site`:
 
 ```javascript
 // Node.js / Express пример

@@ -179,7 +179,7 @@ export function normalizeFilesUrl(src) {
     if (uploadMatch) {
       out = buildUploadUrl(uploadMatch[1].trim());
     } else {
-      const filesBase = String(import.meta?.env?.VITE_FILES_BASE_URL || "https://someshit.yurta.site")
+      const filesBase = String(import.meta?.env?.VITE_FILES_BASE_URL || "https://khural.yurta.site/api")
         .trim()
         .replace(/\/+$/, "");
       const isFileLike =

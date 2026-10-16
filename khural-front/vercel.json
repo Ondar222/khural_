@@ -8,15 +8,15 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://someshit.yurta.site/:path*"
+      "destination": "https://khural.yurta.site/api/:path*"
     },
     {
       "source": "/files/:path*",
-      "destination": "https://someshit.yurta.site/files/:path*"
+      "destination": "https://khural.yurta.site/api/files/:path*"
     },
     {
       "source": "/upload/:path*",
-      "destination": "https://someshit.yurta.site/upload/:path*"
+      "destination": "https://khural.yurta.site/api/upload/:path*"
     },
     {
       "source": "/img-proxy/:path*",
