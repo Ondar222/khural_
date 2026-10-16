@@ -70,7 +70,7 @@ export default function Login() {
 
       // Более понятные сообщения для пользователя
       if (e?.status === 403) {
-        errorMessage = "Неверный email или пароль. Проверьте правильность введенных данных.";
+        errorMessage = "Аккаунт заблокирован или нет доступа. Обратитесь к администратору.";
       } else if (e?.status === 401) {
         errorMessage = "Неверный email или пароль. Проверьте правильность введенных данных.";
       } else if (e?.status === 405) {
@@ -133,7 +133,6 @@ export default function Login() {
                   {
                     validator: (_, value) => {
                       if (!value) return Promise.resolve();
-                      // Дополнительная проверка на полный домен
                       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                       if (!emailRegex.test(value)) {
                         return Promise.reject(new Error('Email должен содержать полное доменное имя (например: user@mail.ru)'));

@@ -111,16 +111,18 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        // khural-backend now listens on 4000 by default
+        // khural-backend now listens on 3004 by default
+        // NO rewrite — бэкенд ждёт путь целиком (global prefix: /api)
         target: "http://localhost:3004",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
       },
       // Proxy files to avoid CORP/CORS issues when backend serves /files cross-origin
       "/files": {
         target: process.env.VITE_API_BASE_URL || "http://localhost:3004",
         changeOrigin: true,
         secure: false,
+        // Бэкенд раздаёт файлы по /api/files/...
+        rewrite: (path) => path.replace(/^\/files/, "/api/files"),
       },
       // Proxy для PDF файлов с khural.rtyva.ru для обхода CORS и X-Frame-Options
       "/pdf-proxy": {

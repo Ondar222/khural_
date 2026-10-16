@@ -33,7 +33,8 @@ The app resolves API base URL in this order:
 3. `VITE_API_BASE_URL`
 4. Defaults:
    - `localhost` → `/api` (dev proxy)
-   - otherwise → same origin
+   - `khural.yurta.site` → `/api` (same-origin, nginx proxies it)
+   - otherwise → same origin `/api`
 
 Example env file is in `env.example` (copy it to `.env.local` if you want to use Vite env variables).
 

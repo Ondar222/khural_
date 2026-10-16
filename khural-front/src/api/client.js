@@ -348,21 +348,13 @@ export const AuthApi = {
     }
   },
   async loginWithPassword({ email, password }) {
-    // Standard endpoint: POST /auth/login (per API docs)
-    try {
-      return await apiFetch("/auth/login", {
-        method: "POST",
-        body: { email, password },
-        auth: false,
-      });
-    } catch {
-      // Fallback for newer backends that use /auth/login/password
-      return apiFetch("/auth/login/password", {
-        method: "POST",
-        body: { email, password },
-        auth: false,
-      });
-    }
+    // Бэкенд: /auth/login ожидает { phone } (только для логина по телефону),
+    // а /auth/login/password ожидает { email, password } — это основной путь.
+    return apiFetch("/auth/login/password", {
+      method: "POST",
+      body: { email, password },
+      auth: false,
+    });
   },
   async refresh(refresh) {
     return apiFetch("/auth/refresh", {

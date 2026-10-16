@@ -370,7 +370,7 @@ export default function AdminCommitteesEditor({
         })
         .filter(Boolean);
       
-      console.log("[AdminCommitteesEditor] ⚠️ Отправка payload на https://khural.yurta.site/api/committees:");
+      console.log("[AdminCommitteesEditor] ⚠️ Отправка payload на /api/committees:");
       console.log("[AdminCommitteesEditor] Payload:", JSON.stringify(payload, null, 2));
       console.log("[AdminCommitteesEditor] Типы данных:", {
         name: typeof payload.name + " = " + payload.name,
