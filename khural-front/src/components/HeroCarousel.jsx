@@ -20,6 +20,15 @@ export default function HeroCarousel() {
     return document.visibilityState === "visible";
   });
 
+  // Ref для контейнера слайдов на мобильных (горизонтальный скролл)
+  const scrollContainerRef = React.useRef(null);
+  // Ref для актуального списка слайдов (чтобы handleScroll не зависел от slides)
+  const slidesRef = React.useRef([]);
+  // Флаг: пользователь скроллит — пауза автопереключения
+  const isScrollingRef = React.useRef(false);
+  const scrollEndTimerRef = React.useRef(null);
+  const hasScrolledRef = React.useRef(false);
+
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => setIsMobile(window.innerWidth <= 768);
@@ -36,6 +45,40 @@ export default function HeroCarousel() {
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, []);
+
+  // Обработчик скролла для определения активного слайда
+  const handleScroll = React.useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Пауза автопереключения при скролле
+    isScrollingRef.current = true;
+    if (scrollEndTimerRef.current) clearTimeout(scrollEndTimerRef.current);
+
+    const slideWidth = container.offsetWidth;
+    const scrollLeft = container.scrollLeft;
+    const newIndex = Math.round(scrollLeft / slideWidth);
+
+    if (newIndex !== active && newIndex >= 0 && newIndex < slidesRef.current.length) {
+      setActive(newIndex);
+      hasScrolledRef.current = true;
+    }
+
+    // Восстановление автопереключения через 2 сек после окончания скролла
+    scrollEndTimerRef.current = setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 2000);
+  }, [active]);
+
+  // Автоскролл к активному слайду при изменении active (из точек или автопереключения)
+  React.useEffect(() => {
+    if (!isMobile || !scrollContainerRef.current) return;
+    const slideWidth = scrollContainerRef.current.offsetWidth;
+    scrollContainerRef.current.scrollTo({
+      left: active * slideWidth,
+      behavior: "smooth",
+    });
+  }, [active, isMobile]);
 
   const truncateWords = React.useCallback((text, maxWords) => {
     const s = String(text || "").trim();
@@ -109,15 +152,19 @@ export default function HeroCarousel() {
     [baseSlides]
   );
 
+  // Синхронизируем ref для handleScroll
+  slidesRef.current = slides;
+
   React.useEffect(() => {
     // Пауза анимации когда вкладка не видима или слайдов нет
-    if (!slides.length || !isVisible) return;
+    // На мобильных: пауза при ручном скролле
+    if (!slides.length || !isVisible || (isMobile && isScrollingRef.current)) return;
     const len = slides.length || 1;
     const id = setInterval(() => {
       setActive((i) => (i + 1) % len);
     }, SLIDE_INTERVAL);
     return () => clearInterval(id);
-  }, [slides.length, isVisible]);
+  }, [slides.length, isVisible, isMobile]);
 
   React.useEffect(() => {
     // If slides length changed and active is out of bounds — reset.
@@ -156,18 +203,39 @@ export default function HeroCarousel() {
     <div className="container">
       <section className="hero hero--contained" aria-label="Важные объявления">
         <div className="slides" aria-hidden>
-          {slides.map((s, i) => (
-            <div
-              key={i}
-              className={`slide ${i === active ? "active" : ""}`}
-              style={{ 
-                backgroundImage: i === active ? `url(${normalizeFilesUrl(s.image)})` : "none",
-                // Ленивая загрузка фона для неактивных слайдов
-                ...(i !== active && { willChange: "background-image" })
-              }}
-            />
-          ))}
-          <div className="overlay" />
+          {isMobile ? (
+            <>
+              <div
+                className="slides-scroll"
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+              >
+                {slides.map((s, i) => (
+                  <div
+                    key={i}
+                    className={`slide ${i === active ? "active" : ""}`}
+                    style={{ backgroundImage: `url(${normalizeFilesUrl(s.image)})` }}
+                  />
+                ))}
+              </div>
+              <div className="overlay" />
+            </>
+          ) : (
+            <>
+              {slides.map((s, i) => (
+                <div
+                  key={i}
+                  className={`slide ${i === active ? "active" : ""}`}
+                  style={{ 
+                    backgroundImage: i === active ? `url(${normalizeFilesUrl(s.image)})` : "none",
+                    // Ленивая загрузка фона для неактивных слайдов
+                    ...(i !== active && { willChange: "background-image" })
+                  }}
+                />
+              ))}
+              <div className="overlay" />
+            </>
+          )}
         </div>
         <div className="caption center">
           <div className="hero__panel">

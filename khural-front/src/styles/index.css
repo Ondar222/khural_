@@ -4219,6 +4219,40 @@ a.btn.btn--primary:focus-visible {
     height: 44vh;
     min-height: 300px;
   }
+  /* Горизонтальный скролл слайдов на мобильных */
+  .hero .slides {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    gap: 0;
+    scrollbar-width: none;
+  }
+  .hero .slides::-webkit-scrollbar {
+    display: none;
+  }
+  .hero .slides .slide {
+    position: relative !important;
+    opacity: 1 !important;
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    scroll-snap-align: start;
+    background-size: cover;
+    background-position: center;
+    transition: none;
+  }
+  .hero .slides .slides-scroll {
+    display: flex;
+  }
+  .hero .slides .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+  .hero .caption {
+    z-index: 3;
+  }
   .hero .caption {
     left: 16px;
     right: 16px;
