@@ -98,7 +98,11 @@ export default function DocumentDetail() {
       setPdfError("");
       setBlobSrc("");
       try {
-        const res = await fetch(pdfSrc, { method: "GET", mode: "cors", credentials: "omit" });
+        // Файлы бэкенда (/api/files/<uuid>) и legacy /upload/* идут через same-origin (vite proxy / vercel rewrite)
+        const fetchUrl = pdfSrc.includes("khural.rtyva.ru")
+          ? pdfSrc.replace("https://khural.rtyva.ru", "")
+          : pdfSrc;
+        const res = await fetch(fetchUrl, { method: "GET", mode: "cors", credentials: "omit" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
         objectUrl = URL.createObjectURL(blob);

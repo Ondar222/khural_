@@ -16,7 +16,7 @@
     },
     {
       "source": "/upload/:path*",
-      "destination": "https://khural.yurta.site/api/upload/:path*"
+      "destination": "https://khural.rtyva.ru/upload/:path*"
     },
     {
       "source": "/img-proxy/:path*",
@@ -24,7 +24,7 @@
     },
     {
       "source": "/pdf-proxy/:path*",
-      "destination": "https://khural.rtyva.ru/:path*"
+      "destination": "https://khural.yurta.site/:path*"
     },
     {
       "source": "/(.*)",

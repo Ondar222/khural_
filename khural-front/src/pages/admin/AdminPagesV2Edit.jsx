@@ -38,7 +38,7 @@ const BLOCK_TYPES = [
 
 /** Slug страницы «Кодекс чести мужчины Тувы». */
 const CODE_OF_HONOR_SLUG = "code-of-honor";
-/** Контент для подстановки в админке (источник: khural.rtyva.ru). */
+/** Контент для подстановки в админке (источник: khural.yurta.site). */
 const CODE_OF_HONOR_DEFAULTS = {
   titleRu: "Кодекс чести мужчины Тувы",
   contentRu: `<p>Мы, мужчины Республики Тыва,</p>

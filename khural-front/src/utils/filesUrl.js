@@ -1,4 +1,17 @@
-const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
+// Файлы документов раздаёт бэкенд: {CDN}/files/<uuid>, где CDN = https://khural.yurta.site/api
+// Старые ссылки вида /upload/iblock/... ведут на тот же домен (после импорта файлы живут у нас).
+const KHURAL_UPLOAD_BASE = "https://khural.yurta.site";
+
+/** Локальный бэкенд отдаёт абсолютный CDN-префикс — приводим его к same-origin /api. */
+function toSameOriginApi(url) {
+  const s = String(url || "");
+  if (!s) return s;
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/api\//i.test(s)) {
+    return s.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i, "");
+  }
+  return s;
+}
+
 
 /**
  * Оставляем только путь к файлу: /upload/iblock/.../имя.расширение — без query, hash и символов после .pdf (и т.д.).
@@ -30,7 +43,7 @@ function fullyDecodePath(path) {
     .join("/");
 }
 
-/** Ссылка = только https://khural.rtyva.ru + путь /upload/.../файл.pdf (путь декодирован в «сырой» вид, без %). */
+/** Ссылка = только https://khural.yurta.site + путь /upload/.../файл.pdf (путь декодирован в «сырой» вид, без %). */
 function buildUploadUrl(pathOnly) {
   const path = normalizePathSlashes(onlyUploadPathToFile(pathOnly));
   const pathRaw = fullyDecodePath(path);
@@ -80,7 +93,7 @@ const decodeMultiEncoded = (raw) => {
   return current;
 };
 
-/** Для upload-ссылок: только https://khural.rtyva.ru + сырой путь /upload/.../файл.pdf (без %). Работает и для полного URL, и для пути. */
+/** Для upload-ссылок: только https://khural.yurta.site + сырой путь /upload/.../файл.pdf (без %). Работает и для полного URL, и для пути. */
 function ensureNoDoubleEncodingInUrl(urlStr) {
   if (!urlStr || typeof urlStr !== "string") return urlStr;
   const pathPart = urlStr.replace(/^https?:\/\/[^/]+/i, "").trim() || urlStr;
@@ -137,6 +150,13 @@ const encodeUrlSafe = (value) => {
 export function normalizeFilesUrl(src) {
   const s = String(src || "").trim();
   if (!s || s === "undefined" || s === "null") return "";
+
+  // Файл, загруженный через бэкенд: /api/files/<uuid> (CDN или локальный бэкенд) — всегда same-origin,
+  // чтобы работали vite-прокси и vercel-rewrite "/files/*" без CORS.
+  const apiFilesMatch = s.match(/(?:\/api)?\/files\/([A-Za-z0-9._-]+)(?:\?.*)?$/);
+  if (apiFilesMatch && !s.includes("/upload/")) {
+    return `/api/files/${apiFilesMatch[1]}`;
+  }
 
   // Если в строке есть %25 и путь /upload/ — сразу возвращаем только base + сырой путь (такие ссылки не открываются)
   if (s.includes("%25") && s.includes("/upload/")) {

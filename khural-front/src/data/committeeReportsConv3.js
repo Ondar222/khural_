@@ -1,12 +1,12 @@
 /**
  * Данные «Отчеты комитетов 3 созыва»: комитеты, повестки и отчёты по годам.
  * Ссылки только на документы (PDF/DOC/DOCX), без ссылок на страницы сайта.
- * Импорт с khural.rtyva.ru/activity/313/, 320/, 362/, 366/ и годовых страниц.
+ * Импорт с khural.yurta.site/activity/313/, 320/, 362/, 366/ и годовых страниц.
  */
 
 import { CONV3_DOCUMENTS_BY_COMMITTEE_1_7 } from "./conv3_committees_1_7_data.js";
 
-const DOC_BASE = "https://khural.rtyva.ru";
+const DOC_BASE = "https://khural.yurta.site";
 
 /** Постановление ВХ РТ о комитетах и комиссии третьего созыва (документ) */
 export const CONV3_RESOLUTION = {

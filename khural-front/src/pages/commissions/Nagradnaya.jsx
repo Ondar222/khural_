@@ -167,7 +167,7 @@ export default function Nagradnaya() {
           <ul style={{ listStyle: "none", padding: 0 }}>
             <li style={{ marginBottom: "1rem" }}>
               <a
-                href="https://khural.rtyva.ru/struct/komissii/114/13818/"
+                href="https://khural.yurta.site/struct/komissii/114/13818/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -179,7 +179,7 @@ export default function Nagradnaya() {
             </li>
             <li style={{ marginBottom: "1rem" }}>
               <a
-                href="https://khural.rtyva.ru/struct/komissii/114/13812/"
+                href="https://khural.yurta.site/struct/komissii/114/13812/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -190,7 +190,7 @@ export default function Nagradnaya() {
             </li>
             <li style={{ marginBottom: "1rem" }}>
               <a
-                href="https://khural.rtyva.ru/struct/komissii/114/13820/"
+                href="https://khural.yurta.site/struct/komissii/114/13820/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -199,7 +199,7 @@ export default function Nagradnaya() {
               </a>
               <br />
               <a
-                href="https://khural.rtyva.ru/docs/%E2%84%96%202216%20%D0%9F%D0%92%D0%A5-III%20%D0%BE%D1%82%2024.10.2023.pdf"
+                href="https://khural.yurta.site/docs/%E2%84%96%202216%20%D0%9F%D0%92%D0%A5-III%20%D0%BE%D1%82%2024.10.2023.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginLeft: "1rem" }}
@@ -218,7 +218,7 @@ export default function Nagradnaya() {
                 Бланк Наградного листа
               </a>
               <a
-                href="https://khural.rtyva.ru/images/%D0%9E%D0%B1%D1%80%D0%B0%D0%B7%D0%B5%D1%86%20%D0%BD%D0%B0%D0%B3%D1%80%D0%B0%D0%B4%D0%BD%D0%BE%D0%B3%D0%BE%20%D0%BB%D0%B8%D1%81%D1%82%D0%B0.doc"
+                href="https://khural.yurta.site/images/%D0%9E%D0%B1%D1%80%D0%B0%D0%B7%D0%B5%D1%86%20%D0%BD%D0%B0%D0%B3%D1%80%D0%B0%D0%B4%D0%BD%D0%BE%D0%B3%D0%BE%20%D0%BB%D0%B8%D1%81%D1%82%D0%B0.doc"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ marginLeft: "1rem" }}

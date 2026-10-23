@@ -3,7 +3,7 @@ import React from "react";
 export default function ReglamentEtika() {
   return (
     <div>
-      <a href="https://khural.rtyva.ru/struct/komissii/265/9390/">
+      <a href="https://khural.yurta.site/struct/komissii/265/9390/">
         Комиссия Верховного Хурала (парламента) Республики Тыва по Регламенту Верховного Хурала
         (парламента) Республики Тыва и депутатской этике
       </a>

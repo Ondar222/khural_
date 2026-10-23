@@ -90,19 +90,9 @@ export default function DocsPage() {
   React.useEffect(() => {
     let alive = true;
     
-    // Фильтруем документы по типу из бекенда
+    // Фильтруем документы по типу из бекенда (DocumentType: law | resolution | order | decision | other)
     const fromApi = (documents || []).filter((d) => {
-      // Маппинг типов фронтенда на типы бекенда
-      const typeMap = {
-        laws: "laws",
-        resolutions: "resolutions",
-        bills: "bills",
-        initiatives: "initiatives",
-        civic: "other",
-        constitution: "other",
-      };
-
-      const expectedType = typeMap[slug] || slug;
+      const expectedType = cat.backendType;
 
       // Для constitution и civic оба используют тип "other" в бекенде
       // Различаем их по category или metadata

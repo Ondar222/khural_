@@ -1139,8 +1139,43 @@ export const NewsApi = {
 
 // Documents-related endpoints
 export const DocumentsApi = {
-  async list() {
-    return apiFetch("/documents", { method: "GET", auth: false });
+  async list(params = {}) {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+    });
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/documents${suffix}`, { method: "GET", auth: false });
+  },
+  /** Все опубликованные документы: API отдаёт максимум 100 на страницу, поэтому собираем все страницы. */
+  async listAllPublished({ pageSize = 100, concurrency = 6 } = {}) {
+    const first = await apiFetch(`/documents?limit=${pageSize}&page=1`, {
+      method: "GET",
+      auth: false,
+    });
+    const byId = new Map();
+    (first?.items || []).forEach((d) => byId.set(d.id, d));
+    const totalPages = Number(first?.totalPages) || 1;
+    if (totalPages <= 1) return [...byId.values()];
+
+    const pages = [];
+    for (let p = 2; p <= totalPages; p += 1) pages.push(p);
+
+    for (let i = 0; i < pages.length; i += concurrency) {
+      const chunk = pages.slice(i, i + concurrency);
+      const results = await Promise.all(
+        chunk.map((p) =>
+          apiFetch(`/documents?limit=${pageSize}&page=${p}`, {
+            method: "GET",
+            auth: false,
+          }).catch(() => null)
+        )
+      );
+      results.forEach((res) => {
+        (res?.items || []).forEach((d) => byId.set(d.id, d));
+      });
+    }
+    return [...byId.values()];
   },
   async listAll() {
     return apiFetch("/documents/all", { method: "GET", auth: true });

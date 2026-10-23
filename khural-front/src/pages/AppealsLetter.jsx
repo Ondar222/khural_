@@ -83,7 +83,7 @@ export default function AppealsLetter() {
             </p>
             <p style={{ fontSize: 15, marginBottom: 16 }}>
               Документ:{" "}
-              <a href="https://khural.rtyva.ru/upload/iblock/ba1/6uy6y7lvo0v49q3xckx35hhfvzw4ydeo/6abb1ffa9896e48c62843b9fbba2c3ec.docx" className="link" download>
+              <a href="https://khural.yurta.site/upload/iblock/ba1/6uy6y7lvo0v49q3xckx35hhfvzw4ydeo/6abb1ffa9896e48c62843b9fbba2c3ec.docx" className="link" download>
                 Загрузить
               </a>
             </p>

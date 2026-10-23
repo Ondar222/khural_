@@ -34,7 +34,7 @@ export const INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_KOMISSII_SLUG = "info/personnel
 /** Корневой путь раздела — единственное место, где он задан литералом. */
 export const PERSONNEL_ROOT_PATH = "/" + INFO_PERSONNEL_SLUG;
 
-/** Локальное хранилище файлов раздела (public/docs/personnel) — чтобы не вести пользователя на khural.rtyva.ru. */
+/** Локальное хранилище файлов раздела (public/docs/personnel) — чтобы не вести пользователя на khural.yurta.site. */
 export const PERSONNEL_DOCS_BASE = "/docs/personnel";
 
 /**
@@ -472,7 +472,7 @@ export const INFO_PERSONNEL_METODIKA_HTML = `
     <div style="margin-top: 20px;">
       <ul style="margin:0; padding-left: 20px; line-height: 2.2;">
         <li>
-          <a href="https://khural.rtyva.ru/upload/iblock/398/%D0%9C%D0%B5%D1%82%D0%BE%D0%B4%D0%B8%D0%BA%D0%B0%20%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D1%8F%20%D0%BA%D0%BE%D0%BD%D0%BA%D1%83%D1%80%D1%81%D0%B0.pdf"
+          <a href="https://khural.yurta.site/upload/iblock/398/%D0%9C%D0%B5%D1%82%D0%BE%D0%B4%D0%B8%D0%BA%D0%B0%20%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D1%8F%20%D0%BA%D0%BE%D0%BD%D0%BA%D1%83%D1%80%D1%81%D0%B0.pdf"
              target="_blank" rel="noreferrer" style="color: #003366;">
             Методика проведения конкурса на замещение вакантной должности государственной гражданской службы
           </a>
@@ -551,13 +551,13 @@ export const INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_HTML = `
   </div>
   <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
   <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-      <a href="https://khural.rtyva.ru/upload/iblock/97f/s7mcx7xxx0vixa6didbho4r2e4apd3x4/%D1%80%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%8F%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5.docx"
+      <a href="https://khural.yurta.site/upload/iblock/97f/s7mcx7xxx0vixa6didbho4r2e4apd3x4/%D1%80%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%8F%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5.docx"
          data-doc-preview="1" data-doc-title="Распоряжение о комиссии"
          style="display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 14px; background: #f3f4f6; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Предпросмотр
       </a>
-    <a href="https://khural.rtyva.ru/upload/iblock/97f/s7mcx7xxx0vixa6didbho4r2e4apd3x4/%D1%80%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%8F%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5.docx" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px; border: 1px solid #bfdbfe;">
+    <a href="https://khural.yurta.site/upload/iblock/97f/s7mcx7xxx0vixa6didbho4r2e4apd3x4/%D1%80%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%8F%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5.docx" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px; border: 1px solid #bfdbfe;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Распоряжение о комиссии
       <span style="color: #6b7280; font-weight: 400; font-size: 13px;">(286.5 КБ)</span>
@@ -698,13 +698,13 @@ export const INFO_PERSONNEL_KOMISSII_POLOZENIE_HTML = `
   </div>
   <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
   <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-      <a href="https://khural.rtyva.ru/upload/iblock/679/9njgt4tz0oj1abodedmw13jh3tweshfh/%D0%9F%D0%BE%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D1%8F%20%D0%BF%D0%BE%20%D1%81%D0%BE%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B9%20%D0%BA%20%D1%81%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D0%BE%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E.docx"
+      <a href="https://khural.yurta.site/upload/iblock/679/9njgt4tz0oj1abodedmw13jh3tweshfh/%D0%9F%D0%BE%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D1%8F%20%D0%BF%D0%BE%20%D1%81%D0%BE%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B9%20%D0%BA%20%D1%81%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D0%BE%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E.docx"
          data-doc-preview="1" data-doc-title="Положение о комиссии"
          style="display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 14px; background: #f3f4f6; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Предпросмотр
       </a>
-    <a href="https://khural.rtyva.ru/upload/iblock/679/9njgt4tz0oj1abodedmw13jh3tweshfh/%D0%9F%D0%BE%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D1%8F%20%D0%BF%D0%BE%20%D1%81%D0%BE%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B9%20%D0%BA%20%D1%81%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D0%BE%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E.docx" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px; border: 1px solid #bfdbfe;">
+    <a href="https://khural.yurta.site/upload/iblock/679/9njgt4tz0oj1abodedmw13jh3tweshfh/%D0%9F%D0%BE%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D1%8F%20%D0%BF%D0%BE%20%D1%81%D0%BE%D0%B1%D0%BB%D1%8E%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E%20%D1%82%D1%80%D0%B5%D0%B1%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B9%20%D0%BA%20%D1%81%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D0%BE%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%B8%D1%8E.docx" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px; border: 1px solid #bfdbfe;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Положение о комиссии
       <span style="color: #6b7280; font-weight: 400; font-size: 13px;">(29.7 КБ)</span>
@@ -732,13 +732,13 @@ export const INFO_PERSONNEL_KOMISSII_SOSTAV_HTML = `
   </ol>
   <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
   <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-      <a href="https://khural.rtyva.ru/upload/iblock/023/d5be353cnh69xbxpwh0whksuagfpo7ww/%D1%81%D0%BE%D1%81%D1%82%D0%B0%D0%B2%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D0%B8.docx"
+      <a href="https://khural.yurta.site/upload/iblock/023/d5be353cnh69xbxpwh0whksuagfpo7ww/%D1%81%D0%BE%D1%81%D1%82%D0%B0%D0%B2%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D0%B8.docx"
          data-doc-preview="1" data-doc-title="Состав комиссии"
          style="display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 14px; background: #f3f4f6; border-radius: 6px; border: 1px solid #e5e7eb; cursor: pointer;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Предпросмотр
       </a>
-    <a href="https://khural.rtyva.ru/upload/iblock/023/d5be353cnh69xbxpwh0whksuagfpo7ww/%D1%81%D0%BE%D1%81%D1%82%D0%B0%D0%B2%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D0%B8.docx" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px; border: 1px solid #bfdbfe;">
+    <a href="https://khural.yurta.site/upload/iblock/023/d5be353cnh69xbxpwh0whksuagfpo7ww/%D1%81%D0%BE%D1%81%D1%82%D0%B0%D0%B2%20%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D0%B8.docx" target="_blank" rel="noreferrer" style="display: inline-flex; align-items: center; gap: 8px; color: #003366; text-decoration: none; font-weight: 600; padding: 8px 16px; background: #f0f7ff; border-radius: 6px; border: 1px solid #bfdbfe;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Состав комиссии
       <span style="color: #6b7280; font-weight: 400; font-size: 13px;">(12.9 КБ)</span>

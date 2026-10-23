@@ -1,5 +1,5 @@
 import React from "react";
-import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi, EventsApi, CommitteesApi, ConvocationsApi } from "../api/client.js";
+import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi, EventsApi, CommitteesApi, ConvocationsApi, DocumentsApi } from "../api/client.js";
 import {
   readNewsOverrides,
   NEWS_OVERRIDES_EVENT_NAME,
@@ -1725,58 +1725,91 @@ export default function DataProvider({ children }) {
         markLoading("deputies", false);
       }
 
-      // Документы только из локальных persons_doc (CSV → zakony.json, postamovleniya_VH.json)
+      // Документы из API бэкенда (/api/documents) — единый источник правды.
+      // Статические persons_doc/*.json оставлены только как fallback, если API недоступен.
       markLoading("documents", true);
       markError("documents", null);
       try {
-        const [zakonyData, zakony2Data, postamovleniyaData] = await Promise.all([
-          fetchJson("/persons_doc/zakony.json").catch(() => []),
-          fetchJson("/persons_doc/zakony2.json").catch(() => []),
-          fetchJson("/persons_doc/postamovleniya_VH.json").catch(() => []),
-        ]);
-        const parseZakonyDoc = (row) => {
-          if (!row || !row.IE_NAME) return null;
-          const fileUrl = String(row.IP_PROP28 || "").trim();
-          if (!fileUrl) return null;
-          const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
-          if (!url) return null;
-          return {
-            id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
-            title: String(row.IE_NAME || "").trim(),
-            desc: "",
-            date: String(row.IP_PROP27 || "").trim(),
-            number: String(row.IP_PROP26 || "").trim(),
-            category: "Законы Республики Тыва",
-            type: "laws",
-            url,
-          };
-        };
-        const parsePostamovleniyaDoc = (row) => {
-          if (!row || !row.IE_NAME) return null;
-          const fileUrl = String(row.IP_PROP59 || "").trim();
-          if (!fileUrl) return null;
-          const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
-          if (!url) return null;
-          return {
-            id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
-            title: String(row.IE_NAME || "").trim(),
-            desc: "",
-            date: String(row.IP_PROP58 || "").trim(),
-            number: String(row.IP_PROP57 || "").trim(),
-            category: "Постановления ВХ РТ",
-            type: "resolutions",
-            url,
-          };
-        };
-        const docs = [
-          ...(Array.isArray(zakonyData) ? zakonyData : []).map(parseZakonyDoc).filter(Boolean),
-          ...(Array.isArray(zakony2Data) ? zakony2Data : []).map(parseZakonyDoc).filter(Boolean),
-          ...(Array.isArray(postamovleniyaData) ? postamovleniyaData : []).map(parsePostamovleniyaDoc).filter(Boolean),
-        ];
-        setDocuments(docs);
+        const apiDocs = await DocumentsApi.listAllPublished().catch(() => []);
+        const docs = (Array.isArray(apiDocs) ? apiDocs : [])
+          .filter((d) => d && d.title)
+          .map((d) => {
+            const categoryName =
+              typeof d.category === "string"
+                ? d.category
+                : d.category?.name || d.category?.title || "";
+            // Файл: pdfFile.link (CDN бэкенда) или legacy previewUrl
+            const fileUrl = d.pdfFile?.link || d.previewUrl || "";
+            return {
+              id: d.id,
+              title: String(d.title || "").trim(),
+              desc: String(d.content || "").trim(),
+              date: d.publishedAt || d.createdAt || "",
+              number: d.number ? String(d.number) : "",
+              category: categoryName,
+              categoryId: d.category?.id ?? null,
+              type: d.type,
+              url: fileUrl ? normalizeFilesUrl(fileUrl) : "",
+            };
+          });
+
+        if (docs.length > 0) {
+          setDocuments(docs);
+        } else {
+          throw new Error("API вернул пустой список документов");
+        }
       } catch (e) {
         markError("documents", e);
-        setDocuments([]);
+        // Fallback: локальные выгрузки (могут быть неполными)
+        try {
+          const [zakonyData, zakony2Data, postamovleniyaData] = await Promise.all([
+            fetchJson("/persons_doc/zakony.json").catch(() => []),
+            fetchJson("/persons_doc/zakony2.json").catch(() => []),
+            fetchJson("/persons_doc/postamovleniya_VH.json").catch(() => []),
+          ]);
+          const parseZakonyDoc = (row) => {
+            if (!row || !row.IE_NAME) return null;
+            const fileUrl = String(row.IP_PROP28 || "").trim();
+            if (!fileUrl) return null;
+            const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
+            if (!url) return null;
+            return {
+              id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
+              title: String(row.IE_NAME || "").trim(),
+              desc: "",
+              date: String(row.IP_PROP27 || "").trim(),
+              number: String(row.IP_PROP26 || "").trim(),
+              category: "Законы Республики Тыва",
+              type: "law",
+              url,
+            };
+          };
+          const parsePostamovleniyaDoc = (row) => {
+            if (!row || !row.IE_NAME) return null;
+            const fileUrl = String(row.IP_PROP59 || "").trim();
+            if (!fileUrl) return null;
+            const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
+            if (!url) return null;
+            return {
+              id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
+              title: String(row.IE_NAME || "").trim(),
+              desc: "",
+              date: String(row.IP_PROP58 || "").trim(),
+              number: String(row.IP_PROP57 || "").trim(),
+              category: "Постановления ВХ РТ",
+              type: "resolution",
+              url,
+            };
+          };
+          const docs = [
+            ...(Array.isArray(zakonyData) ? zakonyData : []).map(parseZakonyDoc).filter(Boolean),
+            ...(Array.isArray(zakony2Data) ? zakony2Data : []).map(parseZakonyDoc).filter(Boolean),
+            ...(Array.isArray(postamovleniyaData) ? postamovleniyaData : []).map(parsePostamovleniyaDoc).filter(Boolean),
+          ];
+          setDocuments(docs);
+        } catch (fallbackError) {
+          setDocuments([]);
+        }
       } finally {
         markLoading("documents", false);
       }

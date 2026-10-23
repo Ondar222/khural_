@@ -95,11 +95,11 @@ export const COUNCIL_GROUPS = [
 
 /** Повестки и протоколы заседаний (ссылки на документы .docx) */
 export const COUNCIL_AGENDAS = [
-  { label: "Повестка от 20 декабря 2019", size: "3684 КБ", url: "https://khural.rtyva.ru/upload/iblock/4c6/te9otyef9ebllpqsmlxfrzyciznjudie/%D0%9F%D0%BE%D0%B2%D0%B5%D1%81%D1%82%D0%BA%D0%B0%20%D0%BE%D1%82%2020%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F%202019.docx" },
-  { label: "Протокол от 20 декабря 2019 г.", size: "3705 КБ", url: "https://khural.rtyva.ru/upload/iblock/bfe/j6tqaainonofaj53ufirbyob2ct1pna3/%D0%9F%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%20%D0%BE%D1%82%2020%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F%202019%20%D0%B3..docx" },
-  { label: "Повестка от 23 декабря 2020 г.", size: "3689 КБ", url: "https://khural.rtyva.ru/upload/iblock/d99/1luwpxvbqnz2c8k17wn8aojtm8hiuj7p/%D0%9F%D0%BE%D0%B2%D0%B5%D1%81%D1%82%D0%BA%D0%B0%20%D0%BE%D1%82%2023%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F%202020%20%D0%B3..docx" },
-  { label: "Протокол от 23 декабря 2020", size: "3717 КБ", url: "https://khural.rtyva.ru/upload/iblock/140/vjm54vbh8unmq1gi7m72xkjz1wlvd9n6/%D0%9F%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%20%D0%BE%D1%82%2023%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F%202020.docx" },
-  { label: "Протокол от 24.04.2025", size: "119 КБ", url: "https://khural.rtyva.ru/upload/iblock/876/rgnici4d3ijovm00f2y21u92fzoew6c1/%D0%9F%D0%BE%D0%B2%D0%B5%D1%81%D1%82%D0%BA%D0%B0%20%D0%B7%D0%B0%D1%81%D0%B5%D0%B4%D0%B0%D0%BD%D0%B8%D1%8F%2024.04.2025%20%D0%BF%D0%BE%D1%81%D0%BB.docx" },
+  { label: "Повестка от 20 декабря 2019", size: "3684 КБ", url: "https://khural.yurta.site/upload/iblock/4c6/te9otyef9ebllpqsmlxfrzyciznjudie/%D0%9F%D0%BE%D0%B2%D0%B5%D1%81%D1%82%D0%BA%D0%B0%20%D0%BE%D1%82%2020%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F%202019.docx" },
+  { label: "Протокол от 20 декабря 2019 г.", size: "3705 КБ", url: "https://khural.yurta.site/upload/iblock/bfe/j6tqaainonofaj53ufirbyob2ct1pna3/%D0%9F%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%20%D0%BE%D1%82%2020%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F%202019%20%D0%B3..docx" },
+  { label: "Повестка от 23 декабря 2020 г.", size: "3689 КБ", url: "https://khural.yurta.site/upload/iblock/d99/1luwpxvbqnz2c8k17wn8aojtm8hiuj7p/%D0%9F%D0%BE%D0%B2%D0%B5%D1%81%D1%82%D0%BA%D0%B0%20%D0%BE%D1%82%2023%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F%202020%20%D0%B3..docx" },
+  { label: "Протокол от 23 декабря 2020", size: "3717 КБ", url: "https://khural.yurta.site/upload/iblock/140/vjm54vbh8unmq1gi7m72xkjz1wlvd9n6/%D0%9F%D1%80%D0%BE%D1%82%D0%BE%D0%BA%D0%BE%D0%BB%20%D0%BE%D1%82%2023%20%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F%202020.docx" },
+  { label: "Протокол от 24.04.2025", size: "119 КБ", url: "https://khural.yurta.site/upload/iblock/876/rgnici4d3ijovm00f2y21u92fzoew6c1/%D0%9F%D0%BE%D0%B2%D0%B5%D1%81%D1%82%D0%BA%D0%B0%20%D0%B7%D0%B0%D1%81%D0%B5%D0%B4%D0%B0%D0%BD%D0%B8%D1%8F%2024.04.2025%20%D0%BF%D0%BE%D1%81%D0%BB.docx" },
 ];
 
 /** Постановление ВХ РТ от 17.02.2021 № 802 ПВХ-III об утверждении Положения о Совете */
@@ -132,7 +132,7 @@ export const COUNCIL_POLOZHENIE = {
   docTitle: "ПОЛОЖЕНИЕ",
   docSubtitle: "О СОВЕТЕ ПО ВЗАИМОДЕЙСТВИЮ ВЕРХОВНОГО ХУРАЛА (ПАРЛАМЕНТА) РЕСПУБЛИКИ ТЫВА С ПРЕДСТАВИТЕЛЬНЫМИ ОРГАНАМИ МУНИЦИПАЛЬНЫХ ОБРАЗОВАНИЙ",
   documentFooter: "Положение (20.8 КБ)",
-  documentUrl: "https://khural.rtyva.ru/upload/iblock/e9d/w0a0qm8m3hl4dbpsart36gyekr6pmzv6/%D0%9F%D0%BE%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5.docx",
+  documentUrl: "https://khural.yurta.site/upload/iblock/e9d/w0a0qm8m3hl4dbpsart36gyekr6pmzv6/%D0%9F%D0%BE%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5.docx",
   sections: [
     {
       heading: "I. Общие положения",

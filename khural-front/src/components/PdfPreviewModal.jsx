@@ -1,7 +1,7 @@
 import React from "react";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
-// Итоговая ссылка: https://khural.rtyva.ru/upload/iblock/.../имя файла.pdf (без %-кодирования в пути)
+// Итоговая ссылка: https://khural.yurta.site/upload/iblock/.../имя файла.pdf (без %-кодирования в пути)
 function normalizeUrl(url) {
   if (!url) return "";
   const normalized = normalizeFilesUrl(url);
@@ -42,9 +42,12 @@ function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
 }
 
-/** Запрос к файлу через прокси /pdf-proxy, если он лежит на khural.rtyva.ru (обход CORS). */
+/** Запрос к файлу через same-origin прокси (vite/vercel), чтобы обойти CORS. */
 function toProxyUrl(url) {
-  if (url.includes("khural.rtyva.ru")) return url.replace("https://khural.rtyva.ru", "/pdf-proxy");
+  // Файлы бэкенда: /api/files/<uuid> — уже same-origin (vite proxy / vercel rewrite)
+  if (/\/api\/files\//i.test(url)) return url;
+  if (url.includes("khural.yurta.site")) return url.replace("https://khural.yurta.site", "/pdf-proxy");
+  if (url.includes("khural.rtyva.ru")) return url.replace("https://khural.rtyva.ru", "/upload");
   return getFetchUrl(url);
 }
 
@@ -73,9 +76,12 @@ function getGoogleDocsViewerUrl(pdfUrl) {
   return `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
 }
 
-/** Определяем, является ли ссылка PDF (по расширению в пути). */
+/** Определяем, является ли ссылка PDF: по расширению либо по эндпоинту файлов бэкенда (/api/files/<uuid>). */
 function isPdfUrl(url) {
-  return /\.pdf(?:$|\?|#)/i.test(String(url || ""));
+  const s = String(url || "");
+  if (/\.pdf(?:$|\?|#)/i.test(s)) return true;
+  // Бэкенд раздаёт файлы без расширения — тип определяем по ответу (content-type)
+  return /\/api\/files\/[^/?#]+/i.test(s) || /\/files\/[0-9a-f-]{36}/i.test(s);
 }
 
 export default function PdfPreviewModal({ open, onClose, url, title }) {
@@ -119,8 +125,9 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
         return;
       }
 
-      const isKhuralDomain = pdfSrc.includes("khural.rtyva.ru");
-      const fetchUrl = isKhuralDomain ? pdfSrc.replace("https://khural.rtyva.ru", "/pdf-proxy") : getFetchUrl(pdfSrc);
+      // khural.yurta.site -> /pdf-proxy, khural.rtyva.ru -> /upload (оба rewrite в vercel.json = same-origin, без CORS)
+      const isKhuralDomain = pdfSrc.includes("khural.yurta.site") || pdfSrc.includes("khural.rtyva.ru");
+      const fetchUrl = toProxyUrl(pdfSrc);
 
       const opts = {
         method: "GET",
@@ -136,8 +143,15 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
-        if (blob.type !== "application/pdf") {
-          throw new Error("Not a PDF file");
+        // Файлы .doc/.docx бэкенд отдаёт по /api/files/<uuid> без расширения в пути —
+        // тип определяем по content-type ответа, а не по имени файла.
+        const isPdfBlob =
+          blob.type === "application/pdf" || blob.type === "application/octet-stream";
+        if (!isPdfBlob) {
+          const absolute = new URL(pdfSrc, window.location.origin).toString();
+          setUseGoogleViewer(true);
+          setBlobSrc(getGoogleDocsViewerUrl(absolute));
+          return;
         }
         objectUrl = URL.createObjectURL(blob);
         if (!cancelled) setBlobSrc(objectUrl);

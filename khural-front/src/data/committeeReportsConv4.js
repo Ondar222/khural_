@@ -1,9 +1,9 @@
 /**
  * Данные «Отчеты комитетов 4 созыва»: комитеты, повестки и отчёты по годам.
- * Ссылки только на документы. Импорт с khural.rtyva.ru/activity/445/, 485/, 486/, 487/.
+ * Ссылки только на документы. Импорт с khural.yurta.site/activity/445/, 485/, 486/, 487/.
  */
 
-const DOC_BASE = "https://khural.rtyva.ru";
+const DOC_BASE = "https://khural.yurta.site";
 
 /** Список комитетов 4 созыва (порядок как на сайте) */
 export const CONV4_COMMITTEES = [

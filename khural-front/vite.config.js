@@ -124,9 +124,9 @@ export default defineConfig({
         // Бэкенд раздаёт файлы по /api/files/...
         rewrite: (path) => path.replace(/^\/files/, "/api/files"),
       },
-      // Proxy для PDF файлов с khural.rtyva.ru для обхода CORS и X-Frame-Options
+      // Proxy для PDF файлов с khural.yurta.site (обход CORS и X-Frame-Options)
       "/pdf-proxy": {
-        target: "https://khural.rtyva.ru",
+        target: "https://khural.yurta.site",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/pdf-proxy/, ""),
@@ -137,6 +137,21 @@ export default defineConfig({
             delete proxyRes.headers["X-Frame-Options"];
             delete proxyRes.headers["frame-ancestors"];
             // Добавляем CORS заголовки
+            proxyRes.headers["Access-Control-Allow-Origin"] = "*";
+            proxyRes.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
+            proxyRes.headers["Access-Control-Allow-Headers"] = "*";
+          });
+        },
+      },
+      // Proxy для файлов документов /upload/... с khural.rtyva.ru (обход CORS при предпросмотре)
+      "/upload": {
+        target: "https://khural.rtyva.ru",
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy, _options) => {
+          proxy.on("proxyRes", (proxyRes, req, res) => {
+            delete proxyRes.headers["x-frame-options"];
+            delete proxyRes.headers["X-Frame-Options"];
             proxyRes.headers["Access-Control-Allow-Origin"] = "*";
             proxyRes.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS";
             proxyRes.headers["Access-Control-Allow-Headers"] = "*";
