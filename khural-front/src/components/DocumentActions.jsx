@@ -1,4 +1,9 @@
 import React from "react";
+import {
+  DOC_FILE_MISSING_HINT,
+  downloadName,
+  isDocumentFileUrl,
+} from "../utils/documentFile.js";
 
 // Минималистичные линейные SVG-иконки (stroke = currentColor, наследуют цвет кнопки)
 function EyeIcon() {
@@ -63,6 +68,10 @@ const btnBase = {
 /**
  * Пара кнопок для документа: «Открыть» (предпросмотр на сайте) и «Скачать».
  * onPreview — открытие модалки предпросмотра; если не передан, «Открыть» ведёт в новую вкладку.
+ *
+ * Кнопки не должны исчезать: если файла у документа нет (или ссылка ведёт не на файл,
+ * а на страницу сайта), показываем «Открыть» на страницу документа (href) и неактивную
+ * «Скачать» с пояснением — иначе карточка документа выглядит сломанной.
  */
 export default function DocumentActions({
   url,
@@ -70,46 +79,77 @@ export default function DocumentActions({
   onPreview,
   openInNewTab = false,
   openLabel = "Открыть",
+  href = "",
+  missingHint = DOC_FILE_MISSING_HINT,
 }) {
-  if (!url) return null;
+  // Ссылка «не файл» (страница сайта, пустая, HTML) — скачивать и открывать нечего
+  const fileUrl = isDocumentFileUrl(url) ? String(url) : "";
+  const pageHref = !fileUrl && href ? String(href) : "";
+
+  if (!fileUrl && !pageHref) return null;
+
+  const openButton = fileUrl ? (
+    onPreview ? (
+      <button
+        type="button"
+        className="btn btn--primary"
+        onClick={onPreview}
+        style={{ ...btnBase, textDecoration: "none" }}
+      >
+        <EyeIcon />
+        {openLabel}
+      </button>
+    ) : (
+      <a
+        className="btn btn--primary"
+        href={fileUrl}
+        target={openInNewTab ? "_blank" : undefined}
+        rel={openInNewTab ? "noopener noreferrer" : undefined}
+        style={btnBase}
+      >
+        <EyeIcon />
+        {openLabel}
+      </a>
+    )
+  ) : (
+    <a className="btn btn--primary" href={pageHref} style={btnBase} title="Открыть страницу документа">
+      <EyeIcon />
+      {openLabel}
+    </a>
+  );
+
+  const downloadButton = fileUrl ? (
+    <a
+      className="btn"
+      href={fileUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      download={downloadName(title, fileUrl)}
+      title="Скачать документ"
+      aria-label={`Скачать: ${title || "документ"}`}
+      style={btnBase}
+    >
+      <DownloadIcon />
+      Скачать
+    </a>
+  ) : (
+    <button
+      type="button"
+      className="btn"
+      disabled
+      aria-disabled="true"
+      title={missingHint}
+      style={{ ...btnBase, opacity: 0.5, cursor: "not-allowed" }}
+    >
+      <DownloadIcon />
+      Скачать
+    </button>
+  );
 
   return (
     <>
-      {onPreview ? (
-        <button
-          type="button"
-          className="btn btn--primary"
-          onClick={onPreview}
-          style={{ ...btnBase, textDecoration: "none" }}
-        >
-          <EyeIcon />
-          {openLabel}
-        </button>
-      ) : (
-        <a
-          className="btn btn--primary"
-          href={url}
-          target={openInNewTab ? "_blank" : undefined}
-          rel={openInNewTab ? "noopener noreferrer" : undefined}
-          style={btnBase}
-        >
-          <EyeIcon />
-          {openLabel}
-        </a>
-      )}
-      <a
-        className="btn"
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        download
-        title="Скачать документ"
-        aria-label={`Скачать: ${title || "документ"}`}
-        style={btnBase}
-      >
-        <DownloadIcon />
-        Скачать
-      </a>
+      {openButton}
+      {downloadButton}
     </>
   );
 }

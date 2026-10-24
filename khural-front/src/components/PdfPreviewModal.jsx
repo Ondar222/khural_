@@ -1,7 +1,17 @@
 import React from "react";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import {
+  canOpenInline,
+  downloadName,
+  embeddedViewerUrl,
+  externalViewerUrl,
+  isDocumentFileUrl,
+  isHtmlBlob,
+  isPdfBlob,
+} from "../utils/documentFile.js";
 
-// Итоговая ссылка: /upload/iblock/.../имя файла.pdf (без %-кодирования в пути)
+/* ---------- helpers ---------- */
+
 function normalizeUrl(url) {
   if (!url) return "";
   const normalized = normalizeFilesUrl(url);
@@ -14,7 +24,6 @@ function normalizeUrl(url) {
   }
 }
 
-/** На продакшене запрос к API/файлам через тот же origin (rewrite /files -> backend), чтобы не было CORS. */
 function getFetchUrl(pdfUrl) {
   if (!pdfUrl || typeof pdfUrl !== "string") return pdfUrl;
   try {
@@ -42,21 +51,14 @@ function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
 }
 
-/** Запрос к файлу через same-origin (nginx отдаёт /api/files и /upload с того же домена). */
 function toProxyUrl(url) {
-  // Файлы бэкенда: /api/files/<uuid> — уже same-origin
   if (/\/api\/files\//i.test(url)) return url;
-  // legacy-путь: тот же origin, файлы разложены nginx-ом
   if (/^https?:\/\/khural\.(?:yurta|rtyva)\.site\/upload\//i.test(url)) {
     return url.replace(/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i, "");
   }
   return getFetchUrl(url);
 }
 
-/**
- * Проверяем доступность файла: "ok" — отдаётся сервером, "missing" — явный 404/410,
- * "unknown" — сеть/CORS/таймаут (в этом случае предпросмотр всё равно пробуем показать).
- */
 async function probeFile(url) {
   const opts = { method: "GET", mode: "cors", credentials: "omit", headers: { Range: "bytes=0-0" } };
   const candidates = [...new Set([toProxyUrl(url), url].filter(Boolean))];
@@ -64,114 +66,121 @@ async function probeFile(url) {
   for (const candidate of candidates) {
     try {
       const res = await fetchWithTimeout(candidate, opts, PROBE_TIMEOUT_MS);
-      if (res.status === 200 || res.status === 206) return "ok";
       if (res.status === 404 || res.status === 410) sawMissing = true;
-    } catch (_) {
-      /* пробуем следующий вариант */
-    }
+      else if (res.status === 200 || res.status === 206) {
+        const ct = String(res.headers.get("content-type") || "").toLowerCase();
+        if (ct.includes("text/html")) {
+          sawMissing = true;
+          continue;
+        }
+        return "ok";
+      }
+    } catch (_) { /* next */ }
   }
   return sawMissing ? "missing" : "unknown";
 }
 
-// Используем Google Docs Viewer как fallback для обхода X-Frame-Options
-function getGoogleDocsViewerUrl(pdfUrl) {
-  return `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
-}
+/* ---------- texts ---------- */
 
-/** Определяем, является ли ссылка PDF: по расширению либо по эндпоинту файлов бэкенда (/api/files/<uuid>). */
-function isPdfUrl(url) {
-  const s = String(url || "");
-  if (/\.pdf(?:$|\?|#)/i.test(s)) return true;
-  // Бэкенд раздаёт файлы без расширения — тип определяем по ответу (content-type)
-  return /\/api\/files\/[^/?#]+/i.test(s) || /\/files\/[0-9a-f-]{36}/i.test(s);
-}
+const MSG = {
+  notAFile: {
+    title: "Файл документа не найден на сервере",
+    hint: "Ссылка ведёт на страницу сайта, а не на файл. Документ нужно загрузить заново в админке.",
+  },
+  missing: {
+    title: "Документ недоступен: файл не найден или был удалён",
+    hint: "",
+  },
+  failed: {
+    title: "Не удалось загрузить документ для предпросмотра",
+    hint: "",
+  },
+};
+
+/* ---------- component ---------- */
 
 export default function PdfPreviewModal({ open, onClose, url, title }) {
   const pdfSrc = React.useMemo(() => normalizeUrl(url), [url]);
   const [blobSrc, setBlobSrc] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const [useGoogleViewer, setUseGoogleViewer] = React.useState(false);
-  const [unavailable, setUnavailable] = React.useState(false);
+  const [status, setStatus] = React.useState("loading");
+  const [directHref, setDirectHref] = React.useState("");
+  const [downloadHref, setDownloadHref] = React.useState("");
+  const [downloadAs, setDownloadAs] = React.useState("");
 
   React.useEffect(() => {
     if (!open) {
       setBlobSrc("");
-      setUseGoogleViewer(false);
-      setUnavailable(false);
+      setStatus("loading");
+      setDirectHref("");
+      setDownloadHref("");
+      setDownloadAs("");
       return;
     }
-    if (!pdfSrc) return;
+    if (!pdfSrc) {
+      setStatus("failed");
+      return;
+    }
+
+    // Ссылка ведёт не на файл — предпросмотра нет
+    if (!isDocumentFileUrl(pdfSrc)) {
+      setStatus("notAFile");
+      return;
+    }
+
+    const inlineByExt = canOpenInline(pdfSrc);
+    setDirectHref(inlineByExt ? pdfSrc : externalViewerUrl(pdfSrc));
+    setDownloadHref(pdfSrc);
+    setDownloadAs(downloadName(title, pdfSrc));
 
     let cancelled = false;
     let objectUrl = "";
 
     (async () => {
-      setLoading(true);
+      setStatus("loading");
       setBlobSrc("");
-      setUseGoogleViewer(false);
-      setUnavailable(false);
 
-      // Документы Word/Excel/др. нельзя отрисовать в <iframe> как PDF —
-      // для них используем внешний просмотрщик, но только если файл реально доступен.
-      if (!isPdfUrl(pdfSrc)) {
-        const reachability = await probeFile(pdfSrc);
-        if (cancelled) return;
-        if (reachability === "missing") {
-          setUnavailable(true);
-          setLoading(false);
-          return;
-        }
-        setUseGoogleViewer(true);
-        setBlobSrc(getGoogleDocsViewerUrl(pdfSrc));
-        setLoading(false);
-        return;
-      }
-
-      // Ссылки на khural.* приводим к same-origin: nginx отдаёт и /api/files, и /upload
-      const isKhuralDomain = /^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(pdfSrc);
-      const fetchUrl = toProxyUrl(pdfSrc);
-
-      const opts = {
-        method: "GET",
-        mode: "cors",
-        credentials: "omit",
-        headers: { Accept: "application/pdf" },
-      };
-
+      const opts = { method: "GET", mode: "cors", credentials: "omit" };
       try {
-        let res = await fetchWithTimeout(fetchUrl, opts);
-        if (!res.ok && isKhuralDomain) {
+        let res = await fetchWithTimeout(toProxyUrl(pdfSrc), opts);
+        if (!res.ok && /^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(pdfSrc)) {
           res = await fetchWithTimeout(pdfSrc, opts);
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
-        // Файлы .doc/.docx бэкенд отдаёт по /api/files/<uuid> без расширения в пути —
-        // тип определяем по content-type ответа, а не по имени файла.
-        const isPdfBlob =
-          blob.type === "application/pdf" || blob.type === "application/octet-stream";
-        if (!isPdfBlob) {
-          const absolute = new URL(pdfSrc, window.location.origin).toString();
-          setUseGoogleViewer(true);
-          setBlobSrc(getGoogleDocsViewerUrl(absolute));
+        if (cancelled) return;
+
+        // Сервер вернул HTML страницы сайта — не показываем внутри iframe
+        if (await isHtmlBlob(blob)) {
+          setStatus("notAFile");
           return;
         }
-        objectUrl = URL.createObjectURL(blob);
-        if (!cancelled) setBlobSrc(objectUrl);
-      } catch (e) {
-        if (!cancelled) {
-          const reachability = await probeFile(pdfSrc);
-          if (cancelled) return;
-          if (reachability === "missing") {
-            console.warn("Документ недоступен на сервере:", e);
-            setUnavailable(true);
-          } else {
-            console.warn("Failed to load PDF as blob, using Google Docs Viewer:", e);
-            setUseGoogleViewer(true);
-            setBlobSrc(getGoogleDocsViewerUrl(pdfSrc));
-          }
+
+        // PDF по сигнатуре
+        if (await isPdfBlob(blob)) {
+          objectUrl = URL.createObjectURL(blob);
+          setBlobSrc(objectUrl);
+          setStatus("inline");
+          setDirectHref(pdfSrc);
+          return;
         }
-      } finally {
-        if (!cancelled) setLoading(false);
+
+        // Word/Excel/tiff и прочее — внешний просмотрщик
+        setBlobSrc(embeddedViewerUrl(pdfSrc));
+        setStatus("external");
+        setDirectHref(externalViewerUrl(pdfSrc));
+      } catch (e) {
+        if (cancelled) return;
+        const reachability = await probeFile(pdfSrc);
+        if (cancelled) return;
+        if (reachability === "missing") {
+          console.warn("Документ недоступен на сервере:", e);
+          setStatus("missing");
+        } else {
+          console.warn("Failed to load document as blob, using external viewer:", e);
+          setBlobSrc(embeddedViewerUrl(pdfSrc));
+          setStatus("external");
+          setDirectHref(externalViewerUrl(pdfSrc));
+        }
       }
     })();
 
@@ -179,9 +188,11 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [open, pdfSrc]);
+  }, [open, pdfSrc, title]);
 
   if (!open) return null;
+
+  const error = MSG[status];
 
   return (
     <div className="modal-overlay" role="dialog" aria-modal="true">
@@ -194,20 +205,32 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
           style={{ height: "calc(86vh - 48px)", display: "flex", flexDirection: "column", gap: 8 }}
         >
           <div style={{ fontWeight: 800 }}>{title || "Предварительный просмотр"}</div>
-          {pdfSrc ? (
+          {!pdfSrc ? (
+            <div style={{ color: "#b91c1c" }}>Ссылка на документ отсутствует.</div>
+          ) : (
             <>
               <div style={{ flex: 1, minHeight: 0 }}>
-                {loading ? (
+                {status === "loading" ? (
                   <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>
                     Загрузка документа…
                   </div>
-                ) : unavailable ? (
+                ) : error ? (
                   <div style={{ padding: 40, textAlign: "center", color: "#b91c1c" }}>
-                    Документ недоступен на сервере: файл не найден или был удалён.
+                    {error.title}
+                    {error.hint ? (
+                      <div style={{ marginTop: 8, color: "#6b7280", fontSize: 13 }}>{error.hint}</div>
+                    ) : null}
                     <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-                      <a href={pdfSrc} target="_blank" rel="noopener noreferrer" className="btn">
-                        Попробовать открыть в новой вкладке ↗
-                      </a>
+                      {(status === "missing" || status === "failed") && (
+                        <a
+                          href={directHref || pdfSrc}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn"
+                        >
+                          Открыть в новой вкладке ↗
+                        </a>
+                      )}
                       <button type="button" className="btn" onClick={onClose}>
                         Закрыть
                       </button>
@@ -226,31 +249,27 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
                     }}
                   />
                 ) : (
-                  <div style={{ padding: 40, textAlign: "center", color: "#b91c1c" }}>
-                    Не удалось загрузить документ для предпросмотра.
-                    <div style={{ marginTop: 12 }}>
-                      <a href={pdfSrc} target="_blank" rel="noopener noreferrer" className="btn">
-                        Открыть в новой вкладке ↗
-                      </a>
-                    </div>
+                  <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>
+                    Предпросмотр недоступен
                   </div>
                 )}
               </div>
-              {useGoogleViewer && !unavailable && (
+              {status === "external" ? (
                 <div style={{ fontSize: 12, color: "#6b7280", padding: "8px 0", borderTop: "1px solid #e5e7eb" }}>
-                  Используется внешний просмотрщик для обхода ограничений сервера
+                  Формат файла браузер не показывает — используется внешний просмотрщик
                 </div>
-              )}
-              {!unavailable && (
-                <div style={{ fontSize: 13, color: "#555" }}>
-                  <a href={pdfSrc} target="_blank" rel="noopener noreferrer">
+              ) : null}
+              {!error ? (
+                <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+                  <a href={directHref || pdfSrc} target="_blank" rel="noopener noreferrer">
                     Открыть в новой вкладке ↗
                   </a>
+                  <a href={downloadHref || pdfSrc} download={downloadAs || true}>
+                    Скачать файл
+                  </a>
                 </div>
-              )}
+              ) : null}
             </>
-          ) : (
-            <div style={{ color: "#b91c1c" }}>Ссылка на документ отсутствует.</div>
           )}
         </div>
       </div>

@@ -4,6 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import DocumentActions from "../components/DocumentActions.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
+import { isDocumentFileUrl } from "../utils/documentFile.js";
 import { BUDGET_DOCS_ARCHIVE } from "../data/budgetDocsArchive.js";
 import { DocumentIcon } from "../components/icons/LinearIcons.jsx";
 
@@ -160,9 +161,7 @@ export default function BudgetDynamicPage() {
                               <DocumentActions
                                 url={doc.file_url || doc.url}
                                 title={doc.title}
-                                onPreview={() =>
-                                  setPreviewDoc({ url: doc.file_url || doc.url, title: doc.title })
-                                }
+                                onPreview={isDocumentFileUrl(doc.file_url || doc.url) ? () => setPreviewDoc({ url: doc.file_url || doc.url, title: doc.title }) : undefined}
                               />
                             </div>
                           )}

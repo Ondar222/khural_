@@ -5,6 +5,7 @@ import DataState from "../components/DataState.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import DocumentActions from "../components/DocumentActions.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { isDocumentFileUrl } from "../utils/documentFile.js";
 import { CommitteesApi, ConvocationsApi } from "../api/client.js";
 import {
   COMMITTEES_OVERRIDES_EVENT_NAME,
@@ -1336,11 +1337,14 @@ export default function Committee() {
                               url={normalizeFilesUrl(plan.fileLink || `/files/${plan.fileId}`)}
                               title={plan.title || "План комитета"}
                               openLabel="Открыть план"
-                              onPreview={() =>
-                                setDocPreview({
-                                  url: normalizeFilesUrl(plan.fileLink || `/files/${plan.fileId}`),
-                                  title: plan.title || "План комитета",
-                                })
+                              onPreview={
+                                isDocumentFileUrl(normalizeFilesUrl(plan.fileLink || `/files/${plan.fileId}`))
+                                  ? () =>
+                                      setDocPreview({
+                                        url: normalizeFilesUrl(plan.fileLink || `/files/${plan.fileId}`),
+                                        title: plan.title || "План комитета",
+                                      })
+                                  : undefined
                               }
                             />
                           </div>
@@ -1625,7 +1629,7 @@ export default function Committee() {
                                     <DocumentActions
                                       url={fileUrl}
                                       title={doc.title || "Документ"}
-                                      onPreview={() => setDocPreview({ url: fileUrl, title: doc.title || "Документ" })}
+                                      onPreview={isDocumentFileUrl(fileUrl) ? () => setDocPreview({ url: fileUrl, title: doc.title || "Документ" }) : undefined}
                                     />
                                   </span>
                                 ) : null}
@@ -1657,7 +1661,7 @@ export default function Committee() {
                                 <DocumentActions
                                   url={fileUrl}
                                   title={doc.title || "Документ"}
-                                  onPreview={() => setDocPreview({ url: fileUrl, title: doc.title || "Документ" })}
+                                  onPreview={isDocumentFileUrl(fileUrl) ? () => setDocPreview({ url: fileUrl, title: doc.title || "Документ" }) : undefined}
                                 />
                               </span>
                             ) : null}

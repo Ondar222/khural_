@@ -3,18 +3,10 @@ import { useHashRoute } from "../Router.jsx";
 import { DocumentsApi } from "../api/client.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
+import { isDocumentFileUrl, isHtmlBlob, isPdfBlob, externalViewerUrl } from "../utils/documentFile.js";
 import DataState from "../components/DataState.jsx";
 import DocumentActions from "../components/DocumentActions.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
-
-function looksLikePdf(url) {
-  const u = String(url || "").toLowerCase();
-  return u.includes(".pdf");
-}
-
-function looksLikeHtml(s) {
-  return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
-}
 
 function renderDocDesc(raw) {
   const decoded = decodeHtmlEntities(raw);
@@ -98,20 +90,33 @@ export default function DocumentDetail() {
       setPdfError("");
       setBlobSrc("");
       try {
-        // Все файлы (и /api/files/<uuid>, и legacy /upload/*) отдаются с того же домена
         const fetchUrl = pdfSrc.replace(/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i, "");
         const res = await fetch(fetchUrl, { method: "GET", mode: "cors", credentials: "omit" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const blob = await res.blob();
-        objectUrl = URL.createObjectURL(blob);
-        if (!cancelled) {
-          setBlobSrc(objectUrl);
-          // Page count is optional - PDF navigation via #page=N works without it
+        if (cancelled) return;
+
+        // Сервер отдал HTML страницы — не показываем его
+        if (await isHtmlBlob(blob)) {
+          setPdfError("Сервер отдал страницу сайта вместо файла");
+          return;
+        }
+
+        // PDF определяем по сигнатуре %PDF: content-type бывает octet-stream
+        if (await isPdfBlob(blob)) {
+          objectUrl = URL.createObjectURL(blob);
+          if (!cancelled) {
+            setBlobSrc(objectUrl);
+            setTotalPages(null);
+          }
+        } else {
+          // Не PDF — показываем внешний просмотрщик вместо ифрейма
+          setBlobSrc(`https://docs.google.com/viewer?url=${encodeURIComponent(pdfSrc)}&embedded=true`);
           setTotalPages(null);
         }
       } catch (e) {
         if (!cancelled) {
-          setPdfError("Не удалось загрузить PDF для просмотра");
+          setPdfError("Не удалось загрузить документ для просмотра");
         }
       } finally {
         if (!cancelled) setPdfLoading(false);
@@ -205,7 +210,8 @@ export default function DocumentDetail() {
       doc?.metadata?.pdfFileTyLink ||
       ""
   );
-  const isPdf = looksLikePdf(pdfUrl);
+  const hasFile = isDocumentFileUrl(pdfUrl);
+  const detailHref = pdfUrl ? "" : (doc?.id ? `/documents/${doc.id}` : "");
 
   return (
     <section className="section">
@@ -245,18 +251,17 @@ export default function DocumentDetail() {
 
           {/* Actions */}
           <div style={{ display: "flex", gap: 12, marginBottom: 32, flexWrap: "wrap" }}>
-            {pdfUrl && (
-              <DocumentActions
-                url={pdfUrl}
-                title={doc?.title}
-                openLabel="Открыть документ"
-                openInNewTab
-              />
-            )}
+            <DocumentActions
+              url={pdfUrl}
+              title={doc?.title}
+              openLabel="Открыть документ"
+              openInNewTab
+              href={detailHref}
+            />
           </div>
 
           {/* PDF Viewer with Pagination */}
-          {isPdf && pdfUrl && (
+          {hasFile && pdfUrl && (
             <div style={{ marginBottom: 32 }}>
               <div
                 style={{
@@ -331,9 +336,9 @@ export default function DocumentDetail() {
                     <div style={{ padding: 40, textAlign: "center", color: "#b91c1c" }}>
                       {pdfError}
                       <div style={{ marginTop: 12 }}>
-                        <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="btn">
-                          Открыть в новой вкладке
-                        </a>
+                      <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="btn">
+                        Открыть в новой вкладке ↗
+                      </a>
                       </div>
                     </div>
                   ) : blobSrc ? (
@@ -359,7 +364,7 @@ export default function DocumentDetail() {
           )}
 
           {/* Fallback for non-PDF or if PDF viewer fails */}
-          {!isPdf && pdfUrl && (
+          {hasFile && pdfUrl && !blobSrc && !pdfLoading && !pdfError && (
             <div style={{ marginBottom: 32 }}>
               <div
                 style={{
@@ -371,7 +376,7 @@ export default function DocumentDetail() {
                 }}
               >
                 <p style={{ marginBottom: 16 }}>Документ доступен для скачивания</p>
-                <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="btn btn--primary">
+                <a href={externalViewerUrl(pdfUrl)} target="_blank" rel="noopener noreferrer" className="btn btn--primary">
                   Открыть документ
                 </a>
               </div>

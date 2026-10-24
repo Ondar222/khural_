@@ -1,6 +1,7 @@
 import React from "react";
 import DocumentActions from "../components/DocumentActions.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
+import { isDocumentFileUrl } from "../utils/documentFile.js";
 import { DocumentIcon, FolderIcon } from "../components/icons/LinearIcons.jsx";
 import {
   CONV3_RESOLUTION,
@@ -69,7 +70,7 @@ function DocumentRow({ doc, onPreview }) {
             url={url}
             title={doc?.title}
             openLabel="Открыть"
-            onPreview={() => onPreview({ url, title: doc?.title })}
+            onPreview={isDocumentFileUrl(url) ? () => onPreview({ url, title: doc?.title }) : undefined}
           />
         </div>
       ) : null}

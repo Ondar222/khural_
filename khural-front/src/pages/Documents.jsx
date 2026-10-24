@@ -8,6 +8,7 @@ import DataState from "../components/DataState.jsx";
 import ScrollToTop from "../components/ScrollToTop.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
+import { isDocumentFileUrl } from "../utils/documentFile.js";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import DocumentActions from "../components/DocumentActions.jsx";
 import { DocumentIcon } from "../components/icons/LinearIcons.jsx";
@@ -251,6 +252,8 @@ export default function Documents() {
                         <div className="law-list" style={{ marginTop: 10 }}>
                           {items.map((d) => {
                             const url = normalizeFilesUrl(d.url || d.file?.link || "");
+                            const hasFile = isDocumentFileUrl(url);
+                            const detailHref = /^\d+$/.test(String(d.id)) ? `/documents/${d.id}` : "";
                             return (
                               <div key={d.id || url || d.title} className="law-item card">
                                 <div className="law-left">
@@ -266,13 +269,12 @@ export default function Documents() {
                                   </div>
                                 </div>
                                 <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
-                                  {url && (
-                                    <DocumentActions
-                                      url={url}
-                                      title={d.title}
-                                      onPreview={() => setPreview({ url, title: d.title })}
-                                    />
-                                  )}
+                                  <DocumentActions
+                                    url={url}
+                                    title={d.title}
+                                    onPreview={hasFile ? () => setPreview({ url, title: d.title }) : undefined}
+                                    href={detailHref}
+                                  />
                                 </div>
                               </div>
                             );
@@ -286,6 +288,8 @@ export default function Documents() {
                     <div className="law-list">
                       {paginatedItems.map((d) => {
                         const url = normalizeFilesUrl(d.url || d.file?.link || "");
+                        const hasFile = isDocumentFileUrl(url);
+                        const detailHref = /^\d+$/.test(String(d.id)) ? `/documents/${d.id}` : "";
                         return (
                           <div key={d.id || url || d.title} className="law-item card">
                             <div className="law-left">
@@ -301,13 +305,12 @@ export default function Documents() {
                               </div>
                             </div>
                             <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
-                              {url && (
-                                <DocumentActions
-                                  url={url}
-                                  title={d.title}
-                                  onPreview={() => setPreview({ url, title: d.title })}
-                                />
-                              )}
+                              <DocumentActions
+                                url={url}
+                                title={d.title}
+                                onPreview={hasFile ? () => setPreview({ url, title: d.title }) : undefined}
+                                href={detailHref}
+                              />
                             </div>
                           </div>
                         );

@@ -6,6 +6,7 @@ import { useData } from "../../context/DataContext.jsx";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
+import { isDocumentFileUrl } from "../../utils/documentFile.js";
 import { getDocumentLinkedEntities } from "../../utils/documentMentions.js";
 import PdfPreviewModal from "../../components/PdfPreviewModal.jsx";
 import DocumentActions from "../../components/DocumentActions.jsx";
@@ -413,7 +414,7 @@ export default function DocsPage() {
                         <DocumentActions
                           url={d.url}
                           title={d.title}
-                          onPreview={() => setPreview({ url: d.url, title: d.title })}
+                          onPreview={isDocumentFileUrl(d.url) ? () => setPreview({ url: d.url, title: d.title }) : undefined}
                         />
                       )}
                     </div>
