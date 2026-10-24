@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate PDFs for bills-004 and bills-005 using cupsfilter."""
+"""Генерация PDF для bills-004 и bills-005 через cupsfilter."""
 import subprocess
 
 bills = {
