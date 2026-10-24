@@ -6,7 +6,7 @@
 
 import { CONV3_DOCUMENTS_BY_COMMITTEE_1_7 } from "./conv3_committees_1_7_data.js";
 
-const DOC_BASE = "https://khural.yurta.site";
+const DOC_BASE = "";
 
 /** Постановление ВХ РТ о комитетах и комиссии третьего созыва (документ) */
 export const CONV3_RESOLUTION = {

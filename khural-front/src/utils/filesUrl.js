@@ -1,6 +1,8 @@
-// Файлы документов раздаёт бэкенд: {CDN}/files/<uuid>, где CDN = https://khural.yurta.site/api
+// Файлы документов раздаёт бэкенд: {CDN}/files/<uuid>, где CDN = /api
 // Старые ссылки вида /upload/iblock/... ведут на тот же домен (после импорта файлы живут у нас).
-const KHURAL_UPLOAD_BASE = "https://khural.yurta.site";
+// База пустая намеренно: ссылки остаются относительными (/upload/...), чтобы работали
+// и на проде за nginx, и локально через vite-прокси — без абсолютного домена в бандле.
+const KHURAL_UPLOAD_BASE = "";
 
 /** Локальный бэкенд отдаёт абсолютный CDN-префикс — приводим его к same-origin /api. */
 function toSameOriginApi(url) {
@@ -43,7 +45,7 @@ function fullyDecodePath(path) {
     .join("/");
 }
 
-/** Ссылка = только https://khural.yurta.site + путь /upload/.../файл.pdf (путь декодирован в «сырой» вид, без %). */
+/** Ссылка = относительный путь /upload/.../файл.pdf (путь декодирован в «сырой» вид, без %). */
 function buildUploadUrl(pathOnly) {
   const path = normalizePathSlashes(onlyUploadPathToFile(pathOnly));
   const pathRaw = fullyDecodePath(path);
@@ -93,7 +95,7 @@ const decodeMultiEncoded = (raw) => {
   return current;
 };
 
-/** Для upload-ссылок: только https://khural.yurta.site + сырой путь /upload/.../файл.pdf (без %). Работает и для полного URL, и для пути. */
+/** Для upload-ссылок: относительный путь /upload/.../файл.pdf (без %). Работает и для полного URL, и для пути. */
 function ensureNoDoubleEncodingInUrl(urlStr) {
   if (!urlStr || typeof urlStr !== "string") return urlStr;
   const pathPart = urlStr.replace(/^https?:\/\/[^/]+/i, "").trim() || urlStr;

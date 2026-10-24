@@ -1,7 +1,7 @@
 import React from "react";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
-// Итоговая ссылка: https://khural.yurta.site/upload/iblock/.../имя файла.pdf (без %-кодирования в пути)
+// Итоговая ссылка: /upload/iblock/.../имя файла.pdf (без %-кодирования в пути)
 function normalizeUrl(url) {
   if (!url) return "";
   const normalized = normalizeFilesUrl(url);
@@ -42,12 +42,14 @@ function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
 }
 
-/** Запрос к файлу через same-origin прокси (vite/vercel), чтобы обойти CORS. */
+/** Запрос к файлу через same-origin (nginx отдаёт /api/files и /upload с того же домена). */
 function toProxyUrl(url) {
-  // Файлы бэкенда: /api/files/<uuid> — уже same-origin (vite proxy / vercel rewrite)
+  // Файлы бэкенда: /api/files/<uuid> — уже same-origin
   if (/\/api\/files\//i.test(url)) return url;
-  if (url.includes("khural.yurta.site")) return url.replace("https://khural.yurta.site", "/pdf-proxy");
-  if (url.includes("khural.rtyva.ru")) return url.replace("https://khural.rtyva.ru", "/upload");
+  // legacy-путь: тот же origin, файлы разложены nginx-ом
+  if (/^https?:\/\/khural\.(?:yurta|rtyva)\.site\/upload\//i.test(url)) {
+    return url.replace(/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i, "");
+  }
   return getFetchUrl(url);
 }
 
@@ -125,8 +127,8 @@ export default function PdfPreviewModal({ open, onClose, url, title }) {
         return;
       }
 
-      // khural.yurta.site -> /pdf-proxy, khural.rtyva.ru -> /upload (оба rewrite в vercel.json = same-origin, без CORS)
-      const isKhuralDomain = pdfSrc.includes("khural.yurta.site") || pdfSrc.includes("khural.rtyva.ru");
+      // Ссылки на khural.* приводим к same-origin: nginx отдаёт и /api/files, и /upload
+      const isKhuralDomain = /^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(pdfSrc);
       const fetchUrl = toProxyUrl(pdfSrc);
 
       const opts = {

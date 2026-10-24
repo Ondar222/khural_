@@ -186,10 +186,9 @@ const FEDERATION_COUNCIL_HTML = `
   <div class="federation-council__header">
     <img
       class="federation-council__photo"
-      src="/img-proxy/docs/%D0%9A%D1%83%D0%B6%D1%83%D0%B3%D0%B5%D1%82.jfif"
+      src="/docs/%D0%9A%D1%83%D0%B6%D1%83%D0%B3%D0%B5%D1%82.jfif"
       alt="Кужугет Шолбан Артемович"
       loading="lazy"
-      onerror="this.src='https://khural.yurta.site/docs/%D0%9A%D1%83%D0%B6%D1%83%D0%B3%D0%B5%D1%82.jfif'"
     />
     <div class="federation-council__titles">
       <div class="federation-council__title">${FEDERATION_COUNCIL_TITLE}</div>
@@ -322,7 +321,7 @@ const INFO_FINANCE_PROCUREMENT_HTML = `
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
       <p style="margin:0 0 8px 0; font-weight: 600; color: #111827;">Документы:</p>
       <ul style="margin:0; padding-left: 20px; line-height: 2;">
-        <li><a href="https://khural.yurta.site/upload/iblock/1f9/%D0%9E%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D1%82%D0%B8%D0%B2%D0%B0%D1%85%20%D0%B7%D0%B0%D0%BA%D1%83%D0%BF%D0%BE%D0%BA%20%D0%92%D0%A5%20%D0%A0%D0%A2.docx" target="_blank" rel="noreferrer" style="color: #003366;">О нормативах закупок Верховного Хурала (парламента) РТ</a></li>
+        <li><a href="/upload/iblock/1f9/%D0%9E%20%D0%BD%D0%BE%D1%80%D0%BC%D0%B0%D1%82%D0%B8%D0%B2%D0%B0%D1%85%20%D0%B7%D0%B0%D0%BA%D1%83%D0%BF%D0%BE%D0%BA%20%D0%92%D0%A5%20%D0%A0%D0%A2.docx" target="_blank" rel="noreferrer" style="color: #003366;">О нормативах закупок Верховного Хурала (парламента) РТ</a></li>
       </ul>
     </div>
   </div>
@@ -599,7 +598,7 @@ const INFO_FINANCE_REPORTS_2019_HTML = `
         <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
-            <a href="https://khural.yurta.site/upload/iblock/178/ix4d70jwylfahx5ibn11bie0yutb17n0/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202019%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+            <a href="/upload/iblock/178/ix4d70jwylfahx5ibn11bie0yutb17n0/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202019%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
               Отчетность за 2019 год
             </a>
 
@@ -621,7 +620,7 @@ const INFO_FINANCE_REPORTS_2020_HTML = `
         <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
-            <a href="https://khural.yurta.site/upload/iblock/cde/xascukpwi7wd04xxgi9p8znj1np0qoax/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202020%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+            <a href="/upload/iblock/cde/xascukpwi7wd04xxgi9p8znj1np0qoax/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202020%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
               Отчетность за 2020 год
             </a>
           </div>
@@ -645,7 +644,7 @@ const INFO_FINANCE_REPORTS_2021_HTML = `
         <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
-            <a href="https://khural.yurta.site/upload/iblock/443/za4cch1k67p410j47y1fo7do1x8xp8bg/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202021%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+            <a href="/upload/iblock/443/za4cch1k67p410j47y1fo7do1x8xp8bg/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202021%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
               Отчетность за 2021 год
             </a>
           </div>
@@ -669,7 +668,7 @@ const INFO_FINANCE_REPORTS_2022_HTML = `
         <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
-            <a href="https://khural.yurta.site/upload/iblock/fc5/bzgwyoh85eb6w2igz5utd915zp5lu5k8/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202022%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+            <a href="/upload/iblock/fc5/bzgwyoh85eb6w2igz5utd915zp5lu5k8/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202022%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
               Отчетность за 2022 год
             </a>
           </div>
@@ -693,7 +692,7 @@ const INFO_FINANCE_REPORTS_2023_HTML = `
         <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <div style="flex: 1; min-width: 200px;">
           <div style="font-weight: 600; color: #111827; margin-bottom: 4px;">
-            <a href="https://khural.yurta.site/upload/iblock/1b9/o51ka03fkpt5rsf6ozzgxl55vcvjv9vu/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202023%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+            <a href="/upload/iblock/1b9/o51ka03fkpt5rsf6ozzgxl55vcvjv9vu/%D0%BE%D1%82%D1%87%D0%B5%D1%82%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%20-%20%D0%BE%D1%82%D1%87%D0%B5%D1%82%D0%BD%D0%BE%D1%81%D1%82%D1%8C%20%D0%B7%D0%B0%202023%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
               Отчетность за 2023 год
             </a>
           </div>
@@ -1032,7 +1031,7 @@ const INFO_POLNOMOCHIYA_HTML = `
             <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
             <div style="flex: 1; min-width: 200px;">
               <div style="font-weight: 600; color: #111827;">
-                <a href="https://khural.yurta.site/docs/%D0%9A%D0%BE%D0%BD%D1%81%D1%82%D0%B8%D1%82%D1%83%D1%86%D0%B8%D1%8F%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B8%20%D0%A2%D1%8B%D0%B2%D0%B0.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+                <a href="/docs/%D0%9A%D0%BE%D0%BD%D1%81%D1%82%D0%B8%D1%82%D1%83%D1%86%D0%B8%D1%8F%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B8%20%D0%A2%D1%8B%D0%B2%D0%B0.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
                   Конституция Республики Тыва
                 </a>
               </div>
@@ -1046,7 +1045,7 @@ const INFO_POLNOMOCHIYA_HTML = `
             <span style="display:inline-flex;color:#003366;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
             <div style="flex: 1; min-width: 200px;">
               <div style="font-weight: 600; color: #111827;">
-                <a href="https://khural.yurta.site/docs/%D0%A0%D0%B5%D0%B3%D0%BB%D0%B0%D0%BC%D0%B5%D0%BD%D1%82%20%D0%92%D0%A5%20%D0%A0%D0%A2.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+                <a href="/docs/%D0%A0%D0%B5%D0%B3%D0%BB%D0%B0%D0%BC%D0%B5%D0%BD%D1%82%20%D0%92%D0%A5%20%D0%A0%D0%A2.docx" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
                   Постановление ВХ РТ "О Регламенте Верховного Хурала (парламента) Республики Тыва"
                 </a>
               </div>
@@ -1109,7 +1108,7 @@ const OPENDATA_HTML = `
     <div style="margin-top: 24px; padding: 16px; background: #f9fafb; border-radius: 8px;">
       <strong style="color: #111827;">Файловое представление:</strong>
       <div style="margin-top: 8px;">
-        <a href="https://khural.yurta.site/upload/iblock/opendata/1701009892-maininfo.csv" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
+        <a href="/upload/iblock/opendata/1701009892-maininfo.csv" target="_blank" rel="noreferrer" style="color: #003366; text-decoration: underline;">
           1701009892-maininfo.csv
         </a>
       </div>
@@ -1141,7 +1140,7 @@ const INFO_OMBUDSMAN_HUMAN_HTML = `
   <div class="ombudsman-page__header">
     <img
       class="ombudsman-page__photo"
-      src="https://khural.yurta.site/images/%D0%B0%D0%B4%D1%8B%D0%B3%D0%B1%D0%B0%D0%B9.jpg"
+      src="/images/%D0%B0%D0%B4%D1%8B%D0%B3%D0%B1%D0%B0%D0%B9.jpg"
       alt="Адыгбай Александр Мижит-оолович"
       loading="lazy"
     />
@@ -1193,9 +1192,9 @@ const INFO_OMBUDSMAN_HUMAN_HTML = `
     <div class="ombudsman-page__block">
       <div class="ombudsman-page__block-title">Документы</div>
       <ul style="margin:0; padding-left: 20px;">
-        <li><a href="https://khural.yurta.site/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A7%20%D0%B7%D0%B0%202022%20%D0%B3..pdf" target="_blank" rel="noreferrer" style="color: #003366;">Доклад Уполномоченного по правам человека в Республике Тыва за 2022 год (PDF)</a></li>
-        <li><a href="https://khural.yurta.site/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%B7%D0%B0%202021%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366;">����������оклад Уполномоченного по правам человека в Республике Тыва за 2021 год (DOCX)</a></li>
-        <li><a href="https://khural.yurta.site/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%90%D0%B4%D1%8B%D0%B3%D0%B1%D0%B0%D0%B9%20%D0%90.%D0%9C.%20%D0%B7%D0%B0%202024%20%D0%B3%D0%BE%D0%B4.pdf" target="_blank" rel="noreferrer" style="color: #003366;">Доклад Уполномоченного по правам человека в Республике Тыва за 2024 год (PDF)</a></li>
+        <li><a href="/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A7%20%D0%B7%D0%B0%202022%20%D0%B3..pdf" target="_blank" rel="noreferrer" style="color: #003366;">Доклад Уполномоченного по правам человека в Республике Тыва за 2022 год (PDF)</a></li>
+        <li><a href="/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%B7%D0%B0%202021%20%D0%B3%D0%BE%D0%B4.docx" target="_blank" rel="noreferrer" style="color: #003366;">����������оклад Уполномоченного по правам человека в Республике Тыва за 2021 год (DOCX)</a></li>
+        <li><a href="/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%90%D0%B4%D1%8B%D0%B3%D0%B1%D0%B0%D0%B9%20%D0%90.%D0%9C.%20%D0%B7%D0%B0%202024%20%D0%B3%D0%BE%D0%B4.pdf" target="_blank" rel="noreferrer" style="color: #003366;">Доклад Уполномоченного по правам человека в Республике Тыва за 2024 год (PDF)</a></li>
       </ul>
     </div>
   </div>
@@ -1254,7 +1253,7 @@ const INFO_OMBUDSMAN_CHILD_HTML = `
   <div style="display:grid; gap:6px;">
     <div style="font-weight:800;">Документы</div>
     <ul style="margin:0; padding-left: 20px; color: #003366">
-      <li><a href="https://khural.yurta.site/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A0%20%D0%B7%D0%B0%202024%20%D0%B3.,%20%D0%BE%D0%BA%D0%BE%D0%BD%D1%87..docx" target="_blank" rel="noreferrer">Доклад о деятельности уполномоченного по правам ребенка в Республике Тыве за 2024 год (DOCX)</a></li>
+      <li><a href="/docs/%D0%94%D0%BE%D0%BA%D0%BB%D0%B0%D0%B4%20%D0%A3%D0%9F%D0%A0%20%D0%B7%D0%B0%202024%20%D0%B3.,%20%D0%BE%D0%BA%D0%BE%D0%BD%D1%87..docx" target="_blank" rel="noreferrer">Доклад о деятельности уполномоченного по правам ребенка в Республике Тыве за 2024 год (DOCX)</a></li>
     </ul>
   </div>
 </div>
@@ -1426,12 +1425,12 @@ const INFO_CORRUPTION_FORMY_DOKUMENTOV_HTML = `
   <div class="card" style="padding: 20px;">
     <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Формы документов, связанных с противодействием коррупции</h1>
     <ul style="margin:0; padding-left: 20px;">
-      <li style="margin-bottom:8px;"><a href="https://khural.yurta.site/upload/docs/188/1.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма справки о доходах, расходах, имуществе и обязательствах имущественного характера <span style="color: #6b7280;">(139 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="https://khural.yurta.site/upload/docs/188/2.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма обращения гражданина, юридического лица по фактам коррупционных правонарушений <span style="color: #6b7280;">(28.5 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="https://khural.yurta.site/upload/docs/188/3.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма сведений об адресах сайтов и (или) страниц сайтов в информационно-телекоммуникационной сети «Интернет» <span style="color: #6b7280;">(64.5 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="https://khural.yurta.site/upload/docs/188/4.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма заявления служащего (работника) о невозможности по объективным причинам представить сведения о доходах, об имуществе и обязательствах имущественного характера своих супруги (супруга) и несовершеннолетних детей <span style="color: #6b7280;">(35.5 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="/upload/docs/188/1.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма справки о доходах, расходах, имуществе и обязательствах имущественного характера <span style="color: #6b7280;">(139 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="/upload/docs/188/2.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма обращения гражданина, юридического лица по фактам коррупционных правонарушений <span style="color: #6b7280;">(28.5 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="/upload/docs/188/3.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма сведений об адресах сайтов и (или) страниц сайтов в информационно-телекоммуникационной сети «Интернет» <span style="color: #6b7280;">(64.5 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="/upload/docs/188/4.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма заявления служащего (работника) о невозможности по объективным причинам представить сведения о доходах, об имуществе и обязательствах имущественного характера своих супруги (супруга) и несовершеннолетних детей <span style="color: #6b7280;">(35.5 КБ)</span></a></li>
       <li style="margin-top: 16px;"><strong>Специальное программное обеспечение для заполнения справки о доходах, об имуществе и обязательствах имущественного характера</strong></li>
-      <li><a href="https://khural.yurta.site/upload/docs/188/5.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма уведомления представителя нанимателя (работодате <span style="color: #6b7280;">(скачать)</span></a></li>
+      <li><a href="/upload/docs/188/5.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма уведомления представителя нанимателя (работодате <span style="color: #6b7280;">(скачать)</span></a></li>
     </ul>
   </div>
 </div>
@@ -1444,11 +1443,11 @@ const INFO_CORRUPTION_SPAVKE_BK_HTML = `
   <div class="card" style="padding: 20px;">
     <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Специальное программное обеспечение «Справки БК»</h1>
     <ul style="margin:0; padding-left: 20px;">
-      <li style="margin-bottom:8px;"><a href="https://khural.yurta.site/upload/docs/185/spavki_bk.exe" target="_blank" rel="noreferrer" style="color: #003366;">СПО Справки БК (версия 2.5.5) от 31.01.2024 <span style="color: #6b7280;">(20139.1 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="https://khural.yurta.site/upload/docs/185/novely.docx" target="_blank" rel="noreferrer" style="color: #003366;">Основные новеллы <span style="color: #6b7280;">(25.6 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="https://khural.yurta.site/upload/docs/185/instrukciya.docx" target="_blank" rel="noreferrer" style="color: #003366;">Инструкция о порядке заполнения справок о доходах (в формате doc) <span style="color: #6b7280;">(41.5 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="https://khural.yurta.site/upload/docs/185/opisanie.docx" target="_blank" rel="noreferrer" style="color: #003366;">Описание специального программного обеспечения (в формате doc) <span style="color: #6b7280;">(458 КБ)</span></a></li>
-      <li><a href="https://khural.yurta.site/upload/docs/185/metod_rekomendacii_2025.pdf" target="_blank" rel="noreferrer" style="color: #003366;">МЕТОДИЧЕСКИЕ РЕКОМЕНДАЦИИ в 2025 году (за отчетный 2024 год) <span style="color: #6b7280;">(163.3 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="/upload/docs/185/spavki_bk.exe" target="_blank" rel="noreferrer" style="color: #003366;">СПО Справки БК (версия 2.5.5) от 31.01.2024 <span style="color: #6b7280;">(20139.1 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="/upload/docs/185/novely.docx" target="_blank" rel="noreferrer" style="color: #003366;">Основные новеллы <span style="color: #6b7280;">(25.6 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="/upload/docs/185/instrukciya.docx" target="_blank" rel="noreferrer" style="color: #003366;">Инструкция о порядке заполнения справок о доходах (в формате doc) <span style="color: #6b7280;">(41.5 КБ)</span></a></li>
+      <li style="margin-bottom:8px;"><a href="/upload/docs/185/opisanie.docx" target="_blank" rel="noreferrer" style="color: #003366;">Описание специального программного обеспечения (в формате doc) <span style="color: #6b7280;">(458 КБ)</span></a></li>
+      <li><a href="/upload/docs/185/metod_rekomendacii_2025.pdf" target="_blank" rel="noreferrer" style="color: #003366;">МЕТОДИЧЕСКИЕ РЕКОМЕНДАЦИИ в 2025 году (за отчетный 2024 год) <span style="color: #6b7280;">(163.3 КБ)</span></a></li>
     </ul>
   </div>
 </div>
@@ -1461,7 +1460,7 @@ const INFO_CORRUPTION_PLAN_HTML = `
   <div class="card" style="padding: 20px;">
     <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">План противодействия коррупции</h1>
     <ul style="margin:0; padding-left: 20px;">
-      <li><a href="https://khural.yurta.site/upload/docs/233/protivodeystvie_korrupcii_2018-2020.pdf" target="_blank" rel="noreferrer" style="color: #003366;">План противодействия коррупции в Верховном Хурале (парламенте) Республики Тыва на 2018 – 2020 годы <span style="color: #6b7280;">(105.5 КБ)</span></a></li>
+      <li><a href="/upload/docs/233/protivodeystvie_korrupcii_2018-2020.pdf" target="_blank" rel="noreferrer" style="color: #003366;">План противодействия коррупции в Верховном Хурале (парламенте) Республики Тыва на 2018 – 2020 годы <span style="color: #6b7280;">(105.5 КБ)</span></a></li>
     </ul>
   </div>
 </div>
@@ -1577,13 +1576,13 @@ const INFO_GRANISA_SHABLONY_HTML = `
   <div class="card" style="padding: 20px;">
     <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Шаблоны заявлений и ходатайств</h1>
     <ul style="margin:0; padding-left: 20px;">
-      <li><a href="https://khural.yurta.site/info/granisa/205/" target="_blank" rel="noreferrer" style="color: #003366;">Ходатайство на получение индивидуального пропуска</a></li>
-      <li><a href="https://khural.yurta.site/info/granisa/206/" target="_blank" rel="noreferrer" style="color: #003366;">Ходатайство на получение коллективного пропуска</a></li>
-      <li><a href="https://khural.yurta.site/info/granisa/207/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление законного представителя</a></li>
-      <li><a href="https://khural.yurta.site/info/granisa/208/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на индивидуальный пропуск</a></li>
-      <li><a href="https://khural.yurta.site/info/granisa/209/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на коллективный пропуск</a></li>
-      <li><a href="https://khural.yurta.site/info/granisa/210/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на промысловую деятельность</a></li>
-      <li><a href="https://khural.yurta.site/info/granisa/211/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на разрешение хоз. деятельности</a></li>
+      <li><a href="/info/granisa/205/" target="_blank" rel="noreferrer" style="color: #003366;">Ходатайство на получение индивидуального пропуска</a></li>
+      <li><a href="/info/granisa/206/" target="_blank" rel="noreferrer" style="color: #003366;">Ходатайство на получение коллективного пропуска</a></li>
+      <li><a href="/info/granisa/207/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление законного представителя</a></li>
+      <li><a href="/info/granisa/208/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на индивидуальный пропуск</a></li>
+      <li><a href="/info/granisa/209/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на коллективный пропуск</a></li>
+      <li><a href="/info/granisa/210/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на промысловую деятельность</a></li>
+      <li><a href="/info/granisa/211/" target="_blank" rel="noreferrer" style="color: #003366;">Заявление на разрешение хоз. деятельности</a></li>
     </ul>
   </div>
 </div>

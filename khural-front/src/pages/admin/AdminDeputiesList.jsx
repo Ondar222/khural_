@@ -7,9 +7,10 @@ import { readDeputiesOverrides, writeDeputiesOverrides } from "./deputiesOverrid
 import { toPersonsApiBody } from "../../api/personsPayload.js";
 import { APPARATUS_SECTIONS } from "../../utils/apparatusContent.js";
 
-const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
+// Пустая база: пути остаются относительными (/upload/...), их отдаёт тот же nginx, что и сайт.
+const KHURAL_UPLOAD_BASE = "";
 
-/** Преобразует путь фото в полный URL через khural.rtyva.ru */
+/** Преобразует путь фото в относительный URL того же домена */
 function normalizePhotoUrl(pic) {
   if (!pic) return "";
   const s = String(pic).trim();

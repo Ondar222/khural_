@@ -519,7 +519,9 @@ function mergeCommitteesPreferApi(apiList, staticList) {
   return out;
 }
 
-const KHURAL_UPLOAD_BASE = "https://khural.rtyva.ru";
+// Пустая база намеренно: ссылки остаются относительными (/upload/...), их отдаёт
+// тот же nginx, что и сайт (локально — vite-прокси на старый сайт).
+const KHURAL_UPLOAD_BASE = "";
 
 /** Вспомогательная функция для кодирования сегмента пути */
 function encodePathSegment(segment) {
@@ -550,7 +552,7 @@ function encodeUrlPathname(pathname) {
     .join("/");
 }
 
-/** Преобразует путь фото в полный URL через khural.rtyva.ru */
+/** Преобразует путь фото в URL того же домена (относительный /upload/...) */
 function normalizePhotoUrl(pic) {
   if (!pic) return "";
   const s = String(pic).trim();
@@ -575,12 +577,11 @@ function normalizePhotoUrl(pic) {
         }
       }
     }
-    // Если это URL с khural.rtyva.ru, кодируем pathname
-    if (s.includes("khural.rtyva.ru")) {
+    // Ссылки на наш/старый домен срезаем в относительный путь — отдаёт тот же nginx
+    if (/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(s)) {
       try {
         const url = new URL(s);
-        const encodedPath = encodeUrlPathname(url.pathname);
-        return `${url.origin}${encodedPath}${url.search}${url.hash}`;
+        return encodeUrlPathname(url.pathname) + url.search + url.hash;
       } catch {
         return s;
       }

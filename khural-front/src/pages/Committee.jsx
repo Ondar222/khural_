@@ -901,9 +901,9 @@ export default function Committee() {
                           const img = e.target;
                           const currentSrc = img.src;
                           
-                          if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                          if (/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(currentSrc) && !img.dataset.proxyTried) {
                             img.dataset.proxyTried = "true";
-                            img.src = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                            img.src = currentSrc.replace(/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i, "");
                           } else {
                             img.style.display = "";
                             img.removeAttribute("src");
@@ -955,9 +955,9 @@ export default function Committee() {
                               const img = e.target;
                               const currentSrc = img.src;
                               
-                              if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                              if (/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(currentSrc) && !img.dataset.proxyTried) {
                                 img.dataset.proxyTried = "true";
-                                img.src = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                                img.src = currentSrc.replace(/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i, "");
                               } else {
                                 img.style.display = "";
                                 img.removeAttribute("src");

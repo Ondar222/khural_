@@ -3,7 +3,7 @@
  * Ссылки только на документы. Импорт с khural.yurta.site/activity/445/, 485/, 486/, 487/.
  */
 
-const DOC_BASE = "https://khural.yurta.site";
+const DOC_BASE = "";
 
 /** Список комитетов 4 созыва (порядок как на сайте) */
 export const CONV4_COMMITTEES = [

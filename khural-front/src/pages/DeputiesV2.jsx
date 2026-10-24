@@ -889,9 +889,9 @@ export default function DeputiesV2() {
                                 const currentSrc = img.src || photo;
 
                                 // Если это URL с khural.rtyva.ru и мы еще не пробовали прокси
-                                if (currentSrc.includes("khural.rtyva.ru") && !img.dataset.proxyTried) {
+                                if (/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(currentSrc) && !img.dataset.proxyTried) {
                                   img.dataset.proxyTried = "true";
-                                  const proxyUrl = currentSrc.replace("https://khural.rtyva.ru", "/img-proxy");
+                                  const proxyUrl = currentSrc.replace(/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i, "");
                                   img.src = proxyUrl;
                                 } else {
                                   // Если прокси не помог, заменяем на placeholder
