@@ -147,8 +147,8 @@ export default function DocsPage() {
     (async () => {
       let allDocs = fromApi.slice();
 
-      // Для разделов initiatives, civic, constitution, bills загружаем из статических файлов
-      if (["initiatives", "civic", "constitution", "bills"].includes(slug)) {
+      // Для разделов initiatives, civic, constitution, bills, resolutions загружаем из статических файлов
+      if (["initiatives", "civic", "constitution", "bills", "resolutions"].includes(slug)) {
         const staticDocs = await loadStaticDocs();
         // Объединяем с API документами, избегая дубликатов по ID
         const existingIds = new Set(allDocs.map(d => String(d.id)));
@@ -409,14 +409,13 @@ export default function DocsPage() {
                         )}
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
-                      {d.url && (
-                        <DocumentActions
-                          url={d.url}
-                          title={d.title}
-                          onPreview={isDocumentFileUrl(d.url) ? () => setPreview({ url: d.url, title: d.title }) : undefined}
-                        />
-                      )}
+                    <div className="law-actions">
+                      <DocumentActions
+                        url={d.url}
+                        title={d.title}
+                        onPreview={isDocumentFileUrl(d.url) ? () => setPreview({ url: d.url, title: d.title }) : undefined}
+                        noFileLabel="Смотреть"
+                      />
                     </div>
                   </div>
                 );

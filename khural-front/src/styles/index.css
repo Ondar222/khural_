@@ -3441,7 +3441,7 @@ a.btn.btn--primary:focus-visible {
 }
 .law-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   padding: 14px;
@@ -3451,6 +3451,16 @@ a.btn.btn--primary:focus-visible {
   grid-template-columns: 32px 1fr;
   gap: 12px;
   align-items: start;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.law-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 2px;
 }
 .law-ico {
   font-size: 20px;
@@ -3587,6 +3597,11 @@ a.btn.btn--primary:focus-visible {
     width: 100%;
     justify-content: center;
     margin-top: 2px;
+  }
+  .section--docs .law-actions {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
   }
   .section--docs .law-left {
     gap: 10px;
@@ -3767,6 +3782,10 @@ a.btn.btn--primary:focus-visible {
   .law-item {
     flex-direction: column;
     align-items: stretch;
+  }
+  .law-actions {
+    display: flex;
+    flex-wrap: wrap;
   }
   .law-link {
     align-self: flex-end;

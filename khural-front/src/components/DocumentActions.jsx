@@ -67,11 +67,8 @@ const btnBase = {
 
 /**
  * Пара кнопок для документа: «Открыть» (предпросмотр на сайте) и «Скачать».
- * onPreview — открытие модалки предпросмотра; если не передан, «Открыть» ведёт в новую вкладку.
- *
- * Кнопки не должны исчезать: если файла у документа нет (или ссылка ведёт не на файл,
- * а на страницу сайта), показываем «Открыть» на страницу документа (href) и неактивную
- * «Скачать» с пояснением — иначе карточка документа выглядит сломанной.
+ * Кнопки НЕ скрываются — если файла нет, показываем неактивную «Скачать»
+ * и «Открыть» на страницу (href) или неактивную кнопку.
  */
 export default function DocumentActions({
   url,
@@ -81,15 +78,16 @@ export default function DocumentActions({
   openLabel = "Открыть",
   href = "",
   missingHint = DOC_FILE_MISSING_HINT,
+  noFileLabel = "Смотреть",
 }) {
-  // Ссылка «не файл» (страница сайта, пустая, HTML) — скачивать и открывать нечего
   const fileUrl = isDocumentFileUrl(url) ? String(url) : "";
   const pageHref = !fileUrl && href ? String(href) : "";
+  const hasAny = fileUrl || pageHref;
 
-  if (!fileUrl && !pageHref) return null;
-
-  const openButton = fileUrl ? (
-    onPreview ? (
+  // Кнопка «Открыть / Смотреть»
+  let openButton;
+  if (fileUrl) {
+    openButton = onPreview ? (
       <button
         type="button"
         className="btn btn--primary"
@@ -110,14 +108,32 @@ export default function DocumentActions({
         <EyeIcon />
         {openLabel}
       </a>
-    )
-  ) : (
-    <a className="btn btn--primary" href={pageHref} style={btnBase} title="Открыть страницу документа">
-      <EyeIcon />
-      {openLabel}
-    </a>
-  );
+    );
+  } else if (pageHref) {
+    openButton = (
+      <a className="btn btn--primary" href={pageHref} style={btnBase}>
+        <EyeIcon />
+        {openLabel}
+      </a>
+    );
+  } else {
+    // Нет файла и нет href — показываем неактивную кнопку «Смотреть»
+    openButton = (
+      <button
+        type="button"
+        className="btn btn--primary"
+        disabled
+        aria-disabled="true"
+        title={missingHint}
+        style={{ ...btnBase, opacity: 0.5, cursor: "not-allowed" }}
+      >
+        <EyeIcon />
+        {noFileLabel}
+      </button>
+    );
+  }
 
+  // Кнопка «Скачать»
   const downloadButton = fileUrl ? (
     <a
       className="btn"

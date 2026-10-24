@@ -268,12 +268,13 @@ export default function Documents() {
                                     </div>
                                   </div>
                                 </div>
-                                <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
+                                <div className="law-actions">
                                   <DocumentActions
                                     url={url}
                                     title={d.title}
                                     onPreview={hasFile ? () => setPreview({ url, title: d.title }) : undefined}
                                     href={detailHref}
+                                    noFileLabel="Смотреть"
                                   />
                                 </div>
                               </div>
@@ -304,12 +305,13 @@ export default function Documents() {
                                 </div>
                               </div>
                             </div>
-                            <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>
+                            <div className="law-actions">
                               <DocumentActions
                                 url={url}
                                 title={d.title}
                                 onPreview={hasFile ? () => setPreview({ url, title: d.title }) : undefined}
                                 href={detailHref}
+                                noFileLabel="Смотреть"
                               />
                             </div>
                           </div>
