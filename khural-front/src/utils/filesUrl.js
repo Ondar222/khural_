@@ -153,6 +153,16 @@ export function normalizeFilesUrl(src) {
   const s = String(src || "").trim();
   if (!s || s === "undefined" || s === "null") return "";
 
+  // Абсолютный URL к /api/files/<uuid> (бэкенд отдаёт их со своим CDN-префиксом,
+  // например https://khural.yurta.site/api/files/...). Приводим к same-origin:
+  // локально файл отдаст локальный бэкенд через vite-прокси, на проде — прод-бэкенд
+  // через nginx. Файлы двух окружений не совпадают, поэтому держать чужой домен
+  // в ссылках нельзя (иначе 404).
+  const absApiFilesMatch = s.match(/^https?:\/\/[^/]+((?:\/api)?\/files\/[A-Za-z0-9._-]+)(?:\?.*)?$/i);
+  if (absApiFilesMatch && !s.includes("/upload/")) {
+    return absApiFilesMatch[1].startsWith("/api") ? absApiFilesMatch[1] : `/api${absApiFilesMatch[1]}`;
+  }
+
   // Файл, загруженный через бэкенд: /api/files/<uuid> (CDN или локальный бэкенд) — всегда same-origin,
   // чтобы работали vite-прокси и vercel-rewrite "/files/*" без CORS.
   const apiFilesMatch = s.match(/(?:\/api)?\/files\/([A-Za-z0-9._-]+)(?:\?.*)?$/);

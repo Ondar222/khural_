@@ -1147,12 +1147,42 @@ export const DocumentsApi = {
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return apiFetch(`/documents${suffix}`, { method: "GET", auth: false });
   },
-  /** Все опубликованные документы: API отдаёт максимум 100 на страницу, поэтому собираем все страницы. */
-  async listAllPublished({ pageSize = 100, concurrency = 6 } = {}) {
-    const first = await apiFetch(`/documents?limit=${pageSize}&page=1`, {
-      method: "GET",
-      auth: false,
-    });
+  /**
+   * Все опубликованные документы: API отдаёт максимум 100 на страницу, поэтому собираем все страницы.
+   * Single-flight: параллельные вызовы (StrictMode, повторные монтирования) переиспользуют один прогон,
+   * иначе 52 страницы x2 запроса выбивают rate-limit бэкенда (429).
+   */
+  listAllPublished(options = {}) {
+    if (documentsAllInFlight) return documentsAllInFlight;
+    documentsAllInFlight = DocumentsApi._listAllPublishedInner(options)
+      .finally(() => {
+        documentsAllInFlight = null;
+      });
+    return documentsAllInFlight;
+  },
+  async _listAllPublishedInner({ pageSize = 100, concurrency = 3, delayMs = 300 } = {}) {
+    // Страница с повтором при rate-limit (429): бэкенд ограничивает частоту запросов.
+    const fetchPage = async (p, attempt = 0) => {
+      try {
+        return await apiFetch(`/documents?limit=${pageSize}&page=${p}`, {
+          method: "GET",
+          auth: false,
+        });
+      } catch (e) {
+        if (e?.status === 429 && attempt < 5) {
+          const waitMs = Number(e?.data?.retryAfter) * 1000 || 1500 * 2 ** attempt;
+          await new Promise((r) => setTimeout(r, waitMs));
+          return fetchPage(p, attempt + 1);
+        }
+        return null;
+      }
+    };
+
+    const first = await fetchPage(1);
+    if (!first || !first?.items?.length) {
+      // Если API недоступен — возвращаем пустой массив, fallback сработает в DataContext
+      return [];
+    }
     const byId = new Map();
     (first?.items || []).forEach((d) => byId.set(d.id, d));
     const totalPages = Number(first?.totalPages) || 1;
@@ -1163,17 +1193,14 @@ export const DocumentsApi = {
 
     for (let i = 0; i < pages.length; i += concurrency) {
       const chunk = pages.slice(i, i + concurrency);
-      const results = await Promise.all(
-        chunk.map((p) =>
-          apiFetch(`/documents?limit=${pageSize}&page=${p}`, {
-            method: "GET",
-            auth: false,
-          }).catch(() => null)
-        )
-      );
+      const results = await Promise.all(chunk.map((p) => fetchPage(p)));
       results.forEach((res) => {
         (res?.items || []).forEach((d) => byId.set(d.id, d));
       });
+      // Задержка между чанками, чтобы не превысить rate-limit бэкенда
+      if (i + concurrency < pages.length) {
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
     }
     return [...byId.values()];
   },
