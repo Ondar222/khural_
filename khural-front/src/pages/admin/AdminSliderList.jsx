@@ -121,7 +121,19 @@ export default function AdminSliderList({
       title: "№",
       width: 52,
       align: 'center',
-      render: (_, __, i) => <span className="admin-slider-cell__index">{i + 1}</span>,
+      render: (_, __, i) => (
+        <span 
+          className="admin-slider-cell__index"
+          style={{
+            display: "block",
+            textAlign: "center",
+            opacity: 0.55,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {i + 1}
+        </span>
+      ),
     },
     {
       title: "Картинка",
@@ -151,17 +163,60 @@ export default function AdminSliderList({
         const desc = plainText(row.description);
         const url = String(row.url || "");
         return (
-          <div className="admin-slider-cell">
-            <div className="admin-slider-cell__title" title={title}>
+          <div 
+            className="admin-slider-cell"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              minWidth: 0,
+              maxWidth: "100%",
+            }}
+          >
+            <div 
+              className="admin-slider-cell__title" 
+              title={title}
+              style={{
+                fontWeight: 700,
+                fontSize: 14,
+                lineHeight: 1.4,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                margin: 0,
+              }}
+            >
               {shortText(row.title, 6) || "(без заголовка)"}
             </div>
             {desc ? (
-              <div className="admin-slider-cell__desc" title={desc}>
+              <div 
+                className="admin-slider-cell__desc" 
+                title={desc}
+                style={{
+                  fontSize: 12.5,
+                  lineHeight: 1.4,
+                  opacity: 0.6,
+                  margin: 0,
+                }}
+              >
                 {shortText(row.description, 3)}
               </div>
             ) : null}
             {url ? (
-              <div className="admin-slider-cell__url" title={url}>
+              <div 
+                className="admin-slider-cell__url" 
+                title={url}
+                style={{
+                  fontSize: 11.5,
+                  lineHeight: 1.3,
+                  opacity: 0.45,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  margin: 0,
+                }}
+              >
                 {url.length > 40 ? `${url.slice(0, 40)}…` : url}
               </div>
             ) : null}

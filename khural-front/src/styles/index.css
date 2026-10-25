@@ -10699,51 +10699,54 @@ body.admin-mode .admin-table .ant-table-tbody > tr > td .admin-docs-title-cell {
 }
 /* Колонка слайдов: компактная ячейка */
 body.admin-mode .admin-table .ant-table-tbody > tr > td .admin-slider-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  max-width: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
 }
 .admin-slider-cell__title {
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
 }
 .admin-slider-cell__desc {
-  font-size: 12.5px;
-  line-height: 1.4;
-  opacity: 0.6;
+  font-size: 12.5px !important;
+  line-height: 1.4 !important;
+  opacity: 0.6 !important;
+  margin: 0 !important;
 }
 .admin-slider-cell__url {
-  font-size: 11.5px;
-  line-height: 1.3;
-  opacity: 0.45;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px !important;
+  line-height: 1.3 !important;
+  opacity: 0.45 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  margin: 0 !important;
 }
 .admin-slider-cell__index {
-  display: block;
-  text-align: center;
-  opacity: 0.55;
-  font-variant-numeric: tabular-nums;
+  display: block !important;
+  text-align: center !important;
+  opacity: 0.55 !important;
+  font-variant-numeric: tabular-nums !important;
 }
 /* Таблица слайдера: без принудительного min-width, компактные строки */
 body.admin-mode .admin-slider-table .ant-table {
-  min-width: 0;
+  min-width: 0 !important;
 }
 body.admin-mode .admin-slider-table .ant-table-thead > tr > th,
 body.admin-mode .admin-slider-table .ant-table-tbody > tr > td {
-  padding: 10px 12px;
-  vertical-align: middle;
+  padding: 10px 12px !important;
+  vertical-align: middle !important;
 }
 .admin-slider-table .ant-btn-text {
-  color: inherit;
+  color: inherit !important;
 }
 @media (max-width: 959px) {
   body.admin-mode .admin-table .ant-table {
