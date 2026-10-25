@@ -1445,8 +1445,14 @@ export default function DataProvider({ children }) {
             ? normalizeConvocationToCanonical(normalizeConvocationText(personInfo.convocation)) || String(personInfo.convocation).trim()
             : "";
           const apiConvocationIds = Array.isArray(p.convocationIds) ? p.convocationIds : (Array.isArray(p.convocation_ids) ? p.convocation_ids : []);
-          const resolvedFromApi = (apiConvocationIds.length > 0)
-            ? [...new Set(apiConvocationIds.map((cid) => mapOldSiteConvocationIdToCanonical(cid)).filter(Boolean))]
+          // API возвращает convocations как массив объектов {id, name} — извлекаем числовые id
+          const apiConvObjectIds = Array.isArray(p.convocations)
+            ? p.convocations.map((c) => c?.id).filter((id) => id != null)
+            : [];
+          // Объединяем оба источника: convocationIds (числа) и convocations[].id
+          const allApiConvIds = [...new Set([...apiConvocationIds, ...apiConvObjectIds])];
+          const resolvedFromApi = (allApiConvIds.length > 0)
+            ? [...new Set(allApiConvIds.map((cid) => mapOldSiteConvocationIdToCanonical(cid)).filter(Boolean))]
             : [];
           const convocationFromApi = resolvedFromApi.length > 0 ? primaryConvocation(resolvedFromApi) : "";
           const hasConvocationFromApi = convocationFromApi !== "";

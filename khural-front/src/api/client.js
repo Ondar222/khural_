@@ -1138,6 +1138,10 @@ export const NewsApi = {
 };
 
 // Documents-related endpoints
+// Single-flight lock: параллельные вызовы listAllPublished (StrictMode, повторные монтирования)
+// переиспользуют один прогон, чтобы не выбить rate-limit бэкенда (429).
+let documentsAllInFlight = null;
+
 export const DocumentsApi = {
   async list(params = {}) {
     const qs = new URLSearchParams();

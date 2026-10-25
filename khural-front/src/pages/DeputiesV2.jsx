@@ -281,12 +281,23 @@ function normalizeApiDeputy(p) {
   };
 }
 
+function normalizeDedupName(s) {
+  return String(s ?? "")
+    .replace(/[^\p{L}\p{M}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 function mergeByIdPreferApi(baseDeputies, apiDeputies) {
   const base = Array.isArray(baseDeputies) ? baseDeputies : [];
   const api = Array.isArray(apiDeputies) ? apiDeputies : [];
   const apiById = new Map(api.map((d) => [String(d.id), d]));
   const out = [];
   const seen = new Set();
+  // Дедупликация по ФИО: админ мог создать дубль существующего депутата
+  // (другой id в API, то же имя) — показываем одну карточку.
+  const seenByName = new Map();
   const hasValue = (v) => {
     if (v === undefined || v === null) return false;
     const s = String(v).trim();
@@ -296,6 +307,8 @@ function mergeByIdPreferApi(baseDeputies, apiDeputies) {
   for (const d of base) {
     const id = String(d?.id ?? "");
     if (!id) continue;
+    const nameKey = normalizeDedupName(d?.name ?? "");
+    if (nameKey && seenByName.has(nameKey)) continue; // дубль внутри base
     const apiD = apiById.get(id);
     const merged = apiD ? { ...d, ...apiD } : d;
     if (apiD && !hasValue(apiD.photo) && hasValue(d.photo)) {
@@ -322,16 +335,26 @@ function mergeByIdPreferApi(baseDeputies, apiDeputies) {
     merged.isDeceased = Boolean(merged.isDeceased ?? merged.is_deceased);
     out.push(merged);
     seen.add(id);
+    if (nameKey) seenByName.set(nameKey, merged);
   }
   for (const d of api) {
     const id = String(d?.id ?? "");
     if (!id) continue;
     if (seen.has(id)) continue;
+    // Дубль по ФИО (создан из админки) — мержим в уже существующую карточку,
+    // а не добавляем вторую.
+    const nameKey = normalizeDedupName(d?.name ?? d?.fullName ?? "");
+    if (nameKey && seenByName.has(nameKey)) {
+      const existing = seenByName.get(nameKey);
+      Object.assign(existing, { ...d, id: existing.id, name: existing.name || d?.name });
+      continue;
+    }
     // Ensure status fields are preserved as booleans
     d.mandateEnded = Boolean(d.mandateEnded ?? d.mandate_ended);
     d.isDeceased = Boolean(d.isDeceased ?? d.is_deceased);
     out.push(d);
     seen.add(id);
+    if (nameKey) seenByName.set(nameKey, d);
   }
   return out;
 }

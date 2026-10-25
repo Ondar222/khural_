@@ -1,5 +1,13 @@
 import React from "react";
-import { App, Button, Input, Modal, Space, Table, Switch, Upload } from "antd";
+import { App, Button, Input, Modal, Space, Table, Switch, Tooltip, Upload } from "antd";
+import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import { useHashRoute } from "../../Router.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { SliderApi } from "../../api/client.js";
@@ -11,6 +19,15 @@ function plainText(html) {
   if (html == null || html === "") return "";
   const s = stripHtmlTags(String(html));
   return s.replace(/\s+/g, " ").trim();
+}
+
+/** Первые N слов + … */
+function shortText(html, words = 3) {
+  const text = plainText(html);
+  if (!text) return "";
+  const parts = text.split(/\s+/);
+  if (parts.length <= words) return text;
+  return parts.slice(0, words).join(" ") + "…";
 }
 
 export default function AdminSliderList({
@@ -102,73 +119,61 @@ export default function AdminSliderList({
   const columns = [
     {
       title: "№",
-      width: 64,
+      width: 52,
       align: 'center',
-      render: (_, __, i) => <span style={{ opacity: 0.75, display: 'block', textAlign: 'center' }}>{i + 1}</span>,
+      render: (_, __, i) => <span className="admin-slider-cell__index">{i + 1}</span>,
     },
     {
       title: "Картинка",
       dataIndex: "image",
-      width: 120,
+      width: 116,
       render: (v) =>
         v ? (
           <img
             src={v}
             alt=""
-            style={{ width: 96, height: 54, objectFit: "cover", borderRadius: 8 }}
+            style={{ width: 88, height: 50, objectFit: "cover", borderRadius: 6, display: "block" }}
             loading="lazy"
             decoding="async"
           />
         ) : (
-          "—"
+          <span style={{ display: "inline-flex", opacity: 0.3 }}>
+            <CameraIcon size={18} />
+          </span>
         ),
     },
     {
       title: "Слайд",
       dataIndex: "title",
-      width: windowWidth > 1024 ? 600 : undefined,
-      ellipsis: false,
-      render: (_, row) => (
-        <div 
-          className="admin-slider-title-cell"
-          style={{ 
-            display: "grid", 
-            gap: 6,
-            maxWidth: windowWidth > 1024 ? "600px" : "100%",
-            width: windowWidth > 1024 ? "600px" : "100%",
-            overflowWrap: "break-word", 
-            wordWrap: "break-word",
-            wordBreak: "break-word",
-            whiteSpace: "normal",
-            overflow: "hidden",
-            boxSizing: "border-box"
-          }}
-        >
-          <div style={{ fontWeight: 800, lineHeight: "1.4" }}>{plainText(row.title) || "(без заголовка)"}</div>
-          {row.description ? (
-            <div style={{ 
-              opacity: 0.75, 
-              fontSize: 13, 
-              lineHeight: "1.4",
-              overflowWrap: "break-word",
-              wordWrap: "break-word",
-              whiteSpace: "normal"
-            }}>
-              {plainText(row.description)}
+      width: 340,
+      render: (_, row) => {
+        const title = plainText(row.title);
+        const desc = plainText(row.description);
+        const url = String(row.url || "");
+        return (
+          <div className="admin-slider-cell">
+            <div className="admin-slider-cell__title" title={title}>
+              {shortText(row.title, 6) || "(без заголовка)"}
             </div>
-          ) : null}
-          {row.url ? (
-            <div style={{ opacity: 0.65, fontSize: 12, lineHeight: "1.4" }}>
-              Ссылка: <code style={{ wordBreak: "break-all" }}>{row.url}</code>
-            </div>
-          ) : null}
-        </div>
-      ),
+            {desc ? (
+              <div className="admin-slider-cell__desc" title={desc}>
+                {shortText(row.description, 3)}
+              </div>
+            ) : null}
+            {url ? (
+              <div className="admin-slider-cell__url" title={url}>
+                {url.length > 40 ? `${url.slice(0, 40)}…` : url}
+              </div>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       title: "Активен",
       dataIndex: "isActive",
-      width: 120,
+      width: 96,
+      align: "center",
       render: (v, row) => (
         <Switch
           checked={Boolean(v)}
@@ -189,58 +194,59 @@ export default function AdminSliderList({
       key: "actions",
       width: 180,
       render: (_, row) => (
-        <Space direction="vertical" size="small" style={{ width: "100%" }}>
-          <Button
-            size="small"
-            disabled={!canWrite}
-            onClick={() => navigate(`/admin/slider/edit/${encodeURIComponent(String(row.id))}`)}
-            block
-          >
-            Редактировать
-          </Button>
+        <Space size={4} className="admin-slider-cell__actions">
+          <Tooltip title="Редактировать">
+            <Button
+              size="small"
+              type="text"
+              icon={<EditOutlined />}
+              disabled={!canWrite}
+              onClick={() => navigate(`/admin/slider/edit/${encodeURIComponent(String(row.id))}`)}
+            />
+          </Tooltip>
 
           <Upload
             showUploadList={false}
-            accept={undefined}
             beforeUpload={(file) => {
               if (!canWrite) return false;
               onUploadImage?.(row.id, file);
               return false;
             }}
           >
-            <Button size="small" disabled={!canWrite} block>
-              Картинка
-            </Button>
+            <Tooltip title="Загрузить картинку">
+              <Button size="small" type="text" icon={<UploadOutlined />} disabled={!canWrite} />
+            </Tooltip>
           </Upload>
 
-          <Space size="small" style={{ width: "100%" }}>
+          <Tooltip title="Выше">
             <Button
               size="small"
+              type="text"
+              icon={<ArrowUpOutlined />}
               disabled={!canWrite}
               onClick={() => moveRow(row.id, -1)}
-              style={{ flex: 1 }}
-            >
-              ↑
-            </Button>
+            />
+          </Tooltip>
+          <Tooltip title="Ниже">
             <Button
               size="small"
+              type="text"
+              icon={<ArrowDownOutlined />}
               disabled={!canWrite}
               onClick={() => moveRow(row.id, +1)}
-              style={{ flex: 1 }}
-            >
-              ↓
-            </Button>
-          </Space>
+            />
+          </Tooltip>
 
-          <Button
-            danger
-            size="small"
-            disabled={!canWrite}
-            onClick={() => handleDelete(row.id, row.title)}
-            block
-          >
-            Удалить
-          </Button>
+          <Tooltip title="Удалить">
+            <Button
+              size="small"
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              disabled={!canWrite}
+              onClick={() => handleDelete(row.id, row.title)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -373,17 +379,16 @@ export default function AdminSliderList({
                     </div>
                     {row.description ? (
                       <div style={{
-                        opacity: 0.75,
+                        opacity: 0.65,
                         fontSize: '13px',
-                        lineHeight: 1.5,
-                        marginTop: '4px',
-                        wordWrap: 'break-word',
-                        overflowWrap: 'break-word',
-                        wordBreak: 'break-word',
-                        whiteSpace: 'normal',
+                        lineHeight: 1.4,
+                        marginTop: '3px',
                         textAlign: 'center',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                       }}>
-                        {plainText(row.description)}
+                        {shortText(row.description, 3)}
                       </div>
                     ) : null}
                     {row.url ? (
@@ -535,13 +540,13 @@ export default function AdminSliderList({
         </Space>
       </div>
 
-      <div className="admin-card admin-table">
+      <div className="admin-card admin-table admin-slider-table">
         <Table
           rowKey={(r) => String(r.id)}
           columns={columns}
           dataSource={filtered}
           pagination={{ pageSize: 10 }}
-          scroll={windowWidth > 1024 ? { x: "max-content" } : undefined}
+          tableLayout="fixed"
         />
       </div>
     </div>

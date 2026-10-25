@@ -88,8 +88,22 @@ export const NUMERIC_CONVOCATION_IDS = {
   4: "IV",
 };
 
-/** Все варианты convocationId → канонический токен (I, II, III, IV). */
-const CONVOCATION_ID_TO_CANONICAL = { ...OLD_SITE_CONVOCATION_IDS, ...NUMERIC_CONVOCATION_IDS };
+/**
+ * Реальные числовые ID созывов из бэкенда API (не совпадают со старыми).
+ * I→12, II→5, III→4, IV→6.
+ * Приоритет выше, чем NUMERIC_CONVOCATION_IDS, так как это актуальные данные из БД.
+ */
+export const BACKEND_CONVOCATION_IDS = {
+  12: "I",
+  5: "II",
+  4: "III",
+  6: "IV",
+};
+
+/** Все варианты convocationId → канонический токен (I, II, III, IV).
+ * BACKEND_CONVOCATION_IDS применяется последним, т.к. это актуальные ID бэкенда
+ * (конфликт: 4 у бэкенда = III, у старых числовых = IV — приоритет у бэкенда). */
+const CONVOCATION_ID_TO_CANONICAL = { ...NUMERIC_CONVOCATION_IDS, ...OLD_SITE_CONVOCATION_IDS, ...BACKEND_CONVOCATION_IDS };
 
 /**
  * Преобразует ID созыва из API или со старого сайта в канонический токен I, II, III, IV.

@@ -274,7 +274,7 @@ export default function Documents() {
                                     title={d.title}
                                     onPreview={hasFile ? () => setPreview({ url, title: d.title }) : undefined}
                                     href={detailHref}
-                                    noFileLabel="Смотреть"
+                                    noFileLabel="Открыть"
                                   />
                                 </div>
                               </div>
@@ -311,7 +311,7 @@ export default function Documents() {
                                 title={d.title}
                                 onPreview={hasFile ? () => setPreview({ url, title: d.title }) : undefined}
                                 href={detailHref}
-                                noFileLabel="Смотреть"
+                                noFileLabel="Открыть"
                               />
                             </div>
                           </div>

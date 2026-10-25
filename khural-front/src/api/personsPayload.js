@@ -147,13 +147,12 @@ export function toPersonsApiBody(input) {
   }
   const cIds = normalizeStringArray(convocationIds);
   if (cIds) {
-    // Бэкенд ожидает числовые ID созывов: I→1, II→2, III→3, IV→4 (римские передаём как числа)
+    // Бэкенд ожидает реальные числовые ID созывов из своей БД:
+    // I→12, II→5, III→4, IV→6 (справочник /persons/convocations/all).
     const toConvocationId = (id) => {
       const s = String(id).trim().toUpperCase();
-      if (s === "I") return 1;
-      if (s === "II") return 2;
-      if (s === "III") return 3;
-      if (s === "IV") return 4;
+      const romanToBackendId = { I: 12, II: 5, III: 4, IV: 6 };
+      if (romanToBackendId[s] !== undefined) return romanToBackendId[s];
       const n = parseInt(id, 10);
       if (Number.isFinite(n)) return n;
       return id;

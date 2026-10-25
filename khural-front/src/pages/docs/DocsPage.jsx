@@ -414,7 +414,7 @@ export default function DocsPage() {
                         url={d.url}
                         title={d.title}
                         onPreview={isDocumentFileUrl(d.url) ? () => setPreview({ url: d.url, title: d.title }) : undefined}
-                        noFileLabel="Смотреть"
+                        noFileLabel="Открыть"
                       />
                     </div>
                   </div>
