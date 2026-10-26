@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useTranslation } from "../hooks/useTranslation.js";
 import DataState from "../components/DataState.jsx";
 import SideNav from "../components/SideNav.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
@@ -43,11 +44,44 @@ function splitDateAndDescription(text) {
 export default function NewsWeekHighlights() {
   const { slides, loading, errors, reload } = useData();
   const { t, lang } = useI18n();
-
+  const { translateNewsList } = useTranslation();
   const items = React.useMemo(() => {
     const list = Array.isArray(slides) ? slides : [];
     return list.slice(0, 5);
   }, [slides]);
+
+  // Перевод слайдов (новостей недели) через Translator — если ...Ty полей нет
+  const [translatedNews, setTranslatedNews] = React.useState(() => new Map());
+
+  React.useEffect(() => {
+    const isTy = lang === "ty" || lang === "tyv";
+    if (!isTy) {
+      setTranslatedNews(new Map());
+      return;
+    }
+    const itemsForTranslate = items.map((s) => ({
+      id: s?.id,
+      title: s?.title,
+      excerpt: s?.desc ?? s?.description ?? s?.subtitle,
+      contentHtml: "",
+      titleTy: s?.titleTy,
+      excerptTy: s?.descTy ?? s?.descriptionTy,
+    }));
+    let alive = true;
+    translateNewsList(itemsForTranslate)
+      .then((res) => {
+        if (!alive) return;
+        const map = new Map();
+        res.forEach((r) => map.set(String(r.id), r));
+        setTranslatedNews(map);
+      })
+      .catch(() => {
+        // Ошибки перевода не должны ломать список — показываем исходные тексты
+      });
+    return () => {
+      alive = false;
+    };
+  }, [lang, items, translateNewsList]);
 
   return (
     <section className="section news-week">
@@ -73,9 +107,11 @@ export default function NewsWeekHighlights() {
               <div className="grid cols-3 news-week__grid" style={{ marginTop: 16 }}>
                 {items.map((s) => {
                   const id = String(s?.id ?? "").trim();
-                  const useTy = (lang === "ty" || lang === "tyv") && (s?.titleTy || s?.descTy || s?.descriptionTy);
-                  const title = (useTy && s?.titleTy) ? String(s.titleTy).trim() : String(s?.title || "").trim();
-                  const descSource = useTy && (s?.descTy || s?.descriptionTy) ? (s.descTy ?? s.descriptionTy ?? "") : (s?.desc ?? s?.description ?? s?.subtitle ?? "");
+                  const isTy = lang === "ty" || lang === "tyv";
+                  const tr = translatedNews?.get(String(s?.id));
+                  const useTy = isTy && (s?.titleTy || s?.descTy || s?.descriptionTy || tr?.title || tr?.excerpt);
+                  const title = (useTy && (s?.titleTy || tr?.title)) ? String(s?.titleTy || tr?.title).trim() : String(s?.title || "").trim();
+                  const descSource = useTy && (s?.descTy || s?.descriptionTy || tr?.excerpt) ? (s.descTy || s.descriptionTy || tr?.excerpt || "") : (s?.desc ?? s?.description ?? s?.subtitle ?? "");
                   const raw = stripHtmlToText(descSource);
                   const { date, description } = splitDateAndDescription(raw);
                   const subtitle = String(description || "").trim();

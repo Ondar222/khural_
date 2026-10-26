@@ -2,17 +2,49 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useTranslation } from "../hooks/useTranslation.js";
 import { SearchApi } from "../api/client.js";
 import { formatNewsDateTime } from "../utils/dateFormat.js";
 import { SearchIcon } from "./icons/LinearIcons.jsx";
 
 export default function SearchModal({ open, onClose }) {
   const { news, documents, ensureDocuments } = useData();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const { translateNewsList } = useTranslation();
   const [query, setQuery] = React.useState("");
   const [remote, setRemote] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
+  const [newsTranslations, setNewsTranslations] = React.useState(() => new Map());
   const inputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (lang !== "ty") {
+      setNewsTranslations(new Map());
+      return;
+    }
+    const items = (news || []).map((n) => ({
+      id: n.id,
+      title: n.title,
+      excerpt: n.excerpt,
+      contentHtml: n.contentHtml,
+      titleTy: n.titleTy,
+      excerptTy: n.excerptTy,
+      contentHtmlTy: n.contentHtmlTy,
+    }));
+    let alive = true;
+    translateNewsList(items)
+      .then((res) => {
+        if (!alive) return;
+        const map = new Map();
+        res.forEach((r) => map.set(String(r.id), r));
+        setNewsTranslations(map);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [lang, news, translateNewsList]);
+
 
   React.useEffect(() => {
     if (open) {
@@ -101,13 +133,17 @@ export default function SearchModal({ open, onClose }) {
       .filter((n) =>
         [n.title, n.desc].filter(Boolean).some((s) => String(s).toLowerCase().includes(q))
       )
-      .map((n) => ({
-        id: `news-${n.id}`,
-        type: "news",
-        title: n.title,
-        meta: formatNewsDateTime(n.date),
-        href: "/news",
-      }));
+      .map((n) => {
+        const tr = newsTranslations?.get(String(n.id));
+        const title = lang === "ty" && (n.titleTy || tr?.title) ? String(n.titleTy || tr?.title) : String(n.title || "");
+        return {
+          id: `news-${n.id}`,
+          type: "news",
+          title,
+          meta: formatNewsDateTime(n.date),
+          href: "/news",
+        };
+      });
     const docMatches = documents
       .filter((d) =>
         [d.title, d.desc, d.description, d.number, d.category, d.type]
@@ -122,7 +158,7 @@ export default function SearchModal({ open, onClose }) {
         href: "/documents",
       }));
     return [...newsMatches, ...docMatches].slice(0, 20);
-  }, [q, news, documents, remote]);
+  }, [q, news, documents, remote, newsTranslations, lang]);
 
   if (!open) return null;
 

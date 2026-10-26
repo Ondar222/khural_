@@ -3,6 +3,7 @@ import { message } from "antd";
 import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useTranslation } from "../hooks/useTranslation.js";
 import DataState from "../components/DataState.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
@@ -62,6 +63,7 @@ export default function NewsSliderDetail() {
   const { slides, loading, errors, reload } = useData();
   const { route } = useHashRoute();
   const { t, lang } = useI18n();
+  const { translateNews, translateNewsList } = useTranslation();
 
   const slideId = React.useMemo(() => {
     const base = (route || "/").split("?")[0];
@@ -79,15 +81,77 @@ export default function NewsSliderDetail() {
     return list.find((s) => String(s?.id ?? "") === id) || null;
   }, [slides, slideId]);
 
-  const useTy = (lang === "ty" || lang === "tyv") && (item?.titleTy || item?.descTy || item?.descriptionTy);
-  const rawDesc = useTy && (item?.descTy || item?.descriptionTy)
-    ? String(item.descTy ?? item.descriptionTy ?? "").trim()
+  // Перевод текущей новости (слайда) через Translator — если ...Ty полей нет
+  const [translatedItem, setTranslatedItem] = React.useState(null);
+
+  React.useEffect(() => {
+    const isTy = lang === "ty" || lang === "tyv";
+    if (!isTy || !item) {
+      setTranslatedItem(null);
+      return;
+    }
+    let alive = true;
+    translateNews(item)
+      .then((res) => {
+        if (alive) setTranslatedItem(res);
+      })
+      .catch(() => {
+        // Ошибки перевода не должны ломать страницу — показываем исходные тексты
+      });
+    return () => {
+      alive = false;
+    };
+  }, [lang, item, translateNews]);
+
+  // Список «Другие события» для перевода
+  const relatedSlides = React.useMemo(
+    () =>
+      (Array.isArray(slides) ? slides : [])
+        .filter((s) => String(s?.id ?? "") !== String(slideId || ""))
+        .slice(0, 6),
+    [slides, slideId]
+  );
+
+  // Перевод связанных слайдов через Translator — если ...Ty полей нет
+  const [relatedTranslations, setRelatedTranslations] = React.useState(() => new Map());
+
+  React.useEffect(() => {
+    const isTy = lang === "ty" || lang === "tyv";
+    if (!isTy) {
+      setRelatedTranslations(new Map());
+      return;
+    }
+    const items = relatedSlides.map((s) => ({
+      id: s?.id,
+      title: s?.title,
+      excerpt: s?.desc ?? s?.description ?? s?.subtitle,
+      contentHtml: "",
+      titleTy: s?.titleTy,
+      excerptTy: s?.descTy ?? s?.descriptionTy,
+    }));
+    let alive = true;
+    translateNewsList(items)
+      .then((res) => {
+        if (!alive) return;
+        const map = new Map();
+        res.forEach((r) => map.set(String(r.id), r));
+        setRelatedTranslations(map);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [lang, relatedSlides, translateNewsList]);
+
+  const useTy = (lang === "ty" || lang === "tyv") && (item?.titleTy || item?.descTy || item?.descriptionTy || translatedItem?.title);
+  const rawDesc = useTy && (item?.descTy || item?.descriptionTy || translatedItem?.excerpt)
+    ? String(item?.descTy || item?.descriptionTy || translatedItem?.excerpt || "").trim()
     : String(item?.desc ?? item?.description ?? item?.subtitle ?? "").trim();
   const plainDesc = stripHtmlToText(rawDesc);
   const { date, body } = splitDateAndDescription(plainDesc);
   const isHtml = looksLikeHtml(body);
   const mainEventsLabel = t("mainEventsOfWeek");
-  const displayTitle = useTy && item?.titleTy ? item.titleTy : (item?.title || mainEventsLabel);
+  const displayTitle = useTy && (item?.titleTy || translatedItem?.title) ? String(item?.titleTy || translatedItem?.title).trim() : (item?.title || mainEventsLabel);
 
   const shareUrl =
     typeof window !== "undefined"
@@ -268,8 +332,9 @@ export default function NewsSliderDetail() {
                     .slice(0, 6)
                     .map((s) => {
                       const id = String(s?.id ?? "").trim();
-                      const useTySlide = (lang === "ty" || lang === "tyv") && (s?.titleTy || s?.descTy || s?.descriptionTy);
-                      const title = (useTySlide && s?.titleTy) ? String(s.titleTy).trim() : (String(s?.title || "").trim() || "—");
+                      const useTySlide = (lang === "ty" || lang === "tyv") && (s?.titleTy || s?.descTy || s?.descriptionTy || relatedTranslations?.get(String(s?.id))?.title);
+                      const trSlide = relatedTranslations?.get(String(s?.id));
+                      const title = (useTySlide && (s?.titleTy || trSlide?.title)) ? String(s?.titleTy || trSlide?.title).trim() : (String(s?.title || "").trim() || "—");
                       const raw = String(s?.desc ?? s?.description ?? s?.subtitle ?? "");
                       const plain = stripHtmlToText(raw);
                       const { date: d } = splitDateAndDescription(plain);

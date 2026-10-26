@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useTranslation } from "../hooks/useTranslation.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 // Увеличенный интервал для экономии ресурсов (8 секунд вместо 6)
@@ -9,6 +10,7 @@ const SLIDE_INTERVAL = 8000;
 export default function HeroCarousel() {
   const { slides: dataSlides } = useData();
   const { t, lang } = useI18n();
+  const { translateNewsList } = useTranslation();
   const [active, setActive] = React.useState(0);
   const [isMobile, setIsMobile] = React.useState(() => {
     if (typeof window === "undefined") return false;
@@ -172,6 +174,37 @@ export default function HeroCarousel() {
     if (active >= slides.length) setActive(0);
   }, [active, slides.length]);
 
+  // Перевод слайдов hero через Translator — если ...Ty полей нет
+  const [translatedSlides, setTranslatedSlides] = React.useState(() => new Map());
+
+  React.useEffect(() => {
+    const isTy = lang === "ty" || lang === "tyv";
+    if (!isTy) {
+      setTranslatedSlides(new Map());
+      return;
+    }
+    const items = slides.map((s) => ({
+      id: s?.id,
+      title: s?.title,
+      excerpt: s?.desc ?? s?.description ?? s?.subtitle,
+      contentHtml: "",
+      titleTy: s?.titleTy,
+      excerptTy: s?.descTy ?? s?.descriptionTy,
+    }));
+    let alive = true;
+    translateNewsList(items)
+      .then((res) => {
+        if (!alive) return;
+        const map = new Map();
+        res.forEach((r) => map.set(String(r.id), r));
+        setTranslatedSlides(map);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [lang, slides, translateNewsList]);
+
   if (!slides.length) return null;
 
   const current = slides[active] || slides[0];
@@ -185,16 +218,17 @@ export default function HeroCarousel() {
     descTy: current?.descTy?.substring(0, 50),
   });
   
-  const useTy = (lang === "ty" || lang === "tyv") && (current?.titleTy || current?.descTy);
-  const desc = useTy && current?.descTy
-    ? String(current.descTy).trim()
-    : (current?.desc ? String(current.desc).trim() : "");
+  const useTy = (lang === "ty" || lang === "tyv") && (current?.titleTy || current?.descTy || translatedSlides?.get(String(current?.id))?.title);
+  const slideTr = translatedSlides?.get(String(current?.id));
+  const desc = useTy && (current?.descTy || slideTr?.excerpt)
+    ? String(current?.descTy || slideTr?.excerpt || "").trim()
+    : (current?.desc ? String(current?.desc).trim() : "");
   const previewText = stripHtmlToText(desc);
   const { date, description } = splitDateAndDescription(previewText);
   const subtitleText = String(description || "").trim();
   // On mobile, keep subtitle short to avoid overflowing the hero card.
   const subtitlePreview = truncateWords(subtitleText, isMobile ? 15 : 30);
-  const displayTitle = useTy && current?.titleTy ? current.titleTy : (current?.title || "");
+  const displayTitle = useTy && (current?.titleTy || slideTr?.title) ? String(current?.titleTy || slideTr?.title).trim() : (current?.title || "");
   const href = current?.id
     ? `/news/slider/${encodeURIComponent(String(current.id))}`
     : "/news";

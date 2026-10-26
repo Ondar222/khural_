@@ -2,6 +2,7 @@ import React from "react";
 import { DatePicker, message, Pagination } from "antd";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useTranslation } from "../hooks/useTranslation.js";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import ScrollToTop from "../components/ScrollToTop.jsx";
@@ -17,20 +18,22 @@ function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
 }
 
-/** Выбор локализованных полей новости по текущему языку (ru / ty). */
-function localizeNewsItem(item, lang) {
+/** Выбор локализованных полей новости по текущему языку (ru / ty). trMap — перевод API-новостей (если ...Ty нет). */
+function localizeNewsItem(item, lang, trMap) {
   if (!item) return { title: "", excerpt: "", contentHtml: "" };
   const useTy = lang === "ty";
+  const translated = trMap ? trMap.get(String(item.id)) : null;
   return {
-    title: useTy && item.titleTy ? item.titleTy : (item.title || ""),
-    excerpt: useTy && item.excerptTy ? item.excerptTy : (item.excerpt || ""),
-    contentHtml: useTy && item.contentHtmlTy ? item.contentHtmlTy : (item.contentHtml || ""),
+    title: useTy && (item.titleTy || translated?.title) ? (item.titleTy || translated?.title) : (item.title || ""),
+    excerpt: useTy && (item.excerptTy || translated?.excerpt) ? (item.excerptTy || translated?.excerpt) : (item.excerpt || ""),
+    contentHtml: useTy && (item.contentHtmlTy || translated?.contentHtml) ? (item.contentHtmlTy || translated?.contentHtml) : (item.contentHtml || ""),
   };
 }
 
 export default function NewsArchive() {
   const { t, lang } = useI18n();
   const { news, loading, errors, reload } = useData();
+  const { translateNewsList } = useTranslation();
 
   const getInitialPage = () => {
     const pageParam = new URLSearchParams(window.location.search || "").get("page");
@@ -55,6 +58,39 @@ export default function NewsArchive() {
     const id = new URLSearchParams(window.location.search || "").get("id");
     return id || null;
   });
+
+  // Перевод новостей (API) для текущего языка — ...Ty поля могут быть пустыми, тогда переводим автоматически
+  const [newsTranslations, setNewsTranslations] = React.useState(() => new Map());
+
+  React.useEffect(() => {
+    if (lang !== "ty") {
+      setNewsTranslations(new Map());
+      return;
+    }
+    const items = (news || []).map((n) => ({
+      id: n.id,
+      title: n.title,
+      excerpt: n.excerpt,
+      contentHtml: n.contentHtml,
+      titleTy: n.titleTy,
+      excerptTy: n.excerptTy,
+      contentHtmlTy: n.contentHtmlTy,
+    }));
+    let alive = true;
+    translateNewsList(items)
+      .then((res) => {
+        if (!alive) return;
+        const map = new Map();
+        res.forEach((r) => map.set(String(r.id), r));
+        setNewsTranslations(map);
+      })
+      .catch(() => {
+        // Ошибки перевода не должны ломать список — показываем исходные тексты
+      });
+    return () => {
+      alive = false;
+    };
+  }, [lang, news, translateNewsList]);
 
   React.useEffect(() => {
     const onNav = () => {
@@ -204,7 +240,7 @@ export default function NewsArchive() {
       );
     }
 
-    const localized = localizeNewsItem(item, lang);
+    const localized = localizeNewsItem(item, lang, newsTranslations);
     const shareUrl =
       typeof window !== "undefined"
         ? `${window.location.origin}/news?id=${encodeURIComponent(item.id)}`
@@ -417,7 +453,7 @@ export default function NewsArchive() {
                       <div style={{ fontSize: 14, color: "#6b7280" }}>
                         {formatNewsDateTime(n.date)}
                       </div>
-                      <div style={{ fontWeight: 700 }}>{localizeNewsItem(n, lang).title || n.title}</div>
+                      <div style={{ fontWeight: 700 }}>{localizeNewsItem(n, lang, newsTranslations).title || n.title}</div>
                     </a>
                   ))}
               </div>
@@ -501,7 +537,7 @@ export default function NewsArchive() {
                       ) : null}
 
                       <div className="news-archive__card-body">
-                        <div className="news-archive__card-title">{localizeNewsItem(n, lang).title || n.title}</div>
+                        <div className="news-archive__card-title">{localizeNewsItem(n, lang, newsTranslations).title || n.title}</div>
                         <div className="news-archive__card-date">{formatNewsDateTime(n.date)}</div>
                       </div>
                     </a>
