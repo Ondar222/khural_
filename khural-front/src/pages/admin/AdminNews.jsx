@@ -47,6 +47,41 @@ function shortText(html, words = 3) {
   return parts.slice(0, words).join(" ") + "…";
 }
 
+/**
+ * Ссылки на картинки новости в порядке приоритета: обложка, затем галерея.
+ * Бэкенд отдаёт файлы объектами ({ id, link }), поэтому поля images/image
+ * в сыром ответе API отсутствуют — их нужно читать из coverImage/gallery.
+ */
+function collectImages(row) {
+  const out = [];
+  const push = (v) => {
+    if (!v) return;
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (s) out.push(s);
+      return;
+    }
+    if (Array.isArray(v)) {
+      v.forEach(push);
+      return;
+    }
+    if (typeof v === "object") {
+      const link = v.link || v.url || v?.file?.link || v?.file?.url || "";
+      if (String(link).trim()) {
+        out.push(String(link).trim());
+      } else {
+        const id = v.id || v?.file?.id || "";
+        if (id) out.push(`/files/${String(id)}`);
+      }
+    }
+  };
+  push(row?.coverImage);
+  push(row?.gallery);
+  push(row?.images);
+  push(row?.image);
+  return out;
+}
+
 export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
@@ -149,11 +184,11 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
   }, []);
 
   const mediaTag = React.useCallback((row) => {
-    const images = Array.isArray(row?.images) ? row.images : row?.image ? [row.image] : [];
+    const images = collectImages(row);
     if (images.length) {
       return (
         <img
-          src={normalizeFilesUrl(String(images[0] || ""))}
+          src={normalizeFilesUrl(images[0])}
           alt=""
           style={{ width: 88, height: 50, objectFit: "cover", borderRadius: 6, display: "block" }}
           loading="lazy"
@@ -383,8 +418,8 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
               const ru = pickRu(row.content);
               const title = String(ru?.title || row.title || "").trim() || "(без названия)";
               const desc = String(ru?.description || "");
-              const images = Array.isArray(row?.images) ? row.images : row?.image ? [row.image] : [];
-              const img = images.length ? normalizeFilesUrl(String(images[0] || "")) : "";
+              const images = collectImages(row);
+              const img = images.length ? normalizeFilesUrl(images[0]) : "";
               return (
                 <div
                   key={String(row.id)}

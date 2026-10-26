@@ -4240,9 +4240,13 @@ a.btn.btn--primary:focus-visible {
   }
   /* Горизонтальный скролл слайдов на мобильных (свайп руками).
      Скролл-контейнер — .slides-scroll (на него висит onScroll в HeroCarousel),
-     а не .slides: иначе scrollLeft считается не с того элемента. */
+     а не .slides: иначе scrollLeft считается не с того элемента.
+     ВАЖНО: .slides остаётся absolute inset:0 (как в базовых стилях) — иначе
+     высота блока схлопывается в 0 (дочерние height:100% от auto-родителя)
+     и фоновые картинки слайдов не показываются. */
   .hero .slides {
-    position: relative;
+    position: absolute;
+    inset: 0;
     overflow: hidden;
   }
   .hero .slides .slides-scroll {
