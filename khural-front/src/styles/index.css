@@ -8742,16 +8742,22 @@ body.admin-mode[data-admin-theme="light"] .admin-pages-list__row--system > td {
 /* News list */
 .admin-news-list__toolbar {
   gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 .admin-news-list__toolbar-left {
-  flex: 1 1 520px;
-  min-width: min(520px, 100%);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.admin-news-list__toolbar-left .admin-input {
+  width: 100%;
 }
 .admin-news-list__toolbar-right {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 .admin-news-list__titlecell {
   display: grid;
@@ -8777,6 +8783,20 @@ body.admin-mode[data-admin-theme="light"] .admin-pages-list__row--system > td {
   font-size: 12px;
   opacity: 0.85;
   line-height: 1.35;
+}
+.admin-news-list__thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.2);
+}
+.admin-news-list__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .admin-news-list__actions .ant-btn {
   font-weight: 700;
@@ -8972,6 +8992,33 @@ body.admin-mode[data-admin-theme="light"] .admin-env-docs__pre {
 .admin-card textarea.ant-input {
   resize: vertical;
   min-height: 100px;
+}
+
+/* Ограничение ширины текстовых полев в редакторе новостей */
+.admin-news-editor .ant-form-item {
+  max-width: 100%;
+}
+.admin-news-editor .ant-input,
+.admin-news-editor textarea.ant-input,
+.admin-news-editor .ant-select-selector,
+.admin-news-editor .ant-picker {
+  max-width: 600px;
+  width: 100%;
+}
+
+/* Hero section — не растягивать слишком широко */
+.admin-news-editor__hero-left {
+  min-width: min(480px, 100%);
+  max-width: 600px;
+}
+.admin-news-editor__hero-row {
+  flex-wrap: wrap;
+}
+@media (max-width: 720px) {
+  .admin-news-editor__hero-left {
+    min-width: auto;
+    max-width: 100%;
+  }
 }
 .admin-card .ant-upload {
   max-width: 100%;

@@ -118,6 +118,13 @@ export default function NewsArchive() {
       }
       // section === "all" - показываем все новости (без дополнительной фильтрации)
 
+      // Сортировка по дате — свежие новости сначала
+      result = result.sort((a, b) => {
+        const da = new Date(a?.date || a?.publishedAt || a?.createdAt || 0).getTime();
+        const db = new Date(b?.date || b?.publishedAt || b?.createdAt || 0).getTime();
+        return db - da;
+      });
+
       return result;
     },
     [news, date, section]

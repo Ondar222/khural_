@@ -124,14 +124,21 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
   }, [filtered, handleDelete, message, canWrite]);
 
   const formatDate = React.useCallback((row) => {
-    const v = row?.createdAt || row?.created_at || row?.publishedAt || row?.published_at;
+    const v = row?.publishedAt || row?.published_at || row?.createdAt || row?.created_at;
     const d = v ? new Date(v) : null;
     return d ? d.toLocaleDateString("ru-RU") : "—";
   }, []);
 
   const mediaTag = React.useCallback((row) => {
-    const v = row?.images;
-    return Array.isArray(v) && v.length ? <Tag color="blue">есть</Tag> : "—";
+    const images = Array.isArray(row?.images) ? row.images : row?.image ? [row.image] : [];
+    if (images.length) {
+      return (
+        <div className="admin-news-list__thumb">
+          <img src={String(images[0])} alt="" loading="lazy" />
+        </div>
+      );
+    }
+    return <Tag color="gray">—</Tag>;
   }, []);
 
   const renderTitleCell = React.useCallback((row) => {
@@ -153,16 +160,17 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
       render: (_, row) => renderTitleCell(row),
     },
     {
-      title: "Дата",
-      dataIndex: "createdAt",
-      width: 160,
-      render: (_, row) => formatDate(row),
+      title: "Изображение",
+      dataIndex: "images",
+      width: 100,
+      align: "center",
+      render: (_, row) => mediaTag(row),
     },
     {
-      title: "Медиа",
-      dataIndex: "images",
-      width: 120,
-      render: (_, row) => mediaTag(row),
+      title: "Дата",
+      dataIndex: "createdAt",
+      width: 170,
+      render: (_, row) => formatDate(row),
     },
     {
       title: "Действия",
@@ -195,13 +203,13 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"
           size={isMobile ? "large" : "middle"}
+          style={{ maxWidth: isMobile ? "100%" : 420 }}
         />
       </div>
       <div className="admin-news-list__toolbar-right">
         <Button type="primary" onClick={() => navigate("/admin/news/create")} disabled={!canWrite} size={isMobile ? "large" : "middle"}>
           + Добавить новость
         </Button>
-   
       </div>
     </div>
   );
@@ -312,7 +320,7 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
             showTotal: (total, range) => `${range[0]}–${range[1]} из ${total}`,
             size: isTablet ? "small" : "default",
           }}
-          scroll={isTablet ? { x: "max-content" } : undefined}
+          scroll={{ x: "max-content" }}
         />
       </div>
 
