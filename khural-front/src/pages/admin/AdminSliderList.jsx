@@ -12,6 +12,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { SliderApi } from "../../api/client.js";
 import { stripHtmlTags } from "../../utils/html.js";
+import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { CameraIcon } from "../../components/icons/LinearIcons.jsx";
 
 /** Показ только текста без тегов и сущностей (<p>, &ndash; и т.д.) */
@@ -140,9 +141,9 @@ export default function AdminSliderList({
       dataIndex: "image",
       width: 116,
       render: (v) =>
-        v ? (
+        normalizeFilesUrl(String(v || "")) ? (
           <img
-            src={v}
+            src={normalizeFilesUrl(String(v || ""))}
             alt=""
             style={{ width: 88, height: 50, objectFit: "cover", borderRadius: 6, display: "block" }}
             loading="lazy"
@@ -362,7 +363,9 @@ export default function AdminSliderList({
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {filtered.map((row, index) => (
+            {filtered.map((row, index) => {
+              const imgSrc = normalizeFilesUrl(String(row.image || ""));
+              return (
               <div
                 key={String(row.id)}
                 className="admin-card"
@@ -391,9 +394,9 @@ export default function AdminSliderList({
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
-                    {row.image ? (
+                    {imgSrc ? (
                       <img
-                        src={row.image}
+                        src={imgSrc}
                         alt=""
                         style={{
                           width: '100%',
@@ -554,7 +557,8 @@ export default function AdminSliderList({
                   </Button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

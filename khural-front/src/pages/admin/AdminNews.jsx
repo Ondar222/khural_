@@ -1,7 +1,9 @@
 import React from "react";
-import { App, Button, Input, Modal, Form, Upload, Space, Table, Tag } from "antd";
+import { App, Button, Input, Modal, Form, Upload, Space, Table, Tooltip } from "antd";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
+import { CameraIcon } from "../../components/icons/LinearIcons.jsx";
 
 function pickRu(content) {
   const arr = Array.isArray(content) ? content : [];
@@ -29,6 +31,22 @@ function toKey(row) {
   return `news:${title}|${date}`;
 }
 
+/** Показ только текста без тегов и сущностей (<p>, &ndash; и т.д.) */
+function plainText(html) {
+  if (html == null || html === "") return "";
+  const s = String(html).replace(/<[^>]+>/g, "");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+/** Первые N слов + … */
+function shortText(html, words = 3) {
+  const text = plainText(html);
+  if (!text) return "";
+  const parts = text.split(/\s+/);
+  if (parts.length <= words) return text;
+  return parts.slice(0, words).join(" ") + "…";
+}
+
 export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
@@ -39,6 +57,7 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
   const [editForm] = Form.useForm();
   const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
+  // Отслеживание размера окна для адаптивности
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => setWindowWidth(window.innerWidth);
@@ -47,7 +66,6 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
   }, []);
 
   const isMobile = windowWidth <= 768;
-  const isTablet = windowWidth > 768 && windowWidth <= 1024;
 
   const grouped = React.useMemo(() => {
     const list = Array.isArray(items) ? items : [];
@@ -134,38 +152,115 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
     const images = Array.isArray(row?.images) ? row.images : row?.image ? [row.image] : [];
     if (images.length) {
       return (
-        <div className="admin-news-list__thumb">
-          <img src={normalizeFilesUrl(String(images[0] || ""))} alt="" loading="lazy" />
-        </div>
+        <img
+          src={normalizeFilesUrl(String(images[0] || ""))}
+          alt=""
+          style={{ width: 88, height: 50, objectFit: "cover", borderRadius: 6, display: "block" }}
+          loading="lazy"
+          decoding="async"
+        />
       );
     }
-    return <Tag color="gray">—</Tag>;
+    return <span style={{ display: "inline-flex", opacity: 0.3 }}><CameraIcon size={18} /></span>;
   }, []);
 
-  const renderTitleCell = React.useCallback((row) => {
+  const renderCell = React.useCallback((row) => {
     const ru = pickRu(row.content);
-    const title = ru?.title || row.title || "(без названия)";
-    const desc = String(ru?.description || "").replace(/<[^>]+>/g, "").slice(0, 140);
+    const title = String(ru?.title || row.title || "").trim();
+    const desc = String(ru?.description || "");
+    const url = String(ru?.link || row?.url || "");
     return (
-      <div className="admin-news-list__titlecell">
-        <div className="admin-news-list__title">{title}</div>
-        {desc ? <div className="admin-news-list__desc">{desc}</div> : null}
+      <div
+        className="admin-slider-cell"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          minWidth: 0,
+          maxWidth: "100%",
+        }}
+      >
+        <div
+          className="admin-slider-cell__title"
+          title={title}
+          style={{
+            fontWeight: 700,
+            fontSize: 14,
+            lineHeight: 1.4,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            margin: 0,
+          }}
+        >
+          {shortText(ru?.title || row.title, 6) || "(без заголовка)"}
+        </div>
+        {desc ? (
+          <div
+            className="admin-slider-cell__desc"
+            title={desc}
+            style={{
+              fontSize: 12.5,
+              lineHeight: 1.4,
+              opacity: 0.6,
+              margin: 0,
+            }}
+          >
+            {shortText(desc, 3)}
+          </div>
+        ) : null}
+        {url ? (
+          <div
+            className="admin-slider-cell__url"
+            title={url}
+            style={{
+              fontSize: 11.5,
+              lineHeight: 1.3,
+              opacity: 0.45,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              margin: 0,
+            }}
+          >
+            {url.length > 40 ? `${url.slice(0, 40)}…` : url}
+          </div>
+        ) : null}
       </div>
     );
   }, []);
 
   const columns = [
     {
-      title: "Заголовок",
-      dataIndex: "content",
-      render: (_, row) => renderTitleCell(row),
+      title: "№",
+      width: 52,
+      align: "center",
+      render: (_, __, i) => (
+        <span
+          className="admin-slider-cell__index"
+          style={{
+            display: "block",
+            textAlign: "center",
+            opacity: 0.55,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {i + 1}
+        </span>
+      ),
     },
     {
       title: "Изображение",
       dataIndex: "images",
-      width: 100,
-      align: "center",
+      width: 116,
       render: (_, row) => mediaTag(row),
+    },
+    {
+      title: "Заголовок",
+      dataIndex: "content",
+      width: 340,
+      render: (_, row) => renderCell(row),
     },
     {
       title: "Дата",
@@ -176,42 +271,79 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
     {
       title: "Действия",
       key: "actions",
-      width: 220,
+      width: 180,
       render: (_, row) => (
-        <Space wrap className="admin-news-list__actions">
-          <Button
-            onClick={() => {
-              navigate(`/admin/news/edit/${row.id}`);
-            }}
-            disabled={!canWrite}
-          >
-            Редактировать
-          </Button>
-          <Button danger onClick={() => handleDelete(row)} disabled={!canWrite}>
-            Удалить
-          </Button>
+        <Space size={4} className="admin-slider-cell__actions">
+          <Tooltip title="Редактировать">
+            <Button
+              size="small"
+              type="text"
+              icon={<EditOutlined />}
+              disabled={!canWrite}
+              onClick={() => {
+                navigate(`/admin/news/edit/${row.id}`);
+              }}
+            />
+          </Tooltip>
+
+          <Tooltip title="Удалить">
+            <Button
+              size="small"
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              disabled={!canWrite}
+              onClick={() => handleDelete(row)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
   ];
 
-  const toolbar = (
-    <div className="admin-card admin-toolbar admin-news-list__toolbar">
-      <div className="admin-news-list__toolbar-left">
-        <Input
-          placeholder="Поиск по заголовку..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="admin-input"
-          size={isMobile ? "large" : "middle"}
-          style={{ maxWidth: isMobile ? "100%" : 420 }}
-        />
-      </div>
-      <div className="admin-news-list__toolbar-right">
-        <Button type="primary" onClick={() => navigate("/admin/news/create")} disabled={!canWrite} size={isMobile ? "large" : "middle"}>
+  const toolbar = isMobile ? (
+    <div
+      className="admin-card admin-toolbar"
+      style={{ padding: "16px", marginBottom: "16px", display: "flex", flexDirection: "column", gap: "12px" }}
+    >
+      <Input
+        placeholder="Поиск по заголовку..."
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        className="admin-input"
+        size="large"
+        style={{ width: "100%" }}
+      />
+      <Button
+        type="primary"
+        onClick={() => navigate("/admin/news/create")}
+        disabled={!canWrite}
+        loading={busy}
+        block
+        size="large"
+        style={{ fontWeight: 600 }}
+      >
+        + Добавить новость
+      </Button>
+    </div>
+  ) : (
+    <div className="admin-card admin-toolbar">
+      <Input
+        placeholder="Поиск по заголовку..."
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        className="admin-input"
+      />
+      <Space wrap>
+        <Button
+          type="primary"
+          onClick={() => navigate("/admin/news/create")}
+          disabled={!canWrite}
+          loading={busy}
+        >
           + Добавить новость
         </Button>
-      </div>
+      </Space>
     </div>
   );
 
@@ -241,31 +373,124 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
       >
         {toolbar}
 
-        {Array.isArray(filtered) && filtered.length ? (
-          <div className="admin-cards admin-news-list__cards">
-            {filtered.map((row) => (
-              <div key={String(row.id)} className="admin-card admin-news-list__card">
-                <div className="admin-news-list__card-head">
-                  {renderTitleCell(row)}
-                  <div className="admin-news-list__meta-row">
-                    <div className="admin-news-list__meta">{formatDate(row)}</div>
-                    <div className="admin-news-list__meta">{mediaTag(row)}</div>
-                  </div>
-                </div>
-
-                <div className="admin-news-list__card-actions">
-                  <Button onClick={() => navigate(`/admin/news/edit/${row.id}`)} disabled={!canWrite} block>
-                    Редактировать
-                  </Button>
-                  <Button danger onClick={() => handleDelete(row)} disabled={!canWrite} block>
-                    Удалить
-                  </Button>
-                </div>
-              </div>
-            ))}
+        {filtered.length === 0 ? (
+          <div className="admin-card" style={{ padding: "32px 16px", textAlign: "center", opacity: 0.6 }}>
+            {q ? "Новости не найдены" : "Новости отсутствуют"}
           </div>
         ) : (
-          <div className="admin-card admin-news-list__empty">Нет данных</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {filtered.map((row, index) => {
+              const ru = pickRu(row.content);
+              const title = String(ru?.title || row.title || "").trim() || "(без названия)";
+              const desc = String(ru?.description || "");
+              const images = Array.isArray(row?.images) ? row.images : row?.image ? [row.image] : [];
+              const img = images.length ? normalizeFilesUrl(String(images[0] || "")) : "";
+              return (
+                <div
+                  key={String(row.id)}
+                  className="admin-card"
+                  style={{
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                    borderRadius: "12px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "8px",
+                        overflow: "hidden",
+                        background: "rgba(0,0,0,0.05)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {img ? (
+                        <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <span style={{ display: "inline-flex", opacity: 0.3 }}><CameraIcon size={20} /></span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px", justifyContent: "center" }}>
+                        <span style={{ opacity: 0.6, fontSize: "12px", fontWeight: 600, textAlign: "center", flexShrink: 0 }}>№{index + 1}</span>
+                        <div
+                          style={{
+                            fontWeight: 800,
+                            fontSize: "16px",
+                            lineHeight: 1.3,
+                            wordWrap: "break-word",
+                            overflowWrap: "break-word",
+                            textAlign: "center",
+                            flex: 1,
+                          }}
+                        >
+                          {title}
+                        </div>
+                      </div>
+                      {desc ? (
+                        <div
+                          style={{
+                            opacity: 0.65,
+                            fontSize: "13px",
+                            lineHeight: 1.4,
+                            marginTop: "3px",
+                            textAlign: "center",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {shortText(desc, 3)}
+                        </div>
+                      ) : null}
+                      <div style={{ opacity: 0.65, fontSize: "12px", marginTop: "4px", textAlign: "center" }}>
+                        {formatDate(row)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      paddingTop: "12px",
+                      borderTop: "1px solid rgba(0,0,0,0.08)",
+                    }}
+                  >
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", flex: 1 }}>
+                      <Button
+                        size="small"
+                        disabled={!canWrite}
+                        onClick={() => navigate(`/admin/news/edit/${row.id}`)}
+                        style={{ flex: isMobile ? "1 1 calc(50% - 4px)" : "0 1 auto" }}
+                      >
+                        Редактировать
+                      </Button>
+                      <Button
+                        danger
+                        size="small"
+                        block={isMobile}
+                        disabled={!canWrite}
+                        onClick={() => handleDelete(row)}
+                        style={{ flex: isMobile ? "1 1 100%" : "0 1 auto" }}
+                      >
+                        Удалить
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
 
         <Modal
@@ -315,19 +540,13 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
     >
       {toolbar}
 
-      <div className="admin-card admin-table">
+      <div className="admin-card admin-table admin-slider-table">
         <Table
           rowKey={(r) => String(r.id)}
           columns={columns}
           dataSource={filtered}
-          pagination={{
-            pageSize: 8,
-            showSizeChanger: !isTablet,
-            showQuickJumper: !isTablet,
-            showTotal: (total, range) => `${range[0]}–${range[1]} из ${total}`,
-            size: isTablet ? "small" : "default",
-          }}
-          scroll={{ x: "max-content" }}
+          pagination={{ pageSize: 10 }}
+          tableLayout="fixed"
         />
       </div>
 
@@ -378,6 +597,3 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
     </div>
   );
 }
-
-
-
