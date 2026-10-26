@@ -235,7 +235,10 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
 
   if (isMobile) {
     return (
-      <div className="admin-grid admin-news-list">
+      <div
+        className="admin-grid admin-news-list"
+        style={{ maxWidth: "100%", width: "100%", margin: 0, padding: 0, overflowX: "hidden", boxSizing: "border-box" }}
+      >
         {toolbar}
 
         {Array.isArray(filtered) && filtered.length ? (
@@ -306,7 +309,10 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
   }
 
   return (
-    <div className="admin-grid admin-news-list">
+    <div
+      className="admin-grid admin-news-list"
+      style={{ maxWidth: "100%", width: "100%", margin: 0, padding: 0, overflowX: "hidden", boxSizing: "border-box" }}
+    >
       {toolbar}
 
       <div className="admin-card admin-table">
