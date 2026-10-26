@@ -150,11 +150,16 @@ function deduplicateCommitteesByRichness(list) {
 }
 
 export default function Committee() {
-  const { committees: committeesFromContext, deputies, convocations, documents: allDocuments, loading, errors, reload } = useData();
+  const { committees: committeesFromContext, deputies, convocations, documents: allDocuments, loading, errors, reload, ensureDocuments } = useData();
   const [committee, setCommittee] = React.useState(null);
   const [apiCommittees, setApiCommittees] = React.useState(null);
   const [overridesSeq, setOverridesSeq] = React.useState(0);
   const [docPreview, setDocPreview] = React.useState(null); // { url, title } — предпросмотр документа на странице
+
+  // Документы в контексте загружаются лениво — запрашиваем полный список для раздела документов комитета
+  React.useEffect(() => {
+    ensureDocuments();
+  }, [ensureDocuments]);
 
   React.useEffect(() => {
     let alive = true;

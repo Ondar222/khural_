@@ -1211,6 +1211,69 @@ export const DocumentsApi = {
   async listAll() {
     return apiFetch("/documents/all", { method: "GET", auth: true });
   },
+  /**
+   * Одна страница опубликованных документов с серверной фильтрацией.
+   * params: { page, limit, categoryId, query, year, type }
+   * Возвращает { items, total, page, limit, totalPages }.
+   * При rate-limit (429) повторяет запрос с экспоненциальной задержкой.
+   */
+  async listPublished(params = {}) {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") qs.append(k, String(v));
+    });
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await apiFetch(`/documents${suffix}`, { method: "GET", auth: false });
+      } catch (e) {
+        if (e?.status === 429 && attempt < 5) {
+          const waitMs = Number(e?.data?.retryAfter) * 1000 || 1000 * 2 ** attempt;
+          await new Promise((r) => setTimeout(r, waitMs));
+          continue;
+        }
+        throw e;
+      }
+    }
+  },
+  /**
+   * Список разделов (категорий) документов с количеством документов в каждом.
+   * Публичного эндпоинта категорий нет, поэтому определяем существующие категории
+   * лёгкими запросами (?limit=1&categoryId=N) — ответы минимальные, имена категорий
+   * и total приходят в ответе. Параметры фильтрации (query, year) пробрасываются,
+   * чтобы счётчики соответствовали текущим фильтрам.
+   */
+  async listSections({ query, year, maxCategoryId = 24, concurrency = 4 } = {}) {
+    const probe = async (categoryId) => {
+      try {
+        const res = await DocumentsApi.listPublished({ categoryId, limit: 1, query, year });
+        const first = res?.items?.[0];
+        const total = Number(res?.total) || 0;
+        if (!first?.category) return null;
+        const name =
+          typeof first.category === "string"
+            ? first.category
+            : first.category?.name || first.category?.title || "";
+        if (!name || total <= 0) return null;
+        return { id: first.category?.id ?? categoryId, name, total };
+      } catch {
+        return null;
+      }
+    };
+
+    const ids = [];
+    for (let id = 1; id <= maxCategoryId; id += 1) ids.push(id);
+    const sections = [];
+    for (let i = 0; i < ids.length; i += concurrency) {
+      const chunk = ids.slice(i, i + concurrency);
+      const results = await Promise.all(chunk.map((id) => probe(id)));
+      results.forEach((s) => {
+        if (s) sections.push(s);
+      });
+    }
+    sections.sort((a, b) => String(a.name).localeCompare(String(b.name), "ru"));
+    return sections;
+  },
   async getById(id) {
     return apiFetch(`/documents/${id}`, { method: "GET", auth: false });
   },

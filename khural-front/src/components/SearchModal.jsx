@@ -7,7 +7,7 @@ import { formatNewsDateTime } from "../utils/dateFormat.js";
 import { SearchIcon } from "./icons/LinearIcons.jsx";
 
 export default function SearchModal({ open, onClose }) {
-  const { news, documents } = useData();
+  const { news, documents, ensureDocuments } = useData();
   const { t } = useI18n();
   const [query, setQuery] = React.useState("");
   const [remote, setRemote] = React.useState([]);
@@ -18,6 +18,9 @@ export default function SearchModal({ open, onClose }) {
     if (open) {
       document.body.style.overflow = "hidden";
       setTimeout(() => inputRef.current && inputRef.current.focus(), 0);
+      // Ленивый список документов в контексте может быть ещё не загружен —
+      // запрашиваем для локального поиска как fallback
+      ensureDocuments();
     }
     return () => {
       document.body.style.overflow = "";
@@ -25,7 +28,7 @@ export default function SearchModal({ open, onClose }) {
       setRemote([]);
       setLoading(false);
     };
-  }, [open]);
+  }, [open, ensureDocuments]);
 
   const q = query.trim().toLowerCase();
 

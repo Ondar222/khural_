@@ -74,6 +74,7 @@ const DataContext = React.createContext({
   },
   reload: () => {},
   reloadEvents: () => {},
+  ensureDocuments: () => Promise.resolve([]),
   // Setters for Admin (optional to use)
   setSlides: () => {},
   setNews: () => {},
@@ -1158,6 +1159,117 @@ export default function DataProvider({ children }) {
     setEventsReloadSeq((x) => x + 1);
   }, []);
 
+  // ── Ленивая загрузка всех документов ─────────────────────────────────────────
+  // Раньше полный список документов (~4900 записей, ~49 запросов) грузился при
+  // монтировании приложения на каждой странице. Теперь — только по запросу
+  // потребителей, которым нужен весь список (DocsPage, SearchModal, Committee):
+  // они вызывают ensureDocuments(). Страница /documents использует серверную
+  // пагинацию и полный список не грузит.
+  const documentsStateRef = React.useRef({ status: "idle", promise: null }); // idle | loading | loaded
+  const ensureDocuments = React.useCallback((opts = {}) => {
+    const { force = false } = opts;
+    const state = documentsStateRef.current;
+    if (!force && (state.status === "loaded" || state.status === "loading")) {
+      return state.promise || Promise.resolve([]);
+    }
+    markLoading("documents", true);
+    markError("documents", null);
+    const promise = (async () => {
+      try {
+        // Документы из API бэкенда (/api/documents) — единый источник правды.
+        const apiDocs = await DocumentsApi.listAllPublished().catch(() => []);
+        const docs = (Array.isArray(apiDocs) ? apiDocs : [])
+          .filter((d) => d && d.title)
+          .map((d) => {
+            const categoryName =
+              typeof d.category === "string"
+                ? d.category
+                : d.category?.name || d.category?.title || "";
+            // Файл: pdfFile.link (CDN бэкенда) или legacy previewUrl
+            const fileUrl = d.pdfFile?.link || d.previewUrl || "";
+            return {
+              id: d.id,
+              title: String(d.title || "").trim(),
+              desc: String(d.content || "").trim(),
+              date: d.publishedAt || d.createdAt || "",
+              number: d.number ? String(d.number) : "",
+              category: categoryName,
+              categoryId: d.category?.id ?? null,
+              type: d.type,
+              url: fileUrl ? normalizeFilesUrl(fileUrl) : "",
+            };
+          });
+
+        if (docs.length > 0) {
+          setDocuments(docs);
+          documentsStateRef.current = { status: "loaded", promise };
+          return docs;
+        }
+        throw new Error("API вернул пустой список документов");
+      } catch (e) {
+        markError("documents", e);
+        // Fallback: локальные выгрузки (могут быть неполными)
+        try {
+          const [zakonyData, zakony2Data, postamovleniyaData] = await Promise.all([
+            fetchJson("/persons_doc/zakony.json").catch(() => []),
+            fetchJson("/persons_doc/zakony2.json").catch(() => []),
+            fetchJson("/persons_doc/postamovleniya_VH.json").catch(() => []),
+          ]);
+          const parseZakonyDoc = (row) => {
+            if (!row || !row.IE_NAME) return null;
+            const fileUrl = String(row.IP_PROP28 || "").trim();
+            if (!fileUrl) return null;
+            const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
+            if (!url) return null;
+            return {
+              id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
+              title: String(row.IE_NAME || "").trim(),
+              desc: "",
+              date: String(row.IP_PROP27 || "").trim(),
+              number: String(row.IP_PROP26 || "").trim(),
+              category: "Законы Республики Тыва",
+              type: "law",
+              url,
+            };
+          };
+          const parsePostamovleniyaDoc = (row) => {
+            if (!row || !row.IE_NAME) return null;
+            const fileUrl = String(row.IP_PROP59 || "").trim();
+            if (!fileUrl) return null;
+            const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
+            if (!url) return null;
+            return {
+              id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
+              title: String(row.IE_NAME || "").trim(),
+              desc: "",
+              date: String(row.IP_PROP58 || "").trim(),
+              number: String(row.IP_PROP57 || "").trim(),
+              category: "Постановления ВХ РТ",
+              type: "resolution",
+              url,
+            };
+          };
+          const docs = [
+            ...(Array.isArray(zakonyData) ? zakonyData : []).map(parseZakonyDoc).filter(Boolean),
+            ...(Array.isArray(zakony2Data) ? zakony2Data : []).map(parseZakonyDoc).filter(Boolean),
+            ...(Array.isArray(postamovleniyaData) ? postamovleniyaData : []).map(parsePostamovleniyaDoc).filter(Boolean),
+          ];
+          setDocuments(docs);
+          documentsStateRef.current = { status: "loaded", promise };
+          return docs;
+        } catch (fallbackError) {
+          setDocuments([]);
+          documentsStateRef.current = { status: "idle", promise: null };
+          return [];
+        }
+      } finally {
+        markLoading("documents", false);
+      }
+    })();
+    documentsStateRef.current = { status: "loading", promise };
+    return promise;
+  }, [markLoading, markError]);
+
   React.useEffect(() => {
     // Try API for slider first, fallback to local JSON
     (async () => {
@@ -1707,95 +1819,6 @@ export default function DataProvider({ children }) {
         markLoading("deputies", false);
       }
 
-      // Документы из API бэкенда (/api/documents) — единый источник правды.
-      // Статические persons_doc/*.json оставлены только как fallback, если API недоступен.
-      markLoading("documents", true);
-      markError("documents", null);
-      try {
-        const apiDocs = await DocumentsApi.listAllPublished().catch(() => []);
-        const docs = (Array.isArray(apiDocs) ? apiDocs : [])
-          .filter((d) => d && d.title)
-          .map((d) => {
-            const categoryName =
-              typeof d.category === "string"
-                ? d.category
-                : d.category?.name || d.category?.title || "";
-            // Файл: pdfFile.link (CDN бэкенда) или legacy previewUrl
-            const fileUrl = d.pdfFile?.link || d.previewUrl || "";
-            return {
-              id: d.id,
-              title: String(d.title || "").trim(),
-              desc: String(d.content || "").trim(),
-              date: d.publishedAt || d.createdAt || "",
-              number: d.number ? String(d.number) : "",
-              category: categoryName,
-              categoryId: d.category?.id ?? null,
-              type: d.type,
-              url: fileUrl ? normalizeFilesUrl(fileUrl) : "",
-            };
-          });
-
-        if (docs.length > 0) {
-          setDocuments(docs);
-        } else {
-          throw new Error("API вернул пустой список документов");
-        }
-      } catch (e) {
-        markError("documents", e);
-        // Fallback: локальные выгрузки (могут быть неполными)
-        try {
-          const [zakonyData, zakony2Data, postamovleniyaData] = await Promise.all([
-            fetchJson("/persons_doc/zakony.json").catch(() => []),
-            fetchJson("/persons_doc/zakony2.json").catch(() => []),
-            fetchJson("/persons_doc/postamovleniya_VH.json").catch(() => []),
-          ]);
-          const parseZakonyDoc = (row) => {
-            if (!row || !row.IE_NAME) return null;
-            const fileUrl = String(row.IP_PROP28 || "").trim();
-            if (!fileUrl) return null;
-            const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
-            if (!url) return null;
-            return {
-              id: `zakony-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
-              title: String(row.IE_NAME || "").trim(),
-              desc: "",
-              date: String(row.IP_PROP27 || "").trim(),
-              number: String(row.IP_PROP26 || "").trim(),
-              category: "Законы Республики Тыва",
-              type: "law",
-              url,
-            };
-          };
-          const parsePostamovleniyaDoc = (row) => {
-            if (!row || !row.IE_NAME) return null;
-            const fileUrl = String(row.IP_PROP59 || "").trim();
-            if (!fileUrl) return null;
-            const url = normalizeFilesUrl(fileUrl.startsWith("http") ? fileUrl : `/upload/${fileUrl.replace(/^\/?upload\//i, "")}`);
-            if (!url) return null;
-            return {
-              id: `postamovleniya-${row.IE_ID || row.IE_XML_ID || Math.random()}`,
-              title: String(row.IE_NAME || "").trim(),
-              desc: "",
-              date: String(row.IP_PROP58 || "").trim(),
-              number: String(row.IP_PROP57 || "").trim(),
-              category: "Постановления ВХ РТ",
-              type: "resolution",
-              url,
-            };
-          };
-          const docs = [
-            ...(Array.isArray(zakonyData) ? zakonyData : []).map(parseZakonyDoc).filter(Boolean),
-            ...(Array.isArray(zakony2Data) ? zakony2Data : []).map(parseZakonyDoc).filter(Boolean),
-            ...(Array.isArray(postamovleniyaData) ? postamovleniyaData : []).map(parsePostamovleniyaDoc).filter(Boolean),
-          ];
-          setDocuments(docs);
-        } catch (fallbackError) {
-          setDocuments([]);
-        }
-      } finally {
-        markLoading("documents", false);
-      }
-
       // Fetch filters from API if available
       const [apiFactions, apiDistricts, apiConvocations] = await Promise.all([
         tryApiFetch("/persons/factions/all", { auth: false }),
@@ -1809,9 +1832,15 @@ export default function DataProvider({ children }) {
       if (Array.isArray(apiConvocations) && apiConvocations.length)
         setConvocations(normalizeStringList(apiConvocations));
 
-      markLoading("documents", false);
       markLoading("deputies", false);
     })();
+
+    // При reload() из админки обновляем документы, только если они уже были загружены ранее
+    // (иначе документы остаются ленивыми и подгрузятся по первому ensureDocuments()).
+    if (reloadSeq > 0 && documentsStateRef.current.status === "loaded") {
+      ensureDocuments({ force: true });
+    }
+
     // Structure-derived lists
     markLoading("structure", true);
     fetchJson("/data/structure.json")
@@ -2180,6 +2209,7 @@ export default function DataProvider({ children }) {
       get errors() { return errorsRef.current; },
       reload,
       reloadEvents,
+      ensureDocuments,
       // Setters (for Admin)
       setSlides,
       setNews,

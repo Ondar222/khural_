@@ -4,6 +4,7 @@ import SideNav from "../../components/SideNav.jsx";
 import ScrollToTop from "../../components/ScrollToTop.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useHashRoute } from "../../Router.jsx";
+import { DocumentsApi } from "../../api/client.js";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
 import { isDocumentFileUrl } from "../../utils/documentFile.js";
@@ -50,11 +51,39 @@ const CATEGORIES = [
   },
 ];
 
+// Статические файлы — только эти разделы их используют (для остальных API отдаёт всё)
+const STATIC_MERGE_SLUGS = ["initiatives", "civic", "constitution", "bills", "resolutions"];
+const STATIC_FILE_MAP = {
+  laws: "/data/docs_laws.json",
+  resolutions: "/data/docs_resolutions.json",
+  initiatives: "/data/docs_initiatives.json",
+  civic: "/data/docs_civic.json",
+  constitution: "/data/docs_constitution.json",
+  bills: "/data/docs_bills.json",
+};
+
+// Приводит документ из ответа API к модели отображения
+function mapApiRow(d) {
+  const cat =
+    typeof d.category === "string"
+      ? d.category
+      : d.category?.name || d.category?.title || "";
+  const fileUrl = d.pdfFile?.link || d.previewUrl || "";
+  return {
+    id: d.id,
+    title: typeof d.title === "string" ? d.title : d?.title?.name || d?.title?.title || String(d.title || ""),
+    desc: String(d.content || "").trim(),
+    number: d.number ? String(d.number) : "",
+    url: normalizeFilesUrl(fileUrl),
+    category: cat || "federal",
+    type: d.type,
+  };
+}
+
 export default function DocsPage() {
   const { t } = useI18n();
-  const { documents, deputies, committees, convocations } = useData();
+  const { deputies, committees, convocations } = useData();
   const { route } = useHashRoute();
-  const [docs, setDocs] = React.useState([]);
   const [query, setQuery] = React.useState("");
   const [filterEntity, setFilterEntity] = React.useState(null); // { type: 'deputy'|'committee'|'convocation', id }
   const [page, setPage] = React.useState(1);
@@ -69,6 +98,13 @@ export default function DocsPage() {
   }, [route]);
 
   const cat = CATEGORIES.find((c) => c.slug === slug) || CATEGORIES[0];
+
+  // Debounced query for server-side search
+  const [debouncedQ, setDebouncedQ] = React.useState("");
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebouncedQ(query.trim()), 300);
+    return () => clearTimeout(id);
+  }, [query]);
 
   // Reset page and subcategory when slug changes
   React.useEffect(() => {
@@ -88,105 +124,124 @@ export default function DocsPage() {
     }
   }, [page]);
 
+  // ── Загрузка API постранично ──────────────────────────────────────────────
+  const [apiItems, setApiItems] = React.useState([]);
+  const [apiTotal, setApiTotal] = React.useState(0);
+  const [apiLoading, setApiLoading] = React.useState(false);
+
   React.useEffect(() => {
     let alive = true;
-    
-    // Фильтруем документы по типу из бекенда (DocumentType: law | resolution | order | decision | other)
-    const fromApi = (documents || []).filter((d) => {
-      const expectedType = cat.backendType;
-
-      // Для constitution и civic оба используют тип "other" в бекенде
-      // Различаем их по category или metadata
-      const catStr =
-        typeof d?.category === "string"
-          ? d.category
-          : d?.category?.name || d?.category?.title || "";
-      const titleStr = typeof d?.title === "string" ? d.title : String(d?.title || "");
-
-      if (slug === "constitution") {
-        const lowerCat = catStr.toLowerCase();
-        const lowerTitle = titleStr.toLowerCase();
-        return d?.type === "other" && (lowerCat.includes("конституция") || lowerCat.includes("constitution") || lowerTitle.includes("конституция"));
-      }
-      if (slug === "civic") {
-        const lowerCat = catStr.toLowerCase();
-        const lowerTitle = titleStr.toLowerCase();
-        return d?.type === "other" && (lowerCat.includes("гражданами") || lowerCat.includes("civic") || lowerTitle.includes("гражданами"));
-      }
-
-      return d?.type === expectedType;
-    });
-
-    // Если из API не хватило документов, загружаем из статических файлов
-    const loadStaticDocs = async () => {
-      const staticFileMap = {
-        laws: "/data/docs_laws.json",
-        resolutions: "/data/docs_resolutions.json",
-        initiatives: "/data/docs_initiatives.json",
-        civic: "/data/docs_civic.json",
-        constitution: "/data/docs_constitution.json",
-        bills: "/data/docs_bills.json",
-      };
-      
-      const staticFile = staticFileMap[slug];
-      if (!staticFile) return [];
-      
-      try {
-        const response = await fetch(staticFile, { cache: "no-cache" });
-        if (!response.ok) return [];
-        const staticDocs = await response.json();
-        return Array.isArray(staticDocs) ? staticDocs : [];
-      } catch (e) {
-        if (import.meta.env.DEV) {
-          console.warn(`Failed to load static docs from ${staticFile}:`, e);
-        }
-        return [];
-      }
-    };
-
-    (async () => {
-      let allDocs = fromApi.slice();
-
-      // Для разделов initiatives, civic, constitution, bills, resolutions загружаем из статических файлов
-      if (["initiatives", "civic", "constitution", "bills", "resolutions"].includes(slug)) {
-        const staticDocs = await loadStaticDocs();
-        // Объединяем с API документами, избегая дубликатов по ID
-        const existingIds = new Set(allDocs.map(d => String(d.id)));
-        for (const doc of staticDocs) {
-          if (!existingIds.has(String(doc.id))) {
-            allDocs.push(doc);
-          }
-        }
-      }
-
-      // Для раздела constitution фильтруем по подкатегории (federal/regional)
-      if (slug === "constitution" && subCategory !== "all") {
-        allDocs = allDocs.filter(d => d.category === subCategory);
-      }
-
-      if (alive) {
-        setDocs(
-          allDocs.map((d) => ({
-            id: d.id,
-            title: typeof d.title === "string" ? d.title : d?.title?.name || d?.title?.title || String(d.title || ""),
-            desc: (() => {
-              const raw = d.desc || d.description || "";
-              if (typeof raw === "string") return raw;
-              if (Array.isArray(raw)) return raw.join(" ");
-              return raw ? String(raw) : "";
-            })(),
-            number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
-            url: normalizeFilesUrl(typeof d.url === "string" ? d.url : d.url ? String(d.url) : ""),
-            category: d.category || "federal",
-          }))
-        );
-      }
-    })();
-
+    setApiLoading(true);
+    DocumentsApi.listPublished({
+      page,
+      limit: PAGE_SIZE,
+      type: cat.backendType,
+      query: debouncedQ,
+    })
+      .then((res) => {
+        if (!alive) return;
+        setApiItems(res?.items || []);
+        setApiTotal(res?.total || 0);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setApiItems([]);
+        setApiTotal(0);
+      })
+      .finally(() => {
+        if (alive) setApiLoading(false);
+      });
     return () => {
       alive = false;
     };
-  }, [documents, slug, subCategory]);
+  }, [page, cat.backendType, debouncedQ]);
+
+  // ── Загрузка статических файлов ───────────────────────────────────────────
+  const [staticFileDocs, setStaticFileDocs] = React.useState([]);
+  React.useEffect(() => {
+    setStaticFileDocs([]);
+    const file = STATIC_FILE_MAP[slug];
+    if (!file) return undefined;
+    let alive = true;
+    (async () => {
+      try {
+        const response = await fetch(file, { cache: "no-cache" });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (alive && Array.isArray(data)) setStaticFileDocs(data);
+      } catch (e) {
+        if (import.meta.env.DEV) console.warn(`Failed to load static docs from ${file}:`, e);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [slug]);
+
+  // ── Статические документы раздела (с локальным поиском и подкатегорией) ────
+  const staticMapped = React.useMemo(() => {
+    if (!STATIC_MERGE_SLUGS.includes(slug)) return [];
+    let list = (staticFileDocs || []).map((d) => ({
+      id: d.id,
+      title: typeof d.title === "string" ? d.title : d?.title?.name || d?.title?.title || String(d.title || ""),
+      desc: (() => {
+        const raw = d.desc || d.description || "";
+        if (typeof raw === "string") return raw;
+        if (Array.isArray(raw)) return raw.join(" ");
+        return raw ? String(raw) : "";
+      })(),
+      number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
+      url: normalizeFilesUrl(typeof d.url === "string" ? d.url : d.url ? String(d.url) : ""),
+      category: d.category || "federal",
+    }));
+    // Поиск по статическим документам (API-документы фильтруются на сервере)
+    const q = debouncedQ.toLowerCase();
+    if (q) {
+      list = list.filter((d) =>
+        [d.title, d.desc, d.number].some((s) => String(s || "").toLowerCase().includes(q))
+      );
+    }
+    // Подкатегория для constitution (federal/regional)
+    if (slug === "constitution" && subCategory !== "all") {
+      list = list.filter((d) => d.category === subCategory);
+    }
+    return list;
+  }, [staticFileDocs, slug, subCategory, debouncedQ]);
+
+  // ── Объединение API + статических документов ──────────────────────────────
+  // apiItems — уже одна страница с сервера.
+  // Если API по типу ничего не вернул (разделы полностью статические) —
+  // статические документы пагинуются на клиенте.
+  const docs = React.useMemo(() => {
+    let apiMapped = apiItems.map(mapApiRow);
+
+    // Для constitution и civic в бэкенде общий тип "other" —
+    // различаем их по category/title (как в прежней фильтрации)
+    if (slug === "constitution") {
+      apiMapped = apiMapped.filter((d) => {
+        const s = `${d.category} ${d.title}`.toLowerCase();
+        return s.includes("конституц") || s.includes("constitution");
+      });
+    }
+    if (slug === "civic") {
+      apiMapped = apiMapped.filter((d) => {
+        const s = `${d.category} ${d.title}`.toLowerCase();
+        return s.includes("гражданами") || s.includes("civic");
+      });
+    }
+
+    if (!STATIC_MERGE_SLUGS.includes(slug)) return apiMapped;
+
+    if (apiTotal === 0) {
+      const start = (page - 1) * PAGE_SIZE;
+      return staticMapped.slice(start, start + PAGE_SIZE);
+    }
+    if (page !== 1) return apiMapped;
+
+    // page === 1: статические документы в начале, без дубликатов по ID
+    const apiIds = new Set(apiMapped.map((d) => String(d.id)));
+    return [...staticMapped.filter((d) => !apiIds.has(String(d.id))), ...apiMapped];
+  }, [apiItems, apiTotal, slug, page, staticMapped]);
 
   const docLinkedMap = React.useMemo(() => {
     const map = new Map();
@@ -200,15 +255,6 @@ export default function DocsPage() {
 
   const visibleDocs = React.useMemo(() => {
     let list = docs;
-    const q = query.trim().toLowerCase();
-    if (q) {
-      list = list.filter((d) => {
-        const title = String(d?.title || "").toLowerCase();
-        const desc = String(d?.desc || "").toLowerCase();
-        const number = String(d?.number || "").toLowerCase();
-        return title.includes(q) || desc.includes(q) || number.includes(q);
-      });
-    }
     if (filterEntity) {
       const { type, id } = filterEntity;
       list = list.filter((d) => {
@@ -222,10 +268,15 @@ export default function DocsPage() {
       });
     }
     return list;
-  }, [docs, query, filterEntity, docLinkedMap]);
+  }, [docs, filterEntity, docLinkedMap]);
 
-  const totalPages = Math.ceil(visibleDocs.length / PAGE_SIZE);
-  const paginatedDocs = visibleDocs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Серверная пагинация: общее число страниц из apiTotal + статические
+  const staticCount = staticMapped.length;
+  const totalPages = Math.ceil((apiTotal + staticCount) / PAGE_SIZE);
+  const paginatedDocs = visibleDocs;
+
+  // Loading indicator for API fetch
+  const showApiLoading = apiLoading && paginatedDocs.length === 0;
 
   return (
     <section className="section section--docs">
@@ -421,12 +472,15 @@ export default function DocsPage() {
                 );
               })}
             </div>
+            {showApiLoading ? (
+              <div style={{ padding: "12px 4px", color: "#6b7280" }}>Загрузка документов…</div>
+            ) : null}
             {totalPages > 1 && (
               <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
                 <Pagination
                   current={page}
                   onChange={setPage}
-                  total={visibleDocs.length}
+                  total={apiTotal + staticCount}
                   pageSize={PAGE_SIZE}
                   showSizeChanger={false}
                   showTotal={(total) => `Всего: ${total}`}
