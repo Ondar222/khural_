@@ -101,7 +101,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const [newsData, setNewsData] = React.useState(null);
   const [saving, setSaving] = React.useState(false);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
-  const { reload: reloadPublicData, news: publicNews } = useData();
+  const { reload: reloadPublicData } = useData();
   
   const handleCreateCategory = React.useCallback(async () => {
     if (!newCategoryName || !newCategoryName.trim()) {
@@ -167,30 +167,13 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
     const loadCategories = async () => {
       setLoadingCategories(true);
       try {
-        const fallbackFromNews = () => {
-          const unique = new Map();
-          (Array.isArray(publicNews) ? publicNews : []).forEach((n) => {
-            const name = (n?.category || "").trim();
-            if (name) unique.set(name, { id: String(name), name });
-          });
-          const arr = Array.from(unique.values());
-          if (arr.length) setCategories(arr);
-        };
-
         const cats = await NewsApi.getAllCategories();
-        if (Array.isArray(cats) && cats.length) {
-          setCategories(cats);
-        } else {
-          fallbackFromNews();
-        }
+        // В fallback-новостях категория — это название, а не id. Подставлять
+        // его в value нельзя: бэкенд ждёт числовой categoryId.
+        setCategories(Array.isArray(cats) ? cats : []);
       } catch (error) {
         console.error("Failed to load categories:", error);
-        const unique = new Map();
-        (Array.isArray(publicNews) ? publicNews : []).forEach((n) => {
-          const name = (n?.category || "").trim();
-          if (name) unique.set(name, { id: String(name), name });
-        });
-        setCategories(Array.from(unique.values()));
+        setCategories([]);
       } finally {
         setLoadingCategories(false);
       }
@@ -287,31 +270,67 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
     }
   }, [translationError, antdMessage, clearError]);
 
+  // HTML-теги и пустые параграфы не считаем заполненным текстом
+  const hasText = (value) =>
+    String(value || "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .trim().length > 0;
+
   const handleTranslate = async (fromLang, toLang) => {
     try {
       const values = form.getFieldsValue();
-      const titleField = fromLang === "tyv" ? "titleTy" : "titleRu";
-      const contentField = fromLang === "tyv" ? "contentTy" : "contentRu";
-      const shortDescField = fromLang === "tyv" ? "shortDescriptionTy" : "shortDescriptionRu";
+      const fields = {
+        tyv: {
+          title: "titleTy",
+          content: "contentTy",
+          shortDesc: "shortDescriptionTy",
+        },
+        ru: {
+          title: "titleRu",
+          content: "contentRu",
+          shortDesc: "shortDescriptionRu",
+        },
+      };
 
-      const titleTarget = toLang === "tyv" ? "titleTy" : "titleRu";
-      const contentTarget = toLang === "tyv" ? "contentTy" : "contentRu";
-      const shortDescTarget = toLang === "tyv" ? "shortDescriptionTy" : "shortDescriptionRu";
+      const read = (lang) => ({
+        title: String(values[fields[lang].title] || ""),
+        content: String(values[fields[lang].content] || ""),
+        shortDesc: String(values[fields[lang].shortDesc] || ""),
+      });
 
-      const title = String(values[titleField] || "");
-      const content = String(values[contentField] || "");
-      const shortDesc = String(values[shortDescField] || "");
+      const hasAnyText = (data) =>
+        hasText(data.title) || hasText(data.content) || hasText(data.shortDesc);
 
-      if (!title && !content && !shortDesc) {
-        antdMessage.warning("Заполните поля для перевода");
+      let source = read(fromLang);
+      let target = read(toLang);
+
+      // Кнопка стоит в блоке целевого языка. Если там уже что-то написано,
+      // а исходный блок пуст — переводим из заполненного языка в пустой.
+      if (!hasAnyText(source) && hasAnyText(target)) {
+        [fromLang, toLang] = [toLang, fromLang];
+        source = read(fromLang);
+        target = read(toLang);
+      }
+
+      if (!hasAnyText(source)) {
+        antdMessage.warning(
+          "Заполните хотя бы один язык — заголовок, краткое описание или контент"
+        );
         return;
       }
 
       // Используем хук для перевода всех трёх полей
       const translations = await Promise.all([
-        title ? translate(title, fromLang, toLang) : Promise.resolve({ translated: "" }),
-        content ? translate(content, fromLang, toLang) : Promise.resolve({ translated: "" }),
-        shortDesc ? translate(shortDesc, fromLang, toLang) : Promise.resolve({ translated: "" }),
+        hasText(source.title)
+          ? translate(source.title, fromLang, toLang)
+          : Promise.resolve({ translated: "" }),
+        hasText(source.content)
+          ? translate(source.content, fromLang, toLang)
+          : Promise.resolve({ translated: "" }),
+        hasText(source.shortDesc)
+          ? translate(source.shortDesc, fromLang, toLang)
+          : Promise.resolve({ translated: "" }),
       ]);
 
       // Убеждаемся, что извлекаем строку, а не объект
@@ -331,11 +350,12 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         ""
       );
 
-      // Устанавливаем значения в форму
+      // Устанавливаем значения в форму. Пустой перевод не должен стирать
+      // уже заполненное поле целевого языка.
       form.setFieldsValue({
-        [titleTarget]: translatedTitle,
-        [contentTarget]: translatedContent,
-        [shortDescTarget]: translatedShortDesc,
+        [fields[toLang].title]: translatedTitle || target.title,
+        [fields[toLang].content]: translatedContent || target.content,
+        [fields[toLang].shortDesc]: translatedShortDesc || target.shortDesc,
       });
 
       antdMessage.success("Перевод выполнен");
@@ -434,8 +454,10 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
         }
       }
 
+      const categoryIdNum = Number(values.categoryId);
+
       payload = {
-        ...(values.categoryId !== undefined && values.categoryId !== null && values.categoryId !== '' ? { categoryId: values.categoryId } : {}),
+        ...(Number.isInteger(categoryIdNum) && categoryIdNum > 0 ? { categoryId: categoryIdNum } : {}),
         slug: values.slug || undefined,
         ...(publishedAtValue !== undefined ? { publishedAt: publishedAtValue } : { publishedAt: null }),
         isPublished: values.isPublished ?? false,
@@ -744,7 +766,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
                 loading={translating}
                 disabled={!canWrite || translating}
               >
-                Получить автоматический перевод
+                Перевести на тувинский
               </Button>
             </div>
             <Form.Item
@@ -789,7 +811,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
                 loading={translating}
                 disabled={!canWrite || translating}
               >
-                Получить автоматический перевод
+                Перевести на русский
               </Button>
             </div>
             <Form.Item

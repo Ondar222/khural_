@@ -377,28 +377,6 @@ function mergeApiNewsRows(rows) {
   return Array.from(byKey.values());
 }
 
-function mergeByIdPreferFirst(primary, secondary) {
-  const a = Array.isArray(primary) ? primary : [];
-  const b = Array.isArray(secondary) ? secondary : [];
-  const seen = new Set();
-  const out = [];
-  for (const it of a) {
-    const id = String(it?.id ?? "").trim();
-    if (!id) continue;
-    if (seen.has(id)) continue;
-    out.push(it);
-    seen.add(id);
-  }
-  for (const it of b) {
-    const id = String(it?.id ?? "").trim();
-    if (!id) continue;
-    if (seen.has(id)) continue;
-    out.push(it);
-    seen.add(id);
-  }
-  return out;
-}
-
 function normalizeStringList(list) {
   const items = Array.isArray(list) ? list : [];
   const normalized = items
@@ -1259,16 +1237,15 @@ export default function DataProvider({ children }) {
       }
       markLoading("slides", false);
     })();
-    // Try API for news first, fallback to local JSON
+    // Новости берём только из API (админки), без локальных мок-данных
     (async () => {
       markLoading("news", true);
       markError("news", null);
       // Добавляем timestamp для обхода кэша при перезагрузке
       const cacheBuster = reloadSeq > 0 ? `?t=${Date.now()}` : "";
-      const [apiNewsRaw, localNewsRaw] = await Promise.all([
-        tryApiFetch(`/news${cacheBuster}`, { auth: false }),
-        fetchJson("/data/news.json"),
-      ]);
+      const apiNewsRaw = await tryApiFetch(`/news${cacheBuster}`, {
+        auth: false,
+      });
 
       const apiNewsArr = Array.isArray(apiNewsRaw)
         ? apiNewsRaw
@@ -1374,10 +1351,8 @@ export default function DataProvider({ children }) {
           })
         : [];
 
-      const mappedLocal = ensureUniqueIds(Array.isArray(localNewsRaw) ? localNewsRaw : []);
-      const merged = mergeByIdPreferFirst(ensureUniqueIds(mappedApi), mappedLocal);
       const deleted = new Set((readNewsOverrides()?.deletedIds || []).map(String));
-      const filtered = merged.filter((n) => !deleted.has(String(n?.id ?? "")));
+      const filtered = mappedApi.filter((n) => !deleted.has(String(n?.id ?? "")));
       setNews(ensureUniqueIds(filtered));
       markLoading("news", false);
     })();
