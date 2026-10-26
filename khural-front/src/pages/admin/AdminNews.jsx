@@ -1,6 +1,7 @@
 import React from "react";
 import { App, Button, Input, Modal, Form, Upload, Space, Table, Tag } from "antd";
 import { useHashRoute } from "../../Router.jsx";
+import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 
 function pickRu(content) {
   const arr = Array.isArray(content) ? content : [];
@@ -134,7 +135,7 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
     if (images.length) {
       return (
         <div className="admin-news-list__thumb">
-          <img src={String(images[0])} alt="" loading="lazy" />
+          <img src={normalizeFilesUrl(String(images[0] || ""))} alt="" loading="lazy" />
         </div>
       );
     }
