@@ -280,27 +280,28 @@ function pagesToLinks(pages, locale) {
   });
 }
 
-// Фильтрует страницы по разделу (section)
+// Фильтрует страницы по разделу (section). Возвращает НОВЫЕ объекты и не мутирует входные данные.
 function filterPagesBySection(pages, section) {
   if (!section) return pages;
-  
-  // Фильтруем страницы, которые принадлежат этому разделу
-  // Страницы могут быть как плоским списком, так и деревом
+
   const filterRecursive = (items) => {
-    return items.filter((p) => {
-      const slug = String(p.slug || "").replace(/^\/+|\/+$/g, "");
-      // Проверяем, начинается ли slug с раздела
+    const list = Array.isArray(items) ? items : [];
+    const result = [];
+    for (const p of list) {
+      const slug = String(p?.slug || "").replace(/^\/+|\/+$/g, "");
       const belongsToSection = slug === section || slug.startsWith(section + "/");
-      
-      // Если у страницы есть дети, фильтруем их тоже
-      if (belongsToSection && Array.isArray(p.children)) {
-        p.children = filterRecursive(p.children);
+      if (!belongsToSection) continue;
+
+      if (Array.isArray(p.children) && p.children.length > 0) {
+        const filteredChildren = filterRecursive(p.children);
+        result.push({ ...p, children: filteredChildren });
+      } else {
+        result.push({ ...p });
       }
-      
-      return belongsToSection;
-    });
+    }
+    return result;
   };
-  
+
   return filterRecursive(pages);
 }
 

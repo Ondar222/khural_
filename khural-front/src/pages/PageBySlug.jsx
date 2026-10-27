@@ -221,7 +221,11 @@ const INFO_INDEX_HTML = `
       <p style="margin:0 0 12px 0;">Депутатский корпус представлен опытными политиками, законодателями, многие из которых избирались неоднократно, профессиональными юристами, деятелями культуры, искусства, спортсменами, учителями, врачами, предпринимателями.</p>
       <p style="margin:0 0 12px 0;">Законотворческая деятельность Верховного Хурала (парламента) Республики Тыва осуществляется в тесном и плодотворном взаимодействии со всеми субъектами законодательной инициативы и, прежде всего с Правительством Республики Тыва.</p>
       <p style="margin:0 0 12px 0;">Кроме основной деятельности по совершенствованию законодательства, депутаты Верховного Хурала (парламента) Республики Тыва активно участвуют практически во всех социально значимых мероприятиях, благотворительных акциях, марафонах. Работу с избирателями, выезды в избирательные участки, рабочие командировками депутаты всегда стараются совместить с оказанием практической помощи: медицинской, консультационной.</p>
+      <p style="margin:0 0 12px 0;">Ежедневно в Общественной приемной депутаты, работающие на постоянной основе, согласно графику ведут прием граждан.</p>
+      <p style="margin:0 0 12px 0;">Материалы о Верховном Хурале, о его составе и структуре, новости о деятельности парламента, онлайн-трансляция заседаний сессии и многое другое размещаются на официальном сайте Верховного Хурала (парламента) Республики Тыва.</p>
+      <p style="margin:0 0 12px 0;">Особое место занимает «Интернет-приемная», посредством которой избиратель может обратиться к депутату с предложением, просьбой или наказом.</p>
       <p style="margin:0 0 12px 0;">Главной целью депутатов Верховного Хурала (парламента) Республики Тыва является совершенствование регионального законодательства, представление интересов избирателей во властных структурах и защита их конституционных прав. В этом направлении депутаты Верховного Хурала (парламента) Республики Тыва действуют единой сплоченной командой.</p>
+      <p style="margin:0 0 12px 0;">Депутатский корпус уверен, что добросовестное исполнение народными избранниками своих обязанностей увенчается достойными результатами во благо процветания родной Тувы.</p>
     </div>
   </div>
 </div>
@@ -1759,6 +1763,7 @@ export default function PageBySlug() {
       INFO_LAWMAP_SLUG,
       INFO_HISTORY_SLUG,
       INFO_POLNOMOCHIYA_SLUG,
+      "info/polnomochiya",
       OPENDATA_SLUG,
       INFO_OMBUDSMAN_HUMAN_SLUG,
       INFO_OMBUDSMAN_CHILD_SLUG,
@@ -1772,6 +1777,54 @@ export default function PageBySlug() {
       INFO_PERSONNEL_OBZHALOVANIE_SLUG,
       INFO_PERSONNEL_PENSION_SLUG,
       INFO_PERSONNEL_OTPUSK_SLUG,
+      INFO_PERSONNEL_VAKANSII_SLUG,
+      INFO_PERSONNEL_KONKURSY_SLUG,
+      INFO_PERSONNEL_METODIKA_SLUG,
+      INFO_PERSONNEL_KOMISSII_SLUG,
+      INFO_PERSONNEL_DOKUMENTY_SLUG,
+      INFO_PERSONNEL_KONKURSY_PROTOKOL_SLUG,
+      INFO_PERSONNEL_KONKURSY_PROTOKOL_1_SLUG,
+      INFO_PERSONNEL_KONKURSY_PROTOKOL_2_SLUG,
+      INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_SLUG,
+      INFO_PERSONNEL_KONKURSY_OB_YAVLENIE_KOMISSII_SLUG,
+      INFO_PERSONNEL_KOMISSII_RASPORYAZHENIE_SLUG,
+      INFO_PERSONNEL_KOMISSII_POLOZENIE_SLUG,
+      INFO_PERSONNEL_KOMISSII_SOSTAV_SLUG,
+      INFO_PERSONNEL_KOMISSII_RESHENIYA_SLUG,
+      INFO_CORRUPTION_SLUG,
+      INFO_CORRUPTION_NORMATIVERNIE_SLUG,
+      INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_SLUG,
+      INFO_CORRUPTION_KOMISSIYA_VYPISKI_SLUG,
+      INFO_CORRUPTION_KOMISSIYA_INFORMACSIYA_SLUG,
+      INFO_CORRUPTION_METODICHESKIE_SLUG,
+      INFO_CORRUPTION_OBRATNAYA_SVYAZ_SLUG,
+      INFO_CORRUPTION_FORMY_DOKUMENTOV_SLUG,
+      INFO_CORRUPTION_SPAVKE_BK_SLUG,
+      INFO_CORRUPTION_PLAN_SLUG,
+      INFO_GRANISA_SLUG,
+      INFO_GRANISA_SHABLONY_SLUG,
+      INFO_GRANISA_SHema_SLUG,
+      INFO_GRANISA_INDIV_PROPUSK_SLUG,
+      INFO_GRANISA_KOL_PROPUSK_SLUG,
+      INFO_GRANISA_ZAYAVLENIE_ZAKON_SLUG,
+      INFO_GRANISA_ZAYAVLENIE_INDIV_SLUG,
+      INFO_GRANISA_ZAYAVLENIE_KOL_SLUG,
+      INFO_GRANISA_ZAYAVLENIE_PROMYSLOVAYA_SLUG,
+      INFO_GRANISA_ZAYAVLENIE_HOZ_SLUG,
+      "info/polnomochiya-spikera",
+      "info/polnomochiya-speaker",
+      "info/speaker-powers",
+      "info/contacts",
+      "info/upoln-po-reb",
+      "info/child-rights",
+      "info/symbols",
+      "info/gosudarstvennye-simvoly",
+      "info/upoln-po-prav",
+      "info/border-subject",
+      "info/prigranichny-subekt",
+      "info/anti-corruption",
+      "info/protivodeystvie-korrupcii",
+      "about/finances",
     ].includes(slug);
     
     // Для статических страниц не делаем запрос к API
@@ -1830,7 +1883,7 @@ export default function PageBySlug() {
   const isInfoDistricts = slug === INFO_DISTRICTS_SLUG;
   const isInfoLawmap = slug === INFO_LAWMAP_SLUG;
   const isInfoHistory = slug === INFO_HISTORY_SLUG;
-  const isInfoPolnomochiya = slug === INFO_POLNOMOCHIYA_SLUG;
+  const isInfoPolnomochiya = slug === INFO_POLNOMOCHIYA_SLUG || slug === "info/polnomochiya";
   const isOpenData = slug === OPENDATA_SLUG;
   const isInfoOmbHuman = slug === INFO_OMBUDSMAN_HUMAN_SLUG;
   const isInfoOmbChild = slug === INFO_OMBUDSMAN_CHILD_SLUG;
@@ -1942,7 +1995,29 @@ export default function PageBySlug() {
       isInfoPersonnelKomissiiPolozhenie ||
       isInfoPersonnelKomissiiSostav ||
       isInfoPersonnelKomissiiResheniya ||
+      isInfoPolnomochiyaSpeaker ||
+      isInfoContacts ||
+      isInfoGosimvoli ||
+      isInfoCorruption ||
+      isInfoCorruptionNormativnye ||
+      isInfoCorruptionKomissiyaDeputatov ||
+      isInfoCorruptionKomissiyaVypiski ||
+      isInfoCorruptionKomissiyaInformaciya ||
+      isInfoCorruptionMetodicheskie ||
+      isInfoCorruptionObratnayaSvyaz ||
+      isInfoCorruptionFormyDokumentov ||
+      isInfoCorruptionSpavkeBK ||
+      isInfoCorruptionPlan ||
       isInfoGranisa ||
+      isInfoGranisaShablony ||
+      isInfoGranisaShema ||
+      isInfoGranisaIndivPropusk ||
+      isInfoGranisaKolPropusk ||
+      isInfoGranisaZayavlenieZakon ||
+      isInfoGranisaZayavlenieIndiv ||
+      isInfoGranisaZayavlenieKol ||
+      isInfoGranisaZayavleniePromyslovaya ||
+      isInfoGranisaZayavlenieHoz ||
       slug === "info/prigranichny-subekt" ||
       slug === "info/border-subject" ||
       slug === "about/finances");
