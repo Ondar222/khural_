@@ -76,19 +76,24 @@
     </script>
     
     <!-- Мониторинг stats.vk-portal.net: отключен для производительности -->
-    <!-- Скрипт версии для слабовидящих -->
-    <script src="https://lidrekon.ru/slep/js/jquery.js"></script>
+    <!-- Скрипт версии для слабовидящих: jQuery и плагин грузятся ТОЛЬКО когда
+         версия явно запрошена (?special_version=Y). Ранее jQuery грузился всегда
+         и мог конфликтовать с обработчиками кликов React (залипание кнопок,
+         самопроизвольное выделение текста, открытие ссылок в новых вкладках). -->
     <script>
-      // Загружаем плагин только если пользователь явно запросил версию для слабовидящих
       (function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const shouldActivate = urlParams.get('special_version') === 'Y';
-        if (shouldActivate) {
-          const script = document.createElement('script');
-          script.src = 'https://lidrekon.ru/slep/js/uhpv-full.min.js';
-          script.async = true;
-          document.head.appendChild(script);
-        }
+        var urlParams = new URLSearchParams(window.location.search);
+        var hashHasFlag = (window.location.hash || '').indexOf('special_version=Y') !== -1;
+        var shouldActivate = urlParams.get('special_version') === 'Y' || hashHasFlag;
+        if (!shouldActivate) return;
+        var jq = document.createElement('script');
+        jq.src = 'https://lidrekon.ru/slep/js/jquery.js';
+        jq.onload = function() {
+          var up = document.createElement('script');
+          up.src = 'https://lidrekon.ru/slep/js/uhpv-full.min.js';
+          document.head.appendChild(up);
+        };
+        document.head.appendChild(jq);
       })();
     </script>
   </head>

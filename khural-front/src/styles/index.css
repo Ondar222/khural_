@@ -6427,7 +6427,10 @@ body:has(.auth-page) {
   text-decoration: none;
   background: #ffffff;
   border: 2px solid rgba(13, 75, 143, 0.7);
-  transition: transform 160ms ease, box-shadow 200ms ease, filter 160ms ease,
+  /* transition без filter: на странице структуры десятки .org__item,
+     а filter при наведении заставляет Chrome создавать отдельный
+     GPU-слой на каждый элемент — это и приводило к белому экрану. */
+  transition: transform 160ms ease, box-shadow 200ms ease,
     background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 .org__item:focus-visible {
@@ -6441,7 +6444,6 @@ body:has(.auth-page) {
     background: #003366;
     color: var(--gold);
     border-color: rgba(255, 215, 0, 0.8);
-    filter: saturate(1.05);
   }
 }
 .org__item--blue {
