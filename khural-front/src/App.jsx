@@ -67,6 +67,10 @@ const Sitemap = lazy(() => import("./pages/Sitemap.jsx"));
 const LegislativeMap = lazy(() => import("./pages/LegislativeMap.jsx"));
 const NewsSliderDetail = lazy(() => import("./pages/NewsSliderDetail.jsx"));
 const NewsWeekHighlights = lazy(() => import("./pages/NewsWeekHighlights.jsx"));
+const SpeakerPowers = lazy(() => import("./pages/info/SpeakerPowers.jsx"));
+const InfoContacts = lazy(() => import("./pages/info/Contacts.jsx"));
+const ChildRights = lazy(() => import("./pages/info/ChildRights.jsx"));
+const Symbols = lazy(() => import("./pages/info/Symbols.jsx"));
 const CabinetHome = lazy(() => import("./pages/cabinet/CabinetHome.jsx"));
 const CabinetAppeals = lazy(() => import("./pages/cabinet/CabinetAppeals.jsx"));
 const CabinetAccount = lazy(() => import("./pages/cabinet/CabinetAccount.jsx"));
@@ -237,6 +241,22 @@ export default function App() {
                             "/info/zakon-karta": LegislativeMap,
                             // Динамические страницы избирательных округов (должны быть после /info/iokrug)
                             "/info/iokrug/:slug": DistrictDetailPage,
+                            "/info/speaker-powers": SpeakerPowers,
+                            "/info/polnomochiya-spikera": SpeakerPowers,
+                            "/info/polnomochiya-speaker": SpeakerPowers,
+                            "/info/contacts": InfoContacts,
+                            "/info/child-rights": ChildRights,
+                            "/info/upoln-po-reb": ChildRights,
+                            "/info/symbols": Symbols,
+                            "/info/gosudarstvennye-simvoly": Symbols,
+                            "/info/border-subject": PageBySlug,
+                            "/info/prigranichny-subekt": PageBySlug,
+                            "/info/anti-corruption": PageBySlug,
+                            "/info/protivodeystvie-korrupcii": PageBySlug,
+                            "/about/finances": PageBySlug,
+                            "/about/istoriya-parlamentarizma": PageBySlug,
+                            "/about/polnomochiya": PageBySlug,
+                            "/info/finansy": PageBySlug,
                             "/info/:slug": PageBySlug,
                             "/opendata": PageBySlug,
                             // "/convocations": Convocations, // Скрыто временно

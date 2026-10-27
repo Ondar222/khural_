@@ -5,6 +5,7 @@ import { DeleteOutlined } from "@ant-design/icons";
 import { useHashRoute } from "../../Router.jsx";
 import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
+import { useNewsCategories } from "../../hooks/useNewsCategories.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 // Функция для сжатия изображения (более агрессивное сжатие)
@@ -126,11 +127,11 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
   const [form] = Form.useForm();
   const [images, setImages] = React.useState([]);
   const [coverImage, setCoverImage] = React.useState(null);
-  const [categories, setCategories] = React.useState([]);
-  const [loadingCategories, setLoadingCategories] = React.useState(false);
   const [creatingCategory, setCreatingCategory] = React.useState(false);
   const [newCategoryName, setNewCategoryName] = React.useState("");
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
+  const { categories, loading: loadingCats } = useNewsCategories();
+  const loadingCategories = loadingCats;
   
   const handleCreateCategory = React.useCallback(async () => {
     if (!newCategoryName || !newCategoryName.trim()) {
@@ -148,67 +149,24 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
     
     setCreatingCategory(true);
     try {
-      console.log("Creating news category:", trimmed);
-      console.log("NewsApi object:", NewsApi);
-      console.log("NewsApi.createCategory:", typeof NewsApi.createCategory);
-      
-      // Проверяем, что метод существует
-      if (typeof NewsApi.createCategory !== 'function') {
-        throw new Error('NewsApi.createCategory is not a function. Available methods: ' + Object.keys(NewsApi).join(', '));
-      }
-      
       const newCategory = await NewsApi.createCategory({ name: trimmed });
-      console.log("Category created:", newCategory);
-      if (newCategory && newCategory.id) {
-        // Добавляем новую категорию в список
-        setCategories((prev) => {
-          const updated = [...(prev || []), newCategory];
-          console.log("Updated categories list:", updated);
-          return updated;
-        });
-        form.setFieldValue("categoryId", newCategory.id);
-        setNewCategoryName("");
-        antdMessage.success(`Категория "${trimmed}" создана`);
-      } else {
-        // Если API вернул категорию без id, попробуем перезагрузить список
-        console.warn("Category created but no id returned, reloading categories...");
-        const cats = await NewsApi.getAllCategories();
-        if (Array.isArray(cats)) {
-          setCategories(cats);
-          // Находим созданную категорию по имени
-          const found = cats.find(c => String(c.name || "").toLowerCase() === trimmed.toLowerCase());
-          if (found && found.id) {
-            form.setFieldValue("categoryId", found.id);
-          }
-        }
-        antdMessage.success(`Категория "${trimmed}" создана`);
-      }
+      const cats = await reloadCategories(true);
+      const createdId = newCategory?.id;
+      const found =
+        (createdId != null && cats.find((c) => String(c.id) === String(createdId))) ||
+        cats.find((c) => String(c.name || "").toLowerCase() === trimmed.toLowerCase()) ||
+        null;
+      if (found) form.setFieldValue("categoryId", found.id);
+      setNewCategoryName("");
+      antdMessage.success(`Категория "${trimmed}" создана`);
     } catch (error) {
-      console.error("Failed to create category:", error);
       antdMessage.error(`Не удалось создать категорию: ${error?.message || "Неизвестная ошибка"}`);
     } finally {
       setCreatingCategory(false);
     }
-  }, [newCategoryName, categories, form, antdMessage]);
+  }, [newCategoryName, categories, form, antdMessage, reloadCategories]);
 
-  // Загружаем категории при монтировании
-  React.useEffect(() => {
-    const loadCategories = async () => {
-      setLoadingCategories(true);
-      try {
-        const cats = await NewsApi.getAllCategories();
-        // В fallback-новостях категория — это название, а не id. Подставлять
-        // его в value нельзя: бэкенд ждёт числовой categoryId.
-        setCategories(Array.isArray(cats) ? cats : []);
-      } catch (error) {
-        console.error("Failed to load categories:", error);
-        setCategories([]);
-      } finally {
-        setLoadingCategories(false);
-      }
-    };
-    loadCategories();
-  }, []);
+  // Категории загружаются через useNewsCategories
   // Очищаем ошибку при изменении
   React.useEffect(() => {
     if (translationError) {

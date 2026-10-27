@@ -1809,7 +1809,7 @@ export default function PageBySlug() {
   const isForMedia = slug === FOR_MEDIA_SLUG;
   const isFederationCouncil = slug === FEDERATION_COUNCIL_SLUG;
   const isInfoIndex = slug === INFO_INDEX_SLUG;
-  const isInfoFinance = slug === INFO_FINANCE_SLUG;
+  const isInfoFinance = slug === INFO_FINANCE_SLUG || slug === "about/finances";
   const isInfoFinanceChecks = slug === INFO_FINANCE_CHECKS_SLUG;
   const isInfoFinanceChecks2016 = slug === INFO_FINANCE_CHECKS_2016_SLUG;
   const isInfoFinanceChecks2018 = slug === INFO_FINANCE_CHECKS_2018_SLUG;
@@ -1871,7 +1871,7 @@ export default function PageBySlug() {
   const isInfoCorruptionPlan = slug === INFO_CORRUPTION_PLAN_SLUG;
   const isInfoContacts = slug === INFO_CONTACTS_SLUG;
   const isInfoGosimvoli = slug === INFO_GOSIMVOLI_SLUG;
-  const isInfoGranisa = slug === INFO_GRANISA_SLUG;
+  const isInfoGranisa = slug === INFO_GRANISA_SLUG || slug === "info/border-subject";
   const isInfoGranisaShablony = slug === INFO_GRANISA_SHABLONY_SLUG;
   const isInfoGranisaShema = slug === INFO_GRANISA_SHema_SLUG;
   const isInfoGranisaIndivPropusk = slug === INFO_GRANISA_INDIV_PROPUSK_SLUG;
@@ -1941,18 +1941,24 @@ export default function PageBySlug() {
       isInfoPersonnelKomissiiRasporyazhenie ||
       isInfoPersonnelKomissiiPolozhenie ||
       isInfoPersonnelKomissiiSostav ||
-      isInfoPersonnelKomissiiResheniya);
+      isInfoPersonnelKomissiiResheniya ||
+      isInfoGranisa ||
+      slug === "info/prigranichny-subekt" ||
+      slug === "info/border-subject" ||
+      slug === "about/finances");
 
   const isStaticPage =
     isCodeOfHonor ||
     isMothersCommandments ||
     isForMedia ||
     isFederationCouncil ||
-    shouldUseInfoFallback;
+    shouldUseInfoFallback ||
+    slug === "about/finances";
 
   // Определяем, является ли страница разделом "Общие сведения" (/info/*)
   const isInfoSection = isInfoIndex ||
-    isInfoFinance ||
+    isInfoFinance || slug === "about/finances" ||
+    isInfoGranisa || slug === "info/border-subject" || slug === "info/prigranichny-subekt" ||
     isInfoFinanceChecks ||
     isInfoFinanceChecks2016 ||
     isInfoFinanceChecks2018 ||
@@ -2014,7 +2020,7 @@ export default function PageBySlug() {
     isInfoCorruptionPlan ||
     isInfoContacts ||
     isInfoGosimvoli ||
-    isInfoGranisa ||
+    (isInfoGranisa || slug === "info/border-subject" || slug === "info/prigranichny-subekt") || 
     isInfoGranisaShablony ||
     isInfoGranisaShema ||
     isInfoGranisaIndivPropusk ||
@@ -2122,7 +2128,7 @@ export default function PageBySlug() {
           : shouldUseInfoFallback
             ? isInfoIndex
               ? t(INFO_INDEX_TITLE) || INFO_INDEX_TITLE
-              : isInfoFinance
+              : isInfoFinance || slug === "about/finances"
                 ? t(INFO_FINANCE_TITLE) || INFO_FINANCE_TITLE
                 : isInfoFinanceChecks
                   ? t(INFO_FINANCE_CHECKS_TITLE) || INFO_FINANCE_CHECKS_TITLE
@@ -2198,7 +2204,7 @@ export default function PageBySlug() {
                                                               ? t(INFO_CONTACTS_TITLE) || INFO_CONTACTS_TITLE
                                                               : isInfoGosimvoli
                                                                 ? t(INFO_GOSIMVOLI_TITLE) || INFO_GOSIMVOLI_TITLE
-                                                                : isInfoGranisa
+                                                                : (isInfoGranisa || slug === "info/border-subject")
                                                                   ? t(INFO_GRANISA_TITLE) || INFO_GRANISA_TITLE
                                                                   : isInfoGranisaShablony
                                                                     ? t(INFO_GRANISA_SHABLONY_TITLE) || INFO_GRANISA_SHABLONY_TITLE
@@ -2279,7 +2285,7 @@ export default function PageBySlug() {
           : shouldUseInfoFallback
             ? isInfoIndex
               ? INFO_INDEX_HTML
-              : isInfoFinance
+              : isInfoFinance || slug === "about/finances"
                 ? INFO_FINANCE_HTML
                 : isInfoFinanceChecks
                   ? INFO_FINANCE_CHECKS_HTML
@@ -2355,7 +2361,7 @@ export default function PageBySlug() {
                                                               ? INFO_CONTACTS_HTML
                                                               : isInfoGosimvoli
                                                                 ? INFO_GOSIMVOLI_HTML
-                                                                : isInfoGranisa
+                                                                : (isInfoGranisa || slug === "info/border-subject")
                                                                   ? INFO_GRANISA_HTML
                                                                   : isInfoGranisaShablony
                                                                     ? INFO_GRANISA_SHABLONY_HTML

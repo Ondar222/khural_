@@ -317,12 +317,18 @@ export default function Header() {
               <Link to="/info">{t("Общие сведения") || "Общие сведения"} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("info")}>
                 <a href="/info">{t("Общие сведения") || "Общие сведения"}</a>
-                <a href="/info/finansy">{t("Финансы") || "Финансы"}</a>
+                <a href="/info/polnomochiya-spikera">Полномочия Председателя</a>
+                <a href="/info/protivodeystvie-korrupcii">{t("aboutCorruption") || "Противодействие коррупции"}</a>
+                <a href="/info/contacts">{t("aboutContacts") || "Контактная информация"}</a>
+                <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
+                <a href="/info/gosudarstvennye-simvoly">Государственные символы</a>
+                <a href="/info/prigranichny-subekt">Приграничный субъект</a>
+                <hr />
+                <a href="/about/finances">{t("Финансы") || "Финансы"}</a>
                 <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
                 <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
                 <a href="/opendata">{t("Открытые данные") || "Открытые данные"}</a>
                 <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
-                <a href="/info/upoln-po-reb">{t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}</a>
                 <a href={PERSONNEL_ROOT_PATH}>{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
               </div>
             </div>
@@ -542,12 +548,18 @@ export default function Header() {
           <div className="sheet-col">
             <h3>{t("Общие сведения") || "Общие сведения"}</h3>
             <a href="/info">{t("Общие сведения") || "Общие сведения"}</a>
-            <a href="/info/finansy">{t("Финансы") || "Финансы"}</a>
+            <a href="/info/polnomochiya-spikera">Полномочия Председателя</a>
+            <a href="/info/protivodeystvie-korrupcii">{t("aboutCorruption") || "Противодействие коррупции"}</a>
+            <a href="/info/contacts">{t("aboutContacts") || "Контактная информация"}</a>
+            <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
+            <a href="/info/gosudarstvennye-simvoly">Государственные символы</a>
+            <a href="/info/prigranichny-subekt">Приграничный субъект</a>
+            <hr />
+            <a href="/about/finances">{t("Финансы") || "Финансы"}</a>
             <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
             <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
             <a href="/opendata">{t("Открытые данные") || "Открытые данные"}</a>
             <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
-            <a href="/info/upoln-po-reb">{t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}</a>
             <a href={PERSONNEL_ROOT_PATH}>{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
           </div>
           <div className="sheet-col">
@@ -854,7 +866,44 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <a className="tile link" href="/info/finansy" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/info/polnomochiya-spikera" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Полномочия Председателя
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/protivodeystvie-korrupcii" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("aboutCorruption") || "Противодействие коррупции"}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/contacts" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("aboutContacts") || "Контактная информация"}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/upoln-po-reb" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Уполномоченный по правам ребенка
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/gosudarstvennye-simvoly" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Государственные символы
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/info/prigranichny-subekt" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Приграничный субъект
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "8px 0" }} />
+            <a className="tile link" href="/about/finances" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("Финансы") || "Финансы"}
                 <RightOutlined aria-hidden="true" />
@@ -881,12 +930,6 @@ export default function Header() {
             <a className="tile link" href="/info/upoln-po-prav" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/upoln-po-reb" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Уполномоченный по правам ребенка") || "Уполномоченный по правам ребенка"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>

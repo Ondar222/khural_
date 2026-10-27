@@ -11,8 +11,16 @@ import NewsImageCarousel from "../components/NewsImageCarousel.jsx";
 import { formatNewsDateTime } from "../utils/dateFormat.js";
 import dayjs from "dayjs";
 import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
+import { useNewsCategories, categoriesFromNews } from "../hooks/useNewsCategories.js";
 
 const NEWS_PAGE_SIZE = 12;
+
+// Категория новости: в API это объект {id, name}, в fallback-JSON — строка
+function getCategoryLabel(item) {
+  const c = item?.category;
+  if (!c) return "";
+  return typeof c === "string" ? c : String(c.name || c.title || "").trim();
+}
 
 function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
@@ -53,6 +61,12 @@ export default function NewsArchive() {
     return sectionParam || "all";
   };
   const [section, setSection] = React.useState(getInitialSection);
+
+  const getInitialCategory = () => {
+    const categoryParam = new URLSearchParams(window.location.search || "").get("category");
+    return categoryParam || "";
+  };
+  const [category, setCategory] = React.useState(getInitialCategory);
 
   const [selected, setSelected] = React.useState(() => {
     const id = new URLSearchParams(window.location.search || "").get("id");
@@ -99,11 +113,13 @@ export default function NewsArchive() {
       const dateParam = params.get("date");
       const sectionParam = params.get("section");
       const pageParam = params.get("page");
+      const categoryParam = params.get("category");
       setSelected(id || null);
       if (dateParam && !id) setDate(dateParam);
       if (!dateParam && !id) setDate("");
       if (sectionParam) setSection(sectionParam);
       else if (!id) setSection("all");
+      setCategory(categoryParam || "");
       const p = parseInt(pageParam, 10);
       if (Number.isFinite(p) && p >= 1) setCurrentPage(p);
       else if (!id) setCurrentPage(1);
@@ -116,20 +132,35 @@ export default function NewsArchive() {
     };
   }, []);
 
-  // Пункты бокового меню «Новости» — только фиксированные и доп. ссылки, без категорий (История, Сессия и т.д.)
-  const newsMenuLinks = React.useMemo(
-    () => [
+  // Категории: сначала из API, при пустом ответе — из самих новостей
+  const { categories: apiCategories } = useNewsCategories();
+  const cats = React.useMemo(() => {
+    const fromApi = apiCategories || [];
+    const source = fromApi.length ? fromApi : categoriesFromNews(news);
+    return source.map((c) => ({ id: c.id, name: String(c.name).trim() })).filter((c) => c.name);
+  }, [apiCategories, news]);
+
+  // Пункты бокового меню «Новости» — фиксированные + категории + доп. ссылки
+  const newsMenuLinks = React.useMemo(() => {
+    const categoryItems = cats.map((c) => ({
+      label: c.name,
+      href: `/news?category=${encodeURIComponent(c.name)}`,
+    }));
+    const base = [
       { label: "Главные события", href: "/news/week" },
       { label: "Актуальные новости", href: "/news?section=actual" },
       { label: "Все новости", href: "/news?section=all" },
       { label: "Медиа", href: "/news?section=media" },
-      ...NEWS_EXTRA_LINKS.map((item) => ({
-        label: item.labelKey ? t(item.labelKey) : item.labelRu,
-        href: item.href,
-      })),
-    ],
-    [t]
-  );
+    ];
+    const categoriesGroup = categoryItems.length
+      ? [{ label: "Категории", children: categoryItems }]
+      : [];
+    const extra = NEWS_EXTRA_LINKS.map((item) => ({
+      label: item.labelKey ? t(item.labelKey) : item.labelRu,
+      href: item.href,
+    }));
+    return [...base, ...categoriesGroup, ...extra];
+  }, [t, cats]);
 
   const filtered = React.useMemo(
     () => {
@@ -138,6 +169,17 @@ export default function NewsArchive() {
       // Фильтр по дате
       if (date) {
         result = result.filter((n) => String(n.date || "").slice(0, 10) === date);
+      }
+
+      // Фильтр по категории
+      if (category) {
+        const target = String(category).trim().toLowerCase();
+        result = result.filter((n) => {
+          const c = n?.category;
+          if (!c) return false;
+          const label = typeof c === "string" ? c : (c.name || c.title || String(c));
+          return label.trim().toLowerCase() === target;
+        });
       }
 
       // Фильтр по разделу (секции)
@@ -163,7 +205,7 @@ export default function NewsArchive() {
 
       return result;
     },
-    [news, date, section]
+    [news, date, section, category]
   );
 
   const totalNews = filtered.length;
@@ -187,13 +229,15 @@ export default function NewsArchive() {
     if (date) params.set("date", date);
     if (section && section !== "all") params.set("section", section);
     else params.delete("section");
+    if (category) params.set("category", category);
+    else params.delete("category");
     if (page > 1) params.set("page", String(page));
     else params.delete("page");
     const newUrl = params.toString() ? `${h}?${params.toString()}` : h;
     window.history.pushState({}, "", newUrl);
     setCurrentPage(page);
     window.dispatchEvent(new Event("app:navigate"));
-  }, [date, section]);
+  }, [date, section, category]);
 
   if (selected) {
     const idx = (news || []).findIndex((n) => String(n.id) === String(selected));
@@ -505,6 +549,48 @@ export default function NewsArchive() {
                 </div>
               </div>
 
+              {/* Категории: пилюли на десктопе, select на мобильных */}
+              {cats.length > 0 && (
+                <div className="news-cats">
+                  <div className="news-cats--pills" role="tablist" aria-label="Категории новостей">
+                    <button
+                      type="button"
+                      className={`news-cats__pill${!category ? " is-active" : ""}`}
+                      onClick={() => setCategoryAndUrl("")}
+                    >
+                      Все
+                    </button>
+                    {cats.map((c) => (
+                      <button
+                        key={c.id ?? c.name}
+                        type="button"
+                        className={`news-cats__pill${category && category.toLowerCase() === String(c.name).toLowerCase() ? " is-active" : ""}`}
+                        onClick={() => setCategoryAndUrl(c.name)}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="news-cats--select">
+                    <div className="news-filter">
+                      <span className="news-filter__label">Категория</span>
+                      <select
+                        className="news-filter-select"
+                        value={category}
+                        onChange={(e) => setCategoryAndUrl(e.target.value)}
+                      >
+                        <option value="">Все категории</option>
+                        {cats.map((c) => (
+                          <option key={c.id ?? c.name} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <DataState
                 loading={false}
                 error={null}
@@ -537,6 +623,9 @@ export default function NewsArchive() {
                       ) : null}
 
                       <div className="news-archive__card-body">
+                        {getCategoryLabel(n) && (
+                          <span className="news-archive__card-cat">{getCategoryLabel(n)}</span>
+                        )}
                         <div className="news-archive__card-title">{localizeNewsItem(n, lang, newsTranslations).title || n.title}</div>
                         <div className="news-archive__card-date">{formatNewsDateTime(n.date)}</div>
                       </div>

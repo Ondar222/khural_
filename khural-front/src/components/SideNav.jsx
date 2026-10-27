@@ -1,6 +1,7 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useHashRoute } from "../Router.jsx";
+import Link from "./Link.jsx";
 import { AboutApi } from "../api/client.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import { pickMenuLabel, applyPagesOverridesToTree } from "../utils/pagesOverrides.js";
@@ -161,7 +162,7 @@ const defaultLinksBroadcast = [
 
 // Стандартные ссылки для раздела "Общие сведения"
 const defaultLinksCommon = [
-  { label: "Финансы", href: "/info/finansy" },
+  { label: "Финансы", href: "/about/finances" },
   { label: "Избирательные округа", href: "/info/iokrug" },
   { label: "Законодательная карта", href: "/info/zakon-karta" },
   { label: "Открытые данные", href: "/opendata" },
@@ -230,9 +231,9 @@ const LinkItem = React.memo(function LinkItem({
   const className = `tile link ${active ? "active" : ""} ${isChild ? "sidenav__sublink" : ""}`;
 
   return (
-    <a
+    <Link
       className={className}
-      href={href}
+      to={href}
       aria-current={active ? "page" : undefined}
       onClick={onClick}
     >
@@ -240,7 +241,7 @@ const LinkItem = React.memo(function LinkItem({
         <span aria-hidden="true">‹</span>
         {typeof label === "string" ? t(label) : label}
       </span>
-    </a>
+    </Link>
   );
 }, (prev, next) => {
   // Кастомная функция сравнения для.memo
@@ -335,6 +336,10 @@ export default function SideNav({
       "^/deputies/.*": "deputies",
       "^/documents$": "documents",
       "^/docs/.*": "documents",
+      "^/about/finances$": "common",
+      "^/about/finances/.*": "common",
+      "^/about/istoriya-parlamentarizma$": "about",
+      "^/about/polnomochiya$": "about",
       "^/about$": "about",
       "^/section$": "about",
       "^/committee.*": "committees",
@@ -343,6 +348,23 @@ export default function SideNav({
       "^/contacts$": "contacts",
       "^/appeals": "appeals",
       "^/broadcast": "broadcast",
+      "^/info/polnomochiya-spikera$": "common",
+      "^/info/polnomochiya-speaker$": "common",
+      "^/info/speaker-powers$": "common",
+      "^/info/protivodeystvie-korrupcii.*": "common",
+      "^/info/anti-corruption.*": "common",
+      "^/info/contacts$": "common",
+      "^/info/upoln-po-reb$": "common",
+      "^/info/child-rights$": "common",
+      "^/info/gosudarstvennye-simvoly$": "common",
+      "^/info/symbols$": "common",
+      "^/info/prigranichny-subekt.*": "common",
+      "^/info/border-subekt.*": "common",
+      "^/info/border-subject.*": "common",
+      "^/info/finansy.*": "common",
+      "^/info/iokrug.*": "common",
+      "^/info/zakon-karta$": "common",
+      "^/info/upoln-po-prav$": "common",
       "^/info": "common",
       "^/opendata": "common",
       "^/youth-parliament": "youth",
@@ -412,30 +434,32 @@ export default function SideNav({
       return "Обращения";
     }
     
-    // Специфичные заголовки для раздела "Общие сведения"
     if (detectedSection === 'common') {
       if (pathname === '/info') return "Общие сведения";
+      if (pathname === '/about/finances') return "Финансы";
+      if (pathname.startsWith('/about/finances/')) return "Финансы";
       if (pathname === '/info/finansy') return "Финансы";
+      if (pathname.startsWith('/info/finansy')) return "Финансы";
       if (pathname === '/info/iokrug') return "Избирательные округа";
       if (pathname === '/info/zakon-karta') return "Законодательная карта";
       if (pathname === '/opendata') return "Открытые данные";
       if (pathname === '/info/upoln-po-prav') return "Уполномоченный по правам человека";
       if (pathname === '/info/upoln-po-reb') return "Уполномоченный по правам ребенка";
-      if (pathname === '/info/polnomochiya-spikera') return "Полномочия Председателя";
-      if (pathname === '/info/protivodeystvie-korrupcii') return "Противодействие коррупции";
-      if (pathname === '/info/protivodeystvie-korrupcii/normativnye-akty') return "Нормативные правовые акты";
-      if (pathname === '/info/protivodeystvie-korrupcii/komissiya-deputatov') return "Комиссия депутатов";
-      if (pathname === '/info/protivodeystvie-korrupcii/komissiya-deputatov/vypiski-protokoly') return "Выписки, протоколы, решения";
-      if (pathname === '/info/protivodeystvie-korrupcii/komissiya-deputatov/informatsiya') return "Информация о деятельности Комиссии";
-      if (pathname === '/info/protivodeystvie-korrupcii/metodicheskie-materialy') return "Методические материалы";
-      if (pathname === '/info/protivodeystvie-korrupcii/obratnaya-svyaz') return "Обратная связь";
-      if (pathname === '/info/protivodeystvie-korrupcii/formy-dokumentov') return "Формы документов";
-      if (pathname === '/info/protivodeystvie-korrupcii/spavki-bk') return 'СПО "Справки БК"';
-      if (pathname === '/info/protivodeystvie-korrupcii/protivodeystvie-korrupcii-plan') return "План противодействия коррупции";
+      if (pathname === '/info/polnomochiya-spikera' || pathname === '/info/polnomochiya-speaker' || pathname === '/info/speaker-powers') return "Полномочия Председателя";
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii') || pathname === '/info/anti-corruption') return "Противодействие коррупции";
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii/normativnye-akty')) return "Нормативные правовые акты";
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii/komissiya-deputatov')) return "Комиссия депутатов";
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii/komissiya-deputatov/vypiski-protokoly')) return "Выписки, протоколы, решения";
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii/komissiya-deputatov/informatsiya')) return "Информация о деятельности Комиссии";
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii/metodicheskie-materialy')) return "Методические материалы";
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii/obratnaya-svyaz')) return "Обратная связь";
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii/formy-dokumentov')) return "Формы документов";
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii/spavki-bk')) return 'СПО "Справки БК"';
+      if (pathname.startsWith('/info/protivodeystvie-korrupcii/protivodeystvie-korrupcii-plan')) return "План противодействия коррупции";
       if (pathname === '/info/contacts') return "Контактная информация";
-      if (pathname === '/info/gosudarstvennye-simvoly') return "Государственные символы";
-      if (pathname === '/info/prigranichny-subekt') return "Приграничный субъект";
-      if (pathname === '/info/prigranichny-subekt/shablony') return "Шаблоны заявлений";
+      if (pathname === '/info/gosudarstvennye-simvoly' || pathname === '/info/symbols') return "Государственные символы";
+      if (pathname.startsWith('/info/prigranichny-subekt') || pathname.startsWith('/info/border-subekt') || pathname === '/info/border-subject') return "Приграничный субъект";
+      if (pathname === '/info/prigranichny-subekt/shablony' || pathname === '/info/border-subject/shablony') return "Шаблоны заявлений";
       if (pathname === '/info/prigranichny-subekt/shema-uslugi') return "Схема предоставления услуги";
       if (pathname === '/info/prigranichny-subekt/individualny-propusk') return "Индивидуальный пропуск";
       if (pathname === '/info/prigranichny-subekt/kollektivny-propusk') return "Коллективный пропуск";
@@ -592,6 +616,12 @@ export default function SideNav({
 
   // Мемоизируем pathname, search и hash
   const [pathname, search, hash] = React.useMemo(() => {
+    if (typeof window !== "undefined") {
+      const p = window.location.pathname || "/";
+      const s = window.location.search || "";
+      const h = window.location.hash || "";
+      return [p, s, h];
+    }
     const r = route || "/";
     const q = r.indexOf("?");
     const h = r.indexOf("#");

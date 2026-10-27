@@ -993,6 +993,39 @@ a {
 .news-cats--select {
   display: none;
 }
+.news-cats__pill {
+  padding: 8px 16px;
+  border: 1.5px solid #d7ddf7;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.news-cats__pill:hover {
+  border-color: #0a3b72;
+  color: #0a3b72;
+}
+.news-cats__pill.is-active {
+  background: #0a3b72;
+  border-color: #0a3b72;
+  color: #fff;
+}
+@media (max-width: 959px) {
+  .news-cats--pills {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .news-cats__pill {
+    flex-shrink: 0;
+  }
+}
 .news-filter {
   display: grid;
   gap: 8px;
