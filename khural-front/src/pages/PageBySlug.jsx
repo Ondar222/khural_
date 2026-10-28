@@ -80,6 +80,7 @@ import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import { useAdminData } from "../hooks/useAdminData.js";
 import DataState from "../components/DataState.jsx";
 import SideNav from "../components/SideNav.jsx";
+import { normalizeSlugAlias } from "../utils/slugAliases.js";
 import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../content/forMedia.js";
 
@@ -1699,38 +1700,8 @@ function getSlugFromPath() {
   return "";
 }
 
-// Псевдонимы слагов → канонический слаг раздела.
-// Некоторые страницы используют короткие/альтернативные URL (алиасы),
-// которые должны вести на тот же контент, что и канонический слаг.
-const SLUG_ALIASES = {
-  // Противодействие коррупции
-  "info/anti-corruption": "info/protivodeystvie-korrupcii",
-  // Приграничный субъект
-  "info/border-subject": "info/prigranichny-subekt",
-  // Полномочия Верховного Хурала
-  "info/hural-powers": "about/polnomochiya",
-  // Полномочия Председателя
-  "info/polnomochiya-speaker": "info/polnomochiya-spikera",
-  // Уполномоченный по правам человека
-  "info/ombudsman": "info/upoln-po-prav",
-  // Уполномоченный по правам ребенка
-  "info/child-rights": "info/upoln-po-reb",
-  // Государственные символы
-  "info/symbols": "info/gosudarstvennye-simvoly",
-};
-
-function normalizeSlugAlias(slug) {
-  if (!slug) return slug;
-  const trimmed = String(slug).replace(/^\/+|\/+$/g, "");
-  const segments = trimmed.split("/");
-  const parentKey = segments.slice(0, 2).join("/");
-  const parentCanonical = SLUG_ALIASES[parentKey];
-  if (parentCanonical) {
-    const rest = segments.slice(2).join("/");
-    return rest ? `${parentCanonical}/${rest}` : parentCanonical;
-  }
-  return trimmed;
-}
+// Псевдонимы слагов вынесены в utils/slugAliases.js — общий источник для
+// страницы и бокового меню (SideNav), чтобы алиасы давали одинаковый контент и меню.
 
 export default function PageBySlug() {
   const { lang, t } = useI18n();
@@ -1793,6 +1764,7 @@ export default function PageBySlug() {
       INFO_FINANCE_REPORTS_2023_SLUG,
       INFO_BUDGET_SLUG,
       INFO_DISTRICTS_SLUG,
+      "about/districts",
       INFO_LAWMAP_SLUG,
       INFO_HISTORY_SLUG,
       INFO_POLNOMOCHIYA_SLUG,

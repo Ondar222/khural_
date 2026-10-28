@@ -760,10 +760,17 @@ export function useAdminData() {
     return out;
   }
 
+  const isAdminRoute =
+    typeof window !== "undefined" &&
+    (window.location.pathname === "/admin" || window.location.pathname.startsWith("/admin/"));
+
   React.useEffect(() => {
-    // Load once on mount to avoid spamming the API (429).
+    // Приватные эндпоинты (/documents/all и др.) дёргаем только в админке или когда есть токен.
+    // Раньше loadAll() выполнялся на каждой публичной странице (PageBySlug вызывает этот хук),
+    // что давало 401 на /api/documents/all и лишние 429 от бэкенда.
+    if (!isAdminRoute && !isAuthenticated) return;
     loadAll();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAdminRoute, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // If API is down and DataContext committees load later, refresh local fallback once.
   React.useEffect(() => {

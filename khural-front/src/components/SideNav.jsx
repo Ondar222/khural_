@@ -5,6 +5,7 @@ import Link from "./Link.jsx";
 import { AboutApi } from "../api/client.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import { pickMenuLabel, applyPagesOverridesToTree } from "../utils/pagesOverrides.js";
+import { normalizePathBySlugAliases } from "../utils/slugAliases.js";
 import {
   PERSONNEL_ROOT_PATH,
   PERSONNEL_TITLE,
@@ -319,12 +320,22 @@ export default function SideNav({
   const locale = getPreferredLocaleToken(lang);
   const [pagesLinks, setPagesLinks] = React.useState([]);
 
+  // Сырой путь из URL и путь, нормализованный через алиасы slug
+  // (/about/districts → /info/iokrug). Нормализованный путь используется для
+  // определения раздела, заголовока и подсветки активной ссылки, чтобы алиасные
+  // URL давали ровно то же меню, что и канонические.
+  const rawPathname = (route || "/").split("?")[0] || "/";
+  const canonicalPathname = React.useMemo(
+    () => normalizePathBySlugAliases(rawPathname),
+    [rawPathname]
+  );
+
   // Автоматически определяем раздел из URL
   const detectedSection = React.useMemo(() => {
     if (!autoSection) return section;
     if (section) return section; // Явно указанный section имеет приоритет
 
-    const pathname = route?.split("?")[0] || "";
+    const pathname = canonicalPathname;
 
     // Сопоставляем пути с разделами
     const sectionMap = {
@@ -386,17 +397,13 @@ export default function SideNav({
   const autoTitle = React.useMemo(() => {
     if (!detectedSection) return "Новости";
 
-    const pathname = route?.split("?")[0] || "";
-    const queryString = route?.split("?")[1] || "";
-    
-    console.log('[SideNav autoTitle] route:', route, 'pathname:', pathname, 'queryString:', queryString, 'detectedSection:', detectedSection);
-    
+    const pathname = canonicalPathname;
+    const queryString = (route || "").split("?")[1] || "";
+
     // Парсим query параметры вручную для надёжности
     const getQueryParam = (name) => {
       const params = new URLSearchParams(queryString);
-      const value = params.get(name);
-      console.log('[SideNav autoTitle] getQueryParam', name, '=', value);
-      return value;
+      return params.get(name);
     };
     
     const sectionParam = getQueryParam("section");
@@ -619,21 +626,17 @@ export default function SideNav({
   }, []);
 
   // Мемоизируем pathname, search и hash
+  // pathname нормализуем через алиасы slug, чтобы на алиасном URL
+  // (/about/districts) подсвечивалась каноническая ссылка (/info/iokrug).
   const [pathname, search, hash] = React.useMemo(() => {
-    if (typeof window !== "undefined") {
-      const p = window.location.pathname || "/";
-      const s = window.location.search || "";
-      const h = window.location.hash || "";
-      return [p, s, h];
-    }
     const r = route || "/";
     const q = r.indexOf("?");
     const h = r.indexOf("#");
-    
+
     // Извлекаем pathname
     const pathEnd = q === -1 ? (h === -1 ? r.length : h) : q;
-    const path = r.slice(0, pathEnd) || "/";
-    
+    const path = normalizePathBySlugAliases(r.slice(0, pathEnd) || "/");
+
     // Извлекаем search
     let searchStr = "";
     if (q !== -1) {
@@ -641,13 +644,13 @@ export default function SideNav({
       const searchEnd = h === -1 ? r.length : h;
       searchStr = r.slice(searchStart, searchEnd);
     }
-    
+
     // Извлекаем hash
     let hashStr = "";
     if (h !== -1) {
       hashStr = r.slice(h);
     }
-    
+
     return [path, searchStr, hashStr];
   }, [route]);
 
