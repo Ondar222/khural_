@@ -111,16 +111,18 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        // khural-backend now listens on 3004 by default
+        // По умолчанию — прод (локальный бэкенд на :3004 часто выключен → «API пропадает»).
+        // Локальный бэкенд: VITE_API_PROXY_TARGET=http://localhost:3004
         // NO rewrite — бэкенд ждёт путь целиком (global prefix: /api)
-        target: "http://localhost:3004",
+        target: process.env.VITE_API_PROXY_TARGET || "https://khural.yurta.site",
         changeOrigin: true,
+        secure: true,
       },
       // Proxy files to avoid CORP/CORS issues when backend serves /files cross-origin
       "/files": {
-        target: process.env.VITE_API_BASE_URL || "http://localhost:3004",
+        target: process.env.VITE_API_PROXY_TARGET || "https://khural.yurta.site",
         changeOrigin: true,
-        secure: false,
+        secure: true,
         // Бэкенд раздаёт файлы по /api/files/...
         rewrite: (path) => path.replace(/^\/files/, "/api/files"),
       },
@@ -185,8 +187,9 @@ export default defineConfig({
     // Включаем сжатие
     proxy: {
       "/api": {
-        target: "http://localhost:3004",
+        target: process.env.VITE_API_PROXY_TARGET || "https://khural.yurta.site",
         changeOrigin: true,
+        secure: true,
       },
     },
   },

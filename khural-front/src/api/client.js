@@ -3,11 +3,17 @@ function normalizeBaseUrl(value) {
   if (!value) return "";
   const str = String(value).trim();
   // Strip wrapping quotes/backticks and trailing semicolons that sometimes get into env vars
-  return str.replace(/^[`'"]+/, "").replace(/[`'";]+$/, "").trim();
+  const cleaned = str.replace(/^[`'"]+/, "").replace(/[`'";]+$/, "").trim();
+  // Нерезолвнутый плейсхолдер из index.html (%VITE_API_BASE_URL%) — считаем пустым,
+  // иначе все запросы уходят на битый URL и «API пропадает».
+  if (!cleaned || cleaned.includes("%VITE_") || cleaned === "undefined" || cleaned === "null") {
+    return "";
+  }
+  return cleaned;
 }
 
 function resolveApiBaseUrl() {
-  // Priority: window override → <meta name="api-base"> → Vite env → sensible fallback
+  // Priority: window override → <meta name="api-base"> → Vite env → same-origin /api
   if (typeof window !== "undefined" && window.__API_BASE_URL__) {
     const normalized = normalizeBaseUrl(window.__API_BASE_URL__);
     if (normalized) return normalized;
@@ -22,18 +28,16 @@ function resolveApiBaseUrl() {
   const fromEnv = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
   if (fromEnv) return fromEnv;
 
-  // Fallbacks
-  if (typeof window !== "undefined" && window.location) {
-    const host = window.location.hostname;
-    // Prefer same-origin reverse-proxy path. Works in dev (Vite proxy) and prod (nginx proxy).
-    if (host === "localhost" || host === "127.0.0.1") return "/api";
-    return "/api";
-  }
-
-  return "";
+  // Same-origin /api: Vite proxy (dev) или nginx (prod). Не зависеть от пустого env.
+  return "/api";
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
+
+/** Пересчитать базу на случай поздней подстановки window.__API_BASE_URL__ */
+export function getApiBaseUrl() {
+  return resolveApiBaseUrl() || API_BASE_URL || "/api";
+}
 
 // Календарь (события) использует тот же API, что и весь сайт — один бэкенд на всех устройствах и в админке
 // Логируем базовый URL для отладки (только в DEV)
@@ -116,7 +120,7 @@ export async function refreshAccessToken() {
   if (refreshInFlight) return refreshInFlight;
 
   refreshInFlight = (async () => {
-    const url = API_BASE_URL.replace(/\/+$/, "") + "/" + "auth/refresh";
+    const url = getApiBaseUrl().replace(/\/+$/, "") + "/" + "auth/refresh";
     const headers = {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -157,13 +161,13 @@ export async function apiFetch(
   path,
   { method = "GET", body, headers, auth = true, retry = true, baseUrl: baseUrlOverride, timeout: timeoutMs } = {}
 ) {
-  const baseUrl = baseUrlOverride || API_BASE_URL;
+  const baseUrl = normalizeBaseUrl(baseUrlOverride) || getApiBaseUrl();
   if (!baseUrl) {
     throw new Error("API base URL не настроен. Установите переменную окружения VITE_API_BASE_URL на Vercel.");
   }
 
   // Проверяем fallback только для основного API (не для calendar)
-  if (!baseUrlOverride && typeof window !== "undefined" && API_BASE_URL === window.location.origin) {
+  if (!baseUrlOverride && typeof window !== "undefined" && baseUrl === window.location.origin) {
     const hostname = window.location.hostname;
     if (import.meta.env.DEV && hostname !== "localhost" && hostname !== "127.0.0.1" && !hostname.includes("localhost")) {
       console.warn("⚠️ API base URL использует текущий домен как fallback.");
@@ -233,12 +237,31 @@ export async function apiFetch(
   const data = isJson ? await res.json().catch(() => null) : null;
   
   if (!res.ok) {
+    // 429 Too Many Requests — коротко подождать и повторить (иначе «API пропадает» под нагрузкой)
+    if (res.status === 429 && retry) {
+      const retryAfterRaw = res.headers.get("retry-after");
+      const retryAfterSec = retryAfterRaw ? Number(retryAfterRaw) : NaN;
+      const delayMs = Number.isFinite(retryAfterSec) && retryAfterSec > 0
+        ? Math.min(retryAfterSec * 1000, 5000)
+        : 800;
+      await new Promise((r) => setTimeout(r, delayMs));
+      return apiFetch(path, {
+        method,
+        body,
+        headers,
+        auth,
+        retry: false,
+        baseUrl: baseUrlOverride,
+        timeout: timeoutMs,
+      });
+    }
+
     if (res.status === 401 && auth && retry) {
       const refreshed = await refreshAccessToken().catch(() => null);
       const nextAccess =
         refreshed?.access_token || refreshed?.accessToken || refreshed?.token || "";
       if (nextAccess) {
-        return apiFetch(path, { method, body, headers, auth, retry: false, baseUrl: baseUrlOverride });
+        return apiFetch(path, { method, body, headers, auth, retry: false, baseUrl: baseUrlOverride, timeout: timeoutMs });
       }
       // refresh failed => clear tokens and trigger logout
       setAuthToken("");
@@ -294,10 +317,11 @@ export async function apiFetch(
 }
 
 export async function apiFetchText(path, { method = "GET", headers, auth = true } = {}) {
-  if (!API_BASE_URL) {
+  const base = getApiBaseUrl();
+  if (!base) {
     throw new Error("VITE_API_BASE_URL is not configured");
   }
-  const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
+  const url = base.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
   const finalHeaders = {
     Accept: "text/plain,text/markdown,*/*",
     ...(headers || {}),
@@ -635,7 +659,7 @@ export const AppealsApi = {
     });
     
     // Для FormData используем прямой fetch, так как apiFetch пытается сериализовать в JSON
-    const url = API_BASE_URL.replace(/\/+$/, "") + "/" + `appeals/${sid}/files`.replace(/^\/+/, "");
+    const url = getApiBaseUrl().replace(/\/+$/, "") + "/" + `appeals/${sid}/files`.replace(/^\/+/, "");
     const token = getAuthToken();
     const headers = {};
     if (token) {
@@ -881,7 +905,7 @@ export async function apiFetchMultipart(
   if (!(formData instanceof FormData)) {
     throw new Error("formData must be FormData");
   }
-  const url = API_BASE_URL.replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
+  const url = getApiBaseUrl().replace(/\/+$/, "") + "/" + String(path).replace(/^\/+/, "");
   const finalHeaders = { ...(headers || {}) };
   if (auth) {
     const token = getAuthToken();
@@ -1336,7 +1360,7 @@ export const TranslationApi = {
 
 // Calendar (events) — один API с основным бэкендом (API_BASE_URL): календарь на сайте и админка событий ходят в один и тот же URL
 const calendarFetch = (path, opts) =>
-  apiFetch(path, { ...opts, baseUrl: API_BASE_URL });
+  apiFetch(path, { ...opts, baseUrl: getApiBaseUrl() });
 
 export const EventsApi = {
   // Не добавляем Cache-Control/Pragma: при cross-origin запросе сервер должен разрешить их в
@@ -1409,7 +1433,7 @@ export const SettingsApi = {
     // Используем прямой fetch без apiFetch, чтобы избежать логов 401 в консоли браузера
     // Этот endpoint может требовать auth на некоторых бэкендах, поэтому тихо игнорируем ошибки
     try {
-      const url = API_BASE_URL.replace(/\/+$/, "") + "/settings/broadcast_links";
+      const url = getApiBaseUrl().replace(/\/+$/, "") + "/settings/broadcast_links";
       const res = await fetch(url, {
         method: "GET",
         headers: { Accept: "application/json" },

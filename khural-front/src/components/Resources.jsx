@@ -141,22 +141,20 @@ export default function Resources() {
         </div>
         
         {/* Раздел Трансляции */}
-        <div style={{ marginTop: 48 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
-            <h2 className="portals-title" style={{ margin: 0 }}>{t("Трансляции")}</h2>
-            <a href="/broadcast" style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap", color: "var(--link)" }}>
+        <div className="broadcasts-section">
+          <div className="broadcasts-section__head">
+            <h2 className="portals-title">{t("Трансляции")}</h2>
+            <a href="/broadcast" className="broadcasts-section__all">
               Все трансляции →
             </a>
           </div>
-          <div style={{ marginTop: 16 }}>
-            <BroadcastWidget />
-          </div>
+          <BroadcastWidget compact />
           {/* Последние 4 трансляций из архива; остальные — на странице «Все трансляции» */}
           {(() => {
             const last4 = broadcastLinks.slice(-4);
             if (last4.length === 0) return null;
             return (
-              <div className="broadcasts-home" style={{ marginTop: 24 }}>
+              <div className="broadcasts-home">
                 {last4.map((url, index) => {
                   const { embedUrl, watchUrl } = getBroadcastUrls(url);
                   const num = broadcastLinks.length - 4 + index + 1;
@@ -168,45 +166,21 @@ export default function Resources() {
                           <iframe
                             src={embedUrl}
                             title={title}
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              border: 0,
-                            }}
                             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                           />
                         ) : (
                           <a
+                            className="broadcasts-home__fallback"
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              color: "#fff",
-                              textDecoration: "none",
-                              fontSize: 14,
-                            }}
                           >
                             {t("Трансляция")}
                           </a>
                         )}
                       </div>
                       <div className="broadcasts-home__link">
-                        <a
-                          href={watchUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                        <a href={watchUrl} target="_blank" rel="noopener noreferrer">
                           {title}
                         </a>
                       </div>

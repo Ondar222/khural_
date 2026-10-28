@@ -64,8 +64,9 @@ export function getBroadcastUrls(url) {
     const oid = -Number(vkMatch[1]);
     const id = vkMatch[2];
     return {
-      embedUrl: `https://vk.com/video_ext.php?oid=${oid}&id=${id}&hd=2`,
-      watchUrl: `https://vk.com/video-${vkMatch[1]}_${vkMatch[2]}`,
+      // vkvideo.ru стабильнее для iframe, чем vk.com (на главной не «чёрные» плееры)
+      embedUrl: `https://vkvideo.ru/video_ext.php?oid=${oid}&id=${id}&hd=2`,
+      watchUrl: `https://vkvideo.ru/video-${vkMatch[1]}_${vkMatch[2]}`,
     };
   }
   const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);

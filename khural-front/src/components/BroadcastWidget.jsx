@@ -3,28 +3,25 @@ import { VideoIcon, RssIcon } from "./icons/LinearIcons.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { BroadcastsApi } from "../api/client.js";
+import { getBroadcastTitle } from "../content/broadcasts.js";
 
 function getVkEmbedUrl(vkStreamKey, vkStreamUrl) {
-  // Если есть прямая ссылка на трансляцию VK: https://vkvideo.ru/video-114457376_456239439
   const src = vkStreamUrl || null;
   if (src) {
-    // Извлекаем ID трансляции из URL
     const match = src.match(/video(-?\d+)_(\d+)/);
     if (match) {
-      // VK трансляции встраиваются через video_ext.php — так работает встроенный плеер
-      return `https://vk.com/video_ext.php?oid=${match[1]}&id=${match[2]}&hd=2`;
+      return `https://vkvideo.ru/video_ext.php?oid=${match[1]}&id=${match[2]}&hd=2`;
     }
-    if (src.includes("video_ext.php") || src.startsWith("https://vk.com/video")) {
+    if (src.includes("video_ext.php") || src.startsWith("https://vk.com/video") || src.startsWith("https://vkvideo.ru/")) {
       return src;
     }
     return null;
   }
-  // Если есть ключ трансляции
   const key = vkStreamKey || null;
   if (key) {
     const match = String(key).match(/video(-?\d+)_(\d+)/);
     if (match) {
-      return `https://vk.com/video_ext.php?oid=${match[1]}&id=${match[2]}&hd=2`;
+      return `https://vkvideo.ru/video_ext.php?oid=${match[1]}&id=${match[2]}&hd=2`;
     }
   }
   return null;
@@ -32,9 +29,6 @@ function getVkEmbedUrl(vkStreamKey, vkStreamUrl) {
 
 function getOBSStreamUrl(obsRtmpUrl, obsStreamKey) {
   if (!obsRtmpUrl || !obsStreamKey) return null;
-  // OBS обычно использует RTMP, но для веб-плеера нужен HLS или другой формат
-  // Можно использовать сервисы типа Wowza, или конвертировать RTMP в HLS
-  // Для простоты возвращаем RTMP URL (потребуется специальный плеер)
   return `${obsRtmpUrl}/${obsStreamKey}`;
 }
 
@@ -43,7 +37,6 @@ function getYouTubeEmbedUrl(youtubeVideoId, youtubeUrl) {
     return `https://www.youtube.com/embed/${youtubeVideoId}`;
   }
   if (youtubeUrl) {
-    // Извлекаем ID из URL
     const match = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
     if (match) {
       return `https://www.youtube.com/embed/${match[1]}`;
@@ -52,74 +45,158 @@ function getYouTubeEmbedUrl(youtubeVideoId, youtubeUrl) {
   return null;
 }
 
-export default function BroadcastWidget() {
+function parseBroadcastFromSettings(settings) {
+  if (!settings) return null;
+
+  let settingsBroadcast = null;
+
+  if (Array.isArray(settings)) {
+    const broadcastSetting = settings.find((s) => s?.key === "broadcast");
+    if (broadcastSetting?.value) {
+      try {
+        settingsBroadcast = JSON.parse(broadcastSetting.value);
+      } catch {
+        settingsBroadcast = null;
+      }
+    }
+  } else if (typeof settings === "object") {
+    settingsBroadcast =
+      settings.broadcast || settings.stream || settings.vk_stream || settings.current_broadcast;
+
+    if (typeof settingsBroadcast === "string") {
+      try {
+        settingsBroadcast = JSON.parse(settingsBroadcast);
+      } catch {
+        settingsBroadcast = null;
+      }
+    }
+  }
+
+  if (!settingsBroadcast || typeof settingsBroadcast !== "object") return null;
+
+  return {
+    type: settingsBroadcast.type || settingsBroadcast.platform || "vk",
+    title: settingsBroadcast.title || settingsBroadcast.name || "",
+    description: settingsBroadcast.description || "",
+    vkStreamKey:
+      settingsBroadcast.vk_stream_key ||
+      settingsBroadcast.vkStreamKey ||
+      settingsBroadcast.stream_key,
+    vkStreamUrl:
+      settingsBroadcast.vk_stream_url ||
+      settingsBroadcast.vkStreamUrl ||
+      settingsBroadcast.stream_url,
+    obsRtmpUrl:
+      settingsBroadcast.obs_rtmp_url || settingsBroadcast.obsRtmpUrl || settingsBroadcast.rtmp_url,
+    obsStreamKey:
+      settingsBroadcast.obs_stream_key || settingsBroadcast.obsStreamKey || settingsBroadcast.obs_key,
+    youtubeVideoId: settingsBroadcast.youtube_video_id || settingsBroadcast.youtubeVideoId,
+    youtubeUrl: settingsBroadcast.youtube_url || settingsBroadcast.youtubeUrl,
+    embedUrl: settingsBroadcast.embed_url || settingsBroadcast.embedUrl,
+    isActive: settingsBroadcast.is_active !== false && settingsBroadcast.isActive !== false,
+    source: "settings",
+  };
+}
+
+function mapApiBroadcast(item, fallbackTitle) {
+  if (!item || typeof item !== "object") return null;
+  const sourceUrl = item.sourceUrl || item.source_url || item.url || "";
+  const title =
+    item.title ||
+    getBroadcastTitle(sourceUrl) ||
+    fallbackTitle ||
+    "";
+
+  return {
+    type: item.type || item.provider || "vk",
+    title,
+    description: item.description || "",
+    vkStreamKey: item.vk_stream_key || item.vkStreamKey || item.externalId,
+    vkStreamUrl: item.vk_stream_url || item.vkStreamUrl || sourceUrl,
+    obsRtmpUrl: item.obs_rtmp_url || item.obsRtmpUrl,
+    obsStreamKey: item.obs_stream_key || item.obsStreamKey,
+    youtubeVideoId: item.youtube_video_id || item.youtubeVideoId,
+    youtubeUrl: item.youtube_url || item.youtubeUrl,
+    embedUrl: item.embedUrl || item.embed_url || null,
+    isActive: item.isLive === true || item.is_live === true,
+    sourceUrl,
+    source: "api",
+  };
+}
+
+function resolveEmbed(broadcast) {
+  if (!broadcast) return { embedUrl: null, streamType: null };
+
+  const type = String(broadcast.type || "vk").toLowerCase();
+  if (broadcast.embedUrl) {
+    return { embedUrl: broadcast.embedUrl, streamType: type };
+  }
+  if (type === "vk" || type === "vkontakte") {
+    return {
+      embedUrl: getVkEmbedUrl(broadcast.vkStreamKey, broadcast.vkStreamUrl),
+      streamType: type,
+    };
+  }
+  if (type === "obs") {
+    return {
+      embedUrl: getOBSStreamUrl(broadcast.obsRtmpUrl, broadcast.obsStreamKey),
+      streamType: type,
+    };
+  }
+  if (type === "youtube") {
+    return {
+      embedUrl: getYouTubeEmbedUrl(broadcast.youtubeVideoId, broadcast.youtubeUrl),
+      streamType: type,
+    };
+  }
+  return { embedUrl: null, streamType: type };
+}
+
+/**
+ * @param {{ compact?: boolean }} props
+ * compact — для главной: без лишних обёрток/вложенного .container
+ */
+export default function BroadcastWidget({ compact = false } = {}) {
   const { settings, loading } = useData();
   const { t } = useI18n();
-  
-  // Получаем настройки трансляции из settings
+  const fallbackTitle = t("Трансляция");
+
   const broadcastSettings = React.useMemo(() => {
-    // Сначала проверяем localStorage (для локальных изменений)
-    let broadcast = null;
     try {
       const local = localStorage.getItem("admin_settings_broadcast");
       if (local) {
-        broadcast = JSON.parse(local);
+        const parsed = JSON.parse(local);
+        if (parsed && typeof parsed === "object") {
+          return {
+            type: parsed.type || parsed.platform || "vk",
+            title: parsed.title || parsed.name || fallbackTitle,
+            description: parsed.description || "",
+            vkStreamKey: parsed.vk_stream_key || parsed.vkStreamKey || parsed.stream_key,
+            vkStreamUrl: parsed.vk_stream_url || parsed.vkStreamUrl || parsed.stream_url,
+            obsRtmpUrl: parsed.obs_rtmp_url || parsed.obsRtmpUrl || parsed.rtmp_url,
+            obsStreamKey: parsed.obs_stream_key || parsed.obsStreamKey || parsed.obs_key,
+            youtubeVideoId: parsed.youtube_video_id || parsed.youtubeVideoId,
+            youtubeUrl: parsed.youtube_url || parsed.youtubeUrl,
+            embedUrl: parsed.embed_url || parsed.embedUrl,
+            isActive: parsed.is_active !== false && parsed.isActive !== false,
+            source: "local",
+          };
+        }
       }
     } catch {
       // ignore
     }
-    
-    // Если нет в localStorage, ищем в settings из API
-    if (!broadcast && settings) {
-      // Settings может быть массивом объектов {key, value} или объектом с ключами
-      let settingsBroadcast = null;
-      
-      if (Array.isArray(settings)) {
-        // Если settings - массив, ищем элемент с key === "broadcast"
-        const broadcastSetting = settings.find((s) => s?.key === "broadcast");
-        if (broadcastSetting?.value) {
-          try {
-            settingsBroadcast = JSON.parse(broadcastSetting.value);
-          } catch {
-            settingsBroadcast = null;
-          }
-        }
-      } else if (typeof settings === "object") {
-        // Если settings - объект, ищем напрямую
-        settingsBroadcast = settings.broadcast || settings.stream || settings.vk_stream || settings.current_broadcast;
-        
-        // Если это строка (JSON), парсим
-        if (typeof settingsBroadcast === "string") {
-          try {
-            settingsBroadcast = JSON.parse(settingsBroadcast);
-          } catch {
-            settingsBroadcast = null;
-          }
-        }
-      }
-      
-      broadcast = settingsBroadcast;
-    }
-    
-    if (!broadcast || typeof broadcast !== "object") return null;
-    
-    return {
-      type: broadcast.type || broadcast.platform || "vk",
-      title: broadcast.title || broadcast.name || t("Трансляция"),
-      description: broadcast.description || "",
-      vkStreamKey: broadcast.vk_stream_key || broadcast.vkStreamKey || broadcast.stream_key,
-      vkStreamUrl: broadcast.vk_stream_url || broadcast.vkStreamUrl || broadcast.stream_url,
-      obsRtmpUrl: broadcast.obs_rtmp_url || broadcast.obsRtmpUrl || broadcast.rtmp_url,
-      obsStreamKey: broadcast.obs_stream_key || broadcast.obsStreamKey || broadcast.obs_key,
-      youtubeVideoId: broadcast.youtube_video_id || broadcast.youtubeVideoId,
-      youtubeUrl: broadcast.youtube_url || broadcast.youtubeUrl,
-      embedUrl: broadcast.embed_url || broadcast.embedUrl,
-      isActive: broadcast.is_active !== false && broadcast.isActive !== false,
-    };
-  }, [settings, t]);
 
-  // Fallback: текущую трансляцию берём из API (/broadcasts), где бэкенд хранит
-  // трансляции, автоматически синхронизированные с VK (video.get). Без ручного добавления через админку.
+    const fromSettings = parseBroadcastFromSettings(settings);
+    if (fromSettings) {
+      return {
+        ...fromSettings,
+        title: fromSettings.title || fallbackTitle,
+      };
+    }
+    return null;
+  }, [settings, fallbackTitle]);
+
   const [apiBroadcast, setApiBroadcast] = React.useState(null);
 
   React.useEffect(() => {
@@ -127,215 +204,131 @@ export default function BroadcastWidget() {
     (async () => {
       const list = await BroadcastsApi.listPublic();
       if (cancelled) return;
-      const live = Array.isArray(list) ? list.find((b) => b?.isLive) || list[0] || null : null;
-      if (live) setApiBroadcast(live);
+      if (!Array.isArray(list) || list.length === 0) {
+        setApiBroadcast(null);
+        return;
+      }
+      // Только реально live; не подставляем архивную запись как «прямой эфир»
+      const live = list.find((b) => b?.isLive === true || b?.is_live === true) || null;
+      setApiBroadcast(live ? mapApiBroadcast(live, fallbackTitle) : null);
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fallbackTitle]);
 
-  // Активная трансляция: сначала настройки админки, иначе — последняя из API
   const resolvedBroadcast = React.useMemo(() => {
-    if (broadcastSettings?.isActive) return broadcastSettings;
-    if (apiBroadcast) {
-      return { ...apiBroadcast, isActive: true, type: apiBroadcast.type || apiBroadcast.provider };
+    // Админские настройки с явным эфиром — приоритет
+    if (broadcastSettings?.isActive) {
+      const hasStream =
+        broadcastSettings.embedUrl ||
+        broadcastSettings.vkStreamUrl ||
+        broadcastSettings.vkStreamKey ||
+        broadcastSettings.youtubeUrl ||
+        broadcastSettings.youtubeVideoId ||
+        broadcastSettings.obsRtmpUrl;
+      if (hasStream) return broadcastSettings;
     }
+    if (apiBroadcast?.isActive) return apiBroadcast;
     return null;
   }, [broadcastSettings, apiBroadcast]);
 
-  const [embedUrl, setEmbedUrl] = React.useState(null);
-  const [streamType, setStreamType] = React.useState(null);
-
-  React.useEffect(() => {
-    if (!resolvedBroadcast || !resolvedBroadcast.isActive) {
-      setEmbedUrl(null);
-      setStreamType(null);
-      return;
-    }
-
-    const type = resolvedBroadcast.type?.toLowerCase() || "vk";
-    setStreamType(type);
-
-    // Определяем URL для встраивания в зависимости от типа
-    if (resolvedBroadcast.embedUrl) {
-      setEmbedUrl(resolvedBroadcast.embedUrl);
-    } else if (type === "vk" || type === "vkontakte") {
-      const url = getVkEmbedUrl(resolvedBroadcast.vkStreamKey, resolvedBroadcast.vkStreamUrl);
-      if (url) {
-        // VK трансляции встраиваются через iframe video_ext.php
-        setEmbedUrl(url);
-      }
-    } else if (type === "obs") {
-      const url = getOBSStreamUrl(resolvedBroadcast.obsRtmpUrl, resolvedBroadcast.obsStreamKey);
-      if (url) {
-        // Для OBS нужен специальный плеер (например, video.js с RTMP плагином)
-        // Или конвертация RTMP в HLS через сервер
-        setEmbedUrl(url);
-      }
-    } else if (type === "youtube") {
-      const url = getYouTubeEmbedUrl(resolvedBroadcast.youtubeVideoId, resolvedBroadcast.youtubeUrl);
-      if (url) {
-        setEmbedUrl(url);
-      }
-    }
-  }, [resolvedBroadcast]);
+  const { embedUrl, streamType } = React.useMemo(
+    () => resolveEmbed(resolvedBroadcast),
+    [resolvedBroadcast]
+  );
 
   if (loading?.settings) {
     return (
-      <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>
+      <div className="broadcast-widget broadcast-widget--loading">
         Загрузка трансляции...
       </div>
     );
   }
 
   if (!resolvedBroadcast) {
-    // Трансляция не настроена — ничего не показываем
     return null;
   }
 
-  if (!resolvedBroadcast.isActive) {
-    // Состояние: трансляция запланирована/настроена, но прямо сейчас эфира нет
-    setEmbedUrl(null);
-    setStreamType(null);
-    return (
-      <div
-        style={{
-          background: "#f9fafb",
-          padding: 32,
-          borderRadius: 12,
-          textAlign: "center",
-          color: "#6b7280",
-        }}
-      >
-        <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: "#374151" }}>
-          Сейчас нет активной трансляции
-        </div>
-        <div style={{ fontSize: 14 }}>
-          Прямой эфир скоро начнётся — загляните на сайт позже
-        </div>
-      </div>
-    );
-  }
+  const title = resolvedBroadcast.title || fallbackTitle;
+  const canEmbedIframe =
+    Boolean(embedUrl) &&
+    (streamType === "youtube" ||
+      streamType === "vk" ||
+      streamType === "vkontakte" ||
+      streamType === "other");
 
   return (
-    <div style={{ background: "#f9fafb", padding: 24, borderRadius: 12 }}>
-      <div className="container">
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ marginBottom: 16 }}>
-            <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8 }}>
-              {resolvedBroadcast.title}
-            </h2>
-            {resolvedBroadcast.description && (
-              <p style={{ color: "#6b7280", fontSize: 16 }}>
-                {resolvedBroadcast.description}
-              </p>
-            )}
-          </div>
-          
-          <div
-            style={{
-              position: "relative",
-              paddingBottom: "56.25%", // 16:9 aspect ratio
-              height: 0,
-              overflow: "hidden",
-              borderRadius: 12,
-              background: "#000",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-            }}
-          >
-            {((streamType === "youtube" || streamType === "vk" || streamType === "vkontakte") && embedUrl) ? (
-              <iframe
-                src={embedUrl}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; screen-wake-lock; fullscreen"
-                title={resolvedBroadcast.title || t("Трансляция")}
-              />
-            ) : streamType === "vk" || streamType === "vkontakte" ? (
-              <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {(resolvedBroadcast.vkStreamUrl || resolvedBroadcast.vkStreamKey) ? (
-                  <a
-                    href={resolvedBroadcast.vkStreamUrl || `https://vk.com/video${resolvedBroadcast.vkStreamKey}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      background: "linear-gradient(135deg, #0077FF 0%, #0051D5 100%)",
-                      color: "#fff",
-                      textDecoration: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexDirection: "column",
-                      gap: 16,
-                      cursor: "pointer",
-                      transition: "opacity 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.opacity = "0.9";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.opacity = "1";
-                    }}
-                  >
-                    <div style={{ fontSize: 64, lineHeight: 1 }}>▶</div>
-                    <div style={{ fontSize: 20, fontWeight: 700 }}>Смотреть трансляцию в VK</div>
-                    <div style={{ fontSize: 14, opacity: 0.9 }}>Нажмите, чтобы открыть</div>
-                  </a>
-                ) : (
-                  <div style={{ color: "#fff", textAlign: "center", padding: 40 }}>
-                    <div style={{ marginBottom: 16 }}><VideoIcon size={48} /></div>
-                    <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-                      Трансляция VK
-                    </div>
-                    <div style={{ fontSize: 14, opacity: 0.9 }}>
-                      Настройте ссылку на трансляцию в админке
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : streamType === "obs" ? (
-              <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#1a1a1a" }}>
-                <div style={{ color: "#fff", textAlign: "center", padding: 40 }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 16, color: "#94a3b8" }}><RssIcon size={48} /></div>
-                  <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-                    OBS Трансляция
-                  </div>
-                  <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 16 }}>
-                    RTMP поток: {resolvedBroadcast.obsRtmpUrl || "не настроен"}
-                  </div>
-                  <div style={{ fontSize: 12, opacity: 0.7 }}>
-                    Для отображения OBS потока требуется специальный видеоплеер
-                  </div>
+    <div className={`broadcast-widget${compact ? " broadcast-widget--compact" : ""}`}>
+      {!compact && (
+        <div className="broadcast-widget__head">
+          <h2 className="broadcast-widget__title">{title}</h2>
+          {resolvedBroadcast.description ? (
+            <p className="broadcast-widget__desc">{resolvedBroadcast.description}</p>
+          ) : null}
+        </div>
+      )}
+
+      <div className="broadcast-widget__player">
+        {canEmbedIframe ? (
+          <iframe
+            src={embedUrl}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; screen-wake-lock; fullscreen"
+            title={title}
+          />
+        ) : streamType === "vk" || streamType === "vkontakte" ? (
+          <div className="broadcast-widget__fallback">
+            {resolvedBroadcast.vkStreamUrl || resolvedBroadcast.vkStreamKey ? (
+              <a
+                className="broadcast-widget__vk-link"
+                href={
+                  resolvedBroadcast.vkStreamUrl ||
+                  `https://vk.com/video${resolvedBroadcast.vkStreamKey}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="broadcast-widget__play">▶</span>
+                <span className="broadcast-widget__vk-title">Смотреть трансляцию в VK</span>
+                <span className="broadcast-widget__vk-hint">Нажмите, чтобы открыть</span>
+              </a>
+            ) : (
+              <div className="broadcast-widget__empty">
+                <VideoIcon size={48} />
+                <div className="broadcast-widget__empty-title">Трансляция VK</div>
+                <div className="broadcast-widget__empty-hint">
+                  Настройте ссылку на трансляцию в админке
                 </div>
               </div>
-            ) : embedUrl ? (
-              <iframe
-                src={embedUrl}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                }}
-                allow="autoplay; encrypted-media; fullscreen"
-                title={resolvedBroadcast.title || t("Трансляция")}
-              />
-            ) : null}
+            )}
           </div>
-        </div>
+        ) : streamType === "obs" ? (
+          <div className="broadcast-widget__fallback broadcast-widget__fallback--obs">
+            <div className="broadcast-widget__empty">
+              <span className="broadcast-widget__empty-icon">
+                <RssIcon size={48} />
+              </span>
+              <div className="broadcast-widget__empty-title">OBS Трансляция</div>
+              <div className="broadcast-widget__empty-hint">
+                RTMP поток: {resolvedBroadcast.obsRtmpUrl || "не настроен"}
+              </div>
+              <div className="broadcast-widget__empty-hint">
+                Для отображения OBS потока требуется специальный видеоплеер
+              </div>
+            </div>
+          </div>
+        ) : embedUrl ? (
+          <iframe
+            src={embedUrl}
+            allow="autoplay; encrypted-media; fullscreen"
+            title={title}
+          />
+        ) : null}
       </div>
+
+      {compact && title ? (
+        <div className="broadcast-widget__caption">{title}</div>
+      ) : null}
     </div>
   );
 }
-
