@@ -1,9 +1,11 @@
 import React from "react";
 import { Button, Input, Space, Table } from "antd";
 import { useHashRoute } from "../../Router.jsx";
+import { useI18n } from "../../context/I18nContext.jsx";
 
 export default function AdminEventsList({ items, onDelete, busy, canWrite }) {
   const { navigate } = useHashRoute();
+  const { t } = useI18n();
   const [q, setQ] = React.useState("");
   const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
@@ -49,26 +51,26 @@ export default function AdminEventsList({ items, onDelete, busy, canWrite }) {
 
   const columns = [
     {
-      title: "Событие",
+      title: t("adminColEvent"),
       dataIndex: "title",
       render: (_, row) => renderEventCell(row),
     },
     {
-      title: "Дата",
+      title: t("adminColDate"),
       dataIndex: "date",
       width: 140,
     },
     {
-      title: "Действия",
+      title: t("adminColActions"),
       key: "actions",
       width: 240,
       render: (_, row) => (
         <Space wrap className="admin-events-list__actions">
           <Button disabled={!canWrite} onClick={() => navigate(`/admin/events/edit/${encodeURIComponent(String(row.id))}`)}>
-            Редактировать
+            {t("adminEditBtn")}
           </Button>
           <Button danger disabled={!canWrite} onClick={() => onDelete?.(row.id)}>
-            Удалить
+            {t("adminDeleteBtn")}
           </Button>
         </Space>
       ),
@@ -79,7 +81,7 @@ export default function AdminEventsList({ items, onDelete, busy, canWrite }) {
     <div className="admin-card admin-toolbar admin-events-list__toolbar">
       <div className="admin-events-list__toolbar-left">
         <Input
-          placeholder="Поиск по названию..."
+          placeholder={t("adminSearchByTitle")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"
@@ -88,7 +90,7 @@ export default function AdminEventsList({ items, onDelete, busy, canWrite }) {
       </div>
       <div className="admin-events-list__toolbar-right">
         <Button type="primary" onClick={() => navigate("/admin/events/create")} disabled={!canWrite} loading={busy} size={isMobile ? "large" : "middle"}>
-          + Добавить событие
+          {t("adminAddEventBtn")}
         </Button>
       </div>
     </div>
@@ -110,17 +112,17 @@ export default function AdminEventsList({ items, onDelete, busy, canWrite }) {
                     onClick={() => navigate(`/admin/events/edit/${encodeURIComponent(String(row.id))}`)}
                     block
                   >
-                    Редактировать
+                    {t("adminEditBtn")}
                   </Button>
                   <Button danger disabled={!canWrite} onClick={() => onDelete?.(row.id)} block>
-                    Удалить
+                    {t("adminDeleteBtn")}
                   </Button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="admin-card admin-events-list__empty">Нет данных</div>
+          <div className="admin-card admin-events-list__empty">{t("adminNoData")}</div>
         )}
       </div>
     );

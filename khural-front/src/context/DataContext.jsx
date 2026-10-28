@@ -1,5 +1,6 @@
 import React from "react";
 import { API_BASE_URL, tryApiFetch, SliderApi, AboutApi, EventsApi, CommitteesApi, ConvocationsApi, DocumentsApi } from "../api/client.js";
+import { useI18n } from "./I18nContext.jsx";
 import {
   readNewsOverrides,
   NEWS_OVERRIDES_EVENT_NAME,
@@ -31,6 +32,9 @@ import {
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { normalizeConvocationToCanonical, mapOldSiteConvocationIdToCanonical } from "../utils/convocationLabels.js";
 import { buildFactionOptions, buildDistrictOptions } from "../utils/deputyFilterOptions.js";
+
+// Минимальный интервал между перезапросами событий при возврате на вкладку (30 сек)
+const EVENTS_TAB_REFRESH_MS = 30_000;
 
 const DataContext = React.createContext({
   slides: [],
@@ -1097,6 +1101,7 @@ function mergeSlidesWithOverrides(baseSlides, overrides) {
 }
 
 export default function DataProvider({ children }) {
+  const { lang } = useI18n();
   const [slides, setSlides] = React.useState([]);
   const [news, setNews] = React.useState([]);
   const [events, setEvents] = React.useState([]);
@@ -1139,6 +1144,7 @@ export default function DataProvider({ children }) {
   const [reloadSeq, setReloadSeq] = React.useState(0);
   const [eventsReloadSeq, setEventsReloadSeq] = React.useState(0);
   const eventsRetryScheduledRef = React.useRef(false);
+  const eventsLastFetchRef = React.useRef(0);
   const [deputiesOverrides, setDeputiesOverrides] = React.useState(() => readDeputiesOverrides());
   const [eventsOverrides, setEventsOverrides] = React.useState(() => readEventsOverrides());
   const [slidesOverrides, setSlidesOverrides] = React.useState(() => readSliderOverrides());
@@ -1930,7 +1936,9 @@ export default function DataProvider({ children }) {
     let cancelled = false;
     markLoading("events", true);
     markError("events", null);
-    const listParams = { _: String(Date.now()) };
+    eventsLastFetchRef.current = Date.now();
+    // Без cache-buster: уникальный query обходил HTTP-кэш и выбивал rate-limit (429) на бэкенде.
+    const listParams = lang === "ty" ? { lang: "tyv" } : { lang: "ru" };
     (async () => {
       let apiEvents = null;
       for (let attempt = 0; attempt < 2 && !cancelled; attempt++) {
@@ -1976,6 +1984,7 @@ export default function DataProvider({ children }) {
             return toDateOnly(typeof start === "string" ? start : Number(start));
           })(),
           title: String(pick(e.title, e.event_title) || ""),
+          titleTy: String(pick(e.titleTy, e.title_ty, e.event_title_ty) || ""),
           time: (() => {
             const t = pick(e.time, e.event_time);
             if (t) return String(t);
@@ -1986,7 +1995,9 @@ export default function DataProvider({ children }) {
             return dt.toISOString().slice(11, 16);
           })(),
           place: String(pick(e.place, e.event_place, e.location) || ""),
+          placeTy: String(pick(e.placeTy, e.place_ty, e.event_place_ty, e.locationTy) || ""),
           desc: String(pick(e.desc, e.description) || ""),
+          descTy: String(pick(e.descTy, e.descriptionTy, e.description_ty, e.event_description_ty) || ""),
           isImportant: Boolean(
             pick(e.isImportant, e.is_important, e.important, e.featured, e.pinned, e.is_featured)
           ),
@@ -2023,12 +2034,16 @@ export default function DataProvider({ children }) {
         });
     })();
     return () => { cancelled = true; };
-  }, [reloadSeq, eventsReloadSeq]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reloadSeq, eventsReloadSeq, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // При возврате на вкладку — обновить события с бэкенда, чтобы новые события были видны на всех устройствах
+  // При возврате на вкладку — обновить события с бэкенда, но не чаще раза в EVENTS_TAB_REFRESH_MS,
+  // иначе частые переключения вкладок создают шквал запросов и упираются в rate-limit (429)
   React.useEffect(() => {
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") setEventsReloadSeq((x) => x + 1);
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - eventsLastFetchRef.current < EVENTS_TAB_REFRESH_MS) return;
+      setEventsReloadSeq((x) => x + 1);
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => document.removeEventListener("visibilitychange", onVisibilityChange);

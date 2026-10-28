@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "../context/I18nContext.jsx";
 
 function parseEventDate(raw) {
   if (raw === undefined || raw === null) return new Date(NaN);
@@ -47,6 +48,12 @@ function stripHtmlToText(html) {
 }
 
 export default function EventModal({ open, onClose, events }) {
+  const { lang } = useI18n();
+  const isTy = lang === "ty" || lang === "tyv";
+  const evTitle = (ev) => (isTy && ev.titleTy ? String(ev.titleTy) : String(ev.title || ""));
+  const evPlace = (ev) => (isTy && ev.placeTy ? String(ev.placeTy) : String(ev.place || ""));
+  const evDesc = (ev) => (isTy && ev.descTy ? String(ev.descTy) : String(ev.desc || ""));
+
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
     return () => {
@@ -71,7 +78,7 @@ export default function EventModal({ open, onClose, events }) {
           <div className="grid" style={{ marginTop: 12 }}>
             {(events || []).map((ev) => (
               <div key={ev.id} className="card" style={{ padding: 12 }}>
-                <h4 style={{ margin: "0 0 6px" }}>{renderText(ev.title)}</h4>
+                <h4 style={{ margin: "0 0 6px" }}>{renderText(evTitle(ev))}</h4>
                 <div style={{ color: "#0a3b72", fontWeight: 600 }}>
                   {parseEventDate(ev.date).toLocaleDateString("ru-RU", {
                     day: "numeric",
@@ -80,9 +87,9 @@ export default function EventModal({ open, onClose, events }) {
                   })}
                   {renderText(ev.time) ? ` • ${renderText(ev.time)}` : ""}
                 </div>
-                {renderText(ev.place) ? <div className="text-muted">{renderText(ev.place)}</div> : null}
+                {renderText(evPlace(ev)) ? <div className="text-muted">{renderText(evPlace(ev))}</div> : null}
                 {(() => {
-                  const raw = renderText(ev.desc);
+                  const raw = renderText(evDesc(ev));
                   if (!raw) return null;
                   if (looksLikeHtml(raw)) {
                     const plain = stripHtmlToText(raw);

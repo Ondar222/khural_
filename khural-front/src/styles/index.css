@@ -8045,6 +8045,12 @@ body.admin-mode[data-admin-theme="light"] .admin-pillbtn--site:hover {
   border-color: rgba(15, 23, 42, 0.3);
 }
 
+.admin-pillbtn--lang {
+  font-weight: 800;
+  padding: 0 14px;
+  letter-spacing: 0.04em;
+}
+
 /* Sidebar menu scroll */
 .admin-brand,
 .admin-sidebar__top,

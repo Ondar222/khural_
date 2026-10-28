@@ -93,9 +93,12 @@ function normalizeEvent(event) {
     id,
     date: date || "",
     title: toText(event?.title),
+    titleTy: toText(event?.titleTy ?? event?.title_ty),
     time: toText(event?.time),
     place: toText(event?.place),
+    placeTy: toText(event?.placeTy ?? event?.place_ty),
     desc: toText(event?.desc),
+    descTy: toText(event?.descTy ?? event?.descriptionTy ?? event?.description_ty),
     isImportant: Boolean(event?.isImportant),
   };
 }

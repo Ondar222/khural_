@@ -3,30 +3,32 @@ import { App, Button, Input } from "antd";
 import AdminShell from "./AdminShell.jsx";
 import AdminEventsList from "./AdminEventsList.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
+import { useI18n } from "../../context/I18nContext.jsx";
 
 export default function AdminEventsPage() {
   const adminData = useAdminData();
   const { message } = App.useApp();
+  const { t } = useI18n();
 
   const loginCard = !adminData.isAuthenticated ? (
     <div className="admin-card" style={{ marginBottom: 16 }}>
       <div style={{ display: "grid", gap: 10, maxWidth: 520 }}>
-        <div style={{ fontWeight: 900, fontSize: 16 }}>Вход в админку</div>
+        <div style={{ fontWeight: 900, fontSize: 16 }}>{t("adminLoginTitle")}</div>
         <div style={{ opacity: 0.8, fontSize: 13, lineHeight: 1.45 }}>
-          Чтобы редактировать, добавлять и удалять записи, выполните вход.
+          {t("adminLoginHint")}
         </div>
         <Input
-          placeholder="Email"
+          placeholder={t("adminEmailPlaceholder")}
           value={adminData.email}
           onChange={(e) => adminData.setEmail(e.target.value)}
         />
         <Input.Password
-          placeholder="Пароль"
+          placeholder={t("adminPasswordPlaceholder")}
           value={adminData.password}
           onChange={(e) => adminData.setPassword(e.target.value)}
         />
         <Button type="primary" loading={adminData.loginBusy} onClick={adminData.handleLogin}>
-          Войти
+          {t("adminLoginBtn")}
         </Button>
       </div>
     </div>
@@ -35,7 +37,7 @@ export default function AdminEventsPage() {
   return (
     <AdminShell
       activeKey="events"
-      title="События"
+      title={t("adminNavEvents")}
       user={adminData.user}
       themeMode={adminData.themeMode}
       onToggleTheme={adminData.toggleTheme}
@@ -43,8 +45,8 @@ export default function AdminEventsPage() {
     >
       {loginCard}
       <div className="admin-card" style={{ marginBottom: 16, padding: 12, fontSize: 13, opacity: 0.9 }}>
-        Календарь на сайте и админка используют один API: <strong>{adminData.apiBase || "—"}</strong>
-        {adminData.canWrite ? " • запись разрешена" : " • только просмотр"}
+        {t("adminEventsApiNote")} <strong>{adminData.apiBase || "—"}</strong>
+        {adminData.canWrite ? t("adminWriteAllowed") : t("adminViewOnly")}
       </div>
       <AdminEventsList items={adminData.events} onDelete={adminData.deleteEvent} busy={adminData.busy} canWrite={adminData.canWrite} />
     </AdminShell>

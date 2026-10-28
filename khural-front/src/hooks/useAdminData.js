@@ -128,8 +128,11 @@ function toEventRow(e) {
     date,
     time,
     place: String(pick(e, "location", "place", "event_place") || ""),
+    placeTy: String(pick(e, "locationTy", "placeTy", "event_place_ty") || ""),
     title: String(pick(e, "title", "event_title") || ""),
+    titleTy: String(pick(e, "titleTy", "event_title_ty") || ""),
     desc: String(pick(e, "description", "desc", "event_description") || ""),
+    descTy: String(pick(e, "descriptionTy", "descTy", "event_description_ty") || ""),
     __raw: e,
   };
 }
@@ -263,12 +266,18 @@ function toCalendarDto(values) {
   const title = safeString(values?.title);
   const description = safeString(values?.desc);
   const location = safeString(values?.place);
+  const titleTy = safeString(values?.titleTy).trim();
+  const descriptionTy = safeString(values?.descTy);
+  const locationTy = safeString(values?.placeTy).trim();
   const startDate = dt.getTime();
   // Отправляем и camelCase, и snake_case, и отдельные date/time — чтобы бэкенд принял любой формат и событие сохранялось и отображалось на всех устройствах
   return {
     title,
     description,
     location,
+    titleTy: titleTy || undefined,
+    descriptionTy: descriptionTy || undefined,
+    locationTy: locationTy || undefined,
     startDate,
     isPublic: true,
     date: dateStr,
@@ -1098,9 +1107,12 @@ export function useAdminData() {
       id: tempId,
       date: String(payload?.date ?? "").trim() || new Date().toISOString().slice(0, 10),
       title: String(payload?.title ?? "").trim(),
+      titleTy: String(payload?.titleTy ?? "").trim(),
       time: String(payload?.time ?? "").trim(),
       place: String(payload?.place ?? "").trim(),
+      placeTy: String(payload?.placeTy ?? "").trim(),
       desc: String(payload?.desc ?? "").trim(),
+      descTy: String(payload?.descTy ?? "").trim(),
       isImportant: Boolean(payload?.isImportant),
     };
     try {
@@ -1133,8 +1145,11 @@ export function useAdminData() {
           date: payload.date,
           time: payload.time,
           title: payload.title ?? created.title ?? created.event_title,
+          titleTy: payload.titleTy ?? created.titleTy ?? created.event_title_ty,
           place: payload.place ?? created.location ?? created.event_place,
+          placeTy: payload.placeTy ?? created.locationTy ?? created.event_place_ty,
           desc: payload.desc ?? created.description ?? created.event_description,
+          descTy: payload.descTy ?? created.descriptionTy ?? created.event_description_ty,
         });
         setDataContextEvents([...dataContextEvents, newEvent]);
         addCreatedEvent(newEvent);
@@ -1197,9 +1212,12 @@ export function useAdminData() {
           id: String(id),
           date: toText(payload.date) || "",
           title: toText(payload.title) || "",
+          titleTy: toText(payload.titleTy) || "",
           time: toText(payload.time) || "",
           place: toText(payload.place) || "",
+          placeTy: toText(payload.placeTy) || "",
           desc: toText(payload.desc) || "",
+          descTy: toText(payload.descTy) || "",
         };
         const updatedEvents = dataContextEvents.map((e) =>
           String(e.id) === String(id) ? updatedEvent : e
