@@ -447,6 +447,9 @@ export default function SideNav({
       if (pathname === '/info/upoln-po-prav') return "Уполномоченный по правам человека";
       if (pathname === '/info/upoln-po-reb') return "Уполномоченный по правам ребенка";
       if (pathname === '/info/polnomochiya-spikera' || pathname === '/info/polnomochiya-speaker' || pathname === '/info/speaker-powers') return "Полномочия Председателя";
+      if (pathname === '/info/hural-powers' || pathname === '/about/polnomochiya') return "Полномочия Верховного Хурала";
+      if (pathname === '/info/ombudsman') return "Уполномоченный по правах человека";
+      if (pathname === '/info/child-rights') return "Уполномоченный по правах ребенка";
       if (pathname.startsWith('/info/protivodeystvie-korrupcii') || pathname === '/info/anti-corruption') return "Противодействие коррупции";
       if (pathname.startsWith('/info/protivodeystvie-korrupcii/normativnye-akty')) return "Нормативные правовые акты";
       if (pathname.startsWith('/info/protivodeystvie-korrupcii/komissiya-deputatov')) return "Комиссия депутатов";

@@ -36,9 +36,28 @@ const TITLES_KEYS = {
   [PERSONNEL_ROOT_PATH]: PERSONNEL_TITLE,
 };
 
+// Псевдонимы маршрутов → канонический маршрут
+const ROUTE_ALIASES = {
+  "/info/anti-corruption": "/info/protivodeystvie-korrupcii",
+  "/info/border-subject": "/info/prigranichny-subekt",
+  "/info/hural-powers": "/about/polnomochiya",
+  "/info/ombudsman": "/info/upoln-po-prav",
+  "/info/child-rights": "/info/upoln-po-reb",
+  "/info/symbols": "/info/gosudarstvennye-simvoly",
+  "/info/polnomochiya-speaker": "/info/polnomochiya-spikera",
+};
+
 function getRouteBase(route) {
   if (!route) return "/";
-  return route.split("?")[0] || "/";
+  let base = route.split("?")[0] || "/";
+  const aliasKey = Object.keys(ROUTE_ALIASES).find(
+    (k) => base === k || base.startsWith(k + "/"),
+  );
+  if (aliasKey) {
+    const rest = base === aliasKey ? "" : base.slice(aliasKey.length);
+    base = rest ? `${ROUTE_ALIASES[aliasKey]}${rest}` : ROUTE_ALIASES[aliasKey];
+  }
+  return base;
 }
 
 export default function Breadcrumbs() {

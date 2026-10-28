@@ -1699,10 +1699,43 @@ function getSlugFromPath() {
   return "";
 }
 
+// Псевдонимы слагов → канонический слаг раздела.
+// Некоторые страницы используют короткие/альтернативные URL (алиасы),
+// которые должны вести на тот же контент, что и канонический слаг.
+const SLUG_ALIASES = {
+  // Противодействие коррупции
+  "info/anti-corruption": "info/protivodeystvie-korrupcii",
+  // Приграничный субъект
+  "info/border-subject": "info/prigranichny-subekt",
+  // Полномочия Верховного Хурала
+  "info/hural-powers": "about/polnomochiya",
+  // Полномочия Председателя
+  "info/polnomochiya-speaker": "info/polnomochiya-spikera",
+  // Уполномоченный по правам человека
+  "info/ombudsman": "info/upoln-po-prav",
+  // Уполномоченный по правам ребенка
+  "info/child-rights": "info/upoln-po-reb",
+  // Государственные символы
+  "info/symbols": "info/gosudarstvennye-simvoly",
+};
+
+function normalizeSlugAlias(slug) {
+  if (!slug) return slug;
+  const trimmed = String(slug).replace(/^\/+|\/+$/g, "");
+  const segments = trimmed.split("/");
+  const parentKey = segments.slice(0, 2).join("/");
+  const parentCanonical = SLUG_ALIASES[parentKey];
+  if (parentCanonical) {
+    const rest = segments.slice(2).join("/");
+    return rest ? `${parentCanonical}/${rest}` : parentCanonical;
+  }
+  return trimmed;
+}
+
 export default function PageBySlug() {
   const { lang, t } = useI18n();
   const adminData = useAdminData();
-  const [slug, setSlug] = React.useState(() => getSlugFromPath());
+  const [slug, setSlug] = React.useState(() => normalizeSlugAlias(getSlugFromPath()));
   const [page, setPage] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
@@ -1722,7 +1755,7 @@ export default function PageBySlug() {
   }, []);
 
   React.useEffect(() => {
-    const update = () => setSlug(getSlugFromPath());
+    const update = () => setSlug(normalizeSlugAlias(getSlugFromPath()));
     window.addEventListener("popstate", update);
     window.addEventListener("app:navigate", update);
     return () => {
