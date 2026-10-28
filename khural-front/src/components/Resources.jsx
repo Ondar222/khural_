@@ -129,7 +129,7 @@ export default function Resources() {
                 rel="noopener noreferrer"
                 style={{ height: 120 }}
               >
-                <span style={{ maxWidth: 260 }}>{portal.label}</span>
+                <span style={{ maxWidth: 260 }}>{t(portal.label)}</span>
                 <span>→</span>
               </a>
             ))}

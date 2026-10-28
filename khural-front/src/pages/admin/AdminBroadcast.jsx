@@ -1,9 +1,10 @@
 import React from "react";
 import { App, Button, Form, Input, Select, Switch, Card, Space, Divider, Alert, List } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import { BROADCAST_LINKS } from "../../content/broadcasts.js";
+import { BroadcastsApi } from "../../api/client.js";
 
 const BROADCAST_TYPE_OPTIONS = [
   { value: "vk", label: "VK (ВКонтакте)" },
@@ -20,6 +21,8 @@ export default function AdminBroadcast() {
   const [saved, setSaved] = React.useState(false);
   const [broadcastLinks, setBroadcastLinks] = React.useState(() => [...BROADCAST_LINKS]);
   const [linksLoading, setLinksLoading] = React.useState(false);
+  const [syncing, setSyncing] = React.useState(false);
+  const [syncResult, setSyncResult] = React.useState(null);
   const [linksSaved, setLinksSaved] = React.useState(false);
   const [newLinkUrl, setNewLinkUrl] = React.useState("");
 
@@ -222,6 +225,29 @@ export default function AdminBroadcast() {
     setBroadcastLinks((prev) => prev.filter((u) => u !== url));
   };
 
+  const handleSyncVk = async () => {
+    if (!adminData.canWrite) {
+      message.warning("Нет прав на запись");
+      return;
+    }
+    try {
+      setSyncing(true);
+      setSyncResult(null);
+      const res = await BroadcastsApi.sync();
+      setSyncResult(res);
+      if (res?.skipped) {
+        message.warning(res?.reason || "Синхронизация пропущена. Проверьте VK_ACCESS_TOKEN и VK_GROUP_ID на бэкенде.");
+      } else {
+        message.success(`Синхронизация VK завершена: добавлено ${res?.created ?? 0}, обновлено ${res?.updated ?? 0}`);
+      }
+      if (adminData.reload) adminData.reload();
+    } catch (e) {
+      message.error(e?.message || "Ошибка синхронизации с VK");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const saveBroadcastLinks = async () => {
     if (!adminData.canWrite) {
       message.warning("Нет прав на запись");
@@ -385,6 +411,42 @@ export default function AdminBroadcast() {
             </Space>
           </Form.Item>
         </Form>
+
+      <Card title="Синхронизация с VK Video" style={{ marginTop: 24 }}>
+        <Alert
+          type="info"
+          style={{ marginBottom: 16 }}
+          message="Автоматическое определение трансляций VK"
+          description="Кнопка синхронизирует список видео сообщества VK с сайтом. Если в VK идёт прямая трансляция (live_status: started), виджет автоматически покажет её во встроенном плеере VK Video."
+        />
+        <Space direction="vertical" style={{ width: "100%" }}>
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            onClick={handleSyncVk}
+            loading={syncing}
+            disabled={!adminData.canWrite}
+          >
+            Синхронизировать с VK
+          </Button>
+          {syncResult && (
+            <Alert
+              type={syncResult.skipped ? "warning" : "success"}
+              message={
+                syncResult.skipped
+                  ? `Пропущено: ${syncResult.reason || "не настроены VK_ACCESS_TOKEN/VK_GROUP_ID"}`
+                  : `Добавлено: ${syncResult.created ?? 0}, обновлено: ${syncResult.updated ?? 0}`
+              }
+              description={
+                Array.isArray(syncResult.liveNow) && syncResult.liveNow.length > 0
+                  ? `Сейчас идёт трансляций: ${syncResult.liveNow.length}`
+                  : undefined
+              }
+              showIcon
+            />
+          )}
+        </Space>
+      </Card>
 
         {!adminData.canWrite && (
           <Alert

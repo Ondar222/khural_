@@ -1445,6 +1445,27 @@ export const SettingsApi = {
   },
 };
 
+// Broadcasts (трансляции) endpoints
+export const BroadcastsApi = {
+  /** GET /broadcasts — список трансляций (backend синхронизирует их с VK). Без auth. */
+  async listPublic() {
+    try {
+      const data = await apiFetch("/broadcasts", { method: "GET", auth: false });
+      if (Array.isArray(data)) return data;
+      return null;
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.warn("BroadcastsApi.listPublic:", e?.message || e);
+      }
+      return null;
+    }
+  },
+  /** POST /broadcasts/sync — принудительная синхронизация с VK (только для админов) */
+  async sync() {
+    return apiFetch("/broadcasts/sync", { method: "POST", auth: true });
+  },
+};
+
 // Convocations (Созывы) endpoints
 // API находится по пути /persons/convocations согласно Swagger
 export const ConvocationsApi = {
