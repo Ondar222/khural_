@@ -2,16 +2,14 @@ import React from "react";
 import BroadcastWidget from "../components/BroadcastWidget.jsx";
 import VkWidget from "../components/VkWidget.jsx";
 import SideNav from "../components/SideNav.jsx";
-import DataState from "../components/DataState.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
-import { getBroadcastUrls, getBroadcastTitle } from "../content/broadcasts.js";
 
 export default function Broadcast() {
   const { t } = useI18n();
   const { settings } = useData();
-  const { links: broadcastLinks } = useBroadcastLinks();
+  const { items: broadcastItems } = useBroadcastLinks();
 
   // Получаем ID группы ВК из настроек
   const vkGroupId = React.useMemo(() => {
@@ -86,12 +84,11 @@ export default function Broadcast() {
                   gap: 20,
                 }}
               >
-                {broadcastLinks.map((url, index) => {
-                  const { embedUrl, watchUrl } = getBroadcastUrls(url);
-                  const title = getBroadcastTitle(url) || `Трансляция ${index + 1}`;
+                {broadcastItems.map((item, index) => {
+                  const title = item.title || `Трансляция ${index + 1}`;
                   return (
                     <div
-                      key={url}
+                      key={String(item.id ?? item.url)}
                       style={{
                         background: "#fafafa",
                         borderRadius: 8,
@@ -100,9 +97,9 @@ export default function Broadcast() {
                       }}
                     >
                       <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, background: "#000" }}>
-                        {embedUrl ? (
+                        {item.embedUrl ? (
                           <iframe
-                            src={embedUrl}
+                            src={item.embedUrl}
                             title={title}
                             style={{
                               position: "absolute",
@@ -116,7 +113,7 @@ export default function Broadcast() {
                           />
                         ) : (
                           <a
-                            href={url}
+                            href={item.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -138,7 +135,7 @@ export default function Broadcast() {
                       </div>
                       <div style={{ padding: 12 }}>
                         <a
-                          href={watchUrl}
+                          href={item.watchUrl || item.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4, display: "block" }}

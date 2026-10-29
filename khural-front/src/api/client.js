@@ -1476,6 +1476,8 @@ export const BroadcastsApi = {
     try {
       const data = await apiFetch("/broadcasts", { method: "GET", auth: false });
       if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.data)) return data.data;
       return null;
     } catch (e) {
       if (import.meta.env.DEV) {
@@ -1483,6 +1485,30 @@ export const BroadcastsApi = {
       }
       return null;
     }
+  },
+  /** GET /broadcasts — список с auth (админка): те же записи, что видит сайт. */
+  async list() {
+    const data = await apiFetch("/broadcasts", { method: "GET", auth: true });
+    if (Array.isArray(data)) return data;
+    if (data?.items && Array.isArray(data.items)) return data.items;
+    if (data?.data && Array.isArray(data.data)) return data.data;
+    return [];
+  },
+  /** GET /broadcasts/{id} */
+  async getById(id) {
+    return apiFetch(`/broadcasts/${id}`, { method: "GET", auth: false });
+  },
+  /** POST /broadcasts — добавить трансляцию по ссылке ВК / YouTube (только админы) */
+  async create(body) {
+    return apiFetch("/broadcasts", { method: "POST", body, auth: true });
+  },
+  /** PATCH /broadcasts/{id} — обновить трансляцию (только админы) */
+  async patch(id, body) {
+    return apiFetch(`/broadcasts/${id}`, { method: "PATCH", body, auth: true });
+  },
+  /** DELETE /broadcasts/{id} — удалить трансляцию (только админы) */
+  async remove(id) {
+    return apiFetch(`/broadcasts/${id}`, { method: "DELETE", auth: true });
   },
   /** POST /broadcasts/sync — принудительная синхронизация с VK (только для админов) */
   async sync() {

@@ -113,7 +113,7 @@ function pick(obj, ...keys) {
 function toEventRow(e) {
   const dateVal = pick(e, "date", "date_of_event");
   const startVal = pick(e, "startDate", "start_date");
-  const start = startVal != null ? new Date(Number(startVal)) : null;
+  const start = startVal != null ? new Date(startVal) : null;
   const date =
     dateVal ? String(dateVal).trim().slice(0, 10)
     : start && !isNaN(start.getTime()) ? start.toISOString().slice(0, 10)
@@ -269,27 +269,19 @@ function toCalendarDto(values) {
   const titleTy = safeString(values?.titleTy).trim();
   const descriptionTy = safeString(values?.descTy);
   const locationTy = safeString(values?.placeTy).trim();
-  const startDate = dt.getTime();
-  // Отправляем и camelCase, и snake_case, и отдельные date/time — чтобы бэкенд принял любой формат и событие сохранялось и отображалось на всех устройствах
+  // Бэкенд хранит startDate как ISO-строку (GET /calendar возвращает "2026-10-30T10:00:00.000Z").
+  // Числовой timestamp и лишние поля (date_of_event, event_title, start_date…) отклоняет
+  // class-validator → 400 → событие сохранялось только в localStorage и было видно на одном устройстве.
   return {
     title,
     description,
     location,
-    titleTy: titleTy || undefined,
-    descriptionTy: descriptionTy || undefined,
-    locationTy: locationTy || undefined,
-    startDate,
+    startDate: dt.toISOString(),
+    endDate: null,
     isPublic: true,
-    date: dateStr,
-    time: timeStr,
-    place: location,
-    desc: description,
-    event_title: title,
-    event_description: description,
-    event_place: location,
-    date_of_event: dateStr,
-    event_time: timeStr,
-    start_date: startDate,
+    ...(titleTy ? { titleTy } : {}),
+    ...(descriptionTy ? { descriptionTy } : {}),
+    ...(locationTy ? { locationTy } : {}),
   };
 }
 
@@ -1103,132 +1095,87 @@ export function useAdminData() {
   const createEvent = React.useCallback(async (payload) => {
     setBusy(true);
     const tempId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const localEvent = {
-      id: tempId,
-      date: String(payload?.date ?? "").trim() || new Date().toISOString().slice(0, 10),
-      title: String(payload?.title ?? "").trim(),
-      titleTy: String(payload?.titleTy ?? "").trim(),
-      time: String(payload?.time ?? "").trim(),
-      place: String(payload?.place ?? "").trim(),
-      placeTy: String(payload?.placeTy ?? "").trim(),
-      desc: String(payload?.desc ?? "").trim(),
-      descTy: String(payload?.descTy ?? "").trim(),
-      isImportant: Boolean(payload?.isImportant),
-    };
     try {
       const created = await EventsApi.create(toCalendarDto(payload));
-      message.success("Событие создано и будет видно всем на сайте");
+      // Сервер — единый источник правды: в localStorage ничего не пишем,
+      // иначе локальная копия затенит серверную на этом устройстве.
+      message.success("Событие создано и видно всем на сайте");
 
       if (created) {
-        const toText = (v) => {
-          if (v === undefined || v === null) return "";
-          if (typeof v === "string") return v;
-          if (typeof v === "number" || typeof v === "boolean") return String(v);
-          if (typeof v === "object") {
-            if (typeof v.getContent === "function") {
-              try {
-                return String(v.getContent() || "");
-              } catch {
-                return "";
-              }
-            }
-            if (typeof v?.target?.value === "string") return v.target.value;
-            if (typeof v?.content === "string") return v.content;
-            if (typeof v?.html === "string") return v.html;
-            return "";
-          }
-          return String(v);
-        };
         const newEvent = toEventRow({
           ...created,
           id: created.id ?? tempId,
           date: payload.date,
           time: payload.time,
-          title: payload.title ?? created.title ?? created.event_title,
-          titleTy: payload.titleTy ?? created.titleTy ?? created.event_title_ty,
-          place: payload.place ?? created.location ?? created.event_place,
-          placeTy: payload.placeTy ?? created.locationTy ?? created.event_place_ty,
-          desc: payload.desc ?? created.description ?? created.event_description,
-          descTy: payload.descTy ?? created.descriptionTy ?? created.event_description_ty,
+          title: payload.title ?? created.title,
+          titleTy: payload.titleTy ?? created.titleTy,
+          place: payload.place ?? created.location,
+          placeTy: payload.placeTy ?? created.locationTy,
+          desc: payload.desc ?? created.description,
+          descTy: payload.descTy ?? created.descriptionTy,
         });
-        setDataContextEvents([...dataContextEvents, newEvent]);
-        addCreatedEvent(newEvent);
+        setDataContextEvents((prev) => [...prev, newEvent]);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 100));
       if (typeof reloadDataContextEvents === "function") reloadDataContextEvents();
       await reload();
     } catch (e) {
-      // При недоступности или ошибке API сохраняем только локально (видено только на этом устройстве)
+      // Ошибка API — сохраняем локально, но показываем реальную причину
+      const detail = e?.status ? `HTTP ${e.status}: ${e?.message || "ошибка бэкенда"}` : (e?.message || "сеть недоступна");
+      const localEvent = {
+        id: tempId,
+        date: String(payload?.date ?? "").trim() || new Date().toISOString().slice(0, 10),
+        title: String(payload?.title ?? "").trim(),
+        titleTy: String(payload?.titleTy ?? "").trim(),
+        time: String(payload?.time ?? "").trim(),
+        place: String(payload?.place ?? "").trim(),
+        placeTy: String(payload?.placeTy ?? "").trim(),
+        desc: String(payload?.desc ?? "").trim(),
+        descTy: String(payload?.descTy ?? "").trim(),
+        isImportant: Boolean(payload?.isImportant),
+      };
       addCreatedEvent(localEvent);
       setDataContextEvents((prev) => [...prev, localEvent]);
-      if (e?.status === 400) {
-        message.warning(
-          "Бэкенд отклонил запрос (400). Событие сохранено локально. Проверьте, что бэкенд принимает поля: title, description, location, startDate (или date_of_event, event_title и т.д.)."
-        );
-      } else {
-        message.warning(
-          "Событие сохранено только на этом устройстве. Чтобы оно было видно всем, настройте API календаря (бэкенд) и проверьте подключение."
-        );
-      }
+      message.warning(
+        `Бэкенд не принял событие: ${detail}. Сохранено только на этом устройстве — на других не видно.`
+      );
     } finally {
       setBusy(false);
     }
-  }, [message, reload, reloadDataContextEvents, setDataContextEvents, dataContextEvents]);
+  }, [message, reload, reloadDataContextEvents, setDataContextEvents]);
 
   const updateEvent = React.useCallback(async (id, payload) => {
     setBusy(true);
     try {
-      try {
-        await EventsApi.patch(id, toCalendarDto(payload));
-        message.success("Событие обновлено");
-      } catch {
-        // allow local update if API is unavailable/no rights
-        message.success("Успешно изменено");
-      }
+      const updated = await EventsApi.patch(id, toCalendarDto(payload));
 
-      // Оптимистично обновляем событие в DataContext + сохраняем в overrides, чтобы работало в календаре при 404/429
-      if (dataContextEvents) {
-        const toText = (v) => {
-          if (v === undefined || v === null) return "";
-          if (typeof v === "string") return v;
-          if (typeof v === "number" || typeof v === "boolean") return String(v);
-          if (typeof v === "object") {
-            if (typeof v.getContent === "function") {
-              try {
-                return String(v.getContent() || "");
-              } catch {
-                return "";
-              }
-            }
-            if (typeof v?.target?.value === "string") return v.target.value;
-            if (typeof v?.content === "string") return v.content;
-            if (typeof v?.html === "string") return v.html;
-            return "";
-          }
-          return String(v);
-        };
-        const updatedEvent = {
+      // Сервер — единственный источник правды: обновляем локально только при успехе
+      if (updated && dataContextEvents) {
+        const updatedEvent = toEventRow({
+          ...updated,
           id: String(id),
-          date: toText(payload.date) || "",
-          title: toText(payload.title) || "",
-          titleTy: toText(payload.titleTy) || "",
-          time: toText(payload.time) || "",
-          place: toText(payload.place) || "",
-          placeTy: toText(payload.placeTy) || "",
-          desc: toText(payload.desc) || "",
-          descTy: toText(payload.descTy) || "",
-        };
-        const updatedEvents = dataContextEvents.map((e) =>
-          String(e.id) === String(id) ? updatedEvent : e
+          date: payload.date,
+          time: payload.time,
+          title: payload.title ?? updated.title,
+          titleTy: payload.titleTy ?? updated.titleTy,
+          place: payload.place ?? updated.location,
+          placeTy: payload.placeTy ?? updated.locationTy,
+          desc: payload.desc ?? updated.description,
+          descTy: payload.descTy ?? updated.descriptionTy,
+        });
+        setDataContextEvents((prev) =>
+          prev.map((e) => (String(e.id) === String(id) ? updatedEvent : e))
         );
-        setDataContextEvents(updatedEvents);
         updateEventOverride(String(id), updatedEvent);
       }
-      
+
+      message.success("Событие обновлено");
       await reload();
-      // Обновляем DataContext, чтобы календарь увидел обновленное событие (если API работает)
       reloadDataContext();
+    } catch (e) {
+      const detail = e?.status ? `HTTP ${e.status}: ${e?.message || "ошибка бэкенда"}` : (e?.message || "сеть недоступна");
+      message.error(`Не удалось обновить: ${detail}`);
     } finally {
       setBusy(false);
     }
@@ -1237,26 +1184,21 @@ export function useAdminData() {
   const deleteEvent = React.useCallback(async (id) => {
     setBusy(true);
     try {
-      try {
-        await EventsApi.remove(id);
-        message.success("Событие удалено");
-      } catch {
-        message.success("Успешно удалено");
-      }
+      await EventsApi.remove(id);
+      message.success("Событие удалено");
       addDeletedEventId(String(id));
 
-      // Оптимистично удаляем событие из локального состояния, чтобы UI сразу обновился
+      // Удаляем локально только после успешного ответа сервера
       if (dataContextEvents) {
         const filteredEvents = dataContextEvents.filter((e) => String(e.id) !== String(id));
         setDataContextEvents(filteredEvents);
       }
 
-      // Перезагружаем данные, чтобы синхронизироваться с бэкендом
       await reload();
       await reloadDataContext();
     } catch (e) {
-      console.error("Ошибка при удалении события:", e);
-      message.error("Не удалось удалить событие");
+      const detail = e?.status ? `HTTP ${e.status}: ${e?.message || "ошибка бэкенда"}` : (e?.message || "сеть недоступна");
+      message.error(`Не удалось удалить событие: ${detail}`);
     } finally {
       setBusy(false);
     }

@@ -1,13 +1,15 @@
 import React from "react";
 import { BROADCAST_LINKS } from "../content/broadcasts.js";
 import { BroadcastsApi } from "../api/client.js";
+import { normalizeApiBroadcasts, normalizeStaticBroadcasts } from "../content/broadcasts.js";
 
 /**
  * Список ссылок на трансляции для архива на главной и /broadcast.
- * Берём sourceUrl из публичного /broadcasts, при ошибке — статический BROADCAST_LINKS.
+ * Приоритет: публичный /api/broadcasts, fallback — BROADCAST_LINKS.
  */
 export function useBroadcastLinks() {
   const [links, setLinks] = React.useState(BROADCAST_LINKS);
+  const [items, setItems] = React.useState(() => normalizeStaticBroadcasts(BROADCAST_LINKS));
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -17,11 +19,10 @@ export function useBroadcastLinks() {
         const list = await BroadcastsApi.listPublic();
         if (cancelled) return;
         if (Array.isArray(list) && list.length > 0) {
-          const urls = list
-            .map((b) => b?.sourceUrl || b?.source_url || b?.url || "")
-            .filter((u) => typeof u === "string" && u.trim());
-          if (urls.length > 0) {
-            setLinks(urls);
+          const normalized = normalizeApiBroadcasts(list);
+          if (normalized.length > 0) {
+            setItems(normalized);
+            setLinks(normalized.map((b) => b.url));
             setLoading(false);
             return;
           }
@@ -30,7 +31,9 @@ export function useBroadcastLinks() {
         // fallback ниже
       }
       if (!cancelled) {
-        setLinks(BROADCAST_LINKS);
+        const fallback = normalizeStaticBroadcasts(BROADCAST_LINKS);
+        setItems(fallback);
+        setLinks(fallback.map((b) => b.url));
         setLoading(false);
       }
     })();
@@ -39,5 +42,5 @@ export function useBroadcastLinks() {
     };
   }, []);
 
-  return { links, loading };
+  return { links, items, loading };
 }

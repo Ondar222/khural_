@@ -84,7 +84,7 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
             const apiEvent = await EventsApi.getById(id);
             if (apiEvent) {
               // Преобразуем данные из API в формат формы (используем ту же логику, что и toEventRow)
-              const start = apiEvent?.startDate ? new Date(Number(apiEvent.startDate)) : null;
+              const start = apiEvent?.startDate ? new Date(apiEvent.startDate) : null;
               const date = start && !isNaN(start.getTime()) ? start.toISOString().slice(0, 10) : apiEvent?.date || "";
               const time = start && !isNaN(start.getTime()) ? start.toISOString().slice(11, 16) : apiEvent?.time || "";
               
@@ -121,7 +121,7 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
         // Если дата/время пустые, но есть __raw с startDate, извлекаем оттуда
         if ((!dateValue || !timeValue) && found.__raw) {
           const raw = found.__raw;
-          const start = raw?.startDate ? new Date(Number(raw.startDate)) : null;
+          const start = raw?.startDate ? new Date(raw.startDate) : null;
           if (start && !isNaN(start.getTime())) {
             dateValue = start.toISOString().slice(0, 10);
             timeValue = start.toISOString().slice(11, 16);
@@ -182,8 +182,8 @@ export default function AdminEventEditor({ mode, eventId, items, onCreate, onUpd
         try {
           const updatedEvent = await EventsApi.getById(eventId);
           if (updatedEvent) {
-            // Извлекаем дату и время из startDate (timestamp в миллисекундах)
-            const start = updatedEvent?.startDate ? new Date(Number(updatedEvent.startDate)) : null;
+            // Извлекаем дату и время из startDate (ISO-строка от бэкенда)
+            const start = updatedEvent?.startDate ? new Date(updatedEvent.startDate) : null;
             let dateValue = "";
             let timeValue = "";
             

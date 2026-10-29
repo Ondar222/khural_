@@ -86,8 +86,11 @@ function normalizeEvent(event) {
   if (!id) return null;
   let date = toDateKey(event?.date) || toText(event?.date);
   if (!date && (event?.startDate != null || event?.start_date != null)) {
-    const ts = Number(event?.startDate ?? event?.start_date);
-    if (!Number.isNaN(ts)) date = toDateKey(ts) || new Date(ts).toISOString().slice(0, 10);
+    // Бэкенд отдаёт startDate как ISO-строку ("2026-10-30T10:00:00.000Z"),
+    // но старые локальные записи могли храниться числовым timestamp — поддерживаем оба.
+    const raw = event?.startDate ?? event?.start_date;
+    const d = typeof raw === "number" ? new Date(raw) : new Date(String(raw));
+    if (!isNaN(d.getTime())) date = d.toISOString().slice(0, 10);
   }
   return {
     id,

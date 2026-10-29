@@ -79,3 +79,82 @@ export function getBroadcastUrls(url) {
   }
   return { embedUrl: null, watchUrl: url };
 }
+
+const text = (v) => (typeof v === "string" ? v.trim() : v == null ? "" : String(v).trim());
+
+/**
+ * Единый формат трансляции для витрины и админки.
+ * Бэкенд (/api/broadcasts) отдаёт embedUrl/sourceUrl готовыми, но title у синхронизированных
+ * записей пустой — название добираем из локального справочника BROADCAST_TITLES по ID видео.
+ */
+export function fromApiBroadcast(item, index = 0) {
+  if (!item || typeof item !== "object") return null;
+  const externalId = text(item.externalId ?? item.external_id);
+  const sourceUrl = text(item.sourceUrl ?? item.source_url ?? item.url);
+  const url = sourceUrl || (externalId ? `https://vkvideo.ru/video${externalId}` : "");
+  if (!url) return null;
+  const derived = getBroadcastUrls(url);
+  return {
+    id: item.id ?? externalId ?? url,
+    url,
+    title: text(item.title) || getBroadcastTitle(url) || getBroadcastTitle(derived.watchUrl) || "",
+    description: text(item.description),
+    provider: text(item.provider ?? item.type) || "vk",
+    embedUrl: text(item.embedUrl ?? item.embed_url) || derived.embedUrl || null,
+    watchUrl: derived.watchUrl || url,
+    thumbnailUrl: text(item.thumbnailUrl ?? item.thumbnail_url) || null,
+    isLive: item.isLive === true || item.is_live === true,
+    isPublished: item.isPublished !== false && item.is_published !== false,
+    publishedAt:
+      text(item.publishedAt ?? item.published_at) || text(item.createdAt ?? item.created_at) || "",
+    sortOrder: Number.isFinite(Number(item.sortOrder ?? item.sort_order))
+      ? Number(item.sortOrder ?? item.sort_order)
+      : index,
+    source: "api",
+  };
+}
+
+/** Статическая ссылка из BROADCAST_LINKS → тот же формат (fallback без бэкенда). */
+export function fromStaticBroadcastLink(url, index = 0) {
+  const derived = getBroadcastUrls(url);
+  return {
+    id: `static-${index}`,
+    url: text(url),
+    title: getBroadcastTitle(url) || "",
+    description: "",
+    provider: text(url).includes("youtu") ? "youtube" : "vk",
+    embedUrl: derived.embedUrl || null,
+    watchUrl: derived.watchUrl || text(url),
+    thumbnailUrl: null,
+    isLive: false,
+    isPublished: true,
+    publishedAt: "",
+    sortOrder: index,
+    source: "static",
+  };
+}
+
+/** Прямые эфиры сверху, далее по дате (новые выше), затем по sortOrder бэкенда. */
+export function sortBroadcastItems(items) {
+  return [...(Array.isArray(items) ? items : [])].sort((a, b) => {
+    if (Boolean(a?.isLive) !== Boolean(b?.isLive)) return a?.isLive ? -1 : 1;
+    const ta = Date.parse(a?.publishedAt ?? "") || 0;
+    const tb = Date.parse(b?.publishedAt ?? "") || 0;
+    if (ta !== tb) return tb - ta;
+    return (a?.sortOrder ?? 0) - (b?.sortOrder ?? 0);
+  });
+}
+
+/** GET /api/broadcasts → отсортированный список опубликованных трансляций. */
+export function normalizeApiBroadcasts(list) {
+  const arr = Array.isArray(list) ? list : [];
+  return sortBroadcastItems(
+    arr.map((item, i) => fromApiBroadcast(item, i)).filter((item) => item && item.isPublished)
+  );
+}
+
+/** BROADCAST_LINKS → тот же формат, порядок как в списке (свежие в конце). */
+export function normalizeStaticBroadcasts(links) {
+  const arr = Array.isArray(links) ? links : [];
+  return arr.map((url, i) => fromStaticBroadcastLink(url, i)).filter((item) => item && item.url);
+}

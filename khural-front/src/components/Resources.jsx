@@ -3,7 +3,6 @@ import GosWidget from "./GosWidget.jsx";
 import BroadcastWidget from "./BroadcastWidget.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
-import { getBroadcastUrls, getBroadcastTitle } from "../content/broadcasts.js";
 import {
   readPortalsOverrides,
   mergePortalsWithOverrides,
@@ -71,7 +70,7 @@ const DEFAULT_PORTALS = [
 
 export default function Resources() {
   const { t } = useI18n();
-  const { links: broadcastLinks } = useBroadcastLinks();
+  const { items: broadcastItems } = useBroadcastLinks();
   const [portalsOpen, setPortalsOpen] = React.useState(false);
   const portalsId = "portals-list";
   const [portals, setPortals] = React.useState(() => {
@@ -149,29 +148,27 @@ export default function Resources() {
             </a>
           </div>
           <BroadcastWidget compact />
-          {/* Последние 4 трансляций из архива; остальные — на странице «Все трансляции» */}
+          {/* 4 актуальные трансляции из /api/broadcasts (live и свежие сверху); остальные — на «Все трансляции» */}
           {(() => {
-            const last4 = broadcastLinks.slice(-4);
-            if (last4.length === 0) return null;
+            const top4 = broadcastItems.slice(0, 4);
+            if (top4.length === 0) return null;
             return (
               <div className="broadcasts-home">
-                {last4.map((url, index) => {
-                  const { embedUrl, watchUrl } = getBroadcastUrls(url);
-                  const num = broadcastLinks.length - 4 + index + 1;
-                  const title = getBroadcastTitle(url) || `${t("Трансляция")} ${num}`;
+                {top4.map((item, index) => {
+                  const title = item.title || `${t("Трансляция")} ${index + 1}`;
                   return (
-                    <div key={url} className="broadcasts-home__item">
+                    <div key={String(item.id ?? item.watchUrl ?? index)} className="broadcasts-home__item">
                       <div className="broadcasts-home__video">
-                        {embedUrl ? (
+                        {item.embedUrl ? (
                           <iframe
-                            src={embedUrl}
+                            src={item.embedUrl}
                             title={title}
                             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                           />
                         ) : (
                           <a
                             className="broadcasts-home__fallback"
-                            href={url}
+                            href={item.watchUrl || item.url}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
@@ -180,7 +177,7 @@ export default function Resources() {
                         )}
                       </div>
                       <div className="broadcasts-home__link">
-                        <a href={watchUrl} target="_blank" rel="noopener noreferrer">
+                        <a href={item.watchUrl || item.url} target="_blank" rel="noopener noreferrer">
                           {title}
                         </a>
                       </div>
