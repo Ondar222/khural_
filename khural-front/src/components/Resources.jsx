@@ -122,14 +122,13 @@ export default function Resources() {
             {portals.map((portal) => (
               <a
                 key={portal.id}
-                className="tile link"
+                className="tile link resources-portals__tile"
                 href={portal.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ height: 120 }}
               >
-                <span style={{ maxWidth: 260 }}>{t(portal.label)}</span>
-                <span>→</span>
+                <span className="resources-portals__label">{t(portal.label)}</span>
+                <span className="resources-portals__arrow" aria-hidden="true">→</span>
               </a>
             ))}
             </div>

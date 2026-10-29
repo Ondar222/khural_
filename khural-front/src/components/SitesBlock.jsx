@@ -42,14 +42,13 @@ export default function SitesBlock() {
             return (
               <a
                 key={site.id}
-                className="tile link"
+                className="tile link sites-block__tile"
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ height: 120 }}
               >
-                <span style={{ maxWidth: 260 }}>{name}</span>
-                <span>→</span>
+                <span className="sites-block__label">{name}</span>
+                <span className="sites-block__arrow" aria-hidden="true">→</span>
               </a>
             );
           })}

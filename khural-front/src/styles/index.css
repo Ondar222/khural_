@@ -1119,6 +1119,50 @@ a {
   min-width: 0;
 }
 
+.resources-portals__tile {
+  min-width: 0;
+  width: 100%;
+  height: 120px;
+  box-sizing: border-box;
+  gap: 10px;
+}
+.resources-portals__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.resources-portals__arrow {
+  flex-shrink: 0;
+}
+
+.sites-block {
+  min-width: 0;
+}
+.sites-block__grid {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+.sites-block__tile {
+  min-width: 0;
+  width: 100%;
+  height: 120px;
+  box-sizing: border-box;
+  gap: 10px;
+}
+.sites-block__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.sites-block__arrow {
+  flex-shrink: 0;
+}
+
 /* Раздел трансляций на главной */
 .broadcasts-section {
   margin-top: 48px;
@@ -1369,16 +1413,112 @@ a {
   .portals-body {
     overflow: hidden;
     max-height: 0;
-    transition: max-height 240ms ease;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: max-height 360ms ease, opacity 220ms ease, transform 220ms ease;
   }
   .portals-body.is-open {
-    max-height: 1200px; /* enough for all items */
+    max-height: 2000px;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .portals-body .grid.cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    max-width: 100%;
+    align-items: stretch;
   }
   .portals-body .tile {
-    height: 96px !important; /* more compact on mobile */
+    height: auto !important;
+    min-height: 86px !important;
+    padding: 12px 14px !important;
+    font-size: 12px !important;
+    line-height: 1.35;
+  }
+  .portals-body .tile > span:first-child {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .resources-portals__tile {
+    height: auto;
+    min-height: 86px;
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+  .resources-portals__label {
+    font-size: 12px;
+    line-height: 1.35;
   }
   .portals-toggle[aria-expanded="true"] .portals-toggle__chev {
     transform: rotate(0deg);
+  }
+  .sites-block__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    max-width: 100%;
+  }
+  .sites-block__tile {
+    height: 96px;
+    padding: 14px 16px;
+    font-size: 13px;
+  }
+  .sites-block__label {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+}
+
+@media (max-width: 540px) {
+  .portals-body .grid.cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .portals-body .grid.cols-3 > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+  .portals-body .tile {
+    min-height: 72px !important;
+    padding: 10px 12px !important;
+  }
+  .portals-body .tile > span:first-child {
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+  .resources-portals__tile {
+    min-height: 72px;
+    padding: 10px 12px;
+  }
+  .resources-portals__label {
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+  .sites-block__grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .sites-block__tile {
+    height: auto;
+    min-height: 80px;
+    padding: 12px 14px;
+  }
+  .sites-block__label {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+  .sites-block__title {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+  .resources-portals__tile {
+    height: auto;
+    min-height: 72px;
+    padding: 10px 12px;
+  }
+  .resources-portals__label {
+    font-size: 11.5px;
+    line-height: 1.4;
   }
 }
 /* Achievements responsive grid */
