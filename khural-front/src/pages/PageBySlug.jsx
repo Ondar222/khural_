@@ -81,7 +81,13 @@ import { useAdminData } from "../hooks/useAdminData.js";
 import DataState from "../components/DataState.jsx";
 import SideNav from "../components/SideNav.jsx";
 import { normalizeSlugAlias } from "../utils/slugAliases.js";
-import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
+import {
+  extractPageHtml,
+  extractPageTitle,
+  getPreferredLocaleToken,
+  hasLocalizedPageHtml,
+} from "../utils/pages.js";
+import { useAutomaticTranslation } from "../hooks/useTranslation.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../content/forMedia.js";
 
 /** Статический контент страницы «Кодекс чести мужчины Тувы» (источник: khural.yurta.site). */
@@ -2511,6 +2517,10 @@ export default function PageBySlug() {
                                                                                       ? INFO_PERSONNEL_KOMISSII_RESHENIYA_HTML
                                                                                       : extractPageHtml(page, locale)
           : extractPageHtml(page, locale);
+  const displayHtml = useAutomaticTranslation(
+    html,
+    lang === "ty" && !hasLocalizedPageHtml(page, locale)
+  );
 
   // Определяем slug для админки
   const adminPageSlug = isCodeOfHonor
@@ -2562,7 +2572,11 @@ export default function PageBySlug() {
             >
               <div className="card" style={{ padding: 18 }}>
                 {html ? (
-                  <div onClick={onHtmlContentClick} dangerouslySetInnerHTML={{ __html: html }} />
+                  <div
+                    data-no-auto-translate
+                    onClick={onHtmlContentClick}
+                    dangerouslySetInnerHTML={{ __html: displayHtml }}
+                  />
                 ) : (
                   <div>—</div>
                 )}

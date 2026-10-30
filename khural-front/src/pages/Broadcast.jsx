@@ -1,4 +1,5 @@
 import React from "react";
+import { Pagination } from "antd";
 import BroadcastWidget from "../components/BroadcastWidget.jsx";
 import VkWidget from "../components/VkWidget.jsx";
 import SideNav from "../components/SideNav.jsx";
@@ -6,10 +7,18 @@ import { useI18n } from "../context/I18nContext.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
 
+const BROADCAST_PAGE_SIZE = 6;
+
 export default function Broadcast() {
   const { t } = useI18n();
   const { settings } = useData();
   const { items: broadcastItems } = useBroadcastLinks();
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [activeBroadcastId, setActiveBroadcastId] = React.useState(null);
+  const pageItems = React.useMemo(() => {
+    const start = (currentPage - 1) * BROADCAST_PAGE_SIZE;
+    return broadcastItems.slice(start, start + BROADCAST_PAGE_SIZE);
+  }, [broadcastItems, currentPage]);
 
   // Получаем ID группы ВК из настроек
   const vkGroupId = React.useMemo(() => {
@@ -77,68 +86,56 @@ export default function Broadcast() {
               <h2 className="h2-compact" style={{ marginBottom: 16 }}>
                 Архив трансляций
               </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                  gap: 20,
-                }}
-              >
-                {broadcastItems.map((item, index) => {
-                  const title = item.title || `Трансляция ${index + 1}`;
+              <div className="broadcast-archive__grid">
+                {pageItems.map((item, index) => {
+                  const itemId = String(item.id ?? item.url);
+                  const title =
+                    item.title ||
+                    `Трансляция ${(currentPage - 1) * BROADCAST_PAGE_SIZE + index + 1}`;
+                  const isPlayerActive = activeBroadcastId === itemId;
                   return (
                     <div
-                      key={String(item.id ?? item.url)}
-                      style={{
-                        background: "#fafafa",
-                        borderRadius: 8,
-                        overflow: "hidden",
-                        border: "1px solid #eee",
-                      }}
+                      key={itemId}
+                      className="broadcast-archive__card"
                     >
-                      <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, background: "#000" }}>
-                        {item.embedUrl ? (
+                      <div className="broadcast-archive__player">
+                        {item.embedUrl && isPlayerActive ? (
                           <iframe
                             src={item.embedUrl}
                             title={title}
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              border: 0,
-                            }}
+                            loading="lazy"
+                            referrerPolicy="strict-origin-when-cross-origin"
                             allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                           />
+                        ) : item.embedUrl ? (
+                          <button
+                            type="button"
+                            className="broadcast-archive__load-player"
+                            onClick={() => setActiveBroadcastId(itemId)}
+                            aria-label={`Загрузить плеер: ${title}`}
+                          >
+                            {item.thumbnailUrl ? (
+                              <img src={item.thumbnailUrl} alt="" loading="lazy" />
+                            ) : null}
+                            <span className="broadcast-archive__play" aria-hidden="true">▶</span>
+                            <span>Нажмите, чтобы загрузить видео</span>
+                          </button>
                         ) : (
                           <a
-                            href={item.url}
+                            href={item.watchUrl || item.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              color: "#fff",
-                              textDecoration: "none",
-                            }}
+                            className="broadcast-archive__load-player"
                           >
-                            Смотреть трансляцию
+                            Открыть трансляцию
                           </a>
                         )}
                       </div>
-                      <div style={{ padding: 12 }}>
+                      <div className="broadcast-archive__caption">
                         <a
                           href={item.watchUrl || item.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.4, display: "block" }}
                         >
                           {title}
                         </a>
@@ -147,6 +144,20 @@ export default function Broadcast() {
                   );
                 })}
               </div>
+              {broadcastItems.length > BROADCAST_PAGE_SIZE ? (
+                <Pagination
+                  className="broadcast-archive__pagination"
+                  current={currentPage}
+                  pageSize={BROADCAST_PAGE_SIZE}
+                  total={broadcastItems.length}
+                  showSizeChanger={false}
+                  onChange={(page) => {
+                    setCurrentPage(page);
+                    setActiveBroadcastId(null);
+                  }}
+                  aria-label="Страницы архива трансляций"
+                />
+              ) : null}
             </div>
 
             {/* Виджет ВК с последними постами */}
@@ -163,4 +174,3 @@ export default function Broadcast() {
     </section>
   );
 }
-

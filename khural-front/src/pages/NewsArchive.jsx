@@ -84,11 +84,11 @@ export default function NewsArchive() {
     const items = (news || []).map((n) => ({
       id: n.id,
       title: n.title,
-      excerpt: n.excerpt,
-      contentHtml: n.contentHtml,
       titleTy: n.titleTy,
-      excerptTy: n.excerptTy,
-      contentHtmlTy: n.contentHtmlTy,
+      excerpt: String(n.id) === String(selected) ? n.excerpt : "",
+      contentHtml: String(n.id) === String(selected) ? n.contentHtml : "",
+      excerptTy: String(n.id) === String(selected) ? n.excerptTy : "",
+      contentHtmlTy: String(n.id) === String(selected) ? n.contentHtmlTy : "",
     }));
     let alive = true;
     translateNewsList(items)
@@ -104,7 +104,7 @@ export default function NewsArchive() {
     return () => {
       alive = false;
     };
-  }, [lang, news, translateNewsList]);
+  }, [lang, news, selected, translateNewsList]);
 
   React.useEffect(() => {
     const onNav = () => {
@@ -239,31 +239,29 @@ export default function NewsArchive() {
     window.dispatchEvent(new Event("app:navigate"));
   }, [date, section, category]);
 
+  const setCategoryAndUrl = React.useCallback((nextCategory) => {
+    const h = window.location.pathname;
+    const params = new URLSearchParams(window.location.search || "");
+    if (date) params.set("date", date);
+    if (section && section !== "all") params.set("section", section);
+    else params.delete("section");
+    if (nextCategory) params.set("category", nextCategory);
+    else params.delete("category");
+    params.delete("page");
+    const newUrl = params.toString() ? `${h}?${params.toString()}` : h;
+    window.history.pushState({}, "", newUrl);
+    setCategory(nextCategory || "");
+    setCurrentPage(1);
+    window.dispatchEvent(new Event("app:navigate"));
+  }, [date, section]);
+
   if (selected) {
     const idx = (news || []).findIndex((n) => String(n.id) === String(selected));
     const item = idx >= 0 ? (news || [])[idx] : null;
     
-    // Логируем для отладки
-    if (item) {
-      console.log(`[NewsArchive] Found news item:`, {
-        id: item.id,
-        title: item.title,
-        hasExcerpt: !!item.excerpt,
-        excerptLength: item.excerpt?.length || 0,
-        hasContentHtml: !!item.contentHtml,
-        contentHtmlLength: item.contentHtml?.length || 0,
-        date: item.date,
-      });
-    } else {
-      console.warn(`[NewsArchive] News item not found:`, {
-        selectedId: selected,
-        availableIds: (news || []).map(n => n.id),
-        newsCount: (news || []).length,
-      });
-    }
     if (!item) {
       return (
-        <section className="section">
+        <section className="section news-archive news-archive--detail">
           <div className="container">
             <a
               className="btn btn-back"
@@ -292,7 +290,7 @@ export default function NewsArchive() {
     const shareTitle = String(localized.title || item.title || "").trim();
 
     return (
-      <section className="section">
+      <section className="section news-archive news-archive--detail">
         <div className="container">
           <div
             style={{
@@ -320,7 +318,7 @@ export default function NewsArchive() {
             </div>
           </div>
 
-          <div className="news-detail">
+          <div className="news-detail news-archive__detail-grid">
             <article className="card" style={{ padding: 16 }}>
               {/* Images must come from backend/admin only */}
               <NewsImageCarousel
@@ -481,7 +479,7 @@ export default function NewsArchive() {
               </div>
             </article>
 
-            <aside>
+            <aside className="news-archive__detail-aside">
               <h3 style={{ marginBottom: 8 }}>{t("otherNews")}</h3>
               <div className="grid">
                 {(news || [])
@@ -509,10 +507,10 @@ export default function NewsArchive() {
   }
 
   return (
-    <section className="section">
+    <section className="section news-archive">
       <div className="container">
-        <div className="page-grid">
-          <div>
+        <div className="page-grid news-archive__layout">
+          <div className="news-archive__main">
             <h1>{t("news")}</h1>
             <DataState
               loading={Boolean(loading?.news) && (!news || news.length === 0)}
@@ -651,12 +649,10 @@ export default function NewsArchive() {
               </DataState>
               </DataState>
           </div>
-          <SideNav links={newsMenuLinks} />
+          <SideNav links={newsMenuLinks} className="sidenav--card news-archive__sidenav" />
         </div>
       </div>
       <ScrollToTop />
     </section>
   );
 }
-
-

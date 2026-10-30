@@ -33,6 +33,8 @@ function resolveApiBaseUrl() {
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
+let translationBatchCooldownUntil = 0;
+const translationBatchRequests = new Map();
 
 /** Пересчитать базу на случай поздней подстановки window.__API_BASE_URL__ */
 export function getApiBaseUrl() {
@@ -159,7 +161,16 @@ export async function refreshAccessToken() {
 
 export async function apiFetch(
   path,
-  { method = "GET", body, headers, auth = true, retry = true, baseUrl: baseUrlOverride, timeout: timeoutMs } = {}
+  {
+    method = "GET",
+    body,
+    headers,
+    auth = true,
+    retry = true,
+    baseUrl: baseUrlOverride,
+    timeout: timeoutMs,
+    quiet = false,
+  } = {}
 ) {
   const baseUrl = normalizeBaseUrl(baseUrlOverride) || getApiBaseUrl();
   if (!baseUrl) {
@@ -261,7 +272,16 @@ export async function apiFetch(
       const nextAccess =
         refreshed?.access_token || refreshed?.accessToken || refreshed?.token || "";
       if (nextAccess) {
-        return apiFetch(path, { method, body, headers, auth, retry: false, baseUrl: baseUrlOverride, timeout: timeoutMs });
+        return apiFetch(path, {
+          method,
+          body,
+          headers,
+          auth,
+          retry: false,
+          baseUrl: baseUrlOverride,
+          timeout: timeoutMs,
+          quiet,
+        });
       }
       // refresh failed => clear tokens and trigger logout
       setAuthToken("");
@@ -282,7 +302,7 @@ export async function apiFetch(
       errorMessage = data?.message || data?.error || "Токен авторизации истек. Пожалуйста, войдите заново.";
     } else if (res.status === 400) {
       // Детальная обработка ошибок валидации (только в DEV)
-      if (import.meta.env.DEV) {
+      if (import.meta.env.DEV && !quiet) {
         console.error(`[API] 400 Bad Request для ${method} ${url}`);
         console.error(`[API] Request body:`, body ? JSON.stringify(body, null, 2) : "нет тела");
         console.error(`[API] Response data:`, data);
@@ -453,32 +473,41 @@ export const PublicApi = {
 
   async translate(text, from, to) {
     // Пробуем без авторизации сначала (для публичного доступа)
-    const opts = { method: "POST", body: { text, from, to }, auth: false, timeout: PublicApi.TRANSLATION_TIMEOUT_MS };
+    const opts = {
+      method: "POST",
+      body: { text, from, to },
+      auth: false,
+      timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
+      quiet: true,
+    };
     try {
       const result = await apiFetch("/translation/translate", opts);
       // Проверяем, вернулся ли реальный перевод (не тот же ли самый текст)
       if (result && result.translated && result.translated !== text) {
         return { original: text, translated: result.translated, from, to };
       }
-    } catch (err) {
-      console.log("[translate] First attempt failed:", err?.status, err?.message);
+    } catch {
+      // The public endpoint may be unavailable; continue through the configured fallbacks.
     }
     
     // Если бэкенд вернул оригинал или ошибка - пробуем с авторизацией
     const token = getAuthToken();
     if (token) {
-      const authOpts = { method: "POST", body: { text, from, to }, auth: true, timeout: PublicApi.TRANSLATION_TIMEOUT_MS };
+      const authOpts = {
+        method: "POST",
+        body: { text, from, to },
+        auth: true,
+        timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
+        quiet: true,
+      };
       try {
         const result = await apiFetch("/translation/translate", authOpts);
         if (result && result.translated && result.translated !== text) {
-          console.log("[translate] Translation successful with auth");
           return { original: text, translated: result.translated, from, to };
         }
-      } catch (authErr) {
-        console.log("[translate] Auth attempt failed:", authErr?.status, authErr?.message);
+      } catch {
+        // Continue through the configured fallbacks.
       }
-    } else {
-      console.warn("[translate] No auth token found");
     }
     
     // Пробуем batch API
@@ -488,18 +517,17 @@ export const PublicApi = {
         body: { texts: [text], from, to },
         auth: token ? true : false,
         timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
+        quiet: true,
       });
       const translated = Array.isArray(batchResult?.translated) ? batchResult.translated[0] : null;
       if (translated && translated !== text) {
-        console.log("[translate] Batch translation successful");
         return { original: text, translated, from, to };
       }
-    } catch (batchErr) {
-      console.log("[translate] Batch attempt failed:", batchErr?.status, batchErr?.message);
+    } catch {
+      // Continue through the configured fallbacks.
     }
     
     // Fallback на Google Translate
-    console.log("[translate] Using Google Translate fallback");
     const googleTranslated = await PublicApi.translateWithGoogle(text, from, to);
     if (googleTranslated && googleTranslated !== text) {
       return { original: text, translated: googleTranslated, from, to };
@@ -517,20 +545,41 @@ export const PublicApi = {
     if (!Array.isArray(texts) || texts.length === 0) {
       return { translated: [], rateLimited: false };
     }
-    try {
-      const result = await apiFetch("/translation/translate-batch", {
-        method: "POST",
-        body: { texts, from, to },
-        auth: true,
-        timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
-      });
-      const translated = Array.isArray(result?.translated) ? result.translated : texts;
-      return { translated, rateLimited: false };
-    } catch (e) {
-      if (e?.status === 429) {
+    if (Date.now() < translationBatchCooldownUntil) {
+      return { translated: texts, rateLimited: true };
+    }
+
+    const requestKey = `${from}->${to}::${JSON.stringify(texts)}`;
+    if (translationBatchRequests.has(requestKey)) {
+      return translationBatchRequests.get(requestKey);
+    }
+
+    const request = (async () => {
+      try {
+        const result = await apiFetch("/translation/translate-batch", {
+          method: "POST",
+          body: { texts, from, to },
+          auth: true,
+          timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
+          quiet: true,
+        });
+        const translated = Array.isArray(result?.translated) ? result.translated : texts;
+        if (translated.length !== texts.length) {
+          translationBatchCooldownUntil = Date.now() + 15_000;
+          return { translated: texts, rateLimited: true };
+        }
+        return { translated, rateLimited: false };
+      } catch (error) {
+        translationBatchCooldownUntil = Date.now() + (error?.status === 429 ? 60_000 : 15_000);
         return { translated: texts, rateLimited: true };
       }
-      return { translated: texts, rateLimited: false };
+    })();
+
+    translationBatchRequests.set(requestKey, request);
+    try {
+      return await request;
+    } finally {
+      translationBatchRequests.delete(requestKey);
     }
   },
 };

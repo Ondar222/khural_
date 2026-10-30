@@ -16,7 +16,7 @@ function parseEventDate(raw) {
 
 export default function CalendarWidget() {
   const { events, loading, errors, reload } = useData();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [viewDate, setViewDate] = useState(() => new Date());
   const [openedDayEvents, setOpenedDayEvents] = useState(null);
 
@@ -46,10 +46,18 @@ export default function CalendarWidget() {
     return map;
   }, [events]);
 
-  const monthName = viewDate.toLocaleDateString("ru-RU", {
+  const dateLocale = lang === "ty" ? "tyv" : "ru-RU";
+  const monthName = viewDate.toLocaleDateString(dateLocale, {
     year: "numeric",
     month: "long",
   });
+  const weekdays = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, index) =>
+        new Date(2024, 0, index + 1).toLocaleDateString(dateLocale, { weekday: "short" })
+      ),
+    [dateLocale]
+  );
 
   return (
     <section className="section">
@@ -88,9 +96,9 @@ export default function CalendarWidget() {
             </div>
 
             <div className="calendar__grid">
-              {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((w) => (
-                <div key={w} className="calendar__weekday">
-                  {w}
+              {weekdays.map((weekday, index) => (
+                <div key={index} className="calendar__weekday">
+                  {weekday.charAt(0).toLocaleUpperCase(dateLocale) + weekday.slice(1)}
                 </div>
               ))}
 

@@ -28,11 +28,7 @@ export default function NewsBlock() {
     const items = (filtered || []).map((n) => ({
       id: n.id,
       title: n.title,
-      excerpt: n.excerpt,
-      contentHtml: n.contentHtml,
       titleTy: n.titleTy,
-      excerptTy: n.excerptTy,
-      contentHtmlTy: n.contentHtmlTy,
     }));
     let alive = true;
     translateNewsList(items)

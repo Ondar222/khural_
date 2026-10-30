@@ -4,8 +4,12 @@ import { useI18n } from "../context/I18nContext.jsx";
 export default function VkWidget({ groupId, height = 400 }) {
   const { t } = useI18n();
   const widgetRef = React.useRef(null);
+  const [enabled, setEnabled] = React.useState(false);
 
   React.useEffect(() => {
+    if (!enabled) return undefined;
+    const widgetElement = widgetRef.current;
+
     // Загружаем VK API скрипт с обработкой ошибок
     if (!window.VK) {
       const script = document.createElement("script");
@@ -19,7 +23,7 @@ export default function VkWidget({ groupId, height = 400 }) {
         try {
           if (window.VK && window.VK.Widgets && groupId) {
             window.VK.Widgets.Group(
-              widgetRef.current,
+              widgetElement,
               {
                 mode: 0, // 0 - последние посты, 1 - только новости, 2 - только фото, 3 - только видео
                 width: "auto",
@@ -37,11 +41,11 @@ export default function VkWidget({ groupId, height = 400 }) {
         }
       };
       document.body.appendChild(script);
-    } else if (window.VK && window.VK.Widgets && groupId && widgetRef.current) {
+    } else if (window.VK && window.VK.Widgets && groupId && widgetElement) {
       // Если VK API уже загружен, сразу инициализируем виджет
       try {
         window.VK.Widgets.Group(
-          widgetRef.current,
+          widgetElement,
           {
             mode: 0,
             width: "auto",
@@ -59,11 +63,11 @@ export default function VkWidget({ groupId, height = 400 }) {
 
     return () => {
       // Очистка при размонтировании
-      if (widgetRef.current) {
-        widgetRef.current.innerHTML = "";
+      if (widgetElement) {
+        widgetElement.innerHTML = "";
       }
     };
-  }, [groupId, height]);
+  }, [enabled, groupId, height]);
 
   if (!groupId) {
     return (
@@ -78,15 +82,25 @@ export default function VkWidget({ groupId, height = 400 }) {
       <h3 style={{ marginBottom: 16, fontSize: 20, fontWeight: 700 }}>
         {t("Последние посты из ВКонтакте")}
       </h3>
-      <div
-        ref={widgetRef}
-        style={{
-          width: "100%",
-          minHeight: height,
-          borderRadius: 12,
-          overflow: "hidden",
-        }}
-      />
+      {enabled ? (
+        <div
+          ref={widgetRef}
+          style={{
+            width: "100%",
+            minHeight: height,
+            borderRadius: 12,
+            overflow: "hidden",
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          className="vk-widget__load"
+          onClick={() => setEnabled(true)}
+        >
+          {t("Загрузить виджет ВКонтакте")}
+        </button>
+      )}
     </div>
   );
 }

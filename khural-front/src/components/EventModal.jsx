@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "../context/I18nContext.jsx";
+import { useTranslation } from "../hooks/useTranslation.js";
 
 function parseEventDate(raw) {
   if (raw === undefined || raw === null) return new Date(NaN);
@@ -48,11 +49,44 @@ function stripHtmlToText(html) {
 }
 
 export default function EventModal({ open, onClose, events }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
+  const { translateNewsList } = useTranslation();
   const isTy = lang === "ty" || lang === "tyv";
-  const evTitle = (ev) => (isTy && ev.titleTy ? String(ev.titleTy) : String(ev.title || ""));
-  const evPlace = (ev) => (isTy && ev.placeTy ? String(ev.placeTy) : String(ev.place || ""));
-  const evDesc = (ev) => (isTy && ev.descTy ? String(ev.descTy) : String(ev.desc || ""));
+  const [translatedEvents, setTranslatedEvents] = React.useState(new Map());
+  const [translationError, setTranslationError] = React.useState(false);
+
+  useEffect(() => {
+    if (!open || !isTy || !events?.length) {
+      setTranslatedEvents(new Map());
+      setTranslationError(false);
+      return undefined;
+    }
+
+    let active = true;
+    setTranslationError(false);
+    const items = events.map((event) => ({
+      id: event.id,
+      title: event.title,
+      titleTy: event.titleTy,
+      excerpt: event.place,
+      excerptTy: event.placeTy,
+      contentHtml: event.desc,
+      contentHtmlTy: event.descTy,
+    }));
+    translateNewsList(items)
+      .then((results) => {
+        if (active) {
+          setTranslatedEvents(new Map(results.map((result) => [String(result.id), result])));
+        }
+      })
+      .catch(() => {
+        if (active) setTranslationError(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [open, isTy, events, translateNewsList]);
 
   useEffect(() => {
     if (open) document.body.style.overflow = "hidden";
@@ -62,34 +96,48 @@ export default function EventModal({ open, onClose, events }) {
   }, [open]);
 
   if (!open) return null;
+  const getEventText = (event, field, fallback) => {
+    if (!isTy) return String(event[fallback] || "");
+    const translated = translatedEvents.get(String(event.id));
+    if (translated?.[field]) return String(translated[field]);
+    return String(event[`${fallback}Ty`] || event[fallback] || "");
+  };
+  const dateLocale = isTy ? "tyv" : "ru-RU";
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button className="modal__close icon-btn" onClick={onClose} aria-label="Закрыть">
+        <button className="modal__close icon-btn" onClick={onClose} aria-label={t("close")}>
           ✕
         </button>
         <div className="modal__content">
           <h3 style={{ margin: 0 }}>
             {events && events.length > 0
-              ? `События ${parseEventDate(events[0].date).toLocaleDateString("ru-RU")}`
-              : "События"}
+              ? `${t("calendarEvents")} ${parseEventDate(events[0].date).toLocaleDateString(dateLocale)}`
+              : t("calendarEvents")}
           </h3>
+          {translationError ? (
+            <p role="status" className="text-muted">
+              {t("translationUnavailable")}
+            </p>
+          ) : null}
           <div className="grid" style={{ marginTop: 12 }}>
             {(events || []).map((ev) => (
               <div key={ev.id} className="card" style={{ padding: 12 }}>
-                <h4 style={{ margin: "0 0 6px" }}>{renderText(evTitle(ev))}</h4>
+                <h4 style={{ margin: "0 0 6px" }}>{renderText(getEventText(ev, "title", "title"))}</h4>
                 <div style={{ color: "#0a3b72", fontWeight: 600 }}>
-                  {parseEventDate(ev.date).toLocaleDateString("ru-RU", {
+                  {parseEventDate(ev.date).toLocaleDateString(dateLocale, {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
                   })}
                   {renderText(ev.time) ? ` • ${renderText(ev.time)}` : ""}
                 </div>
-                {renderText(evPlace(ev)) ? <div className="text-muted">{renderText(evPlace(ev))}</div> : null}
+                {renderText(getEventText(ev, "excerpt", "place")) ? (
+                  <div className="text-muted">{renderText(getEventText(ev, "excerpt", "place"))}</div>
+                ) : null}
                 {(() => {
-                  const raw = renderText(evDesc(ev));
+                  const raw = renderText(getEventText(ev, "contentHtml", "desc"));
                   if (!raw) return null;
                   if (looksLikeHtml(raw)) {
                     const plain = stripHtmlToText(raw);

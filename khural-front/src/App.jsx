@@ -15,6 +15,7 @@ import Register from "./pages/Register.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import RequireAdmin from "./components/RequireAdmin.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
+import AutomaticPageTranslator from "./components/AutomaticPageTranslator.jsx";
 import { App as AntApp, ConfigProvider, theme } from "antd";
 
 // Ленивая загрузка тяжёлых страниц: раньше все ~90 страниц попадали
@@ -145,6 +146,7 @@ function RouteFallback() {
 
 export default function App() {
   const { route } = useHashRoute();
+  const mainRef = React.useRef(null);
   const base = (route || "/").split("?")[0];
   const isAdmin = base === "/admin" || base.startsWith("/admin/");
 
@@ -198,7 +200,8 @@ export default function App() {
                 <DataGate>
                   <div className="layout">
                     {!isAdmin ? <Header /> : null}
-                    <main className="main-content">
+                    <main className="main-content" ref={mainRef}>
+                      <AutomaticPageTranslator rootRef={mainRef} enabled={!isAdmin} />
                       {!isAdmin ? <Breadcrumbs /> : null}
                       <AppErrorBoundary>
                         <React.Suspense fallback={<RouteFallback />}>

@@ -84,3 +84,20 @@ export function extractPageHtml(page, locale) {
   return String(page?.body || "").trim();
 }
 
+export function hasLocalizedPageHtml(page, locale) {
+  if (!page) return false;
+  const wantedLocale = String(locale || "").toLowerCase();
+  const content = page?.content;
+  if (Array.isArray(content)) {
+    const localized = content.find(
+      (item) => String(item?.locale || "").toLowerCase() === wantedLocale
+    );
+    if (!localized) return false;
+    return (
+      String(localized?.content || "").trim().length >= MIN_CONTENT_LENGTH ||
+      blocksToHtml(localized?.blocks).length >= MIN_CONTENT_LENGTH
+    );
+  }
+  const pageLocale = String(page?.locale || page?.language || "").toLowerCase();
+  return pageLocale === wantedLocale && Boolean(extractPageHtml(page, wantedLocale));
+}

@@ -1,7 +1,12 @@
 import React from "react";
 import { AboutApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
-import { extractPageHtml, getPreferredLocaleToken } from "../utils/pages.js";
+import { useAutomaticTranslation } from "../hooks/useTranslation.js";
+import {
+  extractPageHtml,
+  getPreferredLocaleToken,
+  hasLocalizedPageHtml,
+} from "../utils/pages.js";
 
 /**
  * Renders HTML content from /pages by slug, inside an existing page.
@@ -11,6 +16,8 @@ export default function CmsSnippet({ slug, className = "card", style }) {
   const { lang } = useI18n();
   const locale = getPreferredLocaleToken(lang);
   const [html, setHtml] = React.useState("");
+  const [hasTranslation, setHasTranslation] = React.useState(false);
+  const displayHtml = useAutomaticTranslation(html, lang === "ty" && !hasTranslation);
 
   React.useEffect(() => {
     if (!slug) return;
@@ -26,9 +33,11 @@ export default function CmsSnippet({ slug, className = "card", style }) {
         const page = await AboutApi.getPageBySlug(slugStr, { locale }).catch(() => null);
         if (!alive) return;
         setHtml(extractPageHtml(page, locale) || "");
+        setHasTranslation(hasLocalizedPageHtml(page, locale));
       } catch {
         if (!alive) return;
         setHtml("");
+        setHasTranslation(false);
       }
     })();
     return () => {
@@ -40,8 +49,7 @@ export default function CmsSnippet({ slug, className = "card", style }) {
 
   return (
     <div className={className} style={style}>
-      <div dangerouslySetInnerHTML={{ __html: html }} />
+      <div data-no-auto-translate dangerouslySetInnerHTML={{ __html: displayHtml }} />
     </div>
   );
 }
-

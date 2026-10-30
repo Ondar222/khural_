@@ -198,6 +198,7 @@ export default function BroadcastWidget({ compact = false } = {}) {
   }, [settings, fallbackTitle]);
 
   const [apiBroadcast, setApiBroadcast] = React.useState(null);
+  const [playerEnabled, setPlayerEnabled] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -232,6 +233,10 @@ export default function BroadcastWidget({ compact = false } = {}) {
     if (apiBroadcast?.isActive) return apiBroadcast;
     return null;
   }, [broadcastSettings, apiBroadcast]);
+
+  React.useEffect(() => {
+    setPlayerEnabled(false);
+  }, [resolvedBroadcast]);
 
   const { embedUrl, streamType } = React.useMemo(
     () => resolveEmbed(resolvedBroadcast),
@@ -270,12 +275,23 @@ export default function BroadcastWidget({ compact = false } = {}) {
       )}
 
       <div className="broadcast-widget__player">
-        {canEmbedIframe ? (
+        {canEmbedIframe && playerEnabled ? (
           <iframe
             src={embedUrl}
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; screen-wake-lock; fullscreen"
             title={title}
           />
+        ) : canEmbedIframe ? (
+          <button
+            type="button"
+            className="broadcast-widget__load-player"
+            onClick={() => setPlayerEnabled(true)}
+          >
+            <span className="broadcast-widget__play" aria-hidden="true">▶</span>
+            <span>{t("Нажмите, чтобы загрузить видео")}</span>
+          </button>
         ) : streamType === "vk" || streamType === "vkontakte" ? (
           <div className="broadcast-widget__fallback">
             {resolvedBroadcast.vkStreamUrl || resolvedBroadcast.vkStreamKey ? (

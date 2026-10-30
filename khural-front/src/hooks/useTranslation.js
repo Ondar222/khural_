@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { PublicApi } from "../api/client.js";
 
 /**
@@ -189,6 +189,7 @@ export function useTranslation(options = {}) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const activeRequestsRef = useRef(0);
 
   const extractTranslatedText = useCallback((result) => {
     if (!result) return "";
@@ -215,6 +216,7 @@ export function useTranslation(options = {}) {
         };
       }
 
+      activeRequestsRef.current += 1;
       setLoading(true);
       setError(null);
 
@@ -245,9 +247,22 @@ export function useTranslation(options = {}) {
           }
 
           // Переводим все текстовые сегменты параллельно
-          const translationResults = await Promise.all(
-            textSegmentsToTranslate.map((textSegment) =>
-              PublicApi.translate(textSegment.content, from, to)
+          const translationResults = new Array(textSegmentsToTranslate.length);
+          let nextSegment = 0;
+          const translateSegmentWorker = async () => {
+            while (nextSegment < textSegmentsToTranslate.length) {
+              const index = nextSegment++;
+              translationResults[index] = await PublicApi.translate(
+                textSegmentsToTranslate[index].content,
+                from,
+                to
+              );
+            }
+          };
+          await Promise.all(
+            Array.from(
+              { length: Math.min(4, textSegmentsToTranslate.length) },
+              () => translateSegmentWorker()
             )
           );
 
@@ -292,7 +307,8 @@ export function useTranslation(options = {}) {
         setError(error);
         throw error;
       } finally {
-        setLoading(false);
+        activeRequestsRef.current -= 1;
+        setLoading(activeRequestsRef.current > 0);
       }
     },
     [extractTranslatedText]
@@ -354,34 +370,47 @@ export function useTranslation(options = {}) {
         return [];
       }
 
-      setLoading(true);
       setError(null);
+      const missing = [];
+      const missingIndices = new Map();
+      const results = texts.map((text, index) => {
+        const original = typeof text === "string" ? text : String(text ?? "");
+        const cacheKeyStr = translationCacheKey(from, to, original);
+        const cached = translationCache.get(cacheKeyStr);
+        if (cached) return { original, translated: cached, from, to };
+        if (original.trim()) {
+          if (!missingIndices.has(cacheKeyStr)) {
+            missingIndices.set(cacheKeyStr, []);
+            missing.push(original);
+          }
+          missingIndices.get(cacheKeyStr).push(index);
+        }
+        return { original, translated: original, from, to };
+      });
 
-      try {
-        // Переводим все тексты параллельно для лучшей производительности
-        const results = await Promise.all(
-          texts.map((text) =>
-            text && typeof text === "string" && text.trim() !== ""
-              ? PublicApi.translate(text, from, to)
-              : Promise.resolve({ original: text || "", translated: text || "", from, to })
-          )
-        );
+      if (missing.length === 0) return results;
 
-        return results.map((result) => ({
-          original: result?.original || "",
-          translated: extractTranslatedText(result),
-          from,
-          to,
-        }));
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err));
-        setError(error);
-        throw error;
-      } finally {
-        setLoading(false);
-      }
+      const batchResult = await PublicApi.translateBatch(missing, from, to);
+      (batchResult.translated || missing).forEach((translated, missingIndex) => {
+        const original = missing[missingIndex];
+        const normalizedTranslation =
+          typeof translated === "string" && translated.trim() ? translated : original;
+        const cacheKeyStr = translationCacheKey(from, to, original);
+        if (normalizedTranslation !== original) {
+          translationCache.set(cacheKeyStr, normalizedTranslation);
+        }
+        (missingIndices.get(cacheKeyStr) || []).forEach((resultIndex) => {
+          results[resultIndex] = {
+            original: results[resultIndex].original,
+            translated: normalizedTranslation,
+            from,
+            to,
+          };
+        });
+      });
+      return results;
     },
-    [defaultFrom, defaultTo, extractTranslatedText]
+    [defaultFrom, defaultTo]
   );
 
   /**
@@ -431,7 +460,7 @@ export function useTranslation(options = {}) {
   const translateNewsList = useCallback(
     async (newsItems, { from = defaultFrom, to = defaultTo } = {}) => {
       const list = Array.isArray(newsItems) ? newsItems : [];
-      const tasks = list.map(async (item) => {
+      const prepared = list.map((item) => {
         const getStr = (v) => String(v ?? "").trim();
         const titleSource = getStr(item?.title ?? item?.name ?? item?.headline);
         const excerptSource = getStr(
@@ -444,23 +473,36 @@ export function useTranslation(options = {}) {
         const excerptTy = getStr(item?.excerptTy ?? item?.descTy ?? item?.descriptionTy ?? item?.shortDescriptionTy);
         const contentHtmlTy = getStr(item?.contentHtmlTy ?? item?.content_ty ?? item?.contentDescriptionTy);
 
-        const texts = [];
-        if (titleSource) texts.push({ key: "title", text: titleSource });
-        if (excerptSource) texts.push({ key: "excerpt", text: excerptSource });
-        if (contentSource) texts.push({ key: "contentHtml", text: contentSource });
-
-        const results = await translateBatch(texts.map((t) => t.text), from, to);
-        const translatedMap = new Map();
-        results.forEach((r, i) => translatedMap.set(texts[i].key, r?.translated ?? texts[i].text));
-
         return {
           id: item?.id,
-          title: titleTy || translatedMap.get("title") || "",
-          excerpt: excerptTy || translatedMap.get("excerpt") || "",
-          contentHtml: contentHtmlTy || translatedMap.get("contentHtml") || "",
+          titleSource,
+          excerptSource,
+          contentSource,
+          titleTy,
+          excerptTy,
+          contentHtmlTy,
         };
       });
-      return Promise.all(tasks);
+      const pending = [];
+      prepared.forEach((item, index) => {
+        if (!item.titleTy && item.titleSource) pending.push({ index, key: "title", text: item.titleSource });
+        if (!item.excerptTy && item.excerptSource) pending.push({ index, key: "excerpt", text: item.excerptSource });
+        if (!item.contentHtmlTy && item.contentSource) pending.push({ index, key: "contentHtml", text: item.contentSource });
+      });
+      const translations = await translateBatch(pending.map((item) => item.text), from, to);
+      const translatedByField = new Map();
+      pending.forEach((item, index) => {
+        translatedByField.set(`${item.index}:${item.key}`, translations[index]?.translated || item.text);
+      });
+      return prepared.map((item, index) => ({
+        id: item.id,
+        title: item.titleTy || translatedByField.get(`${index}:title`) || item.titleSource,
+        excerpt: item.excerptTy || translatedByField.get(`${index}:excerpt`) || item.excerptSource,
+        contentHtml:
+          item.contentHtmlTy ||
+          translatedByField.get(`${index}:contentHtml`) ||
+          item.contentSource,
+      }));
     },
     [translateBatch, defaultFrom, defaultTo]
   );
@@ -474,4 +516,32 @@ export function useTranslation(options = {}) {
     translateNewsList,
     clearError,
   };
+}
+
+export function useAutomaticTranslation(sourceText, enabled) {
+  const { translate } = useTranslation();
+  const [translatedText, setTranslatedText] = useState("");
+
+  useEffect(() => {
+    if (!enabled || !sourceText) {
+      setTranslatedText("");
+      return undefined;
+    }
+
+    let active = true;
+    setTranslatedText("");
+    translate(sourceText, "ru", "tyv")
+      .then((result) => {
+        if (active) setTranslatedText(result?.translated || "");
+      })
+      .catch(() => {
+        if (active) setTranslatedText("");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [enabled, sourceText, translate]);
+
+  return translatedText || sourceText || "";
 }
