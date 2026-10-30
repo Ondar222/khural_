@@ -18,6 +18,22 @@ function looksLikeHtml(s) {
   return /<\/?[a-z][\s\S]*>/i.test(String(s || ""));
 }
 
+function formatDocumentDate(value) {
+  if (!value) return "";
+  const date = String(value).trim();
+  const isoDate = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoDate) return `${isoDate[3]}.${isoDate[2]}.${isoDate[1]}`;
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(date)) return date;
+
+  const parsed = new Date(date);
+  return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString("ru-RU");
+}
+
+function matchesSearchPrefix(value, query) {
+  const text = String(value || "").toLocaleLowerCase("ru-RU");
+  return text.startsWith(query) || text.split(/[^\p{L}\p{N}]+/u).some((word) => word.startsWith(query));
+}
+
 const CATEGORIES = [
   {
     slug: "laws",
@@ -72,9 +88,10 @@ function mapApiRow(d) {
   return {
     id: d.id,
     title: typeof d.title === "string" ? d.title : d?.title?.name || d?.title?.title || String(d.title || ""),
-    desc: String(d.content || "").trim(),
+    desc: String(d.content || d.desc || "").trim(),
     number: d.number ? String(d.number) : "",
-    url: normalizeFilesUrl(fileUrl),
+    date: d.publishedAt || d.date || d.createdAt || "",
+    url: normalizeFilesUrl(fileUrl || d.url || ""),
     category: cat || "federal",
     type: d.type,
   };
@@ -82,7 +99,7 @@ function mapApiRow(d) {
 
 export default function DocsPage() {
   const { t } = useI18n();
-  const { deputies, committees, convocations } = useData();
+  const { deputies, committees, convocations, documents: allDocuments, ensureDocuments, loading } = useData();
   const { route } = useHashRoute();
   const [query, setQuery] = React.useState("");
   const [filterEntity, setFilterEntity] = React.useState(null); // { type: 'deputy'|'committee'|'convocation', id }
@@ -99,12 +116,11 @@ export default function DocsPage() {
 
   const cat = CATEGORIES.find((c) => c.slug === slug) || CATEGORIES[0];
 
-  // Debounced query for server-side search
-  const [debouncedQ, setDebouncedQ] = React.useState("");
+  const searchQuery = query.trim();
+
   React.useEffect(() => {
-    const id = setTimeout(() => setDebouncedQ(query.trim()), 300);
-    return () => clearTimeout(id);
-  }, [query]);
+    if (searchQuery && !allDocuments.length) ensureDocuments();
+  }, [searchQuery, allDocuments.length, ensureDocuments]);
 
   // Reset page and subcategory when slug changes
   React.useEffect(() => {
@@ -131,12 +147,17 @@ export default function DocsPage() {
 
   React.useEffect(() => {
     let alive = true;
+    if (searchQuery) {
+      setApiLoading(false);
+      return () => {
+        alive = false;
+      };
+    }
     setApiLoading(true);
     DocumentsApi.listPublished({
       page,
       limit: PAGE_SIZE,
       type: cat.backendType,
-      query: debouncedQ,
     })
       .then((res) => {
         if (!alive) return;
@@ -154,7 +175,7 @@ export default function DocsPage() {
     return () => {
       alive = false;
     };
-  }, [page, cat.backendType, debouncedQ]);
+  }, [page, cat.backendType, searchQuery]);
 
   // ── Загрузка статических файлов ───────────────────────────────────────────
   const [staticFileDocs, setStaticFileDocs] = React.useState([]);
@@ -191,11 +212,12 @@ export default function DocsPage() {
         return raw ? String(raw) : "";
       })(),
       number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
+      date: d.publishedAt || d.date || d.createdAt || "",
       url: normalizeFilesUrl(typeof d.url === "string" ? d.url : d.url ? String(d.url) : ""),
       category: d.category || "federal",
     }));
     // Поиск по статическим документам (API-документы фильтруются на сервере)
-    const q = debouncedQ.toLowerCase();
+    const q = searchQuery.toLowerCase();
     if (q) {
       list = list.filter((d) =>
         [d.title, d.desc, d.number].some((s) => String(s || "").toLowerCase().includes(q))
@@ -206,13 +228,45 @@ export default function DocsPage() {
       list = list.filter((d) => d.category === subCategory);
     }
     return list;
-  }, [staticFileDocs, slug, subCategory, debouncedQ]);
+  }, [staticFileDocs, slug, subCategory, searchQuery]);
+
+  const searchDocuments = React.useMemo(() => {
+    if (!searchQuery) return [];
+    const query = searchQuery.toLocaleLowerCase("ru-RU");
+    let searchedApi = (allDocuments || [])
+      .filter((d) => d.type === cat.backendType)
+      .map(mapApiRow)
+      .filter((d) => [d.title, d.number, d.desc].some((value) => matchesSearchPrefix(value, query)));
+
+    if (slug === "constitution") {
+      searchedApi = searchedApi.filter((d) => {
+        const text = `${d.category} ${d.title}`.toLowerCase();
+        return text.includes("конституц") || text.includes("constitution");
+      });
+    }
+    if (slug === "civic") {
+      searchedApi = searchedApi.filter((d) => {
+        const text = `${d.category} ${d.title}`.toLowerCase();
+        return text.includes("гражданами") || text.includes("civic");
+      });
+    }
+
+    const apiIds = new Set(searchedApi.map((d) => String(d.id)));
+    return STATIC_MERGE_SLUGS.includes(slug)
+      ? [...staticMapped.filter((d) => !apiIds.has(String(d.id))), ...searchedApi]
+      : searchedApi;
+  }, [allDocuments, cat.backendType, searchQuery, slug, staticMapped]);
 
   // ── Объединение API + статических документов ──────────────────────────────
   // apiItems — уже одна страница с сервера.
   // Если API по типу ничего не вернул (разделы полностью статические) —
   // статические документы пагинуются на клиенте.
   const docs = React.useMemo(() => {
+    if (searchQuery) {
+      const start = (page - 1) * PAGE_SIZE;
+      return searchDocuments.slice(start, start + PAGE_SIZE);
+    }
+
     let apiMapped = apiItems.map(mapApiRow);
 
     // Для constitution и civic в бэкенде общий тип "other" —
@@ -241,7 +295,7 @@ export default function DocsPage() {
     // page === 1: статические документы в начале, без дубликатов по ID
     const apiIds = new Set(apiMapped.map((d) => String(d.id)));
     return [...staticMapped.filter((d) => !apiIds.has(String(d.id))), ...apiMapped];
-  }, [apiItems, apiTotal, slug, page, staticMapped]);
+  }, [apiItems, apiTotal, slug, page, staticMapped, searchQuery, searchDocuments]);
 
   const docLinkedMap = React.useMemo(() => {
     const map = new Map();
@@ -272,11 +326,12 @@ export default function DocsPage() {
 
   // Серверная пагинация: общее число страниц из apiTotal + статические
   const staticCount = staticMapped.length;
-  const totalPages = Math.ceil((apiTotal + staticCount) / PAGE_SIZE);
+  const searchTotal = searchQuery ? searchDocuments.length : apiTotal + staticCount;
+  const totalPages = Math.ceil(searchTotal / PAGE_SIZE);
   const paginatedDocs = visibleDocs;
 
   // Loading indicator for API fetch
-  const showApiLoading = apiLoading && paginatedDocs.length === 0;
+  const showApiLoading = (apiLoading || (searchQuery && loading.documents)) && paginatedDocs.length === 0;
 
   return (
     <section className="section section--docs">
@@ -444,6 +499,9 @@ export default function DocsPage() {
                           })()
                         ) : null}
                         {d.number && <div className="law-status">№ {d.number}</div>}
+                        {d.date && (
+                          <div className="law-status">Дата: {formatDocumentDate(d.date)}</div>
+                        )}
                         {hasLinked && (
                           <div className="law-linked" style={{ marginTop: 10, fontSize: 12, display: "flex", flexWrap: "wrap", gap: "6px 12px", alignItems: "center" }}>
                             <span style={{ color: "#6b7280" }}>Связано:</span>
@@ -475,12 +533,15 @@ export default function DocsPage() {
             {showApiLoading ? (
               <div style={{ padding: "12px 4px", color: "#6b7280" }}>Загрузка документов…</div>
             ) : null}
+            {searchQuery && !loading.documents && paginatedDocs.length === 0 ? (
+              <div style={{ padding: "12px 4px", color: "#6b7280" }}>Документы не найдены.</div>
+            ) : null}
             {totalPages > 1 && (
               <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
                 <Pagination
                   current={page}
                   onChange={setPage}
-                  total={apiTotal + staticCount}
+                  total={searchTotal}
                   pageSize={PAGE_SIZE}
                   showSizeChanger={false}
                   showTotal={(total) => `Всего: ${total}`}
