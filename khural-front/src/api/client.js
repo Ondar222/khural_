@@ -65,6 +65,18 @@ function unwrapApiPayload(payload) {
   return payload;
 }
 
+function normalizePageList(payload) {
+  let value = payload;
+  for (let depth = 0; depth < 4; depth += 1) {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== "object") return null;
+    const list = value.items ?? value.results ?? value.pages ?? value.data;
+    if (list === undefined) return null;
+    value = list;
+  }
+  return Array.isArray(value) ? value : null;
+}
+
 export function getAuthToken() {
   try {
     const direct = sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
@@ -776,6 +788,14 @@ export const AppealsApi = {
 };
 
 export const AboutApi = {
+  async listAdminPages() {
+    const response = await apiFetch("/pages", { method: "GET", auth: true });
+    const pages = normalizePageList(response);
+    if (!pages) {
+      throw new Error("API вернул список CMS-страниц в неизвестном формате");
+    }
+    return pages;
+  },
   async listPages({ locale, publishedOnly = true } = {}) {
     // Backend /pages does NOT support locale filter in query.
     // We fetch list and then filter client-side by localized content locale.
@@ -1701,8 +1721,14 @@ export const CommitteesApi = {
       if (Array.isArray(result.data)) {
         return result.data;
       }
+      if (Array.isArray(result.items)) {
+        return result.items;
+      }
       if (Array.isArray(result.committees)) {
         return result.committees;
+      }
+      if (Array.isArray(result.results)) {
+        return result.results;
       }
     }
     return result;

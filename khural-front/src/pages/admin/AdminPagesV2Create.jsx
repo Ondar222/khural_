@@ -246,7 +246,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
         window.dispatchEvent(new Event("khural:pages-reload"));
       }
 
-      onDone?.();
+      await onDone?.();
     } catch (error) {
       console.error("Failed to create page:", error);
       antdMessage.error(error?.message || "Не удалось создать страницу");
@@ -588,6 +588,5 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
     </div>
   );
 }
-
 
 

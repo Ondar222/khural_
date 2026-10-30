@@ -336,7 +336,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       }
 
       reload();
-      onDone?.();
+      await onDone?.();
     } catch (error) {
       console.error("Failed to save page:", error);
       antdMessage.error(error?.message || "Не удалось сохранить страницу");

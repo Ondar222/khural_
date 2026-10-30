@@ -8,81 +8,47 @@ import {
   PAGES_OVERRIDES_EVENT_NAME,
   PAGES_OVERRIDES_STORAGE_KEY,
 } from "../../utils/pagesOverrides.js";
+import {
+  FIXED_CONTENT_PAGES,
+  STATIC_SECTIONS,
+  SYSTEM_ROUTE_DEFS,
+} from "../../utils/adminPagesCatalog.js";
 
 function normalizeList(res) {
   if (Array.isArray(res)) return res;
-  if (res && typeof res === "object" && Array.isArray(res.items)) return res.items;
-  return [];
+  let value = res;
+  for (let depth = 0; depth < 4; depth += 1) {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== "object") break;
+    const list = value.items ?? value.results ?? value.pages ?? value.data;
+    if (list === undefined) break;
+    value = list;
+  }
+  if (Array.isArray(value)) return value;
+  throw new Error("API вернул список страниц в неизвестном формате");
 }
 
-// Real site routes. These are NOT CMS pages.
-// Editing is done via corresponding admin modules (news/deputies/documents/slider/etc).
-const SYSTEM_ROUTE_DEFS = [
-  {
-    route: "/",
-    title: "Главная",
-    adminLinks: [
-      { label: "Слайдер", href: "/admin/slider" },
-      { label: "Новости", href: "/admin/news" },
-      { label: "События", href: "/admin/events" },
-    ],
-  },
-  { route: "/news", title: "Новости", adminLinks: [{ label: "Новости", href: "/admin/news" }] },
-  { route: "/deputies", title: "Депутаты", adminLinks: [{ label: "Депутаты", href: "/admin/deputies" }] },
-  { route: "/documents", title: "Документы", adminLinks: [{ label: "Документы", href: "/admin/documents" }] },
-  { route: "/contacts", title: "Контакты", adminLinks: [] },
-  { route: "/about", title: "О Хурале", adminLinks: [{ label: "Структура", href: "/admin/committees" }] },
-];
-
-// Static sections that can have subpages
-const STATIC_SECTIONS = [
-  { slug: "news", title: "Новости" },
-  { slug: "deputies", title: "Депутаты" },
-  { slug: "documents", title: "Документы" },
-  { slug: "about", title: "О Хурале" },
-  { slug: "committees", title: "Комитеты" },
-  { slug: "commissions", title: "Комиссии" },
-  { slug: "activity", title: "Деятельность" },
-  { slug: "contacts", title: "Контакты" },
-  { slug: "appeals", title: "Обращения" },
-  { slug: "broadcast", title: "Трансляция" },
-];
-
-// Фиксированные контентные страницы (отображаются в списке даже если ещё не созданы в API)
-const FIXED_CONTENT_PAGES = [
-  { slug: "code-of-honor", title: "Кодекс чести мужчины Тувы" },
-  { slug: "mothers-commandments", title: "Свод заповедей матерей Тувы" },
-  { slug: "struct/council", title: "Представительство в Совете Федерации" },
-  { slug: "info/finansy", title: "Финансы" },
-  { slug: "info/iokrug", title: "Избирательные округа" },
-  { slug: "info/zakon-karta", title: "Законодательная карта сайта" },
-  { slug: "opendata", title: "Открытые данные" },
-  { slug: "info/upoln-po-prav", title: "Уполномоченный по правам человека в Республике Тыва" },
-  { slug: "info/upoln-po-reb", title: "Уполномоченный по правам ребенка в Республике Тыва" },
-  { slug: "info/personnel", title: "Кадровое обеспечение" },
-];
-
-async function listPagesWithFallback({ locale, authPreferred } = {}) {
-  try {
-    // Пробуем с авторизацией сначала (админский список всех страниц)
-    const res = await apiFetch(`/pages`, { method: "GET", auth: true });
-    return normalizeList(res);
-  } catch (e) {
-    // Если не получилось с авторизацией, пробуем без неё
-    if (authPreferred) {
-      throw e;
+async function listPages({ locale, authenticated }) {
+  const pages = authenticated
+    ? await AboutApi.listAdminPages()
+    : normalizeList(
+        await apiFetch("/pages?publishedOnly=true", { method: "GET", auth: false })
+      );
+  if (!locale) return { pages, responseEmpty: pages.length === 0 };
+  const want = String(locale).toLowerCase();
+  const filteredPages = pages.filter((page) => {
+    const content = page?.content;
+    if (Array.isArray(content)) {
+      return content.some((entry) => String(entry?.locale || "").toLowerCase() === want);
     }
-    try {
-      const res = await AboutApi.listPages({ locale });
-      return normalizeList(res);
-    } catch {
-      throw e; // Возвращаем первую ошибку
-    }
-  }
+    return want === "ru";
+  });
+  return { pages: filteredPages, responseEmpty: pages.length === 0 };
 }
 
 export default function AdminPagesV2List({
   canWrite,
+  onReloadData,
   onCreate,
   onCreateFixedPage,
   onEdit,
@@ -94,6 +60,8 @@ export default function AdminPagesV2List({
   const [localeMode, setLocaleMode] = React.useState("all"); // all | ru | tyv
   const [busy, setBusy] = React.useState(false);
   const [items, setItems] = React.useState([]);
+  const [apiReturnedEmpty, setApiReturnedEmpty] = React.useState(false);
+  const [loadStatus, setLoadStatus] = React.useState("loading");
   const [, setOvTick] = React.useState(0);
   const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
@@ -123,40 +91,35 @@ export default function AdminPagesV2List({
 
   const load = React.useCallback(async () => {
     setBusy(true);
+    setLoadStatus("loading");
     try {
-      // В админке пробуем auth сначала, но разрешаем fallback на публичный список,
-      // чтобы страница не была пустой, если токен/права не настроены.
-      const res = await listPagesWithFallback({ locale: localeMode === "all" ? undefined : localeMode, authPreferred: false });
-      const arr = Array.isArray(res) ? res : [];
+      const { pages, responseEmpty } = await listPages({
+        locale: localeMode === "all" ? undefined : localeMode,
+        authenticated: canWrite,
+      });
 
-      console.log('[AdminPagesV2List] Loaded pages:', arr.length, arr.map(p => ({ slug: p.slug, title: p.title, id: p.id })));
-
-      // dedupe by slug
       const bySlug = new Map();
-      for (const p of arr) {
+      for (const p of pages) {
         const slug = String(p?.slug || "");
         if (!slug) continue;
         if (!bySlug.has(slug)) bySlug.set(slug, p);
       }
-      console.log('[AdminPagesV2List] After dedup:', bySlug.size, Array.from(bySlug.keys()));
       setItems(Array.from(bySlug.values()));
-      
-      if (arr.length === 0) {
-        onMessage?.("warning", "Страницы не найдены в API. Нажмите 'Создать страницу' для добавления.");
-      }
+      setApiReturnedEmpty(responseEmpty);
+      setLoadStatus("success");
     } catch (e) {
-      console.error('[AdminPagesV2List] Error loading pages:', e);
+      console.error("[AdminPagesV2List] Error loading pages:", e);
+      setLoadStatus("error");
       onMessage?.("error", e?.message || "Не удалось загрузить страницы. Проверьте подключение к API.");
-      setItems([]);
     } finally {
       setBusy(false);
     }
-  }, [localeMode, onMessage]);
+  }, [canWrite, localeMode, onMessage]);
 
   React.useEffect(() => {
     // Загружаем страницы при монтировании и при изменении режима языка
     load();
-  }, [localeMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [load]);
 
   const filtered = React.useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -260,13 +223,14 @@ export default function AdminPagesV2List({
         onMessage?.("success", "Страница удалена");
         reloadData();
         await load();
+        await onReloadData?.();
       } catch (e) {
         onMessage?.("error", e?.message || "Не удалось удалить страницу");
       } finally {
         setBusy(false);
       }
     },
-    [canWrite, load, onMessage, reloadData]
+    [canWrite, load, onMessage, onReloadData, reloadData]
   );
 
   const cleanupSystemCmsPages = React.useCallback(async () => {
@@ -288,12 +252,13 @@ export default function AdminPagesV2List({
       onMessage?.("success", `Удалено: ${toDelete.length}`);
       reloadData();
       await load();
+      await onReloadData?.();
     } catch (e) {
       onMessage?.("error", e?.message || "Не удалось удалить");
     } finally {
       setBusy(false);
     }
-  }, [canWrite, items, load, onMessage, reloadData]);
+  }, [canWrite, items, load, onMessage, onReloadData, reloadData]);
 
   const columns = [
     {
@@ -646,6 +611,24 @@ export default function AdminPagesV2List({
       {renderToolbar()}
 
       <div className="admin-card admin-table">
+        {loadStatus === "loading" ? (
+          <div role="status" style={{ padding: 12, color: "#6b7280" }}>
+            Загружаем CMS-страницы…
+          </div>
+        ) : null}
+        {loadStatus === "error" ? (
+          <div role="alert" style={{ padding: 12, color: "#b42318" }}>
+            Не удалось проверить CMS-страницы. Пустое состояние не отображается.
+            <Button type="link" loading={busy} onClick={load}>
+              Повторить
+            </Button>
+          </div>
+        ) : null}
+        {loadStatus === "success" && apiReturnedEmpty ? (
+          <div role="status" style={{ padding: 12, color: "#6b7280" }}>
+            CMS-страниц пока нет. Системные разделы ниже не учитываются в этом количестве.
+          </div>
+        ) : null}
         <Table
           rowKey={(r) => String(r.id || r.slug || Math.random())}
           rowClassName={(r) =>
@@ -670,6 +653,3 @@ export default function AdminPagesV2List({
     </div>
   );
 }
-
-
-

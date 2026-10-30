@@ -4,6 +4,7 @@ import { useData } from "../context/DataContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import {
   API_BASE_URL,
+  AboutApi,
   NewsApi,
   PersonsApi,
   DocumentsApi,
@@ -13,7 +14,6 @@ import {
   ConvocationsApi,
   CommitteesApi,
   getAuthToken,
-  apiFetch,
 } from "../api/client.js";
 import { addDeletedNewsId, readNewsOverrides } from "../utils/newsOverrides.js";
 import { addDeletedDocumentId, readDocumentsOverrides } from "../utils/documentsOverrides.js";
@@ -168,6 +168,7 @@ function normalizeServerList(payload) {
   const p = payload?.data ? payload.data : payload;
   if (Array.isArray(p?.items)) return p.items;
   if (Array.isArray(p?.results)) return p.results;
+  if (Array.isArray(p?.pages)) return p.pages;
   if (Array.isArray(p)) return p;
   return [];
 }
@@ -482,7 +483,7 @@ export function useAdminData() {
   const [commissions, setCommissions] = React.useState(() =>
     mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides())
   );
-  const [pages, setPages] = React.useState([]);
+  const [pages, setPages] = React.useState(null);
   const [adminDataLoaded, setAdminDataLoaded] = React.useState(false);
   const statsReady =
     adminDataLoaded && !data.loading?.structure && !data.loading?.committees;
@@ -552,7 +553,7 @@ export function useAdminData() {
       SliderApi.list({ all: true }).catch(() => null),
       ConvocationsApi.list().catch(() => null),
       CommitteesApi.list({ all: true }).catch(() => null),
-      apiFetch("/pages", { method: "GET", auth: false }).catch(() => null),
+      AboutApi.listAdminPages().catch(() => null),
       Promise.all([
         fetch("/persons_doc/zakony.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
         fetch("/persons_doc/zakony2.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
@@ -722,8 +723,9 @@ export function useAdminData() {
     });
     setCommittees(mergeCommitteesWithOverrides(baseCommittees, readCommitteesOverrides()));
     setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
-    const pagesList = normalizeServerList(apiPages);
-    setPages(Array.isArray(pagesList) ? pagesList : []);
+    if (apiPages !== null) {
+      setPages(apiPages);
+    }
     setAdminDataLoaded(true);
   }, [publicCommitteesFallback]);
 
@@ -847,6 +849,12 @@ export function useAdminData() {
     setThemeMode(next);
     writeAdminTheme(next);
   }, [themeMode]);
+
+  const reloadPages = React.useCallback(async () => {
+    const pagesList = await AboutApi.listAdminPages();
+    setPages(pagesList);
+    return pagesList;
+  }, []);
 
   const reload = React.useCallback(async () => {
     if (typeof reloadDataContext === "function") reloadDataContext();
@@ -1692,7 +1700,7 @@ export function useAdminData() {
     const visibleNews = (news || []).filter((n) => !deletedNewsIds.has(String(n?.id ?? n?._id ?? "")));
     return {
       deputies: Array.isArray(persons) ? persons.length : 0,
-      pages: Array.isArray(pages) ? pages.length : 0,
+      pages: Array.isArray(pages) ? pages.length : null,
       documents: Array.isArray(documents) ? documents.length : 0,
       news: visibleNews.length,
       events: Array.isArray(eventsForList) ? eventsForList.length : 0,
@@ -1751,6 +1759,7 @@ export function useAdminData() {
     pages,
     stats,
     statsReady,
+    reloadPages,
     apiBase,
     reload,
     
@@ -1805,4 +1814,3 @@ export function useAdminData() {
     busy,
   };
 }
-

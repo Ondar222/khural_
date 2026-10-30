@@ -9,8 +9,28 @@ import AdminPagesV2Edit from "./AdminPagesV2Edit.jsx";
 
 export default function AdminPagesV2Routes() {
   const adminData = useAdminData();
+  const { reloadPages } = adminData;
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
+  const refreshAfterSave = React.useCallback(async () => {
+    try {
+      await reloadPages();
+    } catch (error) {
+      message.error(`Страница сохранена, но счётчик не обновлён: ${error?.message || "ошибка API"}`);
+    } finally {
+      navigate("/admin/pages");
+    }
+  }, [message, navigate, reloadPages]);
+
+  const handlePageMessage = React.useCallback(
+    (type, text) => {
+      if (type === "success") message.success(text);
+      else if (type === "warning") message.warning(text);
+      else if (type === "info") message.info(text);
+      else message.error(text);
+    },
+    [message]
+  );
 
   const pathname =
     typeof window !== "undefined" ? window.location.pathname || "/admin/pages" : "/admin/pages";
@@ -44,7 +64,7 @@ export default function AdminPagesV2Routes() {
       return (
         <AdminPagesV2Create
           canWrite={adminData.canWrite}
-          onDone={() => navigate("/admin/pages")}
+          onDone={refreshAfterSave}
         />
       );
     }
@@ -54,13 +74,14 @@ export default function AdminPagesV2Routes() {
         <AdminPagesV2Edit
           id={id}
           canWrite={adminData.canWrite}
-          onDone={() => navigate("/admin/pages")}
+          onDone={refreshAfterSave}
         />
       );
     }
     return (
       <AdminPagesV2List
         canWrite={adminData.canWrite}
+        onReloadData={reloadPages}
         onCreate={(parentSlug, parentTitle) =>
           navigate(
             parentSlug
@@ -96,10 +117,7 @@ export default function AdminPagesV2Routes() {
             .map((x) => encodeURIComponent(x));
           window.open(`/p/${segs.join("/")}`, "_blank");
         }}
-        onMessage={(type, text) => {
-          if (type === "success") message.success(text);
-          else message.error(text);
-        }}
+        onMessage={handlePageMessage}
       />
     );
   })();
@@ -121,6 +139,3 @@ export default function AdminPagesV2Routes() {
     </AdminShell>
   );
 }
-
-
-

@@ -56,16 +56,6 @@ function resolveConvocationLabel(list, row) {
   return "";
 }
 
-/** Пустой комитет: нет описания, созыва и депутатов (не считаем системные комитеты структуры) */
-function isCommitteeEmpty(row, isSystem) {
-  if (isSystem) return false;
-  const hasDesc = String(row?.description ?? "").trim().length > 0;
-  const hasConv = getCommitteeConvocationId(row) != null && getCommitteeConvocationId(row) !== "";
-  const members = Array.isArray(row?.members) ? row.members : [];
-  const hasMembers = members.length > 0;
-  return !hasDesc && !hasConv && !hasMembers;
-}
-
 /** Очки «полноты» комитета: больше = оставляем при дедупликации */
 function committeeRichness(row) {
   let score = 0;
@@ -118,10 +108,7 @@ export default function AdminCommitteesList({
       return c;
     });
 
-    // 2) Убрать пустые комитеты (нет описания, созыва и депутатов), кроме системных
-    list = list.filter((c) => !isCommitteeEmpty(c, isSystemCommittee(c)));
-
-    // 3) Дедупликация по нормализованному названию: оставить один с большей «полнотой»
+    // Keep named records even when their details are incomplete so admins can edit them.
     const byName = new Map();
     for (const c of list) {
       const key = normalizeCommitteeName(getCommitteeTitle(c));
@@ -133,14 +120,14 @@ export default function AdminCommitteesList({
     }
     list = Array.from(byName.values());
 
-    // 4) Фильтр по созыву
+    // Фильтр по созыву
     if (selectedConvocationId && selectedConvocationId !== "all") {
       list = list.filter(
         (c) => String(getCommitteeConvocationId(c)) === String(selectedConvocationId)
       );
     }
 
-    // 5) Поиск по названию/описанию
+    // Поиск по названию/описанию
     const qq = q.trim().toLowerCase();
     if (qq) {
       list = list.filter((c) => {
@@ -155,9 +142,6 @@ export default function AdminCommitteesList({
     return list;
   }, [items, selectedConvocationId, q]);
 
-  const isLocalStatic = (row) => String(row?.id || "").startsWith("local-static-");
-  const isLocal = (row) =>
-    !isLocalStatic(row) && String(row?.id || "").startsWith("local-");
   const isCommitteeActive = (row) => normalizeBool(row?.isActive, true) !== false;
 
   const importCommitteesFromJson = React.useCallback(() => {
@@ -173,9 +157,15 @@ export default function AdminCommitteesList({
         setBusyLocal(true);
         try {
           const [staticCommittees, apiCommittees] = await Promise.all([
-            fetch("/data/committees.json").then((r) => (r.ok ? r.json() : [])).catch(() => []),
-            CommitteesApi.list({ all: true }).catch(() => []),
+            fetch("/data/committees.json").then((r) => {
+              if (!r.ok) throw new Error(`Не удалось загрузить список комитетов (${r.status})`);
+              return r.json();
+            }),
+            CommitteesApi.list({ all: true }),
           ]);
+          if (!Array.isArray(staticCommittees)) {
+            throw new Error("Файл с комитетами имеет неверный формат");
+          }
           const apiList = Array.isArray(apiCommittees) ? apiCommittees : [];
           const existingByName = new Set(
             apiList.map((c) => normalizeCommitteeName(c?.name || c?.title || c?.label || c?.description))
@@ -205,8 +195,15 @@ export default function AdminCommitteesList({
             if (c?.description) payload.description = String(c.description).trim();
 
             const convRaw = c?.convocation?.id ?? c?.convocationId ?? c?.convocation;
-            const convId = Number(convRaw);
-            if (Number.isFinite(convId) && convId > 0) payload.convocationId = convId;
+            const matchedConvocation = (Array.isArray(convocations) ? convocations : []).find(
+              (convocation) =>
+                String(convocation?.id ?? "") === String(convRaw) ||
+                String(convocation?.name ?? convocation?.number ?? "") === String(convRaw)
+            );
+            const convocationId = matchedConvocation?.id ?? convRaw;
+            if (convocationId != null && convocationId !== "") {
+              payload.convocationId = convocationId;
+            }
 
             const rawMembers = Array.isArray(c?.members) ? c.members : [];
             const members = rawMembers
@@ -229,10 +226,11 @@ export default function AdminCommitteesList({
             }
           }
 
-          message.success(
-            `Готово: создано ${createdCount}, пропущено ${skippedCount}, ошибок ${failedCount}`
-          );
-          onReload?.();
+          const resultMessage =
+            `Импорт завершён: создано ${createdCount}, пропущено ${skippedCount}, ошибок ${failedCount}`;
+          if (failedCount > 0) message.warning(resultMessage);
+          else message.success(resultMessage);
+          await onReload?.();
         } catch (e) {
           message.error(`Ошибка импорта: ${e?.message || "неизвестно"}`);
         } finally {
@@ -240,7 +238,7 @@ export default function AdminCommitteesList({
         }
       },
     });
-  }, [canWrite, message, onReload]);
+  }, [canWrite, convocations, message, onReload]);
 
   // Функция для обрезки текста с удалением HTML тегов
   const stripHtml = React.useCallback((html) => {
@@ -379,6 +377,9 @@ export default function AdminCommitteesList({
   return (
     <div className="admin-grid">
       <div className="admin-card admin-toolbar">
+        <div style={{ width: "100%", color: "#6b7280", fontSize: 13 }}>
+          Найдено комитетов: {filtered.length}
+        </div>
         <div className="admin-committees-list__toolbar-left">
           <Select
             style={{ 
@@ -428,14 +429,14 @@ export default function AdminCommitteesList({
           >
             + Добавить комитет
           </Button>
-          {/* <Button
+          <Button
             onClick={importCommitteesFromJson}
             disabled={!canWrite}
             loading={busyLocal}
             block={isMobile}
           >
             Импортировать комитеты
-          </Button> */}
+          </Button>
        
         </div>
       </div>
@@ -526,4 +527,3 @@ export default function AdminCommitteesList({
     </div>
   );
 }
-

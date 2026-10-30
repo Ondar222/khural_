@@ -11,36 +11,42 @@ export function useBroadcastLinks() {
   const [links, setLinks] = React.useState(BROADCAST_LINKS);
   const [items, setItems] = React.useState(() => normalizeStaticBroadcasts(BROADCAST_LINKS));
   const [loading, setLoading] = React.useState(true);
+  const requestId = React.useRef(0);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const list = await BroadcastsApi.listPublic();
-        if (cancelled) return;
-        if (Array.isArray(list) && list.length > 0) {
-          const normalized = normalizeApiBroadcasts(list);
-          if (normalized.length > 0) {
-            setItems(normalized);
-            setLinks(normalized.map((b) => b.url));
-            setLoading(false);
-            return;
-          }
+  const reload = React.useCallback(async () => {
+    const currentRequestId = ++requestId.current;
+    setLoading(true);
+    let loadedFromApi = false;
+    try {
+      const list = await BroadcastsApi.listPublic();
+      const normalized = normalizeApiBroadcasts(list);
+      if (normalized.length > 0) {
+        if (currentRequestId === requestId.current) {
+          setItems(normalized);
+          setLinks(normalized.map((b) => b.url));
         }
-      } catch {
-        // fallback ниже
+        loadedFromApi = true;
       }
-      if (!cancelled) {
-        const fallback = normalizeStaticBroadcasts(BROADCAST_LINKS);
-        setItems(fallback);
-        setLinks(fallback.map((b) => b.url));
+    } catch {
+      // Retain the static archive if the public broadcasts endpoint is unavailable.
+    } finally {
+      if (currentRequestId === requestId.current) {
+        if (!loadedFromApi) {
+          const fallback = normalizeStaticBroadcasts(BROADCAST_LINKS);
+          setItems(fallback);
+          setLinks(fallback.map((b) => b.url));
+        }
         setLoading(false);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    }
   }, []);
 
-  return { links, items, loading };
+  React.useEffect(() => {
+    reload();
+    return () => {
+      requestId.current += 1;
+    };
+  }, [reload]);
+
+  return { links, items, loading, reload };
 }
