@@ -165,6 +165,13 @@ export default function Login() {
                   Зарегистрироваться
                 </a>
               </p>
+              <a
+                href="#/"
+                className="auth-glass-card__home"
+                onClick={(e) => { e.preventDefault(); navigate("/"); }}
+              >
+                На главную
+              </a>
             </div>
           </>
         )}

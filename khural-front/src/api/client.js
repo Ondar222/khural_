@@ -444,8 +444,8 @@ export const PublicApi = {
   async listNews() {
     return apiFetch("/news", { method: "GET", auth: false });
   },
-  /** Таймаут для запросов перевода (5 мин): сервис перевода может отвечать долго при больших текстах. */
-  TRANSLATION_TIMEOUT_MS: 300000,
+  /** Перевод не должен блокировать интерфейс надолго; при проблемах используем fallback. */
+  TRANSLATION_TIMEOUT_MS: 20000,
 
   /**
    * Перевод через Google Translate (fallback, если бэкенд не работает)
@@ -480,19 +480,20 @@ export const PublicApi = {
       timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
       quiet: true,
     };
+    let publicError = null;
     try {
       const result = await apiFetch("/translation/translate", opts);
       // Проверяем, вернулся ли реальный перевод (не тот же ли самый текст)
       if (result && result.translated && result.translated !== text) {
         return { original: text, translated: result.translated, from, to };
       }
-    } catch {
-      // The public endpoint may be unavailable; continue through the configured fallbacks.
+    } catch (error) {
+      publicError = error;
     }
     
-    // Если бэкенд вернул оригинал или ошибка - пробуем с авторизацией
+    // Повторяем запрос с токеном только при отказе в авторизации, не при медленном/недоступном API.
     const token = getAuthToken();
-    if (token) {
+    if (token && publicError?.status === 401) {
       const authOpts = {
         method: "POST",
         body: { text, from, to },
@@ -506,25 +507,27 @@ export const PublicApi = {
           return { original: text, translated: result.translated, from, to };
         }
       } catch {
-        // Continue through the configured fallbacks.
+        // Continue through the configured fallback.
       }
     }
     
-    // Пробуем batch API
-    try {
-      const batchResult = await apiFetch("/translation/translate-batch", {
-        method: "POST",
-        body: { texts: [text], from, to },
-        auth: token ? true : false,
-        timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
-        quiet: true,
-      });
-      const translated = Array.isArray(batchResult?.translated) ? batchResult.translated[0] : null;
-      if (translated && translated !== text) {
-        return { original: text, translated, from, to };
+    // Используем batch endpoint только если single endpoint ответил без перевода или не найден.
+    if (!publicError || publicError.status === 404 || publicError.status === 405) {
+      try {
+        const batchResult = await apiFetch("/translation/translate-batch", {
+          method: "POST",
+          body: { texts: [text], from, to },
+          auth: Boolean(token),
+          timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
+          quiet: true,
+        });
+        const translated = Array.isArray(batchResult?.translated) ? batchResult.translated[0] : null;
+        if (translated && translated !== text) {
+          return { original: text, translated, from, to };
+        }
+      } catch {
+        // Continue through the configured fallback.
       }
-    } catch {
-      // Continue through the configured fallbacks.
     }
     
     // Fallback на Google Translate
@@ -539,14 +542,35 @@ export const PublicApi = {
 
   /**
    * Перевод массива текстов одним запросом (меньше запросов → меньше 429).
-   * При 429 возвращает исходные тексты.
+   * Если сервер недоступен или ограничивает запросы, дополняет результат fallback-переводом.
    */
   async translateBatch(texts, from, to) {
     if (!Array.isArray(texts) || texts.length === 0) {
       return { translated: [], rateLimited: false };
     }
+
+    const fallbackTranslations = async (initial = texts) => {
+      const translated = [...initial];
+      let nextIndex = 0;
+      const worker = async () => {
+        while (nextIndex < texts.length) {
+          const index = nextIndex++;
+          if (translated[index] && translated[index] !== texts[index]) continue;
+          const fallback = await PublicApi.translateWithGoogle(texts[index], from, to);
+          if (fallback) translated[index] = fallback;
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(4, texts.length) }, () => worker())
+      );
+      return translated;
+    };
+
     if (Date.now() < translationBatchCooldownUntil) {
-      return { translated: texts, rateLimited: true };
+      return {
+        translated: await fallbackTranslations(),
+        rateLimited: true,
+      };
     }
 
     const requestKey = `${from}->${to}::${JSON.stringify(texts)}`;
@@ -566,12 +590,19 @@ export const PublicApi = {
         const translated = Array.isArray(result?.translated) ? result.translated : texts;
         if (translated.length !== texts.length) {
           translationBatchCooldownUntil = Date.now() + 15_000;
-          return { translated: texts, rateLimited: true };
+          return {
+            translated: await fallbackTranslations(),
+            rateLimited: true,
+          };
         }
-        return { translated, rateLimited: false };
+        const withFallbacks = await fallbackTranslations(translated);
+        return { translated: withFallbacks, rateLimited: false };
       } catch (error) {
         translationBatchCooldownUntil = Date.now() + (error?.status === 429 ? 60_000 : 15_000);
-        return { translated: texts, rateLimited: true };
+        return {
+          translated: await fallbackTranslations(),
+          rateLimited: true,
+        };
       }
     })();
 
