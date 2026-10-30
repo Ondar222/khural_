@@ -29,10 +29,8 @@ export default function AppealsOverview() {
             Хурала или направить запрос через раздел обращений.
           </p>
           <p style={{ fontSize: 16, lineHeight: 1.6, marginBottom: 0 }}>
-            Дополнительная информация по обзору обращений граждан размещена на официальном портале:{" "}
-            <a href="https://khural.rtyva.ru/internet-priemnaya/" target="_blank" rel="noopener noreferrer" className="link">
-              khural.rtyva.ru/internet-priemnaya
-            </a>
+            По вопросам получения информации об обращениях свяжитесь с приёмной Верховного Хурала через раздел{" "}
+            <a href="/contacts" className="link">«Контактная информация»</a>.
           </p>
         </div>
           </div>

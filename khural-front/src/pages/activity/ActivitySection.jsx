@@ -54,6 +54,7 @@ export default function ActivitySectionPage() {
   const [slug, setSlug] = React.useState(() => getSlugFromRoute(route));
   const section = SECTIONS.find((s) => s.slug === slug) || SECTIONS[0];
   const [data, setData] = React.useState({ items: [] });
+  const routePath = String(route || "/").split("?")[0].replace(/\/+$/, "") || "/";
 
   React.useEffect(() => {
     setSlug(getSlugFromRoute(route));
@@ -88,22 +89,33 @@ export default function ActivitySectionPage() {
           <div>
             <h1>{section.title}</h1>
             <div className="grid">
-              {(data.items || []).map((it) => (
-                <a
-                  key={(it.url || it.title) + (it.date || "")}
-                  className="tile link"
-                  href={it.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {it.date && <div style={{ color: "#6b7280", fontSize: 13 }}>{it.date}</div>}
-                  <div style={{ fontWeight: 800, marginTop: 4 }}>{it.title}</div>
-                  {it.desc && <div style={{ marginTop: 8 }}>{it.desc}</div>}
-                  <div className="link" style={{ marginTop: 8 }}>
-                    Открыть →
+              {(data.items || []).map((it) => {
+                const href = typeof it.url === "string" && it.url.startsWith("/") && !it.url.startsWith("//")
+                  ? it.url
+                  : "";
+                const cardContent = (
+                  <>
+                    {it.date && <div style={{ color: "#6b7280", fontSize: 13 }}>{it.date}</div>}
+                    <div style={{ fontWeight: 800, marginTop: 4 }}>{it.title}</div>
+                    {it.desc && <div style={{ marginTop: 8 }}>{it.desc}</div>}
+                    {href && <div className="link" style={{ marginTop: 8 }}>Открыть →</div>}
+                  </>
+                );
+
+                if (href && href.split("?")[0].replace(/\/+$/, "") !== routePath) {
+                  return (
+                    <a key={(it.title || href) + (it.date || "")} className="tile link" href={href}>
+                      {cardContent}
+                    </a>
+                  );
+                }
+
+                return (
+                  <div key={(it.title || href) + (it.date || "")} className="tile">
+                    {cardContent}
                   </div>
-                </a>
-              ))}
+                );
+              })}
             </div>
           </div>
           <SideNav links={sidebarLinks} />

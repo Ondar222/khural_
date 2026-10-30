@@ -29,11 +29,8 @@ export default function AppealsPublicInterests() {
             о размещении ответа на сайте.
           </p>
           <p style={{ fontSize: 16, lineHeight: 1.6, marginBottom: 0 }}>
-            Актуальные ответы на обращения, затрагивающие интересы неопределённого круга лиц, размещены на
-            официальном портале:{" "}
-            <a href="https://khural.rtyva.ru/internet-priemnaya/" target="_blank" rel="noopener noreferrer" className="link">
-              khural.rtyva.ru/internet-priemnaya
-            </a>
+            Чтобы направить обращение через электронную приёмную нового сайта, перейдите в раздел{" "}
+            <a href="/appeals/online" className="link">«Электронная приёмная»</a>.
           </p>
         </div>
           </div>

@@ -34,10 +34,7 @@ export default function AppealsStatus() {
                 разделе «Мои обращения» после{" "}
                 <a href="/login" className="link">входа</a> в личный кабинет. Для обращений, поданных по почте или
                 лично, уточнить статус можно по телефонам приёмной Верховного Хурала, указанным в разделе{" "}
-                <a href="/contacts" className="link">Контакты</a>, либо на официальном портале:{" "}
-                <a href="https://khural.rtyva.ru/internet-priemnaya/" target="_blank" rel="noopener noreferrer" className="link">
-                  khural.rtyva.ru/internet-priemnaya
-                </a>
+                <a href="/contacts" className="link">«Контактная информация»</a>.
               </span>
             }
             style={{ marginBottom: 24 }}

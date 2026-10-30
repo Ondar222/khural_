@@ -45,11 +45,11 @@ export default function AdminDashboardPage() {
       {loginCard}
       <AdminDashboard
         stats={adminData.stats}
+        statsReady={adminData.statsReady}
         onReload={adminData.reload}
         onReloadSuccess={() => message.success("Информация обновлена")}
       />
     </AdminShell>
   );
 }
-
 

@@ -29,7 +29,7 @@ function QuickAction({ title, description, href }) {
   );
 }
 
-export default function AdminDashboard({ stats, onReload, onReloadSuccess }) {
+export default function AdminDashboard({ stats, statsReady, onReload, onReloadSuccess }) {
   const [refreshing, setRefreshing] = React.useState(false);
   const [lastUpdated, setLastUpdated] = React.useState(null);
 
@@ -65,16 +65,19 @@ export default function AdminDashboard({ stats, onReload, onReloadSuccess }) {
           </Button>
         </div>
       )}
+      <p style={{ gridColumn: "1 / -1", margin: "0 0 8px", color: "#6b7280", fontSize: 13 }}>
+        «—» — данные загружаются или счётчик неприменим; «0» — данные загружены, записей нет.
+      </p>
       <div className="admin-cards admin-cards--stats">
-        <StatCard label="Созывы" value={stats.convocations ?? 0} href="/admin/convocations" />
-        <StatCard label="Комитеты" value={stats.committees ?? 0} href="/admin/committees" />
-        <StatCard label="Комиссии" value={stats.commissions ?? 0} href="/admin/commissions" />
-        <StatCard label="Депутаты" value={stats.deputies ?? 0} href="/admin/deputies" />
-        <StatCard label="Страницы" value={stats.pages ?? 0} href="/admin/pages" />
+        <StatCard label="Созывы" value={statsReady ? stats.convocations ?? 0 : "—"} href="/admin/convocations" />
+        <StatCard label="Комитеты" value={statsReady ? stats.committees ?? 0 : "—"} href="/admin/committees" />
+        <StatCard label="Комиссии" value={statsReady ? stats.commissions ?? 0 : "—"} href="/admin/commissions" />
+        <StatCard label="Депутаты" value={statsReady ? stats.deputies ?? 0 : "—"} href="/admin/deputies" />
+        <StatCard label="Страницы" value={statsReady ? stats.pages ?? 0 : "—"} href="/admin/pages" />
         {/* <StatCard label="Документы" value={stats.documents ?? 0} href="/admin/documents" /> */}
-        <StatCard label="Слайдер" value={stats.slides ?? 0} href="/admin/slider" />
-        <StatCard label="Новости" value={stats.news ?? 0} href="/admin/news" />
-        <StatCard label="События" value={stats.events ?? 0} href="/admin/events" />
+        <StatCard label="Слайдер" value={statsReady ? stats.slides ?? 0 : "—"} href="/admin/slider" />
+        <StatCard label="Новости" value={statsReady ? stats.news ?? 0 : "—"} href="/admin/news" />
+        <StatCard label="События" value={statsReady ? stats.events ?? 0 : "—"} href="/admin/events" />
         {/* <StatCard label="Обращения" value={stats.appeals ?? 0} href="/admin/appeals" /> */}
         <StatCard label="Трансляция" value={"—"} href="/admin/broadcast" />
         {/* <StatCard label="ENV доки" value={"—"} href="/admin/env" /> */}
@@ -118,6 +121,5 @@ export default function AdminDashboard({ stats, onReload, onReloadSuccess }) {
     </div>
   );
 }
-
 
 

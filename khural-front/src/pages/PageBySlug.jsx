@@ -1507,11 +1507,11 @@ const INFO_CONTACTS_HTML = `
 
 // === Государственные символы ===
 const INFO_GOSIMVOLI_SLUG = "info/gosudarstvennye-simvoly";
-const INFO_GOSIMVOLI_TITLE = "Государственные символы";
+const INFO_GOSIMVOLI_TITLE = "Государственные символы Республики Тыва";
 const INFO_GOSIMVOLI_HTML = `
 <div style="display:grid; gap:16px;">
   <div class="card" style="padding: 20px; line-height: 1.8; color: #1f2937;">
-    <h1 style="margin:0 0 20px 0; font-size: 22px; font-weight: 700; color: #111827;">Государственные символы</h1>
+    <h1 style="margin:0 0 20px 0; font-size: 22px; font-weight: 700; color: #111827;">Государственные символы Республики Тыва</h1>
     
     <h2 style="margin:20px 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">Государственный гимн Республики Тыва</h2>
     <p style="margin:0 0 16px 0;">Принят Верховным Хуралом (парламентом) Республики Тыва 11 августа 2011 года приложением № 2 к конституционному закону Республики Тыва № 828 ВХ-I «О Государственном гимне Республики Тыва».</p>

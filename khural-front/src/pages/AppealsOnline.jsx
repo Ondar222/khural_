@@ -649,7 +649,7 @@ export default function AppealsOnline() {
                 <>
                   {/* Виджет Госуслуг */}
                   <div style={{ maxWidth: 600, margin: "0 auto 24px" }}>
-                    <GosWidget id="gos-widget-appeals" src="/js/gos_pos_cit.js" variant={3} />
+                    <GosWidget id="gos-widget-appeals" />
                   </div>
 
                   {/* Форма обращения (скрыта) */}

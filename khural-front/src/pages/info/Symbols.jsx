@@ -16,7 +16,7 @@ export default function Symbols() {
     { label: t("aboutChildRights"), href: "/info/child-rights" },
     { label: t("aboutDistricts"), href: "/about/districts" },
     { label: t("aboutFinances"), href: "/about/finances" },
-    { label: t("aboutSymbols"), href: "/info/symbols" },
+    { label: "Государственные символы Республики Тыва", href: "/info/gosudarstvennye-simvoly" },
     { label: t("aboutBorder"), href: "/info/border-subject" },
   ];
   return (
@@ -24,7 +24,7 @@ export default function Symbols() {
       <div className="container">
         <div className="page-grid">
           <div>
-            <h1>Государственные символы</h1>
+            <h1>Государственные символы Республики Тыва</h1>
             <article className="card" style={{ padding: 24 }}>
               <div className="prose">
                 <h2>Государственный гимн Республики Тыва</h2>

@@ -483,6 +483,9 @@ export function useAdminData() {
     mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides())
   );
   const [pages, setPages] = React.useState([]);
+  const [adminDataLoaded, setAdminDataLoaded] = React.useState(false);
+  const statsReady =
+    adminDataLoaded && !data.loading?.structure && !data.loading?.committees;
 
   const canWrite = isAuthenticated;
 
@@ -540,6 +543,7 @@ export function useAdminData() {
   }, [themeMode]);
 
   const loadAll = React.useCallback(async () => {
+    setAdminDataLoaded(false);
     const fb = fallbackRef.current || {};
     const [apiNews, apiPersons, apiDocsResponse, apiSlider, apiConvocations, apiCommittees, apiPages, personsDocJson, convocationMappingRaw] = await Promise.all([
       NewsApi.list().catch(() => null),
@@ -720,6 +724,7 @@ export function useAdminData() {
     setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
     const pagesList = normalizeServerList(apiPages);
     setPages(Array.isArray(pagesList) ? pagesList : []);
+    setAdminDataLoaded(true);
   }, [publicCommitteesFallback]);
 
   function mergeConvocationsWithOverrides(base, overrides) {
@@ -1745,6 +1750,7 @@ export function useAdminData() {
     commissions,
     pages,
     stats,
+    statsReady,
     apiBase,
     reload,
     
@@ -1799,5 +1805,4 @@ export function useAdminData() {
     busy,
   };
 }
-
 

@@ -81,7 +81,7 @@ function isRouteActive(currentPathname, currentSearch, currentHash, href) {
 const defaultLinks = [
   { label: "Общие сведения", href: "/about" },
   { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-  { label: "Руководство", href: "/government" },
+  { label: "Руководство парламента", href: "/section?title=" + encodeURIComponent("Руководство парламента") },
   { label: "Депутаты", href: "/deputies?convocation=VIII" },
   { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
   { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
@@ -172,7 +172,7 @@ const defaultLinksCommon = [
   { label: "Полномочия Председателя", href: "/info/polnomochiya-spikera" },
   { label: "Противодействие коррупции", href: "/info/protivodeystvie-korrupcii" },
   { label: "Контактная информация", href: "/info/contacts" },
-  { label: "Государственные символы", href: "/info/gosudarstvennye-simvoly" },
+  { label: "Государственные символы Республики Тыва", href: "/info/gosudarstvennye-simvoly" },
   { label: "Приграничный субъект", href: "/info/prigranichny-subekt" },
   PERSONNEL_NAV_LINKS,
 ];
@@ -188,7 +188,12 @@ const defaultLinksDeputies = [
 const defaultLinksAbout = [
   { label: "Общие сведения", href: "/about" },
   { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-  { label: "Руководство", href: "/government" },
+  { label: "Руководство парламента", href: "/section?title=" + encodeURIComponent("Руководство парламента") },
+  {
+    label: "Совет по взаимодействию с представительными органами муниципальных образований",
+    href: "/section?title=" + encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
+  },
+  { label: "Молодежный Хурал", href: "/youth-parliament" },
   { label: "Представительство в Совете Федерации", href: "/struct/council" },
   { label: "История парламентаризма", href: "/about/istoriya-parlamentarizma" },
   { label: "Полномочия", href: "/info/polnomochiya" },
@@ -208,7 +213,7 @@ const defaultLinksActivity = [
 const defaultLinksCommittees = [
   { label: "Общие сведения", href: "/about" },
   { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-  { label: "Руководство", href: "/government" },
+  { label: "Руководство парламента", href: "/section?title=" + encodeURIComponent("Руководство парламента") },
   { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
   { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
   { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
@@ -468,7 +473,7 @@ export default function SideNav({
       if (pathname.startsWith('/info/protivodeystvie-korrupcii/spavki-bk')) return 'СПО "Справки БК"';
       if (pathname.startsWith('/info/protivodeystvie-korrupcii/protivodeystvie-korrupcii-plan')) return "План противодействия коррупции";
       if (pathname === '/info/contacts') return "Контактная информация";
-      if (pathname === '/info/gosudarstvennye-simvoly' || pathname === '/info/symbols') return "Государственные символы";
+      if (pathname === '/info/gosudarstvennye-simvoly' || pathname === '/info/symbols') return "Государственные символы Республики Тыва";
       if (pathname.startsWith('/info/prigranichny-subekt') || pathname.startsWith('/info/border-subekt') || pathname === '/info/border-subject') return "Приграничный субъект";
       if (pathname === '/info/prigranichny-subekt/shablony' || pathname === '/info/border-subject/shablony') return "Шаблоны заявлений";
       if (pathname === '/info/prigranichny-subekt/shema-uslugi') return "Схема предоставления услуги";

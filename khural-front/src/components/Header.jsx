@@ -17,6 +17,11 @@ import {
 } from "../utils/pagesOverrides.js";
 // removed unused UI icon libs
 
+const PARLIAMENT_LEADERSHIP_HREF =
+  `/section?title=${encodeURIComponent("Руководство парламента")}`;
+const MUNICIPAL_COUNCIL_HREF =
+  `/section?title=${encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований")}`;
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -286,6 +291,11 @@ export default function Header() {
                 <a href="/about/polnomochiya">{t("Полномочия Верховного Хурала")}</a>
                 <a href="/section">{t("structure")}</a>
                 <a href="/committee">{t("committees")}</a>
+                <a href={PARLIAMENT_LEADERSHIP_HREF}>Руководство парламента</a>
+                <a href="/youth-parliament">Молодежный Хурал</a>
+                <a href={MUNICIPAL_COUNCIL_HREF}>
+                  Совет по взаимодействию с представительными органами муниципальных образований
+                </a>
                 {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
                 <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
                 <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
@@ -321,7 +331,7 @@ export default function Header() {
                 <a href="/info/protivodeystvie-korrupcii">{t("aboutCorruption") || "Противодействие коррупции"}</a>
                 <a href="/info/contacts">{t("aboutContacts") || "Контактная информация"}</a>
                 <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
-                <a href="/info/gosudarstvennye-simvoly">Государственные символы</a>
+                <a href="/info/gosudarstvennye-simvoly">Государственные символы Республики Тыва</a>
                 <a href="/info/prigranichny-subekt">Приграничный субъект</a>
                 <hr />
                 <a href="/about/finances">{t("Финансы") || "Финансы"}</a>
@@ -535,6 +545,11 @@ export default function Header() {
             <a href="/about/polnomochiya">{t("Полномочия Верховного Хурала")}</a>
             <a href="/section">{t("structure")}</a>
             <a href="/committee">{t("committees")}</a>
+            <a href={PARLIAMENT_LEADERSHIP_HREF}>Руководство парламента</a>
+            <a href="/youth-parliament">Молодежный Хурал</a>
+            <a href={MUNICIPAL_COUNCIL_HREF}>
+              Совет по взаимодействию с представительными органами муниципальных образований
+            </a>
             {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
             <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
             <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
@@ -552,7 +567,7 @@ export default function Header() {
             <a href="/info/protivodeystvie-korrupcii">{t("aboutCorruption") || "Противодействие коррупции"}</a>
             <a href="/info/contacts">{t("aboutContacts") || "Контактная информация"}</a>
             <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
-            <a href="/info/gosudarstvennye-simvoly">Государственные символы</a>
+            <a href="/info/gosudarstvennye-simvoly">Государственные символы Республики Тыва</a>
             <a href="/info/prigranichny-subekt">Приграничный субъект</a>
             <hr />
             <a href="/about/finances">{t("Финансы") || "Финансы"}</a>
@@ -820,6 +835,24 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
+            <a className="tile link" href={PARLIAMENT_LEADERSHIP_HREF} onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Руководство парламента
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href="/youth-parliament" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Молодежный Хурал
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a className="tile link" href={MUNICIPAL_COUNCIL_HREF} onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                Совет по взаимодействию с представительными органами муниципальных образований
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
             <a
               className="tile link"
               href={"/section?title=" + encodeURIComponent("Комиссии")}
@@ -892,7 +925,7 @@ export default function Header() {
             </a>
             <a className="tile link" href="/info/gosudarstvennye-simvoly" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Государственные символы
+                Государственные символы Республики Тыва
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>

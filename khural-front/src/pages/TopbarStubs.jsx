@@ -16,10 +16,10 @@ export function Feedback() {
               <a href="">переданы лично</a>
             </li>
             <li>
-              <a href="https://khural.rtyva.ru/internet-priemnaya/letter/">отправлены по почте</a>
+              <a href="/appeals/letter">отправлены по почте</a>
             </li>
             <li>
-              <a href="https://khural.rtyva.ru/internet-priemnaya/send/">
+              <a href="/appeals/online">
                 отправлены в электронном виде через официальный сайт
               </a>
             </li>
@@ -27,7 +27,7 @@ export function Feedback() {
           <div>
             <p>
               Прежде чем отправить обращение, внимательно ознакомьтесь с{" "}
-              <a href="https://khural.rtyva.ru/internet-priemnaya/consideration/">
+              <a href="/appeals/review">
                 порядком рассмотрения обращений{" "}
               </a>
               и следующей информацией:
@@ -43,7 +43,7 @@ export function Feedback() {
               <li>
                 Не принимаются к регистрации анонимные обращения и обращения, оформленные с
                 нарушением требований, описанных в{" "}
-                <a href="https://khural.rtyva.ru/internet-priemnaya/consideration/">
+                <a href="/appeals/review">
                   порядке рассмотрения обращений.
                 </a>
               </li>
@@ -54,7 +54,7 @@ export function Feedback() {
               </li>
               <li>
                 Обращения в электронном виде, направляемые минуя предлагаемую{" "}
-                <a href="https://khural.rtyva.ru/internet-priemnaya/send/">форму ввода</a>
+                <a href="/appeals/online">форму ввода</a>
                 ,либо на иные электронные адреса к рассмотрению не принимаются.
               </li>
             </ul>
@@ -64,15 +64,15 @@ export function Feedback() {
       <div>
         <ul>
           <li>
-            <a href="https://khural.rtyva.ru/internet-priemnaya/consideration/">
+            <a href="/appeals/review">
               Порядок рассмотрения обращений
             </a>
           </li>
           <li>
-            <a href="https://khural.rtyva.ru/internet-priemnaya/appeal/">Порядок обжалования</a>
+            <a href="/appeals/complaints">Порядок обжалования</a>
           </li>
           <li>
-            <a href="http://khural.org/internet-priemnaya/legal/">Правовое регулирование</a>
+            <a href="/appeals/legal">Правовое регулирование</a>
           </li>
         </ul>
       </div>
