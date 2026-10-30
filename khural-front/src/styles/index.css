@@ -1391,6 +1391,15 @@ a {
   .broadcasts-section {
     margin-top: 32px;
   }
+  .broadcast-widget {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .broadcast-widget__player {
+    width: 100%;
+    padding-bottom: 45%;
+  }
   .broadcasts-home {
     display: flex;
     flex-wrap: nowrap;
