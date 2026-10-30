@@ -11555,6 +11555,18 @@ body.a11y-brown .btn {
   }
 }
 
+@media (max-width: 959px) {
+  .site-header {
+    position: fixed;
+    inset: 0 0 auto;
+    width: 100%;
+  }
+
+  body:not(.admin-mode) .main-content {
+    padding-top: 77px;
+  }
+}
+
 /* Fix horizontal overflow on mobile - 2026 */
 @media (max-width: 959px) {
   html,
