@@ -27,11 +27,13 @@ export function formatNewsDateTime(date) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "UTC",
   });
   
   const timeStr = dateObj.toLocaleTimeString("ru-RU", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   });
   
   return `${dateStr}, ${timeStr}`;
@@ -64,5 +66,6 @@ export function formatNewsDate(date) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "UTC",
   });
 }

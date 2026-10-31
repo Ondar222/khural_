@@ -121,7 +121,6 @@ const defaultLinksAppeals = [
   { label: "Обращения граждан", href: "/appeals" },
   { label: "Письменное обращение", href: "/appeals/letter" },
   { label: "Электронная приемная", href: "/appeals/online" },
-  { label: "Проверить статус обращения", href: "/appeals/status" },
   { label: "Порядок рассмотрения обращений", href: "/appeals/review" },
   { label: "Порядок обжалования", href: "/appeals/complaints" },
   { label: "Обзор обращений граждан", href: "/appeals/overview" },

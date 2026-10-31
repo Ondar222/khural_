@@ -94,7 +94,6 @@ export default function Appeals() {
         <div className="tile appeals-page__tile appeals-page__links-block">
           <h2 className="appeals-page__heading">Полезная информация</h2>
           <nav className="appeals-page__links" aria-label="Полезные ссылки по обращениям">
-            <a href="/appeals/status" className="appeals-page__nav-link">→ Проверить статус обращения</a>
             <a href="/appeals/review" className="appeals-page__nav-link">→ Порядок рассмотрения обращений</a>
             <a href="/appeals/complaints" className="appeals-page__nav-link">→ Порядок обжалования</a>
             <a href="/appeals/overview" className="appeals-page__nav-link">→ Обзор обращений граждан</a>

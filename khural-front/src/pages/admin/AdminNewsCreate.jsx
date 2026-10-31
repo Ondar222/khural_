@@ -130,7 +130,11 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
   const [creatingCategory, setCreatingCategory] = React.useState(false);
   const [newCategoryName, setNewCategoryName] = React.useState("");
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
-  const { categories, loading: loadingCats } = useNewsCategories();
+  const {
+    categories,
+    loading: loadingCats,
+    reload: reloadCategories,
+  } = useNewsCategories();
   const loadingCategories = loadingCats;
   
   const handleCreateCategory = React.useCallback(async () => {
@@ -761,4 +765,3 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
     </div>
   );
 }
-

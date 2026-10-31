@@ -52,7 +52,6 @@ const AppealsOverview = lazy(() => import("./pages/AppealsOverview.jsx"));
 const AppealsPublicInterests = lazy(() => import("./pages/AppealsPublicInterests.jsx"));
 const AppealsLegal = lazy(() => import("./pages/AppealsLegal.jsx"));
 const AppealsSchedule = lazy(() => import("./pages/AppealsSchedule.jsx"));
-const AppealsStatus = lazy(() => import("./pages/AppealsStatus.jsx"));
 const AppealsMinyust = lazy(() => import("./pages/AppealsMinyust.jsx"));
 const MapPage = lazy(() => import("./pages/Map.jsx"));
 const Apparatus = lazy(() => import("./pages/Apparatus.jsx"));
@@ -282,7 +281,7 @@ export default function App() {
                             "/appeals/public-interests": AppealsPublicInterests,
                             "/appeals/legal": AppealsLegal,
                             "/appeals/schedule": AppealsSchedule,
-                            "/appeals/status": AppealsStatus,
+                            "/appeals/status": NotFound,
                             "/appeals/minyust": AppealsMinyust,
                             // Динамические маршруты для страниц разделов (должны быть после конкретных)
                             "/news/:slug": PageBySlug,

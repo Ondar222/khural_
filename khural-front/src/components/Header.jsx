@@ -392,7 +392,6 @@ export default function Header() {
                 <a href="/appeals">{t("Обращения граждан") || "Обращения граждан"}</a>
                 <a href="/appeals/letter">{t("Письменное обращение") || "Письменное обращение"}</a>
                 <a href="/appeals/online">{t("Электронная приемная") || "Электронная приемная"}</a>
-                <a href="/appeals/status">{t("Проверить статус обращения") || "Проверить статус обращения"}</a>
                 <a href="/appeals/review">{t("Порядок рассмотрения обращений") || "Порядок рассмотрения обращений"}</a>
                 <a href="/appeals/complaints">{t("Порядок обжалования") || "Порядок обжалования"}</a>
                 <a href="/appeals/overview">{t("Обзор обращений граждан") || "Обзор обращений граждан"}</a>
@@ -1206,12 +1205,6 @@ export default function Header() {
             <a className="tile link" href="/appeals/online" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("Электронная приемная") || "Электронная приемная"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/appeals/status" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Проверить статус обращения") || "Проверить статус обращения"}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>

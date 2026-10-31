@@ -101,7 +101,11 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
   const [saving, setSaving] = React.useState(false);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
   const { reload: reloadPublicData } = useData();
-  const { categories, loading: loadingCats } = useNewsCategories();
+  const {
+    categories,
+    loading: loadingCats,
+    reload: reloadCategories,
+  } = useNewsCategories();
   const loadingCategories = loadingCats;
   
   const handleCreateCategory = React.useCallback(async () => {
@@ -1036,6 +1040,5 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
     </div>
   );
 }
-
 
 

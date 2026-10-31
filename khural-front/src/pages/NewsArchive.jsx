@@ -1,5 +1,6 @@
 import React from "react";
 import { DatePicker, message, Pagination } from "antd";
+import ruRU from "antd/locale/ru_RU";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useTranslation } from "../hooks/useTranslation.js";
@@ -10,6 +11,7 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import NewsImageCarousel from "../components/NewsImageCarousel.jsx";
 import { formatNewsDateTime } from "../utils/dateFormat.js";
 import dayjs from "dayjs";
+import "dayjs/locale/ru";
 import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
 import { useNewsCategories, categoriesFromNews } from "../hooks/useNewsCategories.js";
 
@@ -542,6 +544,7 @@ export default function NewsArchive() {
                       style={{ width: "100%", height: "54px" }}
                       placeholder="Выберите дату"
                       format="DD.MM.YYYY"
+                      locale={ruRU.DatePicker}
                       size="large"
                     />
                 </div>

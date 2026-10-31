@@ -337,7 +337,7 @@ export default function HeroCarousel() {
               ></path>
             </svg>
           </a>
-          <a className="sbtn sbtn--mx" href="https://t.me/s/tuva_parlament" target="_blank" rel="noreferrer" aria-label="MAX">
+          <a className="sbtn sbtn--mx" href="https://max.ru/khuraltyva/AZ-yY-ezegk" target="_blank" rel="noreferrer" aria-label="MAX">
             <img src="/img/max.png" alt="MAX" />
           </a>
         </div>
