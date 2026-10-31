@@ -575,6 +575,7 @@ a {
 @media (min-width: 960px) {
   .main-nav {
     display: flex;
+    transform: translateY(-10px);
   }
 }
 
