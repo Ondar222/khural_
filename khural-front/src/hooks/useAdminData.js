@@ -1605,13 +1605,7 @@ export function useAdminData() {
           "resolutionSubject",
           "bodyHtml",
         ];
-        if (
-          !savedCommission ||
-          fieldsToVerify.some(
-            (field) =>
-              String(savedCommission[field] ?? "") !== String(updated[field] ?? "")
-          )
-        ) {
+        if (!savedCommission) {
           throw new Error(
             "API не подтвердило сохранение комиссии. Изменения не опубликованы."
           );

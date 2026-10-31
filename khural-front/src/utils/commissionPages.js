@@ -17,7 +17,7 @@ function getPageContent(page) {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     const item = content.find((entry) => String(entry?.locale || "").toLowerCase() === "ru") || content[0];
-    return typeof item?.content === "string" ? item.content : "";
+    return item?.content ?? "";
   }
   return "";
 }
@@ -28,7 +28,8 @@ export function readCommissionPage(page) {
 
   let stored;
   try {
-    stored = JSON.parse(getPageContent(page));
+    const content = getPageContent(page);
+    stored = typeof content === "string" ? JSON.parse(content) : content;
   } catch {
     return null;
   }
@@ -90,13 +91,13 @@ export function commissionPagePayload(commission, { deleted = false } = {}) {
   return {
     slug: commissionPageSlug(id),
     title: name,
-    content: JSON.stringify({
+    content: {
       type: COMMISSION_PAGE_TYPE,
       version: 1,
       id,
       deleted,
       commission: { id, name, ...details },
-    }),
+    },
     isPublished: true,
   };
 }

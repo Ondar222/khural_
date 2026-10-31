@@ -891,6 +891,8 @@ export const AboutApi = {
               content: rawContent,
             },
           ]
+        : rawContent && typeof rawContent === "object"
+          ? [{ locale, title, content: rawContent }]
         : undefined;
 
     const body = {
@@ -927,6 +929,8 @@ export const AboutApi = {
               content: rawContent,
             },
           ]
+        : rawContent && typeof rawContent === "object"
+          ? [{ locale, title: String(title || "").trim(), content: rawContent }]
         : undefined;
 
     const body = {
