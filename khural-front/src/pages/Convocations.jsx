@@ -3,17 +3,11 @@ import { useData } from "../context/DataContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import DataState from "../components/DataState.jsx";
 import { ConvocationsApi, CommitteesApi } from "../api/client.js";
-import {
-  COMMITTEES_OVERRIDES_EVENT_NAME,
-  COMMITTEES_OVERRIDES_STORAGE_KEY,
-  readCommitteesOverrides,
-} from "../utils/committeesOverrides.js";
-import {
-  CONVOCATIONS_OVERRIDES_EVENT_NAME,
-  CONVOCATIONS_OVERRIDES_STORAGE_KEY,
-  readConvocationsOverrides,
-} from "../utils/convocationsOverrides.js";
 import { normalizeBool } from "../utils/bool.js";
+import {
+  getConvocationNumber,
+  mergeConvocationsPreferApi,
+} from "../utils/convocationIdentity.js";
 
 function normalizeConvocationToken(raw) {
   const s = String(raw || "").replace(/\u00A0/g, " ").trim();
@@ -43,6 +37,8 @@ function formatConvocationLabel(c) {
 
 function convocationKey(c) {
   if (!c) return "";
+  const ordinal = getConvocationNumber(c);
+  if (ordinal) return ordinal;
   if (typeof c === "string") return normalizeConvocationToken(c) || String(c).trim();
   const name = String(c?.name || c?.number || "").trim();
   const token = normalizeConvocationToken(name);
@@ -51,90 +47,8 @@ function convocationKey(c) {
   return String(id).trim();
 }
 
-function mergeConvocationsWithOverridesByKey(base, overrides) {
-  const created = Array.isArray(overrides?.created) ? overrides.created : [];
-  const updatedById =
-    overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
-  const deletedIds = new Set(Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []);
-
-  const out = [];
-  const seen = new Set();
-
-  const pushOne = (it) => {
-    if (!it) return;
-    const key = convocationKey(it);
-    if (!key) return;
-    if (deletedIds.has(String(it?.id ?? ""))) return;
-    const override = updatedById[String(it?.id ?? "")] || updatedById[key];
-    const merged = override ? { ...(typeof it === "string" ? { name: it } : it), ...override } : it;
-    out.push(merged);
-    seen.add(key);
-  };
-
-  for (const it of Array.isArray(base) ? base : []) pushOne(it);
-  for (const it of created) {
-    const key = convocationKey(it);
-    if (!key || seen.has(key)) continue;
-    pushOne(it);
-  }
-
-  // Also add updates even if base list is only strings (no numeric ids),
-  // so we keep full data (id/description/isActive) and can match committees by convocationId.
-  for (const patch of Object.values(updatedById || {})) {
-    if (!patch || typeof patch !== "object") continue;
-    const idStr = String(patch?.id ?? "").trim();
-    if (idStr && deletedIds.has(idStr)) continue;
-    const key = convocationKey(patch);
-    if (!key || seen.has(key)) continue;
-    out.push(patch);
-    seen.add(key);
-  }
-
-  return out;
-}
-
-function mergeCommitteesWithOverrides(base, overrides) {
-  const created = Array.isArray(overrides?.created) ? overrides.created : [];
-  const updatedById =
-    overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
-  const deletedIds = new Set(Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []);
-
-  const out = [];
-  const seen = new Set();
-  for (const it of Array.isArray(base) ? base : []) {
-    const idStr = String(it?.id ?? "");
-    if (!idStr) continue;
-    if (deletedIds.has(idStr)) continue;
-    const override = updatedById[idStr];
-    out.push(override ? { ...it, ...override } : it);
-    seen.add(idStr);
-  }
-  for (const it of created) {
-    const idStr = String(it?.id ?? "");
-    if (!idStr) continue;
-    if (deletedIds.has(idStr)) continue;
-    if (seen.has(idStr)) continue;
-    const override = updatedById[idStr];
-    out.push(override ? { ...it, ...override } : it);
-    seen.add(idStr);
-  }
-
-  // Also add updated snapshots even if base list doesn't have them (API unavailable).
-  for (const patch of Object.values(updatedById || {})) {
-    if (!patch || typeof patch !== "object") continue;
-    const idStr = String(patch?.id ?? "").trim();
-    if (!idStr) continue;
-    if (deletedIds.has(idStr)) continue;
-    if (seen.has(idStr)) continue;
-    out.push(patch);
-    seen.add(idStr);
-  }
-
-  return out.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
-}
-
 function toConvocationIdStrFromCommittee(c) {
-  const v = c?.convocation?.id ?? c?.convocationId ?? null;
+  const v = c?.convocationComittees?.id ?? c?.convocation?.id ?? c?.convocationId ?? null;
   if (v === null || v === undefined || v === "") return "";
   return String(v);
 }
@@ -144,6 +58,8 @@ function convocationMatchKeys(c) {
   if (!c) return [];
   const id = String(c?.id ?? "").trim();
   if (id) keys.add(id);
+  const ordinal = getConvocationNumber(c);
+  if (ordinal) keys.add(ordinal);
   const token = normalizeConvocationToken(c?.name || c?.number || c?.id || "");
   if (token) keys.add(token);
   return Array.from(keys);
@@ -154,7 +70,10 @@ function committeeConvocationMatchKeys(c) {
   if (!c) return [];
   const idStr = toConvocationIdStrFromCommittee(c);
   if (idStr) keys.add(idStr);
-  const token = normalizeConvocationToken(c?.convocation?.name || c?.convocation?.number || "");
+  const relation = c?.convocationComittees ?? c?.convocation;
+  const ordinal = getConvocationNumber(relation ?? idStr);
+  if (ordinal) keys.add(ordinal);
+  const token = normalizeConvocationToken(relation?.name || relation?.number || "");
   if (token) keys.add(token);
   return Array.from(keys);
 }
@@ -209,10 +128,9 @@ export default function Convocations() {
   } = useData();
   const [tab, setTab] = React.useState("active"); // active | archive
   const [apiConvocations, setApiConvocations] = React.useState(null);
+  const [staticConvocations, setStaticConvocations] = React.useState([]);
   const [apiCommittees, setApiCommittees] = React.useState(null);
   const [busy, setBusy] = React.useState(false);
-  const [overridesSeq, setOverridesSeq] = React.useState(0);
-  const [convOverridesSeq, setConvOverridesSeq] = React.useState(0);
   const [expandedByKey, setExpandedByKey] = React.useState({});
 
   React.useEffect(() => {
@@ -220,9 +138,17 @@ export default function Convocations() {
     (async () => {
       setBusy(true);
       try {
-        const list = await ConvocationsApi.list().catch(() => null);
+        const [list, staticList] = await Promise.all([
+          ConvocationsApi.list({ activeOnly: false }).catch(() => null),
+          fetch("/data/convocations.json").then((response) =>
+            response.ok ? response.json() : []
+          ),
+        ]);
         if (!alive) return;
         setApiConvocations(list);
+        setStaticConvocations(Array.isArray(staticList) ? staticList : []);
+      } catch (error) {
+        console.error("[Convocations] Не удалось загрузить список созывов:", error);
       } finally {
         if (alive) setBusy(false);
       }
@@ -244,62 +170,16 @@ export default function Convocations() {
     };
   }, []);
 
-  React.useEffect(() => {
-    const bump = () => setOverridesSeq((x) => x + 1);
-    const onStorage = (e) => {
-      if (e?.key === COMMITTEES_OVERRIDES_STORAGE_KEY) bump();
-    };
-    window.addEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const bump = () => setConvOverridesSeq((x) => x + 1);
-    const onStorage = (e) => {
-      if (e?.key === CONVOCATIONS_OVERRIDES_STORAGE_KEY) bump();
-    };
-    window.addEventListener(CONVOCATIONS_OVERRIDES_EVENT_NAME, bump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(CONVOCATIONS_OVERRIDES_EVENT_NAME, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
-  const convocations = React.useMemo(() => {
-    const raw = apiConvocations;
-    const base =
-      Array.isArray(raw) && raw.length
-        ? raw
-            // Some backends return strings (from /all), some return objects.
-            .map((x) => {
-              if (typeof x === "string") {
-                const token = normalizeConvocationToken(x);
-                return { id: token || x, name: x, description: "", isActive: true };
-              }
-              if (x && typeof x === "object") {
-                return {
-                  id: x.id ?? normalizeConvocationToken(x.name || x.number || ""),
-                  name: x.name || x.number || "",
-                  description: x.description || "",
-                  isActive: normalizeBool(x.isActive, true),
-                };
-              }
-              return null;
-            })
-            .filter(Boolean)
-        : [];
-    return mergeConvocationsWithOverridesByKey(base, readConvocationsOverrides());
-  }, [apiConvocations, convOverridesSeq]);
+  const convocations = React.useMemo(
+    () => mergeConvocationsPreferApi(apiConvocations, staticConvocations),
+    [apiConvocations, staticConvocations]
+  );
 
   const committees = React.useMemo(() => {
-    const base = Array.isArray(apiCommittees) ? apiCommittees : committeesFromContext;
-    return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
-  }, [apiCommittees, committeesFromContext, overridesSeq]);
+    return Array.isArray(apiCommittees) && apiCommittees.length
+      ? apiCommittees
+      : committeesFromContext;
+  }, [apiCommittees, committeesFromContext]);
 
   const convocationsFromCommittees = React.useMemo(() => {
     const out = [];
@@ -321,14 +201,8 @@ export default function Convocations() {
   }, [committees]);
 
   const convocationsMerged = React.useMemo(() => {
-    // Prefer convocations resolved from committees first (they include numeric ids),
-    // then merge API list and local overrides.
-    const base = [
-      ...(Array.isArray(convocationsFromCommittees) ? convocationsFromCommittees : []),
-      ...(Array.isArray(convocations) ? convocations : []),
-    ];
-    return mergeConvocationsWithOverridesByKey(base, readConvocationsOverrides());
-  }, [convocationsFromCommittees, convocations, convOverridesSeq]);
+    return mergeConvocationsPreferApi(convocations, convocationsFromCommittees);
+  }, [convocationsFromCommittees, convocations]);
 
   const activeConvocations = React.useMemo(
     () => convocationsMerged.filter((c) => normalizeBool(c?.isActive, true) !== false),
@@ -650,4 +524,3 @@ export default function Convocations() {
     </section>
   );
 }
-

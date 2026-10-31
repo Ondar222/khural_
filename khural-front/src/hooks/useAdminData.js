@@ -29,28 +29,25 @@ import {
 } from "../utils/eventsOverrides.js";
 import { addCreatedSlide, updateSlideOverride, addDeletedSlideId, setSliderOrder } from "../utils/sliderOverrides.js";
 import {
-  COMMITTEES_OVERRIDES_EVENT_NAME,
-  readCommitteesOverrides,
-  writeCommitteesOverrides,
   SYSTEM_COMMITTEE_IDS,
   COMMITTEE_DEFAULT_CONVOCATION,
 } from "../utils/committeesOverrides.js";
 import {
-  readCommissionsOverrides,
-  writeCommissionsOverrides,
-  mergeCommissionsWithOverrides,
   DEFAULT_COMMISSIONS_LIST,
-  COMMISSIONS_OVERRIDES_EVENT_NAME,
-  COMMISSIONS_OVERRIDES_STORAGE_KEY,
-} from "../utils/commissionsOverrides.js";
+} from "../utils/commissionsData.js";
+import {
+  commissionPagePayload,
+  mergeCommissionsWithPages,
+} from "../utils/commissionPages.js";
+import {
+  getCommitteeConvocation,
+  getCommitteeConvocationId,
+  getConvocationNumber,
+  isStaticConvocationId,
+  mergeConvocationsPreferApi,
+} from "../utils/convocationIdentity.js";
 import { normalizeBool } from "../utils/bool.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
-import {
-  CONVOCATIONS_OVERRIDES_EVENT_NAME,
-  CONVOCATIONS_OVERRIDES_STORAGE_KEY,
-  readConvocationsOverrides,
-  writeConvocationsOverrides,
-} from "../utils/convocationsOverrides.js";
 
 function toNewsFallback(items) {
   return (items || []).map((n) => ({
@@ -304,121 +301,72 @@ function normalizeCommitteeName(value) {
     .toLowerCase();
 }
 
+function committeeConvocationKey(committee) {
+  const relation = getCommitteeConvocation(committee);
+  return getConvocationNumber(relation) || String(getCommitteeConvocationId(committee) ?? "");
+}
+
 function mergeCommitteesPreferApi(apiList, fallbackList) {
   const api = Array.isArray(apiList) ? apiList : [];
   const fallback = Array.isArray(fallbackList) ? fallbackList : [];
   const out = api.map((c) => ({ ...c }));
   const byId = new Map();
-  const byName = new Map();
+  const byNameAndConvocation = new Map();
 
   for (const c of out) {
     const id = String(c?.id ?? "");
     if (id) byId.set(id, c);
     const nameKey = normalizeCommitteeName(c?.name || c?.title || c?.label || c?.description);
-    if (nameKey) byName.set(nameKey, c);
+    const convocationKey = committeeConvocationKey(c);
+    if (nameKey && convocationKey) {
+      byNameAndConvocation.set(`${nameKey}|${convocationKey}`, c);
+    }
   }
 
   for (const c of fallback) {
     const id = String(c?.id ?? "");
     const nameKey = normalizeCommitteeName(c?.name || c?.title || c?.label || c?.description);
-    const target = (id && byId.get(id)) || (nameKey && byName.get(nameKey)) || null;
+    const convocationKey = committeeConvocationKey(c);
+    const target =
+      (id && byId.get(id)) ||
+      (nameKey && convocationKey
+        ? byNameAndConvocation.get(`${nameKey}|${convocationKey}`)
+        : null);
     if (target) {
-      if (!target.name && c?.name) target.name = c.name;
-      if (!target.title && c?.title) target.title = c.title;
-      if (!target.description && c?.description) target.description = c.description;
-      if (!target.convocation && c?.convocation) target.convocation = c.convocation;
-      if (!target.convocationId && c?.convocationId) target.convocationId = c.convocationId;
-      if (!Array.isArray(target.members) && Array.isArray(c?.members)) target.members = c.members;
-      if ((!Array.isArray(target.plans) || target.plans.length === 0) && Array.isArray(c?.plans) && c.plans.length > 0) target.plans = c.plans;
-      if ((!Array.isArray(target.activities) || target.activities.length === 0) && Array.isArray(c?.activities) && c.activities.length > 0) target.activities = c.activities;
+      for (const key of [
+        "name",
+        "title",
+        "description",
+        "phone",
+        "email",
+        "address",
+        "website",
+        "head",
+        "convocation",
+        "convocationId",
+        "members",
+        "staff",
+        "plans",
+        "activities",
+      ]) {
+        const current = target[key];
+        const fallbackValue = c?.[key];
+        const isMissing =
+          current == null ||
+          current === "" ||
+          (Array.isArray(current) && current.length === 0);
+        const hasFallback =
+          fallbackValue != null &&
+          fallbackValue !== "" &&
+          (!Array.isArray(fallbackValue) || fallbackValue.length > 0);
+        if (isMissing && hasFallback) target[key] = fallbackValue;
+      }
       continue;
     }
     out.push(c);
   }
 
   return out;
-}
-
-function normalizeConvocationKey(value) {
-  return String(value ?? "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
-function mergeConvocationsPreferApi(apiList, fallbackList) {
-  const api = Array.isArray(apiList) ? apiList : [];
-  const fallback = Array.isArray(fallbackList) ? fallbackList : [];
-  const out = api.map((c) => ({ ...c }));
-  const byId = new Map();
-  const byName = new Map();
-
-  for (const c of out) {
-    if (c == null) continue;
-    if (typeof c === "string") {
-      const key = normalizeConvocationKey(c);
-      if (key) byName.set(key, { id: c, name: c });
-      continue;
-    }
-    const id = String(c?.id ?? "");
-    if (id) byId.set(id, c);
-    const nameKey = normalizeConvocationKey(c?.name || c?.number || c?.title);
-    if (nameKey) byName.set(nameKey, c);
-  }
-
-  for (const c of fallback) {
-    if (c == null) continue;
-    if (typeof c === "string") {
-      const key = normalizeConvocationKey(c);
-      if (!key) continue;
-      if (byName.has(key)) continue;
-      out.push({ id: c, name: c });
-      byName.set(key, { id: c, name: c });
-      continue;
-    }
-    const id = String(c?.id ?? "");
-    const nameKey = normalizeConvocationKey(c?.name || c?.number || c?.title);
-    const target = (id && byId.get(id)) || (nameKey && byName.get(nameKey)) || null;
-    if (target) {
-      if (!target.name && c?.name) target.name = c.name;
-      if (!target.number && c?.number) target.number = c.number;
-      if (!target.title && c?.title) target.title = c.title;
-      if (target.isActive === undefined && c?.isActive !== undefined) target.isActive = c.isActive;
-      continue;
-    }
-    out.push(c);
-  }
-
-  return out;
-}
-
-function mergeCommitteesWithOverrides(base, overrides) {
-  const created = Array.isArray(overrides?.created) ? overrides.created : [];
-  const updatedById =
-    overrides?.updatedById && typeof overrides.updatedById === "object"
-      ? overrides.updatedById
-      : {};
-  // Удаление комитетов отключено — игнорируем deletedIds, чтобы список не исчезал.
-  const deleted = new Set();
-
-  const list = Array.isArray(base) ? base.slice() : [];
-  const mergedBase = list
-    .filter((c) => !deleted.has(String(c?.id ?? "")))
-    .map((c) => {
-      const id = String(c?.id ?? "");
-      const upd = id && updatedById[id] ? updatedById[id] : null;
-      return upd ? { ...c, ...upd } : c;
-    });
-
-  const createdFiltered = created.filter((c) => !deleted.has(String(c?.id ?? "")));
-  const byId = new Map();
-  for (const c of mergedBase) byId.set(String(c?.id ?? ""), c);
-  for (const c of createdFiltered) {
-    const id = String(c?.id ?? "");
-    if (!id || byId.has(id)) continue;
-    byId.set(id, c);
-  }
-  return Array.from(byId.values()).sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
 }
 
 /** Количество комитетов после дедупликации по названию (как в списке и на /committee) */
@@ -429,7 +377,7 @@ function countDeduplicatedCommittees(list) {
   const richness = (c) => {
     let s = 0;
     if (String(c?.description ?? "").trim().length > 0) s += 2;
-    const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+    const convId = getCommitteeConvocationId(c);
     if (convId != null && convId !== "") s += 2;
     const members = Array.isArray(c?.members) ? c.members : [];
     return s + members.length;
@@ -480,9 +428,7 @@ export function useAdminData() {
   const [appeals, setAppeals] = React.useState([]);
   const [convocations, setConvocations] = React.useState([]);
   const [committees, setCommittees] = React.useState([]);
-  const [commissions, setCommissions] = React.useState(() =>
-    mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides())
-  );
+  const [commissions, setCommissions] = React.useState(DEFAULT_COMMISSIONS_LIST);
   const [pages, setPages] = React.useState(null);
   const [adminDataLoaded, setAdminDataLoaded] = React.useState(false);
   const statsReady =
@@ -493,16 +439,53 @@ export function useAdminData() {
   // Track whether committees list endpoint is healthy; if not, keep local fallback in sync.
   const committeesApiOkRef = React.useRef(true);
 
+  const resolveConvocationApiId = React.useCallback(
+    async (value) => {
+      if (value == null || value === "") return null;
+      const ordinal = getConvocationNumber(value);
+      const current = (Array.isArray(convocations) ? convocations : []).find((item) => {
+        if (String(item?.id ?? "") === String(value)) return true;
+        return ordinal && getConvocationNumber(item) === ordinal;
+      });
+      if (current && !isStaticConvocationId(current.id)) return current.id;
+
+      const apiRows = await ConvocationsApi.list({ activeOnly: false });
+      const apiMatch = apiRows.find((item) => {
+        if (String(item?.id ?? "") === String(value)) return true;
+        return ordinal && getConvocationNumber(item) === ordinal;
+      });
+      if (apiMatch) return apiMatch.id;
+      if (!ordinal) return value;
+
+      const fallback = (Array.isArray(convocations) ? convocations : []).find(
+        (item) => getConvocationNumber(item) === ordinal
+      );
+      if (!fallback) throw new Error(`Созыв ${ordinal} отсутствует в списке`);
+
+      const created = await ConvocationsApi.create({
+        name: fallback.name || `Созыв ${ordinal}`,
+        description: fallback.description || "",
+        isActive: normalizeBool(fallback.isActive, true),
+        is_active: normalizeBool(fallback.isActive, true),
+      });
+      if (created?.id != null) return created.id;
+
+      const refreshedRows = await ConvocationsApi.list({ activeOnly: false });
+      const refreshed = refreshedRows.find((item) => getConvocationNumber(item) === ordinal);
+      if (!refreshed?.id) {
+        throw new Error(`API не вернул ID созданного созыва ${ordinal}`);
+      }
+      return refreshed.id;
+    },
+    [convocations]
+  );
+
   const publicCommitteesFallback = React.useCallback(() => {
     const fb = fallbackRef.current || {};
     const list = Array.isArray(fb.committees) ? fb.committees : [];
     return list.map((c, idx) => {
       const title = String(c?.title || c?.name || "").trim();
-      const short =
-        title.length <= 255
-          ? title
-          : (title.split(",")[0] || title).trim().slice(0, 252).trimEnd() + "…";
-      const convRaw = c?.convocation?.id ?? c?.convocationId ?? c?.convocation;
+      const convRaw = c?.convocationComittees?.id ?? c?.convocation?.id ?? c?.convocationId ?? c?.convocation;
       let conv = null;
       if (convRaw && Array.isArray(convocations)) {
         conv = (() => {
@@ -521,14 +504,23 @@ export function useAdminData() {
         })();
       }
       return {
+        ...c,
         id: `local-static-${String(c?.id || idx)}`,
-        name: short || title || `Комитет ${idx + 1}`,
-        description: title && short && title !== short ? title : "",
-        convocation: conv,
-        convocationId: conv?.id ?? null,
-        isActive: true,
-        order: idx,
-        // keep original payload for potential future sync
+        name: title || `Комитет ${idx + 1}`,
+        convocation: conv || c?.convocation || null,
+        convocationId:
+          c?.convocationComittees?.id ??
+          c?.convocationId ??
+          c?.convocation_id ??
+          conv?.id ??
+          (typeof c?.convocation === "object" ? c.convocation?.id : c?.convocation) ??
+          null,
+        members: Array.isArray(c?.members) ? c.members : [],
+        staff: Array.isArray(c?.staff) ? c.staff : [],
+        plans: Array.isArray(c?.plans) ? c.plans : [],
+        activities: Array.isArray(c?.activities) ? c.activities : [],
+        isActive: c?.isActive ?? true,
+        order: c?.order ?? idx,
         __source: c,
       };
     });
@@ -696,14 +688,14 @@ export function useAdminData() {
     const mergedConv = apiConvocationsList.length > 0
       ? mergeConvocationsPreferApi(apiConvocationsList, fallbackConv)
       : fallbackConv;
-    const convocationsList = mergeConvocationsWithOverrides(mergedConv, readConvocationsOverrides());
+    const convocationsList = mergedConv;
     setConvocations(convocationsList);
     const apiCommitteesList = Array.isArray(apiCommittees) ? apiCommittees : [];
     committeesApiOkRef.current = apiCommitteesList.length > 0;
     let baseCommittees = mergeCommitteesPreferApi(apiCommitteesList, publicCommitteesFallback());
     // Обогатить комитеты объектом созыва по convocationId/convocation_id для фильтра и колонки «Созыв»
     baseCommittees = baseCommittees.map((c) => {
-      let convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+      let convId = getCommitteeConvocationId(c);
       if (convId == null || convId === "") {
         const defaultNum = c?.id != null ? COMMITTEE_DEFAULT_CONVOCATION[String(c.id)] : undefined;
         if (defaultNum != null && defaultNum !== "") convId = defaultNum;
@@ -721,52 +713,18 @@ export function useAdminData() {
         : { id: convId, name: String(convId) };
       return { ...c, convocationId: c.convocationId ?? convId, convocation: c.convocation && (c.convocation?.name ?? c.convocation?.id) ? c.convocation : convObj };
     });
-    setCommittees(mergeCommitteesWithOverrides(baseCommittees, readCommitteesOverrides()));
-    setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
+    setCommittees(baseCommittees);
+    setCommissions(
+      mergeCommissionsWithPages(
+        DEFAULT_COMMISSIONS_LIST,
+        Array.isArray(apiPages) ? apiPages : []
+      )
+    );
     if (apiPages !== null) {
       setPages(apiPages);
     }
     setAdminDataLoaded(true);
   }, [publicCommitteesFallback]);
-
-  function mergeConvocationsWithOverrides(base, overrides) {
-    const created = Array.isArray(overrides?.created) ? overrides.created : [];
-    const updatedById =
-      overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
-    const deletedIds = new Set(Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []);
-
-    const out = [];
-    const seen = new Set();
-    for (const it of Array.isArray(base) ? base : []) {
-    if (it == null) continue;
-    if (typeof it === "string") {
-      const idStr = String(it);
-      if (!idStr) continue;
-      if (deletedIds.has(idStr)) continue;
-      const override = updatedById[idStr];
-      const baseRow = { id: idStr, name: idStr };
-      out.push(override ? { ...baseRow, ...override } : baseRow);
-      seen.add(idStr);
-      continue;
-    }
-    const idStr = String(it?.id ?? "");
-    if (!idStr) continue;
-    if (deletedIds.has(idStr)) continue;
-    const override = updatedById[idStr];
-    out.push(override ? { ...it, ...override } : it);
-    seen.add(idStr);
-    }
-    for (const it of created) {
-      const idStr = String(it?.id ?? "");
-      if (!idStr) continue;
-      if (deletedIds.has(idStr)) continue;
-      if (seen.has(idStr)) continue;
-      const override = updatedById[idStr];
-      out.push(override ? { ...it, ...override } : it);
-      seen.add(idStr);
-    }
-    return out;
-  }
 
   const isAdminRoute =
     typeof window !== "undefined" &&
@@ -780,62 +738,15 @@ export function useAdminData() {
     loadAll();
   }, [isAdminRoute, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // If API is down and DataContext committees load later, refresh local fallback once.
+  // Keep the shared public fallback visible if the committees API has no records yet.
   React.useEffect(() => {
     if (committeesApiOkRef.current) return;
     const fbList = publicCommitteesFallback();
     if (!fbList.length) return;
     setCommittees((prev) =>
-      Array.isArray(prev) && prev.length
-        ? prev
-        : mergeCommitteesWithOverrides(fbList, readCommitteesOverrides())
+      Array.isArray(prev) && prev.length ? prev : fbList
     );
   }, [data?.committees, publicCommitteesFallback]);
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const apply = () => {
-      setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
-    };
-    window.addEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, apply);
-    window.addEventListener("storage", apply);
-    return () => {
-      window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, apply);
-      window.removeEventListener("storage", apply);
-    };
-  }, []);
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const apply = () => {
-      setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
-    };
-    const onStorage = (e) => {
-      if (e?.key === COMMISSIONS_OVERRIDES_STORAGE_KEY) apply();
-    };
-    window.addEventListener(COMMISSIONS_OVERRIDES_EVENT_NAME, apply);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(COMMISSIONS_OVERRIDES_EVENT_NAME, apply);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const apply = () => {
-      setConvocations((prev) => mergeConvocationsWithOverrides(prev, readConvocationsOverrides()));
-    };
-    const onStorage = (e) => {
-      if (e?.key === CONVOCATIONS_OVERRIDES_STORAGE_KEY) apply();
-    };
-    window.addEventListener(CONVOCATIONS_OVERRIDES_EVENT_NAME, apply);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(CONVOCATIONS_OVERRIDES_EVENT_NAME, apply);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1481,16 +1392,7 @@ export function useAdminData() {
   const createConvocation = React.useCallback(async (payload) => {
     setBusy(true);
     try {
-      try {
-        await ConvocationsApi.create(payload);
-      } catch (e) {
-        // Fallback for older backend versions that accept only { name }
-        if (e?.status === 400 && payload?.name) {
-          await ConvocationsApi.create({ name: payload.name });
-        } else {
-          throw e;
-        }
-      }
+      await ConvocationsApi.create(payload);
       message.success("Созыв создан");
       await reload();
     } finally {
@@ -1502,32 +1404,17 @@ export function useAdminData() {
     setBusy(true);
     try {
       const sid = String(id);
-      // Always persist locally so UI/public site reflects status even if backend ignores it.
-      const ov = readConvocationsOverrides();
-      const updatedById =
-        ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
-      writeConvocationsOverrides({
-        ...ov,
-        updatedById: { ...updatedById, [sid]: { ...payload, id: sid } },
-      });
-      setConvocations((prev) =>
-        mergeConvocationsWithOverrides(
-          (Array.isArray(prev) ? prev : []).map((c) =>
-            String(c?.id ?? "") === sid ? { ...c, ...payload } : c
-          ),
-          readConvocationsOverrides()
-        )
-      );
-      try {
-        await ConvocationsApi.patch(id, payload);
-      } catch (e) {
-        // Fallback for older backend versions that accept only { name }
-        if (e?.status === 400 && payload?.name) {
-          await ConvocationsApi.patch(id, { name: payload.name });
+      if (isStaticConvocationId(sid)) {
+        const ordinal = getConvocationNumber(sid);
+        const apiRows = await ConvocationsApi.list({ activeOnly: false });
+        const existing = apiRows.find((item) => getConvocationNumber(item) === ordinal);
+        if (existing?.id != null) {
+          await ConvocationsApi.patch(existing.id, payload);
         } else {
-          message.warning("Сервер не сохранил изменения. Сохранено локально.");
-          return;
+          await ConvocationsApi.create(payload);
         }
+      } else {
+        await ConvocationsApi.patch(id, payload);
       }
       message.success("Созыв обновлён");
       await reload();
@@ -1539,7 +1426,15 @@ export function useAdminData() {
   const deleteConvocation = React.useCallback(async (id) => {
     setBusy(true);
     try {
-      await ConvocationsApi.remove(id);
+      let apiId = id;
+      if (isStaticConvocationId(id)) {
+        const ordinal = getConvocationNumber(id);
+        const apiRows = await ConvocationsApi.list({ activeOnly: false });
+        const existing = apiRows.find((item) => getConvocationNumber(item) === ordinal);
+        if (!existing?.id) throw new Error(`Созыв ${ordinal} отсутствует в API`);
+        apiId = existing.id;
+      }
+      await ConvocationsApi.remove(apiId);
       message.success("Созыв удалён");
       await reload();
     } finally {
@@ -1550,98 +1445,70 @@ export function useAdminData() {
   const createCommittee = React.useCallback(async (payload) => {
     setBusy(true);
     try {
-      const created = await CommitteesApi.create(payload);
+      const convocationId = await resolveConvocationApiId(
+        payload?.convocationId ?? payload?.convocation_id
+      );
+      const committeeFields = { ...(payload || {}) };
+      delete committeeFields.convocation_id;
+      const created = await CommitteesApi.create({
+        ...committeeFields,
+        convocationId,
+      });
       message.success("Комитет создан");
       await reload();
       return created;
-    } catch (error) {
-      // Fallback: save locally when API is down (500, network, etc.)
-      console.error("Ошибка создания комитета:", error);
-      const id = `local-${Date.now()}`;
-      const next = {
-        id,
-        name: String(payload?.name || "").trim() || "Комитет",
-        description: String(payload?.description || ""),
-        phone: payload?.phone || "",
-        email: payload?.email || "",
-        address: payload?.address || "",
-        website: payload?.website || "",
-        head: payload?.head || "",
-        convocationId:
-          payload?.convocationId === null || payload?.convocationId === undefined
-            ? null
-            : Number(payload.convocationId),
-        members: Array.isArray(payload?.members) ? payload.members : [],
-        isActive: normalizeBool(payload?.isActive, true),
-        order: payload?.order ?? Date.now(),
-      };
-      const ov = readCommitteesOverrides();
-      writeCommitteesOverrides({
-        ...ov,
-        created: [...(Array.isArray(ov.created) ? ov.created : []), next],
-      });
-      setCommittees((prev) => mergeCommitteesWithOverrides(prev, readCommitteesOverrides()));
-      message.warning("Сервер вернул 500. Комитет сохранён локально.");
-      return next;
     } finally {
       setBusy(false);
     }
-  }, [message, reload]);
+  }, [message, reload, resolveConvocationApiId]);
 
   const updateCommittee = React.useCallback(async (id, payload) => {
     const sid = String(id);
-    if (SYSTEM_COMMITTEE_IDS.includes(sid) && payload?.isActive === false) {
+    const systemId = sid.replace(/^local-static-/, "");
+    if (SYSTEM_COMMITTEE_IDS.includes(systemId) && payload?.isActive === false) {
       message.warning("Комитеты структуры нельзя отключить или удалить.");
       return;
     }
     setBusy(true);
     try {
-      // Build a full snapshot for overrides so public pages can render even if API is unavailable.
-      const baseList = Array.isArray(committees) ? committees : [];
-      const found = baseList.find((c) => c && String(c.id) === sid) || null;
-      const snapshot =
-        found && typeof found === "object"
-          ? { ...found, ...payload, id: found.id ?? sid }
-          : { id: sid, ...payload };
-
-      // Persist snapshot locally (safe even if API succeeds).
-      const ov0 = readCommitteesOverrides();
-      const updatedById0 =
-        ov0.updatedById && typeof ov0.updatedById === "object" ? ov0.updatedById : {};
-      writeCommitteesOverrides({
-        ...ov0,
-        updatedById: { ...updatedById0, [sid]: { ...(updatedById0[sid] || {}), ...snapshot } },
-      });
-
-      // Optimistically update local state
-      setCommittees((prev) =>
-        mergeCommitteesWithOverrides(
-          (Array.isArray(prev) ? prev : []).map((c) => (String(c?.id ?? "") === sid ? { ...c, ...snapshot } : c)),
-          readCommitteesOverrides()
-        )
+      const convocationId = await resolveConvocationApiId(
+        payload?.convocationId ?? payload?.convocation_id
       );
-
-      if (sid.startsWith("local-") || sid.startsWith("local-static-")) {
-        message.success("Комитет обновлён (локально)");
-        return;
+      const committeeFields = { ...(payload || {}) };
+      delete committeeFields.convocation_id;
+      const apiPayload = {
+        ...committeeFields,
+        convocationId,
+      };
+      let apiId = id;
+      if (sid.startsWith("local-")) {
+        const apiRows = await CommitteesApi.list({ all: true });
+        const name = normalizeCommitteeName(payload?.name);
+        const existing = apiRows.find(
+          (committee) =>
+            normalizeCommitteeName(committee?.name || committee?.title) === name
+        );
+        if (existing?.id != null) {
+          apiId = existing.id;
+        } else {
+          await CommitteesApi.create(apiPayload);
+          message.success("Комитет сохранён в API");
+          await reload();
+          return;
+        }
       }
-
-      try {
-        await CommitteesApi.patch(id, payload);
-        message.success("Комитет обновлён");
-        await reload();
-      } catch {
-        // Fallback: keep change locally when backend is broken
-        message.warning("Сервер недоступен. Изменения сохранены локально.");
-      }
+      await CommitteesApi.patch(apiId, apiPayload);
+      message.success("Комитет обновлён в API");
+      await reload();
     } finally {
       setBusy(false);
     }
-  }, [message, reload, committees]);
+  }, [message, reload, resolveConvocationApiId]);
 
   const deleteCommittee = React.useCallback(async (id) => {
     const sid = String(id);
-    if (SYSTEM_COMMITTEE_IDS.includes(sid)) {
+    const systemId = sid.replace(/^local-static-/, "");
+    if (SYSTEM_COMMITTEE_IDS.includes(systemId)) {
       message.warning("Комитеты структуры нельзя удалить.");
       return;
     }
@@ -1652,42 +1519,72 @@ export function useAdminData() {
   const createCommission = React.useCallback(
     async (payload) => {
       const id = String(payload?.id || "").trim() || `commission-${Date.now()}`;
-      const name = String(payload?.name || "").trim() || "Комиссия";
-      const ov = readCommissionsOverrides();
-      const created = [...(Array.isArray(ov.created) ? ov.created : []), { id, name }];
-      writeCommissionsOverrides({ ...ov, created });
-      setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
-      window.dispatchEvent(new Event(COMMISSIONS_OVERRIDES_EVENT_NAME));
-      message.success("Комиссия добавлена");
-      return { id, name };
+      const name = String(payload?.name || "").trim();
+      if (!name) throw new Error("Введите название комиссии");
+      if (commissions.some((commission) => String(commission.id) === id)) {
+        throw new Error("Комиссия с таким ID уже существует");
+      }
+
+      setBusy(true);
+      try {
+        const page = await AboutApi.createPage(
+          commissionPagePayload({ ...payload, id, name })
+        );
+        message.success("Комиссия сохранена в общей базе");
+        await reload();
+        return page;
+      } finally {
+        setBusy(false);
+      }
     },
-    [message]
+    [commissions, message, reload]
   );
 
   const updateCommission = React.useCallback(
     async (id, payload) => {
       const sid = String(id);
-      const ov = readCommissionsOverrides();
-      const updatedById = { ...(ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {}), [sid]: { ...(ov.updatedById?.[sid] || {}), ...payload } };
-      writeCommissionsOverrides({ ...ov, updatedById });
-      setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
-      window.dispatchEvent(new Event(COMMISSIONS_OVERRIDES_EVENT_NAME));
-      message.success("Комиссия обновлена");
+      const current = commissions.find((commission) => String(commission.id) === sid);
+      if (!current) throw new Error("Комиссия не найдена");
+      const updated = { ...current, ...payload, id: sid };
+      const pagePayload = commissionPagePayload(updated);
+
+      setBusy(true);
+      try {
+        if (current.cmsPageId != null) {
+          await AboutApi.updatePage(current.cmsPageId, pagePayload);
+        } else {
+          await AboutApi.createPage(pagePayload);
+        }
+        message.success("Комиссия сохранена в общей базе");
+        await reload();
+      } finally {
+        setBusy(false);
+      }
     },
-    [message]
+    [commissions, message, reload]
   );
 
   const deleteCommission = React.useCallback(
     async (id) => {
       const sid = String(id);
-      const ov = readCommissionsOverrides();
-      const deletedIds = [...(Array.isArray(ov.deletedIds) ? ov.deletedIds : []), sid];
-      writeCommissionsOverrides({ ...ov, deletedIds });
-      setCommissions(mergeCommissionsWithOverrides(DEFAULT_COMMISSIONS_LIST, readCommissionsOverrides()));
-      window.dispatchEvent(new Event(COMMISSIONS_OVERRIDES_EVENT_NAME));
-      message.success("Комиссия удалена");
+      const current = commissions.find((commission) => String(commission.id) === sid);
+      if (!current) throw new Error("Комиссия не найдена");
+
+      setBusy(true);
+      try {
+        const pagePayload = commissionPagePayload(current, { deleted: true });
+        if (current.cmsPageId != null) {
+          await AboutApi.updatePage(current.cmsPageId, pagePayload);
+        } else {
+          await AboutApi.createPage(pagePayload);
+        }
+        message.success("Комиссия удалена из общего списка");
+        await reload();
+      } finally {
+        setBusy(false);
+      }
     },
-    [message]
+    [commissions, message, reload]
   );
 
   const eventsForList = React.useMemo(

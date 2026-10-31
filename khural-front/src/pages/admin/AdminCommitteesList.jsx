@@ -17,9 +17,10 @@ function getCommitteeTitle(row) {
   return String(row?.name || row?.title || row?.label || row?.description || "").trim();
 }
 
-/** ID созыва комитета (API может вернуть convocationId, convocation_id или вложенный convocation) */
+/** ID созыва комитета (API возвращает связь как convocationComittees). */
 function getCommitteeConvocationId(row) {
   return (
+    row?.convocationComittees?.id ??
     row?.convocation?.id ??
     row?.convocationId ??
     row?.convocation_id ??
@@ -29,7 +30,7 @@ function getCommitteeConvocationId(row) {
 
 function resolveConvocationLabel(list, row) {
   // Если у комитета уже есть объект созыва с названием — показываем его (API или обогащение)
-  const conv = row?.convocation;
+  const conv = row?.convocationComittees ?? row?.convocation;
   if (conv && typeof conv === "object") {
     const name = conv?.name ?? conv?.number ?? conv?.title;
     if (name != null && String(name).trim() !== "") return String(name).trim();
@@ -94,7 +95,7 @@ export default function AdminCommitteesList({
   const isMobile = windowWidth <= 820;
 
   const isSystemCommittee = (row) =>
-    SYSTEM_COMMITTEE_IDS.includes(String(row?.id ?? ""));
+    SYSTEM_COMMITTEE_IDS.includes(String(row?.id ?? "").replace(/^local-static-/, ""));
 
   const filtered = React.useMemo(() => {
     let list = Array.isArray(items) ? items.slice() : [];
@@ -102,17 +103,19 @@ export default function AdminCommitteesList({
     // 1) Нормализация: подставить convocationId из convocation_id для отображения и фильтра
     list = list.map((c) => {
       const convId = getCommitteeConvocationId(c);
-      if (convId != null && (c.convocationId === undefined && c.convocation?.id === undefined)) {
+      if (convId != null && (c.convocationId === undefined && c.convocation?.id === undefined && c.convocationComittees?.id === undefined)) {
         return { ...c, convocationId: convId };
       }
       return c;
     });
 
-    // Keep named records even when their details are incomplete so admins can edit them.
+    // Keep historical committees with the same name when they belong to different convocations.
     const byName = new Map();
     for (const c of list) {
-      const key = normalizeCommitteeName(getCommitteeTitle(c));
-      if (!key) continue;
+      const convocationId = getCommitteeConvocationId(c);
+      const nameKey = normalizeCommitteeName(getCommitteeTitle(c));
+      if (!nameKey) continue;
+      const key = `${nameKey}|${String(convocationId ?? "")}`;
       const existing = byName.get(key);
       if (!existing || committeeRichness(c) > committeeRichness(existing)) {
         byName.set(key, c);

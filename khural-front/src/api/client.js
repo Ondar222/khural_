@@ -1620,67 +1620,34 @@ export const BroadcastsApi = {
 // API находится по пути /persons/convocations согласно Swagger
 export const ConvocationsApi = {
   async list({ activeOnly = false } = {}) {
+    let all;
     try {
-      // Сначала пробуем /all (устойчивее для бэкенда)
-      let all;
-      try {
-        all = await PersonsApi.listConvocationsAll();
-      } catch (e1) {
-        if (import.meta.env.DEV) {
-          console.warn("ConvocationsApi.list: /all failed, trying /persons/convocations:", e1);
-        }
-        try {
-          const qs = new URLSearchParams();
-          if (activeOnly) qs.set("activeOnly", "true");
-          const suffix = qs.toString() ? `?${qs.toString()}` : "";
-          all = await apiFetch(`/persons/convocations${suffix}`, { method: "GET", auth: false });
-        } catch (e2) {
-          if (import.meta.env.DEV) {
-            console.error("ConvocationsApi.list: both endpoints failed:", e2);
-          }
-          return [];
-        }
-      }
-      
-      if (!Array.isArray(all)) {
-        if (import.meta.env.DEV) {
-          console.warn("ConvocationsApi.list: API returned non-array:", all);
-        }
-        // Попробуем нормализовать
-        // Попробуем извлечь данные из объекта
-        if (all && typeof all === 'object') {
-          if (Array.isArray(all.convocations)) {
-            // Созывы могут быть в поле convocations (например, из /persons/{id})
-            all = all.convocations;
-          } else if (Array.isArray(all.data)) {
-            all = all.data;
-          } else if (Array.isArray(all.items)) {
-            all = all.items;
-          } else if (Array.isArray(all.results)) {
-            all = all.results;
-          } else {
-            return [];
-          }
-        } else {
-          return [];
-        }
-      }
-      
-      // Фильтруем по активности, если нужно
-      if (activeOnly) {
-        return all.filter((c) => {
-          const v = c?.isActive;
-          // Treat string/number false as false as well
-          return !(v === false || v === 0 || v === "0" || String(v).toLowerCase() === "false");
-        });
-      }
-      return all;
-    } catch (e) {
+      all = await PersonsApi.listConvocationsAll();
+    } catch (primaryError) {
       if (import.meta.env.DEV) {
-        console.error("ConvocationsApi.list: unexpected error:", e);
+        console.warn("ConvocationsApi.list: /all failed, trying /persons/convocations:", primaryError);
       }
-      return [];
+      const qs = new URLSearchParams();
+      if (activeOnly) qs.set("activeOnly", "true");
+      const suffix = qs.toString() ? `?${qs.toString()}` : "";
+      all = await apiFetch(`/persons/convocations${suffix}`, { method: "GET", auth: false });
     }
+
+    if (!Array.isArray(all)) {
+      if (all && typeof all === "object") {
+        all = all.convocations ?? all.data ?? all.items ?? all.results;
+      }
+      if (!Array.isArray(all)) {
+        throw new Error("API вернул список созывов в неизвестном формате");
+      }
+    }
+
+    return activeOnly
+      ? all.filter((c) => {
+          const value = c?.isActive;
+          return !(value === false || value === 0 || value === "0" || String(value).toLowerCase() === "false");
+        })
+      : all;
   },
   async getById(id) {
     if (id == null || id === "") return null;
@@ -1731,10 +1698,18 @@ export const CommitteesApi = {
         return result.results;
       }
     }
+    if (!Array.isArray(result)) {
+      throw new Error("API вернул список комитетов в неизвестном формате");
+    }
     return result;
   },
-  async getById(id) {
-    return apiFetch(`/committees/${id}`, { method: "GET", auth: false });
+  async getById(id, { convocationId } = {}) {
+    const qs = new URLSearchParams();
+    if (convocationId != null && convocationId !== "") {
+      qs.set("convocationId", String(convocationId));
+    }
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch(`/committees/${id}${suffix}`, { method: "GET", auth: false });
   },
   async create(body) {
     return apiFetch("/committees", { method: "POST", body, auth: true });
@@ -1745,10 +1720,13 @@ export const CommitteesApi = {
   async remove(id) {
     return apiFetch(`/committees/${id}`, { method: "DELETE", auth: true });
   },
-  async addMembers(id, members) {
+  async addMembers(id, memberNames) {
+    if (!Array.isArray(memberNames) || memberNames.some((name) => typeof name !== "string")) {
+      throw new Error("Список участников должен содержать строки согласно API");
+    }
     return apiFetch(`/committees/${id}/members`, {
       method: "POST",
-      body: members,
+      body: memberNames,
       auth: true,
     });
   },

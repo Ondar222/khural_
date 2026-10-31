@@ -69,49 +69,6 @@ export default function AdminCommitteesEditor({
     return `Созыв ${raw}`;
   }, []);
 
-  // Моковые данные для разделов «Планы» и «Деятельность» (Верховный Хурал / Парламент РТ), если в комитете их ещё нет
-  const DEFAULT_PLANS = [
-    {
-      title: "План работы комитета Верховного Хурала Республики Тыва на 2025 год",
-      date: "2025",
-      description:
-        "План законодательной и контрольной деятельности комитета Верховного Хурала (парламента) Республики Тыва на текущий год. Включает подготовку законопроектов, проведение заседаний и участие в пленарных заседаниях.",
-      fileLink: "",
-      fileId: "",
-    },
-    {
-      title: "План законодательной работы комитета на текущий созыв",
-      date: "2024–2029",
-      description:
-        "Сводный план работы комитета на период созыва парламента Республики Тыва: приоритетные направления, законопроекты и экспертиза нормативных актов.",
-      fileLink: "",
-      fileId: "",
-    },
-  ];
-  const DEFAULT_ACTIVITIES = [
-    {
-      title: "Заседание комитета Верховного Хурала Республики Тыва",
-      date: "2025",
-      type: "Заседание комитета",
-      description:
-        "Регулярные заседания комитета по вопросам, отнесённым к его ведению. Обсуждение законопроектов и подготовка заключений для пленарных заседаний парламента Республики Тыва.",
-    },
-    {
-      title: "Участие в пленарных заседаниях парламента Республики Тыва",
-      date: "2025",
-      type: "Пленарное заседание",
-      description:
-        "Участие членов комитета в заседаниях Верховного Хурала (парламента) Республики Тыва, представление законопроектов и заключений комитета.",
-    },
-    {
-      title: "Работа над законопроектами в сфере ведения комитета",
-      date: "2025",
-      type: "Законодательная работа",
-      description:
-        "Подготовка и экспертиза проектов законов Республики Тыва, работа с инициативами депутатов и обращений граждан в рамках полномочий комитета.",
-    },
-  ];
-
   const selectedConvocation = React.useMemo(() => {
     const list = Array.isArray(convocations) ? convocations : [];
     if (!convocationIdValue) return null;
@@ -192,7 +149,7 @@ export default function AdminCommitteesEditor({
         website: found.website || "",
         head: found.head || "",
         isActive: normalizeBool(found.isActive, true),
-        convocationId: found.convocation?.id || found.convocationId || null,
+        convocationId: found.convocationComittees?.id || found.convocation?.id || found.convocationId || null,
         members: Array.isArray(found.members)
           ? found.members.map((m, idx) => ({
               personId: m?.person?.id ?? m?.personId ?? null,
@@ -201,25 +158,29 @@ export default function AdminCommitteesEditor({
               order: m?.order ?? idx,
             }))
           : [],
-        plans:
-          Array.isArray(found.plans) && found.plans.length > 0
-            ? found.plans.map((p) => ({
+        staff: Array.isArray(found.staff)
+          ? found.staff.map((member) => ({
+              name: member?.name || member?.fullName || "",
+              role: member?.role || "",
+            }))
+          : [],
+        plans: Array.isArray(found.plans)
+          ? found.plans.map((p) => ({
                 title: p?.title || "",
                 date: p?.date || "",
                 description: p?.description || "",
                 fileLink: p?.fileLink || "",
                 fileId: p?.fileId ?? "",
               }))
-            : DEFAULT_PLANS,
-        activities:
-          Array.isArray(found.activities) && found.activities.length > 0
-            ? found.activities.map((a) => ({
+          : [],
+        activities: Array.isArray(found.activities)
+          ? found.activities.map((a) => ({
                 title: a?.title || "",
                 date: a?.date || "",
                 type: a?.type || "",
                 description: a?.description || "",
               }))
-            : DEFAULT_ACTIVITIES,
+          : [],
       });
     } finally {
       setLoading(false);
@@ -299,12 +260,9 @@ export default function AdminCommitteesEditor({
       
       if (convocationId != null && convocationId !== "") {
         payload.convocationId = convocationId;
-        // Бэкенд может требовать snake_case
-        payload.convocation_id = convocationId;
       } else if (convocationId === null || convocationId === "") {
         // Если созыв был сброшен, явно передаём null
         payload.convocationId = null;
-        payload.convocation_id = null;
       }
 
       console.log("[AdminCommitteesEditor] Saving committee:", {
@@ -340,6 +298,13 @@ export default function AdminCommitteesEditor({
         })
         .filter(Boolean);
       payload.members = normalizedMembers;
+
+      payload.staff = (Array.isArray(values.staff) ? values.staff : [])
+        .map((member) => ({
+          name: String(member?.name || "").trim(),
+          role: String(member?.role || "").trim(),
+        }))
+        .filter((member) => member.name);
 
       // Планы комитета
       const rawPlans = Array.isArray(values.plans) ? values.plans : [];
@@ -507,7 +472,7 @@ export default function AdminCommitteesEditor({
         <Form 
           layout="vertical" 
           form={form} 
-          initialValues={{ isActive: true, members: [], plans: [], activities: [] }}
+          initialValues={{ isActive: true, members: [], staff: [], plans: [], activities: [] }}
           style={{ padding: windowWidth <= 768 ? '16px' : '24px' }}
         >
           {/* Основная информация */}
@@ -754,6 +719,63 @@ export default function AdminCommitteesEditor({
                       + Добавить участника
                     </Button>
                   </Space>
+                </div>
+              )}
+            </Form.List>
+          </div>
+
+          <Divider style={{ margin: "24px 0 16px" }} />
+
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>Сотрудники комитета</div>
+            <Form.List name="staff">
+              {(fields, { add, remove }) => (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {fields.map((field, idx) => (
+                    <div
+                      key={field.key}
+                      style={{
+                        border: "1px solid rgba(10, 31, 68, 0.08)",
+                        borderRadius: 12,
+                        padding: 12,
+                        display: "grid",
+                        gridTemplateColumns:
+                          windowWidth <= 640 ? "1fr" : "minmax(0, 2fr) minmax(0, 1fr) auto",
+                        gap: 10,
+                        alignItems: "end",
+                      }}
+                    >
+                      <Form.Item
+                        {...field}
+                        label={`Сотрудник #${idx + 1}`}
+                        name={[field.name, "name"]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <Input placeholder="ФИО" disabled={loading || saving} />
+                      </Form.Item>
+                      <Form.Item
+                        {...field}
+                        label="Должность"
+                        name={[field.name, "role"]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <Input placeholder="Должность" disabled={loading || saving} />
+                      </Form.Item>
+                      <Button
+                        danger
+                        onClick={() => remove(field.name)}
+                        disabled={loading || saving}
+                      >
+                        Удалить
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    onClick={() => add({ name: "", role: "" })}
+                    disabled={loading || saving}
+                  >
+                    + Добавить сотрудника
+                  </Button>
                 </div>
               )}
             </Form.List>
@@ -1035,4 +1057,3 @@ export default function AdminCommitteesEditor({
     </div>
   );
 }
-

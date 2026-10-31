@@ -16,7 +16,7 @@ function normalizeCommitteeTitleKey(value) {
 function committeeRichness(c) {
   let score = 0;
   if (String(c?.description ?? "").trim().length > 0) score += 2;
-  const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+  const convId = c?.convocationComittees?.id ?? c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
   if (convId != null && convId !== "") score += 2;
   const members = Array.isArray(c?.members) ? c.members : [];
   score += members.length;

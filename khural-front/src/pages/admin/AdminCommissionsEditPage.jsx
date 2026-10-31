@@ -1,10 +1,12 @@
 import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { Button, Input, Form } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import AdminShell from "./AdminShell.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import { stripHtmlTags } from "../../utils/html.js";
+import { LEGACY_COMMISSION_COMPONENTS } from "../../utils/legacyCommissionComponents.js";
 
 const DETAIL_FIELDS = [
   { name: "parentBody", label: "Орган (подзаголовок)", placeholder: "ВЕРХОВНЫЙ ХУРАЛ (ПАРЛАМЕНТ) РЕСПУБЛИКИ ТЫВА" },
@@ -26,6 +28,10 @@ export default function AdminCommissionsEditPage() {
     () => (Array.isArray(adminData.commissions) ? adminData.commissions.find((c) => String(c?.id) === id) : null),
     [adminData.commissions, id]
   );
+  const legacyContent = React.useMemo(() => {
+    const LegacyComponent = LEGACY_COMMISSION_COMPONENTS[id];
+    return LegacyComponent ? renderToStaticMarkup(<LegacyComponent />) : "";
+  }, [id]);
 
   React.useEffect(() => {
     if (commission) {
@@ -37,7 +43,7 @@ export default function AdminCommissionsEditPage() {
         resolutionDate: commission.resolutionDate ?? "",
         resolutionNumber: commission.resolutionNumber ?? "",
         resolutionSubject: commission.resolutionSubject ?? "",
-        bodyHtml: commission.bodyHtml ?? "",
+        bodyHtml: commission.bodyHtml ?? legacyContent,
       });
     } else if (id) {
       form.setFieldsValue({
@@ -48,10 +54,10 @@ export default function AdminCommissionsEditPage() {
         resolutionDate: "",
         resolutionNumber: "",
         resolutionSubject: "",
-        bodyHtml: "",
+        bodyHtml: legacyContent,
       });
     }
-  }, [commission, id, form]);
+  }, [commission, id, form, legacyContent]);
 
   const handleFinish = React.useCallback(
     async (values) => {
@@ -117,6 +123,12 @@ export default function AdminCommissionsEditPage() {
           <div className="admin-commissions-edit__section-title">
             Контент страницы (постановление)
           </div>
+          {!commission?.bodyHtml && legacyContent ? (
+            <div style={{ marginBottom: 16, color: "#6b7280", lineHeight: 1.5 }}>
+              Загружен текущий текст публичной страницы. После сохранения его можно будет
+              редактировать здесь.
+            </div>
+          ) : null}
           {DETAIL_FIELDS.map(({ name: fieldName, label, placeholder }) => (
             <Form.Item key={fieldName} name={fieldName} label={label}>
               <Input placeholder={placeholder} />

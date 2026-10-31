@@ -7,49 +7,9 @@ import DocumentActions from "../components/DocumentActions.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { isDocumentFileUrl } from "../utils/documentFile.js";
 import { CommitteesApi, ConvocationsApi } from "../api/client.js";
-import {
-  COMMITTEES_OVERRIDES_EVENT_NAME,
-  COMMITTEES_OVERRIDES_STORAGE_KEY,
-  readCommitteesOverrides,
-} from "../utils/committeesOverrides.js";
 import { toCommitteeHtml } from "../utils/committeeHtml.js";
 import { getDocumentLinkedEntities } from "../utils/documentMentions.js";
 import { MailIcon, PhoneIcon, PinIcon, GlobeIcon } from "../components/icons/LinearIcons.jsx";
-
-function mergeCommitteesWithOverrides(base, overrides) {
-  const created = Array.isArray(overrides?.created) ? overrides.created : [];
-  const updatedById =
-    overrides?.updatedById && typeof overrides.updatedById === "object"
-      ? overrides.updatedById
-      : {};
-  const deletedIds = new Set(
-    Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []
-  );
-
-  const out = [];
-  const seen = new Set();
-
-  for (const it of Array.isArray(base) ? base : []) {
-    const idStr = String(it?.id ?? "");
-    if (!idStr) continue;
-    if (deletedIds.has(idStr)) continue;
-    const override = updatedById[idStr];
-    out.push(override ? { ...it, ...override } : it);
-    seen.add(idStr);
-  }
-
-  for (const it of created) {
-    const idStr = String(it?.id ?? "");
-    if (!idStr) continue;
-    if (deletedIds.has(idStr)) continue;
-    if (seen.has(idStr)) continue;
-    const override = updatedById[idStr];
-    out.push(override ? { ...it, ...override } : it);
-    seen.add(idStr);
-  }
-
-  return out.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
-}
 
 function normalizeCommitteeTitle(value) {
   return String(value ?? "")
@@ -124,7 +84,7 @@ function resolveConvocationName(list, convId) {
 function committeeRichness(c) {
   let score = 0;
   if (String(c?.description ?? "").trim().length > 0) score += 2;
-  const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+  const convId = c?.convocationComittees?.id ?? c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
   if (convId != null && convId !== "") score += 2;
   const members = Array.isArray(c?.members) ? c.members : [];
   score += members.length;
@@ -153,7 +113,6 @@ export default function Committee() {
   const { committees: committeesFromContext, deputies, convocations, documents: allDocuments, loading, errors, reload, ensureDocuments } = useData();
   const [committee, setCommittee] = React.useState(null);
   const [apiCommittees, setApiCommittees] = React.useState(null);
-  const [overridesSeq, setOverridesSeq] = React.useState(0);
   const [docPreview, setDocPreview] = React.useState(null); // { url, title } — предпросмотр документа на странице
 
   // Документы в контексте загружаются лениво — запрашиваем полный список для раздела документов комитета
@@ -195,32 +154,18 @@ export default function Committee() {
     };
   }, []);
 
-  React.useEffect(() => {
-    const bump = () => setOverridesSeq((x) => x + 1);
-    const onStorage = (e) => {
-      if (e?.key === COMMITTEES_OVERRIDES_STORAGE_KEY) bump();
-    };
-    window.addEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
   const committees = React.useMemo(() => {
     const base = mergeCommitteesPreferApi(apiCommittees, committeesFromContext);
-    const merged = mergeCommitteesWithOverrides(base, readCommitteesOverrides());
-    const deduped = deduplicateCommitteesByRichness(merged);
+    const deduped = deduplicateCommitteesByRichness(base);
     const sorted = deduped.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
     console.log("[Committee] Итоговый список комитетов:", {
       apiCommittees: apiCommittees?.length || 0,
       committeesFromContext: committeesFromContext?.length || 0,
-      merged: merged?.length || 0,
+      merged: base?.length || 0,
       deduped: deduped?.length || 0,
     });
     return sorted;
-  }, [apiCommittees, committeesFromContext, overridesSeq]);
+  }, [apiCommittees, committeesFromContext]);
   
   // Get current section from URL hash or default to "about"
   const [currentSection, setCurrentSection] = React.useState(() => {
@@ -504,7 +449,7 @@ export default function Committee() {
   // Номер созыва комитета для подбора документов с сайта (3, 4, "sessions" и т.д.)
   const committeeConvocationKey = React.useMemo(() => {
     if (!committee) return null;
-    const num = committee.convocation?.number ?? committee.convocationId ?? committee.convocation_id ?? committee.convocation;
+    const num = committee.convocationComittees?.number ?? committee.convocationComittees?.id ?? committee.convocation?.number ?? committee.convocationId ?? committee.convocation_id ?? committee.convocation;
     if (num == null || num === "") return null;
     const n = typeof num === "number" ? num : parseInt(String(num), 10);
     if (!Number.isNaN(n)) return n;
@@ -551,57 +496,8 @@ export default function Committee() {
     return [...committeeAgendas, ...convAgendas, ...(siteDocsForCommittee.agendas || [])];
   }, [committeeAgendas, convocationDocuments, siteDocsForCommittee.agendas]);
   
-  // Моковые данные для раздела «Планы» и «Деятельность», если комитет без них (Верховный Хурал / Парламент РТ)
-  const DEFAULT_MOCK_PLANS = [
-    {
-      title: "План работы комитета Верховного Хурала Республики Тыва на 2025 год",
-      date: "2025",
-      description:
-        "План законодательной и контрольной деятельности комитета Верховного Хурала (парламента) Республики Тыва на текущий год. Включает подготовку законопроектов, проведение заседаний и участие в пленарных заседаниях.",
-    },
-    {
-      title: "План законодательной работы комитета на текущий созыв",
-      date: "2024–2029",
-      description:
-        "Сводный план работы комитета на период созыва парламента Республики Тыва: приоритетные направления, законопроекты и экспертиза нормативных актов.",
-    },
-  ];
-  const DEFAULT_MOCK_ACTIVITIES = [
-    {
-      title: "Заседание комитета Верховного Хурала Республики Тыва",
-      date: "2025",
-      type: "Заседание комитета",
-      description:
-        "Регулярные заседания комитета по вопросам, отнесённым к его ведению. Обсуждение законопроектов и подготовка заключений для пленарных заседаний парламента Республики Тыва.",
-    },
-    {
-      title: "Участие в пленарных заседаниях парламента Республики Тыва",
-      date: "2025",
-      type: "Пленарное заседание",
-      description:
-        "Участие членов комитета в заседаниях Верховного Хурала (парламента) Республики Тыва, представление законопроектов и заключений комитета.",
-    },
-    {
-      title: "Работа над законопроектами в сфере ведения комитета",
-      date: "2025",
-      type: "Законодательная работа",
-      description:
-        "Подготовка и экспертиза проектов законов Республики Тыва, работа с инициативами депутатов и обращений граждан в рамках полномочий комитета.",
-    },
-  ];
-
-  const plans =
-    committee && Array.isArray(committee.plans) && committee.plans.length > 0
-      ? committee.plans
-      : committee
-        ? DEFAULT_MOCK_PLANS
-        : [];
-  const activities =
-    committee && Array.isArray(committee.activities) && committee.activities.length > 0
-      ? committee.activities
-      : committee
-        ? DEFAULT_MOCK_ACTIVITIES
-        : [];
+  const plans = committee && Array.isArray(committee.plans) ? committee.plans : [];
+  const activities = committee && Array.isArray(committee.activities) ? committee.activities : [];
   const staff = committee ? (Array.isArray(committee.staff) ? committee.staff : []) : [];
 
   // Боковое меню страницы комитета: разделы самого комитета (состав, планы, повестки, отчеты)
@@ -796,7 +692,7 @@ export default function Committee() {
 
             {/* Информация о созыве */}
             {(() => {
-              const convId = committee?.convocation?.id || committee?.convocationId || committee?.convocation;
+              const convId = committee?.convocationComittees?.id || committee?.convocation?.id || committee?.convocationId || committee?.convocation;
               let convName = null;
 
               if (convId) {

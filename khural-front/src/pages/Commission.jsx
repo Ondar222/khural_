@@ -1,31 +1,13 @@
 import React from "react";
 import SideNav from "../components/SideNav.jsx";
 import { useData } from "../context/DataContext.jsx";
-import Nagradnaya from "./commissions/Nagradnaya.jsx";
-import KontrolDostovernost from "./commissions/KontrolDostovernost.jsx";
-import Schetnaya from "./commissions/Schetnaya.jsx";
-import ReglamentEtika from "./commissions/ReglamentEtika.jsx";
-import Reabilitatsiya from "./commissions/Reabilitatsiya.jsx";
-import SvoPodderzhka from "./commissions/SvoPodderzhka.jsx";
-import SmiObshestvo from "./commissions/SmiObshestvo.jsx";
-import MezhregionalnyeSvyazi from "./commissions/MezhregionalnyeSvyazi.jsx";
+import { LEGACY_COMMISSION_COMPONENTS } from "../utils/legacyCommissionComponents.js";
 
 // Маппинг id -> компонент (для комиссий без контента из админки)
-const COMMISSION_COMPONENTS = {
-  nagradnaya: Nagradnaya,
-  "kontrol-dostovernost": KontrolDostovernost,
-  schetnaya: Schetnaya,
-  "reglament-etika": ReglamentEtika,
-  reabilitatsiya: Reabilitatsiya,
-  "svo-podderzhka": SvoPodderzhka,
-  "smi-obshestvo": SmiObshestvo,
-  "mezhregionalnye-svyazi": MezhregionalnyeSvyazi,
-};
 
 /** Шаблон страницы комиссии из данных админки (постановление + HTML-контент). */
 function CommissionContentFromData({ commission }) {
   const {
-    name,
     parentBody,
     documentType,
     resolutionDate,
@@ -104,7 +86,7 @@ export default function Commission() {
     [id, commissions]
   );
 
-  const LegacyComponent = id ? COMMISSION_COMPONENTS[id] : null;
+  const LegacyComponent = id ? LEGACY_COMMISSION_COMPONENTS[id] : null;
   const useDataContent =
     commissionFromData &&
     (commissionFromData.bodyHtml ||

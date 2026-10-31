@@ -19,18 +19,13 @@ const loaderStyles = `
 `;
 import {
   DEFAULT_STRUCTURE_COMMITTEES,
-  COMMITTEE_DEFAULT_CONVOCATION,
-  COMMITTEES_OVERRIDES_EVENT_NAME,
-  COMMITTEES_OVERRIDES_STORAGE_KEY,
-  readCommitteesOverrides,
 } from "../utils/committeesOverrides.js";
-import {
-  CONVOCATIONS_OVERRIDES_EVENT_NAME,
-  CONVOCATIONS_OVERRIDES_STORAGE_KEY,
-  readConvocationsOverrides,
-} from "../utils/convocationsOverrides.js";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import { buildFactionOptions } from "../utils/deputyFilterOptions.js";
+import {
+  getConvocationNumber,
+  mergeConvocationsPreferApi,
+} from "../utils/convocationIdentity.js";
 import {
   COUNCIL_BASE_TITLE,
   COUNCIL_NAV,
@@ -281,7 +276,7 @@ function formatConvocationLabel(c) {
 }
 
 function toConvocationIdStrFromCommittee(c) {
-  const v = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? null;
+  const v = c?.convocationComittees?.id ?? c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? null;
   if (v === null || v === undefined || v === "") return "";
   return String(v);
 }
@@ -291,7 +286,8 @@ function committeeConvocationMatchKeys(c) {
   if (!c) return [];
   const idStr = toConvocationIdStrFromCommittee(c);
   if (idStr) keys.add(idStr);
-  const token = normalizeConvocationToken(c?.convocation?.name || c?.convocation?.number || "");
+  const relation = c?.convocationComittees ?? c?.convocation;
+  const token = normalizeConvocationToken(relation?.name || relation?.number || "");
   if (token) keys.add(token);
   return Array.from(keys);
 }
@@ -313,92 +309,13 @@ function getChairman(c) {
 }
 
 // Точно такие же функции, как на странице /convocations — чтобы данные «Отчеты всех Созывов» совпадали с «Созывы»
-function convocationKeyForMerge(c) {
-  if (!c) return "";
-  if (typeof c === "string") return normalizeConvocationToken(c) || String(c).trim();
-  const name = String(c?.name || c?.number || "").trim();
-  const token = normalizeConvocationToken(name);
-  if (token) return token;
-  const id = c?.id ?? "";
-  return String(id).trim();
-}
-
-function mergeConvocationsWithOverridesByKey(base, overrides) {
-  const created = Array.isArray(overrides?.created) ? overrides.created : [];
-  const updatedById =
-    overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
-  const deletedIds = new Set(Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []);
-  const out = [];
-  const seen = new Set();
-  const pushOne = (it) => {
-    if (!it) return;
-    const key = convocationKeyForMerge(it);
-    if (!key) return;
-    if (deletedIds.has(String(it?.id ?? ""))) return;
-    const override = updatedById[String(it?.id ?? "")] || updatedById[key];
-    const merged = override ? { ...(typeof it === "string" ? { name: it } : it), ...override } : it;
-    out.push(merged);
-    seen.add(key);
-  };
-  for (const it of Array.isArray(base) ? base : []) pushOne(it);
-  for (const it of created) {
-    const key = convocationKeyForMerge(it);
-    if (!key || seen.has(key)) continue;
-    pushOne(it);
-  }
-  for (const patch of Object.values(updatedById || {})) {
-    if (!patch || typeof patch !== "object") continue;
-    const idStr = String(patch?.id ?? "").trim();
-    if (idStr && deletedIds.has(idStr)) continue;
-    const key = convocationKeyForMerge(patch);
-    if (!key || seen.has(key)) continue;
-    out.push(patch);
-    seen.add(key);
-  }
-  return out;
-}
-
-function mergeCommitteesWithOverrides(base, overrides) {
-  const created = Array.isArray(overrides?.created) ? overrides.created : [];
-  const updatedById =
-    overrides?.updatedById && typeof overrides.updatedById === "object" ? overrides.updatedById : {};
-  const deletedIds = new Set(Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []);
-  const out = [];
-  const seen = new Set();
-  for (const it of Array.isArray(base) ? base : []) {
-    const idStr = String(it?.id ?? "");
-    if (!idStr) continue;
-    if (deletedIds.has(idStr)) continue;
-    const override = updatedById[idStr];
-    out.push(override ? { ...it, ...override } : it);
-    seen.add(idStr);
-  }
-  for (const it of created) {
-    const idStr = String(it?.id ?? "");
-    if (!idStr) continue;
-    if (deletedIds.has(idStr)) continue;
-    if (seen.has(idStr)) continue;
-    const override = updatedById[idStr];
-    out.push(override ? { ...it, ...override } : it);
-    seen.add(idStr);
-  }
-  for (const patch of Object.values(updatedById || {})) {
-    if (!patch || typeof patch !== "object") continue;
-    const idStr = String(patch?.id ?? "").trim();
-    if (!idStr) continue;
-    if (deletedIds.has(idStr)) continue;
-    if (seen.has(idStr)) continue;
-    out.push(patch);
-    seen.add(idStr);
-  }
-  return out.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
-}
-
 function convocationMatchKeysForReports(c) {
   const keys = new Set();
   if (!c) return [];
   const id = String(c?.id ?? "").trim();
   if (id) keys.add(id);
+  const ordinal = getConvocationNumber(c);
+  if (ordinal) keys.add(ordinal);
   const token = normalizeConvocationToken(c?.name || c?.number || c?.id || "");
   if (token) keys.add(token);
   return Array.from(keys);
@@ -407,22 +324,25 @@ function convocationMatchKeysForReports(c) {
 function ReportsAllConvocationsPage() {
   const { committees: committeesFromContext } = useData();
   const [apiConvocations, setApiConvocations] = React.useState(null);
+  const [staticConvocations, setStaticConvocations] = React.useState([]);
   const [apiCommittees, setApiCommittees] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
-  const [overridesSeq, setOverridesSeq] = React.useState(0);
-  const [convOverridesSeq, setConvOverridesSeq] = React.useState(0);
 
   React.useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
       try {
-        const [list, committeesList] = await Promise.all([
+        const [list, committeesList, staticList] = await Promise.all([
           ConvocationsApi.list({ activeOnly: false }).catch(() => null),
           CommitteesApi.list({ all: true }).catch(() => null),
+          fetch("/data/convocations.json").then((response) =>
+            response.ok ? response.json() : []
+          ),
         ]);
         if (!alive) return;
         setApiConvocations(Array.isArray(list) ? list : []);
+        setStaticConvocations(Array.isArray(staticList) ? staticList : []);
         setApiCommittees(Array.isArray(committeesList) ? committeesList : null);
       } catch {
         if (alive) {
@@ -436,56 +356,17 @@ function ReportsAllConvocationsPage() {
     return () => { alive = false; };
   }, []);
 
-  React.useEffect(() => {
-    const bump = () => setOverridesSeq((x) => x + 1);
-    const onStorage = (e) => { if (e?.key === COMMITTEES_OVERRIDES_STORAGE_KEY) bump(); };
-    window.addEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const bump = () => setConvOverridesSeq((x) => x + 1);
-    const onStorage = (e) => { if (e?.key === CONVOCATIONS_OVERRIDES_STORAGE_KEY) bump(); };
-    window.addEventListener(CONVOCATIONS_OVERRIDES_EVENT_NAME, bump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(CONVOCATIONS_OVERRIDES_EVENT_NAME, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
-  // Те же комитеты, что и на странице «Созывы»: API + контекст + overrides
+  // Use API data when present; static site data fills API gaps.
   const committees = React.useMemo(() => {
-    const base = Array.isArray(apiCommittees) ? apiCommittees : committeesFromContext;
-    return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
-  }, [apiCommittees, committeesFromContext, overridesSeq]);
+    return Array.isArray(apiCommittees) && apiCommittees.length
+      ? apiCommittees
+      : committeesFromContext;
+  }, [apiCommittees, committeesFromContext]);
 
-  // Сырой список созывов из API (нормализация как на странице Convocations)
-  const convocationsRaw = React.useMemo(() => {
-    const raw = apiConvocations;
-    const base = Array.isArray(raw) && raw.length
-      ? raw.map((x) => {
-          if (typeof x === "string") {
-            const token = normalizeConvocationToken(x);
-            return { id: token || x, name: x, description: "", isActive: true };
-          }
-          if (x && typeof x === "object") {
-            return {
-              id: x.id ?? normalizeConvocationToken(x.name || x.number || ""),
-              name: x.name || x.number || "",
-              description: x.description || "",
-              isActive: normalizeBool(x.isActive, true),
-            };
-          }
-          return null;
-        }).filter(Boolean)
-      : [];
-    return mergeConvocationsWithOverridesByKey(base, readConvocationsOverrides());
-  }, [apiConvocations, convOverridesSeq]);
+  const convocationsRaw = React.useMemo(
+    () => mergeConvocationsPreferApi(apiConvocations, staticConvocations),
+    [apiConvocations, staticConvocations]
+  );
 
   // Созывы, извлечённые из комитетов — как на странице «Созывы»; у них id совпадает с committee.convocation.id
   const convocationsFromCommittees = React.useMemo(() => {
@@ -507,14 +388,10 @@ function ReportsAllConvocationsPage() {
     return out;
   }, [committees]);
 
-  // Объединённый список созывов: сначала из комитетов (чтобы id совпадали), потом из API + overrides
-  const convocationsMerged = React.useMemo(() => {
-    const base = [
-      ...(Array.isArray(convocationsFromCommittees) ? convocationsFromCommittees : []),
-      ...(Array.isArray(convocationsRaw) ? convocationsRaw : []),
-    ];
-    return mergeConvocationsWithOverridesByKey(base, readConvocationsOverrides());
-  }, [convocationsFromCommittees, convocationsRaw, convOverridesSeq]);
+  const convocationsMerged = React.useMemo(
+    () => mergeConvocationsPreferApi(convocationsRaw, convocationsFromCommittees),
+    [convocationsFromCommittees, convocationsRaw]
+  );
 
   const isCommitteeActive = React.useCallback((c) => {
     if (!c) return false;
@@ -545,8 +422,8 @@ function ReportsAllConvocationsPage() {
   const sortedConvocations = React.useMemo(() => {
     const romanOrder = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I"];
     return [...convocationsMerged].sort((a, b) => {
-      const aToken = normalizeConvocationToken(a.name || a.number || "");
-      const bToken = normalizeConvocationToken(b.name || b.number || "");
+      const aToken = getConvocationNumber(a) || normalizeConvocationToken(a.name || a.number || "");
+      const bToken = getConvocationNumber(b) || normalizeConvocationToken(b.name || b.number || "");
       const aRomanIndex = romanOrder.indexOf(aToken);
       const bRomanIndex = romanOrder.indexOf(bToken);
       if (aRomanIndex !== -1 && bRomanIndex !== -1) return aRomanIndex - bRomanIndex;
@@ -584,7 +461,7 @@ function ReportsAllConvocationsPage() {
                     if (!uniq.has(cid)) uniq.set(cid, it);
                   }
                   const committeesList = Array.from(uniq.values());
-                  const token = normalizeConvocationToken(c?.name || c?.number || c?.id || "");
+                  const token = getConvocationNumber(c) || normalizeConvocationToken(c?.name || c?.number || c?.id || "");
                   const reportTitle = `Отчеты о деятельности комитетов ${token} созыва`;
                   const href = `/section?title=${encodeURIComponent(reportTitle)}`;
 
@@ -789,10 +666,11 @@ function ConvocationReportsPage({ convocationNumber }) {
     return () => { alive = false; };
   }, []);
 
-  // 3) Список комитетов — тот же источник, что на «Созывы» и «Отчеты всех Созывов» (API + контекст + overrides)
+  // 3) Список комитетов — API first, with the public data as fallback.
   const committeesMerged = React.useMemo(() => {
-    const base = Array.isArray(apiCommittees) ? apiCommittees : committeesFromContext;
-    return mergeCommitteesWithOverrides(base, readCommitteesOverrides());
+    return Array.isArray(apiCommittees) && apiCommittees.length
+      ? apiCommittees
+      : committeesFromContext;
   }, [apiCommittees, committeesFromContext]);
 
   // 4) Отфильтровать комитеты по созыву (те же ключи, что на странице Созывы)
@@ -824,8 +702,9 @@ function ConvocationReportsPage({ convocationNumber }) {
       if (committeeIds.has(String(c.id))) return true;
       const matchKeys = committeeConvocationMatchKeys(c);
       if (matchKeys.some((key) => convKeys.has(key))) return true;
-      const committeeConvId = String(c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? "");
-      const committeeConvToken = normalizeConvocationToken(c?.convocation?.name || c?.convocation?.number || "");
+      const committeeConvocation = c?.convocationComittees ?? c?.convocation;
+      const committeeConvId = String(committeeConvocation?.id ?? c?.convocationId ?? c?.convocation_id ?? "");
+      const committeeConvToken = normalizeConvocationToken(committeeConvocation?.name || committeeConvocation?.number || "");
       if (committeeConvId && convKeys.has(committeeConvId)) return true;
       if (committeeConvToken && convKeys.has(committeeConvToken)) return true;
       return false;
@@ -1698,7 +1577,7 @@ function normalizeCommitteeTitleKey(value) {
 function committeeRichness(c) {
   let score = 0;
   if (String(c?.description ?? "").trim().length > 0) score += 2;
-  const convId = c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
+  const convId = c?.convocationComittees?.id ?? c?.convocation?.id ?? c?.convocationId ?? c?.convocation_id ?? c?.convocation;
   if (convId != null && convId !== "") score += 2;
   const members = Array.isArray(c?.members) ? c.members : [];
   score += members.length;

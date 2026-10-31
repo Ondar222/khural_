@@ -2,197 +2,38 @@ import React from "react";
 import { Button, Input, Space, Table, Tag, App } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
-import { CommitteesApi } from "../../api/client.js";
-import { useAdminData } from "../../hooks/useAdminData.js";
 import { ClipboardIcon } from "../../components/icons/LinearIcons.jsx";
+import { getConvocationNumber } from "../../utils/convocationIdentity.js";
 
-export default function AdminConvocationsList({ items, onDelete, busy, canWrite }) {
-  const adminData = useAdminData();
+export default function AdminConvocationsList({ items, committees = [], onDelete, busy, canWrite }) {
   const { navigate } = useHashRoute();
   const { modal } = App.useApp();
   const [q, setQ] = React.useState("");
   const [windowWidth, setWindowWidth] = React.useState(
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
-  // Используем комитеты из useAdminData, чтобы они автоматически обновлялись
-  const committeesFromAdmin = adminData.committees || [];
-  const [committees, setCommittees] = React.useState([]);
-
-  // Логируем структуру созывов для отладки
-  React.useEffect(() => {
-    if (Array.isArray(items) && items.length > 0) {
-      console.log("[AdminConvocationsList] Созывы:", items.map(c => ({
-        id: c.id,
-        id_type: typeof c.id,
-        name: c.name,
-        number: c.number,
-      })));
-    }
-  }, [items]);
-
-  // Загружаем комитеты напрямую из API для получения актуальных данных
-  const loadCommittees = React.useCallback(async () => {
-    try {
-      const comms = await CommitteesApi.list({ all: true }).catch(() => []);
-      const commsArray = Array.isArray(comms) ? comms : [];
-      console.log("[AdminConvocationsList] Загружено комитетов из API:", commsArray.length);
-      console.log("[AdminConvocationsList] Полный ответ API:", comms);
-      
-      // Логируем структуру ВСЕХ комитетов для отладки
-      commsArray.forEach((c, idx) => {
-        // Проверяем все возможные варианты полей для связи с созывом
-        const allPossibleFields = {
-          convocation: c.convocation,
-          convocationId: c.convocationId,
-          convocation_id: c.convocation_id,
-          convocationNumber: c.convocationNumber,
-          convocationNumberId: c.convocationNumberId,
-        };
-        
-        console.log(`[AdminConvocationsList] Комитет ${idx + 1} (ID: ${c.id}):`, {
-          id: c.id,
-          name: c.name || c.title,
-          ...allPossibleFields,
-          allFields: Object.keys(c),
-          fullObject: c,
-        });
-      });
-      
-      setCommittees(commsArray);
-    } catch (error) {
-      console.error("Failed to load committees:", error);
-      // Fallback на данные из useAdminData
-      setCommittees(committeesFromAdmin);
-    }
-  }, [committeesFromAdmin]);
-
-  React.useEffect(() => {
-    loadCommittees();
-  }, [loadCommittees]);
-
-  // Также используем комитеты из useAdminData как fallback
-  React.useEffect(() => {
-    if (committeesFromAdmin.length > 0 && committees.length === 0) {
-      console.log("[AdminConvocationsList] Используем комитеты из useAdminData:", committeesFromAdmin.length);
-      setCommittees(committeesFromAdmin);
-    }
-  }, [committeesFromAdmin, committees.length]);
-
-  // Перезагружаем комитеты при фокусе на окне (например, после создания комитета)
-  React.useEffect(() => {
-    const handleFocus = () => {
-      loadCommittees();
-    };
-    const handleReload = () => {
-      loadCommittees();
-    };
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("khural:admin:reload", handleReload);
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("khural:admin:reload", handleReload);
-    };
-  }, [loadCommittees]);
-
   // Получаем комитеты для созыва
   const getCommitteesForConvocation = React.useCallback((convocationId) => {
-    if (!convocationId) {
-      console.log("[AdminConvocationsList] getCommitteesForConvocation: convocationId пустой");
-      return [];
-    }
-    
-    console.log(`[AdminConvocationsList] Ищем комитеты для созыва ID: ${convocationId}, тип: ${typeof convocationId}`);
-    console.log(`[AdminConvocationsList] Всего комитетов для проверки: ${committees.length}`);
-    
-    // Логируем все комитеты с их convocationId для отладки
-    if (committees.length > 0) {
-      console.log(`[AdminConvocationsList] Все комитеты и их convocationId:`, committees.map(c => ({
-        id: c.id,
-        name: c.name || c.title,
-        convocationId: c.convocationId,
-        convocation: c.convocation,
-        convocation_type: typeof c.convocation,
-        convocationId_type: typeof c.convocationId,
-      })));
-    }
-    
-    // Нормализуем ID созыва для сравнения
-    const normalizedConvId = String(convocationId).trim();
-    const numericConvId = Number(convocationId);
-    
-    const result = committees.filter(c => {
-      // Проверяем все возможные варианты связи
-      let cConvId = null;
-      let source = null;
-      
-      // Вариант 1: вложенный объект convocation.id
-      if (c?.convocation && typeof c.convocation === "object" && c.convocation.id !== undefined) {
-        cConvId = c.convocation.id;
-        source = "convocation.id";
-      }
-      // Вариант 2: прямое поле convocationId
-      else if (c?.convocationId !== undefined && c?.convocationId !== null && c?.convocationId !== "") {
-        cConvId = c.convocationId;
-        source = "convocationId";
-      }
-      // Вариант 3: поле convocation_id (snake_case)
-      else if (c?.convocation_id !== undefined && c?.convocation_id !== null && c?.convocation_id !== "") {
-        cConvId = c.convocation_id;
-        source = "convocation_id";
-      }
-      // Вариант 4: поле convocation как ID (не объект)
-      else if (c?.convocation !== undefined && c?.convocation !== null && typeof c.convocation !== "object") {
-        cConvId = c.convocation;
-        source = "convocation (direct)";
-      }
-      
-      if (cConvId === null || cConvId === undefined) {
-        // Логируем комитеты без связи для отладки
-        console.log(`[AdminConvocationsList] Комитет ${c.id} (${c.name || c.title}) не имеет связи с созывом:`, {
-          convocation: c.convocation,
-          convocationId: c.convocationId,
-        });
-        return false;
-      }
-      
-      // Сравниваем как строки и как числа
-      const cConvIdStr = String(cConvId).trim();
-      const cConvIdNum = Number(cConvId);
-      
-      const matchStr = cConvIdStr === normalizedConvId;
-      const matchNum = Number.isFinite(cConvIdNum) && Number.isFinite(numericConvId) && cConvIdNum === numericConvId;
-      const match = matchStr || matchNum;
-      
-      if (match) {
-        console.log(`[AdminConvocationsList] ✓ Найден комитет для созыва ${convocationId}:`, {
-          committeeId: c.id,
-          committeeName: c.name || c.title,
-          cConvId,
-          source,
-          matchStr,
-          matchNum,
-        });
-      } else {
-        // Логируем несовпадения для отладки (только первые несколько)
-        if (committees.indexOf(c) < 3) {
-          console.log(`[AdminConvocationsList] Комитет ${c.id} не совпадает:`, {
-            committeeId: c.id,
-            cConvId,
-            normalizedConvId,
-            matchStr,
-            matchNum,
-            cConvIdStr,
-            cConvIdNum,
-            numericConvId,
-          });
-        }
-      }
-      
-      return match;
+    if (convocationId == null || convocationId === "") return [];
+    const target = String(convocationId).trim();
+    const ordinal = getConvocationNumber(convocationId);
+    return committees.filter((committee) => {
+      const committeeConvocation =
+        committee?.convocation?.id ??
+        committee?.convocationComittees?.id ??
+        committee?.convocationId ??
+        committee?.convocation_id ??
+        committee?.convocation;
+      const relatedId =
+        committeeConvocation && typeof committeeConvocation === "object"
+          ? committeeConvocation.id
+          : committeeConvocation;
+      return (
+        relatedId != null &&
+        (String(relatedId).trim() === target ||
+          (ordinal && getConvocationNumber(committeeConvocation) === ordinal))
+      );
     });
-    
-    console.log(`[AdminConvocationsList] Для созыва ${convocationId} найдено комитетов: ${result.length}`);
-    return result;
   }, [committees]);
 
   // Отслеживание размера окна для адаптивности
@@ -237,19 +78,8 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
     const itemsArray = Array.isArray(items) ? items : [];
     const qq = q.trim().toLowerCase();
     
-    // Разрешённые созывы: только I, II, III, IV
-    const ALLOWED_CONVOCATIONS = ["I", "II", "III", "IV"];
-    
-    // Фильтруем по разрешённым созывам
-    const allowedItems = itemsArray.filter((e) => {
-      const name = String(e.name || e.number || "").trim().toUpperCase();
-      // Проверяем, является ли название созыва разрешённой римской цифрой
-      return ALLOWED_CONVOCATIONS.includes(name);
-    });
-    
-    // Если есть поиск, фильтруем по нему
-    if (!qq) return allowedItems;
-    return allowedItems.filter(
+    if (!qq) return itemsArray;
+    return itemsArray.filter(
       (e) =>
         String(e.name || e.number || "").toLowerCase().includes(qq) ||
         String(e.description || "").toLowerCase().includes(qq)
@@ -291,6 +121,20 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
           {row.description ? (
             <div style={{ opacity: 0.75, fontSize: 13 }}>
               {stripHtmlTags(row.description).slice(0, 160)}
+            </div>
+          ) : null}
+          {row.years ? (
+            <div style={{ fontSize: 13, color: "#475569" }}>Период: {row.years}</div>
+          ) : null}
+          {row.stats ? (
+            <div style={{ fontSize: 13, color: "#475569" }}>
+              Депутатов: {row.stats.deputies ?? "—"} · Законов: {row.stats.laws ?? "—"} ·
+              Постановлений: {row.stats.resolutions ?? "—"}
+            </div>
+          ) : null}
+          {getCommitteesForConvocation(row.id).length > 0 ? (
+            <div style={{ fontSize: 13, color: "#475569" }}>
+              Комитетов: {getCommitteesForConvocation(row.id).length}
             </div>
           ) : null}
         </div>
@@ -448,6 +292,22 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
                             {stripHtmlTags(row.description).length > 120 ? '...' : ''}
                           </div>
                         )}
+                        {row.years ? (
+                          <div style={{ marginTop: 4, fontSize: 13, color: "#475569" }}>
+                            Период: {row.years}
+                          </div>
+                        ) : null}
+                        {row.stats ? (
+                          <div style={{ marginTop: 4, fontSize: 13, color: "#475569" }}>
+                            Депутатов: {row.stats.deputies ?? "—"} · Законов: {row.stats.laws ?? "—"} ·
+                            Постановлений: {row.stats.resolutions ?? "—"}
+                          </div>
+                        ) : null}
+                        {getCommitteesForConvocation(row.id).length > 0 ? (
+                          <div style={{ marginTop: 4, fontSize: 13, color: "#475569" }}>
+                            Комитетов: {getCommitteesForConvocation(row.id).length}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
 
@@ -511,4 +371,3 @@ export default function AdminConvocationsList({ items, onDelete, busy, canWrite 
     </div>
   );
 }
-

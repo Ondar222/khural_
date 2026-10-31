@@ -1,5 +1,5 @@
 import React from "react";
-import { App, Button, Input } from "antd";
+import { Button, Input } from "antd";
 import AdminShell from "./AdminShell.jsx";
 import AdminConvocationsList from "./AdminConvocationsList.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
@@ -44,6 +44,7 @@ export default function AdminConvocationsPage() {
       {loginCard}
       <AdminConvocationsList
         items={adminData.convocations}
+        committees={adminData.committees}
         onDelete={adminData.deleteConvocation}
         busy={adminData.busy}
         canWrite={adminData.canWrite}
@@ -51,4 +52,3 @@ export default function AdminConvocationsPage() {
     </AdminShell>
   );
 }
-

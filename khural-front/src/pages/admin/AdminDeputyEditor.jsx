@@ -1,7 +1,7 @@
 import React from "react";
 import { App, Button, Form, Input, Select, Upload, Modal, Checkbox } from "antd";
 import { useHashRoute } from "../../Router.jsx";
-import { CommitteesApi, PersonsApi } from "../../api/client.js";
+import { CommitteesApi, ConvocationsApi, PersonsApi } from "../../api/client.js";
 import { useData, enrichDeputyFromPersonInfo } from "../../context/DataContext.jsx";
 import { buildFactionOptions, buildDistrictOptions } from "../../utils/deputyFilterOptions.js";
 import { toPersonsApiBody } from "../../api/personsPayload.js";
@@ -10,12 +10,7 @@ import { decodeHtmlEntities } from "../../utils/html.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { AlertIcon } from "../../components/icons/LinearIcons.jsx";
-import {
-  COMMITTEES_OVERRIDES_EVENT_NAME,
-  COMMITTEES_OVERRIDES_STORAGE_KEY,
-  readCommitteesOverrides,
-  writeCommitteesOverrides,
-} from "../../utils/committeesOverrides.js";
+import { getConvocationNumber } from "../../utils/convocationIdentity.js";
 
 function pickFirstLink(v) {
   if (!v) return "";
@@ -206,7 +201,7 @@ function normalizeInitial(d) {
 export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
-  const { reload, deputies, factions, districts, committees, convocations, setFactions, setCommittees, setConvocations } = useData();
+  const { reload, deputies, factions, districts, committees, convocations, setFactions } = useData();
   console.log("[AdminDeputyEditor] DataContext convocations:", convocations);
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(mode === "edit");
@@ -228,7 +223,6 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const [lookupBusy, setLookupBusy] = React.useState(false);
   const [factionEntities, setFactionEntities] = React.useState([]);
   const [districtEntities, setDistrictEntities] = React.useState([]);
-  const [convocationEntities, setConvocationEntities] = React.useState([]);
 
   // Те же списки, что в фильтрах на странице «Депутаты»: API + структура + из депутатов (поле + биография)
   const factionOptions = React.useMemo(
@@ -247,71 +241,20 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     return result;
   }, [deputyId]);
 
-  const [committeesOverridesSeq, setCommitteesOverridesSeq] = React.useState(0);
-  React.useEffect(() => {
-    const bump = () => setCommitteesOverridesSeq((x) => x + 1);
-    const onStorage = (e) => {
-      if (e?.key === COMMITTEES_OVERRIDES_STORAGE_KEY) bump();
-    };
-    window.addEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(COMMITTEES_OVERRIDES_EVENT_NAME, bump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
-  const mergeCommitteesWithOverrides = React.useCallback((base, overrides) => {
-    const created = Array.isArray(overrides?.created) ? overrides.created : [];
-    const updatedById =
-      overrides?.updatedById && typeof overrides.updatedById === "object"
-        ? overrides.updatedById
-        : {};
-    const deletedIds = new Set(
-      Array.isArray(overrides?.deletedIds) ? overrides.deletedIds.map(String) : []
-    );
-    const out = [];
-    const seen = new Set();
-    for (const it of Array.isArray(base) ? base : []) {
-      const id = String(it?.id ?? "");
-      if (!id) continue;
-      if (deletedIds.has(id)) continue;
-      const override = updatedById[id];
-      out.push(override ? { ...it, ...override } : it);
-      seen.add(id);
+  const committeesMerged = React.useMemo(
+    () => (Array.isArray(committees) ? committees : []),
+    [committees]
+  );
+  const refreshCommitteeData = React.useCallback(() => {
+    reload();
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("khural:admin:reload"));
     }
-    for (const it of created) {
-      const id = String(it?.id ?? "");
-      if (!id) continue;
-      if (deletedIds.has(id)) continue;
-      if (seen.has(id)) continue;
-      const override = updatedById[id];
-      out.push(override ? { ...it, ...override } : it);
-      seen.add(id);
-    }
-    return out;
-  }, []);
-
-  const committeesMerged = React.useMemo(() => {
-    void committeesOverridesSeq;
-    const base = Array.isArray(committees) ? committees : [];
-    const overrides = readCommitteesOverrides();
-    const result = mergeCommitteesWithOverrides(base, overrides);
-    return result;
-  }, [committees, committeesOverridesSeq, mergeCommitteesWithOverrides]);
+  }, [reload]);
 
   const [participationConvocationId, setParticipationConvocationId] = React.useState("all");
   const [participationCommitteeId, setParticipationCommitteeId] = React.useState(null);
   const [participationRole, setParticipationRole] = React.useState("Член комитета");
-
-  const deputyConvocationIds = Form.useWatch("convocationIds", form);
-
-  const convocationsForParticipation = React.useMemo(() => {
-    // Используем созывы из DataContext (они загружаются при инициализации приложения)
-    const all = Array.isArray(convocations) ? convocations : [];
-    console.log("[AdminDeputyEditor] convocationsForParticipation (from DataContext):", all);
-    return all;
-  }, [convocations]);
 
   const committeesForSelectedConvocation = React.useMemo(() => {
     const list = Array.isArray(committeesMerged) ? committeesMerged : [];
@@ -328,56 +271,108 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     for (const c of list) {
       const members = Array.isArray(c?.members) ? c.members : [];
       const found = members.find((m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum);
-      if (found) {
-        // Обогащаем комитет данными из overrides (включая созыв)
-        const ov = readCommitteesOverrides();
-        const override = ov?.updatedById?.[c?.id ?? ""] || null;
-        const committeeWithData = override
-          ? { ...c, ...override, convocationId: override.convocationId || c.convocationId, convocation: override.convocation || c.convocation }
-          : c;
-        out.push({ committee: committeeWithData, member: found });
-      }
+      if (found) out.push({ committee: c, member: found });
     }
-
-    // Также проверяем комитеты из localStorage overrides (если они не вошли в committeesMerged)
-    try {
-      const ov = readCommitteesOverrides();
-      const updatedById = ov?.updatedById || {};
-      for (const [cid, override] of Object.entries(updatedById)) {
-        // Проверяем, есть ли уже этот комитет в результате
-        if (out.some(({ committee: c }) => String(c?.id ?? "") === cid)) continue;
-
-        const members = Array.isArray(override?.members) ? override.members : [];
-        const found = members.find((m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum);
-        if (found) {
-          // Находим комитет в базовом списке или создаем заглушку
-          const baseCommittee = list.find((c) => String(c?.id ?? "") === cid) || { id: cid, name: `Комитет ${cid}` };
-          // Обогащаем данными из overrides включая созыв
-          const committeeWithData = {
-            ...baseCommittee,
-            ...override,
-            convocationId: override.convocationId || baseCommittee.convocationId,
-            convocation: override.convocation || baseCommittee.convocation,
-          };
-          out.push({ committee: committeeWithData, member: found });
-        }
-      }
-    } catch (e) {
-      console.error("[AdminDeputyEditor] Error reading localStorage overrides:", e);
-    }
-
     return out;
   }, [committeesMerged, deputyIdNum]);
 
+  const resolveApiCommittee = React.useCallback(async (committee) => {
+    const apiRows = await CommitteesApi.list({ all: true });
+    const committeeId = String(committee?.id ?? "");
+    const committeeName = String(committee?.name || committee?.title || "").replace(/\s+/g, " ").trim().toLowerCase();
+    let apiCommittee = apiRows.find((row) => String(row?.id ?? "") === committeeId);
+
+    if (!apiCommittee && committeeName) {
+      const committeeConvocation = getConvocationNumber(
+        committee?.convocationComittees ?? committee?.convocation ?? committee?.convocationId ?? committee?.convocation_id
+      );
+      apiCommittee = apiRows.find((row) => {
+        if (String(row?.name || row?.title || "").replace(/\s+/g, " ").trim().toLowerCase() !== committeeName) {
+          return false;
+        }
+        return (
+          !committeeConvocation ||
+          getConvocationNumber(row?.convocationComittees ?? row?.convocation ?? row?.convocationId) === committeeConvocation
+        );
+      });
+    }
+
+    if (apiCommittee?.id != null) return apiCommittee;
+    if (!committeeName) throw new Error("У комитета отсутствует название");
+
+    const convocationValue =
+      committee?.convocation?.id ??
+      committee?.convocationComittees?.id ??
+      committee?.convocationId ??
+      committee?.convocation_id ??
+      (participationConvocationId !== "all" ? participationConvocationId : null);
+    let convocationId = convocationValue;
+
+    if (convocationValue != null && convocationValue !== "") {
+      const ordinal = getConvocationNumber(convocationValue);
+      const apiConvocations = await ConvocationsApi.list({ activeOnly: false });
+      let apiConvocation = apiConvocations.find(
+        (row) =>
+          String(row?.id ?? "") === String(convocationValue) ||
+          (ordinal && getConvocationNumber(row) === ordinal)
+      );
+
+      if (!apiConvocation && ordinal) {
+        const fallback = convocations.find((row) => getConvocationNumber(row) === ordinal);
+        if (!fallback) throw new Error(`Созыв ${ordinal} отсутствует в списке`);
+
+        const created = await ConvocationsApi.create({
+          name: fallback.name || `Созыв ${ordinal}`,
+          description: fallback.description || "",
+          isActive: fallback.isActive !== false,
+          is_active: fallback.isActive !== false,
+        });
+        apiConvocation =
+          created?.data?.id != null
+            ? created.data
+            : created?.id != null
+              ? created
+              : (await ConvocationsApi.list({ activeOnly: false })).find(
+                  (row) => getConvocationNumber(row) === ordinal
+                );
+        if (apiConvocation?.id == null) {
+          throw new Error(`API не вернул ID созыва ${ordinal}`);
+        }
+      }
+
+      convocationId = apiConvocation?.id ?? convocationValue;
+    }
+
+    const payload = {
+      name: String(committee.name || committee.title).trim(),
+      isActive: committee.isActive !== false,
+    };
+    if (convocationId != null && convocationId !== "") {
+      const numericConvocationId = Number(convocationId);
+      if (!Number.isInteger(numericConvocationId) || numericConvocationId <= 0) {
+        throw new Error("Созыв должен быть сохранён в API перед созданием комитета");
+      }
+      payload.convocationId = numericConvocationId;
+    }
+    const created = await CommitteesApi.create(payload);
+    apiCommittee =
+      created?.data?.id != null
+        ? created.data
+        : created?.id != null
+          ? created
+          : null;
+    if (apiCommittee?.id == null) {
+      apiCommittee = (await CommitteesApi.list({ all: true })).find(
+        (row) => String(row?.name || row?.title || "").replace(/\s+/g, " ").trim().toLowerCase() === committeeName
+      );
+    }
+    if (apiCommittee?.id == null) {
+      throw new Error("API не вернул ID созданного комитета");
+    }
+    return apiCommittee;
+  }, [convocations, participationConvocationId]);
+
   const upsertMembershipLocal = React.useCallback(async () => {
-    console.log("[AdminDeputyEditor] upsertMembershipLocal called", {
-      canWrite,
-      deputyIdNum,
-      participationCommitteeId,
-      participationRole,
-      participationConvocationId,
-      committeesMergedCount: committeesMerged.length,
-    });
     if (!canWrite) {
       message.error("Нет прав доступа");
       return;
@@ -386,179 +381,137 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       message.error("Для участия нужен сохранённый депутат (ID)");
       return;
     }
-    const cid = String(participationCommitteeId || "");
-    if (!cid) {
-      message.error("Выберите комитет");
-      return;
-    }
-    const role = String(participationRole || "").trim() || "Член комитета";
-    const c = (Array.isArray(committeesMerged) ? committeesMerged : []).find(
-      (x) => String(x?.id ?? "") === cid
-    );
-    console.log("[AdminDeputyEditor] Found committee:", c);
-    if (!c) {
+    const selectedId = String(participationCommitteeId || "");
+    const committee = committeesMerged.find((item) => String(item?.id ?? "") === selectedId);
+    if (!committee) {
       message.error("Комитет не найден");
       return;
     }
 
-    // Определяем созыв для комитета: используем выбранный в фильтре (приоритет) или существующий у комитета
-    const existingConvId = c?.convocation?.id || c?.convocationId;
-    const convIdToSet = (participationConvocationId && participationConvocationId !== "all")
-      ? participationConvocationId
-      : existingConvId;
-
-    // Ensure deputy has this convocation selected
-    if (convIdToSet && convIdToSet !== "all") {
-      const nextIds = Array.isArray(form.getFieldValue("convocationIds"))
-        ? form.getFieldValue("convocationIds").map(String)
-        : [];
-      if (!nextIds.includes(String(convIdToSet))) {
-        form.setFieldValue("convocationIds", [...nextIds, String(convIdToSet)]);
+    try {
+      let apiCommittee = await resolveApiCommittee(committee);
+      if (!Array.isArray(apiCommittee.members)) {
+        const details = await CommitteesApi.getById(String(apiCommittee.id));
+        apiCommittee = { ...apiCommittee, ...details };
       }
-    }
-    const members = Array.isArray(c.members) ? c.members.slice() : [];
-    const idx = members.findIndex(
-      (m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum
-    );
-    const nextMember = { personId: deputyIdNum, role, order: idx >= 0 ? (members[idx]?.order ?? idx) : members.length };
-    if (idx >= 0) members[idx] = { ...members[idx], ...nextMember };
-    else members.push(nextMember);
-
-    // Try API first for real committees, then local override
-    const looksServerId = /^\d+$/.test(cid);
-    if (looksServerId) {
-      try {
-        await CommitteesApi.addMembers(cid, [{ personId: deputyIdNum, role, order: nextMember.order }]);
-        // Also save to local overrides for immediate UI update, including convocationId
-        const ov = readCommitteesOverrides();
-        const updatedById =
-          ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
-        const existingOverride = updatedById[cid] || {};
-        writeCommitteesOverrides({
-          ...ov,
-          updatedById: {
-            ...updatedById,
-            [cid]: {
-              ...existingOverride,
-              members,
-              // Всегда сохраняем созыв для комитета (из фильтра или существующий)
-              ...(convIdToSet && convIdToSet !== "all" ? { 
-                convocationId: convIdToSet, 
-                convocation: { id: convIdToSet, name: convIdToSet } 
-              } : {}),
-            },
-          },
-        });
-        setCommitteesOverridesSeq((s) => s + 1);
-        message.success("Участие добавлено");
-        // Update committeeIds in form to include this committee
-        const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
-          ? form.getFieldValue("committeeIds").map(String)
-          : [];
-        if (!currentCommitteeIds.includes(cid)) {
-          form.setFieldValue("committeeIds", [...currentCommitteeIds, cid]);
+      if (!Array.isArray(apiCommittee.members)) {
+        throw new Error("API не вернул состав комитета; изменения не сохранены");
+      }
+      const members = Array.isArray(apiCommittee.members) ? apiCommittee.members : [];
+      const existingIndex = members.findIndex(
+        (member) => Number(member?.personId) === deputyIdNum || Number(member?.person?.id) === deputyIdNum
+      );
+      const role = String(participationRole || "").trim() || "Член комитета";
+      const nextMembers = members.map((member, index) => {
+        const memberRole = String(member?.role || "").trim();
+        if (!memberRole) {
+          throw new Error("У существующего участника отсутствует роль; состав не изменён");
         }
-        return;
-      } catch (err) {
-        console.warn("[AdminDeputyEditor] Failed to add member via API:", err);
-        message.warning("Не удалось сохранить на сервере, сохраняю локально");
-        // fall back to local override below
-      }
-    }
+        const personId = Number(member?.personId ?? member?.person?.id);
+        const name = String(member?.name || member?.person?.fullName || member?.person?.name || "").trim();
+        if ((!Number.isInteger(personId) || personId <= 0) && !name) {
+          throw new Error("У существующего участника отсутствует ID депутата или имя; состав не изменён");
+        }
+        return {
+          ...(Number.isInteger(personId) && personId > 0 ? { personId } : {}),
+          ...(name ? { name } : {}),
+          role: memberRole,
+          order: Number.isFinite(Number(member?.order)) ? Number(member.order) : index,
+        };
+      });
+      const nextMember = {
+        personId: deputyIdNum,
+        role,
+        order: existingIndex >= 0
+          ? (nextMembers[existingIndex]?.order ?? existingIndex)
+          : nextMembers.length,
+      };
+      if (existingIndex >= 0) nextMembers[existingIndex] = nextMember;
+      else nextMembers.push(nextMember);
+      await CommitteesApi.patch(String(apiCommittee.id), { members: nextMembers });
 
-    const ov = readCommitteesOverrides();
-    const updatedById =
-      ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
-    const existingOverride = updatedById[cid] || {};
-    writeCommitteesOverrides({
-      ...ov,
-      updatedById: {
-        ...updatedById,
-        [cid]: {
-          ...existingOverride,
-          members,
-          // Всегда сохраняем созыв для комитета (из фильтра или существующий)
-          ...(convIdToSet && convIdToSet !== "all" ? { 
-            convocationId: convIdToSet, 
-            convocation: { id: convIdToSet, name: convIdToSet } 
-          } : {}),
-        },
-      },
-    });
-    // Trigger re-render to show updated membership
-    setCommitteesOverridesSeq((s) => s + 1);
-    message.success("Участие сохранено");
-    // Update committeeIds in form to include this committee
-    const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
-      ? form.getFieldValue("committeeIds").map(String)
-      : [];
-    if (!currentCommitteeIds.includes(cid)) {
-      form.setFieldValue("committeeIds", [...currentCommitteeIds, cid]);
+      const convocationId =
+        committee?.convocation?.id ??
+        committee?.convocationComittees?.id ??
+        committee?.convocationId ??
+        committee?.convocation_id ??
+        (participationConvocationId !== "all" ? participationConvocationId : null);
+      if (convocationId != null && convocationId !== "") {
+        const currentConvocationIds = Array.isArray(form.getFieldValue("convocationIds"))
+          ? form.getFieldValue("convocationIds").map(String)
+          : [];
+        if (!currentConvocationIds.includes(String(convocationId))) {
+          form.setFieldValue("convocationIds", [...currentConvocationIds, String(convocationId)]);
+        }
+      }
+      const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
+        ? form.getFieldValue("committeeIds").map(String)
+        : [];
+      if (!currentCommitteeIds.includes(String(apiCommittee.id))) {
+        form.setFieldValue("committeeIds", [...currentCommitteeIds, String(apiCommittee.id)]);
+      }
+      refreshCommitteeData();
+      message.success("Участие сохранено в API");
+    } catch (error) {
+      message.error(error?.message || "Не удалось сохранить участие в комитете через API");
     }
-  }, [canWrite, committeesMerged, deputyIdNum, message, participationCommitteeId, participationRole, form, participationConvocationId]);
+  }, [
+    canWrite,
+    committeesMerged,
+    deputyIdNum,
+    form,
+    message,
+    participationCommitteeId,
+    participationRole,
+    participationConvocationId,
+    refreshCommitteeData,
+    resolveApiCommittee,
+  ]);
 
   const removeMembershipLocal = React.useCallback(async (committeeIdToUpdate) => {
-    if (!canWrite) return;
-    if (!deputyIdNum) return;
-    const cid = String(committeeIdToUpdate || "");
-    if (!cid) return;
-    const c = (Array.isArray(committeesMerged) ? committeesMerged : []).find(
-      (x) => String(x?.id ?? "") === cid
+    if (!canWrite || !deputyIdNum) return;
+    const committee = committeesMerged.find(
+      (item) => String(item?.id ?? "") === String(committeeIdToUpdate || "")
     );
-    if (!c) return;
-    const currentMembers = Array.isArray(c.members) ? c.members : [];
-    const memberToRemove = currentMembers.find(
-      (m) => Number(m?.personId) === deputyIdNum || Number(m?.person?.id) === deputyIdNum
-    );
-    const members = currentMembers.filter(
-      (m) => Number(m?.personId) !== deputyIdNum && Number(m?.person?.id) !== deputyIdNum
-    );
+    if (!committee) return;
 
-    const looksServerId = /^\d+$/.test(cid);
-    if (looksServerId && memberToRemove?.id != null) {
-      try {
-        await CommitteesApi.removeMember(cid, String(memberToRemove.id));
-        setCommitteesOverridesSeq((s) => s + 1);
-        message.success("Участие в комитете удалено.");
-        // Remove committeeIds from form if no longer a member
-        const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
-          ? form.getFieldValue("committeeIds").map(String)
-          : [];
-        form.setFieldValue("committeeIds", currentCommitteeIds.filter(id => id !== cid));
-        return;
-      } catch (err) {
-        message.warning("Не удалось удалить на сервере, сохраняю локально.");
+    try {
+      let apiCommittee = await resolveApiCommittee(committee);
+      if (!Array.isArray(apiCommittee.members)) {
+        const details = await CommitteesApi.getById(String(apiCommittee.id));
+        apiCommittee = { ...apiCommittee, ...details };
       }
-    }
+      const member = (Array.isArray(apiCommittee.members) ? apiCommittee.members : []).find(
+        (item) => Number(item?.personId) === deputyIdNum || Number(item?.person?.id) === deputyIdNum
+      );
+      if (member?.id == null) {
+        throw new Error("API не вернул ID участия депутата в комитете");
+      }
+      await CommitteesApi.removeMember(String(apiCommittee.id), String(member.id));
 
-    const ov = readCommitteesOverrides();
-    const updatedById =
-      ov.updatedById && typeof ov.updatedById === "object" ? ov.updatedById : {};
-    writeCommitteesOverrides({
-      ...ov,
-      updatedById: { ...updatedById, [cid]: { ...(updatedById[cid] || {}), members } },
-    });
-    setCommitteesOverridesSeq((s) => s + 1);
-    message.success("Участие удалено (локально). Обновите страницу на сайте, чтобы изменения отобразились везде.");
-    // Remove committeeIds from form if no longer a member
-    const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
-      ? form.getFieldValue("committeeIds").map(String)
-      : [];
-    form.setFieldValue("committeeIds", currentCommitteeIds.filter(id => id !== cid));
-  }, [canWrite, committeesMerged, deputyIdNum, message, form]);
+      const currentCommitteeIds = Array.isArray(form.getFieldValue("committeeIds"))
+        ? form.getFieldValue("committeeIds").map(String)
+        : [];
+      form.setFieldValue(
+        "committeeIds",
+        currentCommitteeIds.filter((id) => id !== String(apiCommittee.id))
+      );
+      refreshCommitteeData();
+      message.success("Участие в комитете удалено");
+    } catch (error) {
+      message.error(error?.message || "Не удалось удалить участие через API");
+    }
+  }, [canWrite, committeesMerged, deputyIdNum, form, message, refreshCommitteeData, resolveApiCommittee]);
 
   const refreshLookups = React.useCallback(async () => {
     setLookupBusy(true);
     try {
-      const [fs, ds, cs] = await Promise.all([
+      const [fs, ds] = await Promise.all([
         PersonsApi.listFactionsAll().catch(() => []),
         PersonsApi.listDistrictsAll().catch(() => []),
-        PersonsApi.listConvocationsAll().catch(() => []),
       ]);
-      console.log("[AdminDeputyEditor] Convocations loaded:", cs);
       setFactionEntities(Array.isArray(fs) ? fs : []);
       setDistrictEntities(Array.isArray(ds) ? ds : []);
-      setConvocationEntities(Array.isArray(cs) ? cs : []);
     } finally {
       setLookupBusy(false);
     }
@@ -1551,33 +1504,40 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           const name = String(newCommitteeName || "").trim();
           if (!name) return;
           try {
-            // Коммитеты обычно хранятся в DataContext, добавим в локальный список
-            const newCommittee = {
-              id: `committee-${Date.now()}`,
-              name: name,
-              title: name,
-            };
-            // Обновим список комитетов в контексте
-            setCommittees((prev) => {
-              const arr = Array.isArray(prev) ? prev : [];
-              // Пр��веряем, не существует ли уже такой комитет
-              const exists = arr.some(
-                (c) =>
-                  String(c?.id || "") === String(newCommittee.id) ||
-                  String(c?.name || "").toLowerCase() === name.toLowerCase() ||
-                  String(c?.title || "").toLowerCase() === name.toLowerCase()
+            const key = name.replace(/\s+/g, " ").toLowerCase();
+            const apiRows = await CommitteesApi.list({ all: true });
+            let newCommittee = apiRows.find(
+              (row) => String(row?.name || row?.title || "").replace(/\s+/g, " ").trim().toLowerCase() === key
+            );
+            if (!newCommittee) {
+              const created = await CommitteesApi.create({ name, isActive: true });
+              newCommittee = created?.data?.id != null
+                ? created.data
+                : created?.id != null
+                  ? created
+                  : null;
+            }
+            if (newCommittee?.id == null) {
+              newCommittee = (await CommitteesApi.list({ all: true })).find(
+                (row) => String(row?.name || row?.title || "").replace(/\s+/g, " ").trim().toLowerCase() === key
               );
-              if (exists) return prev;
-              return [...arr, newCommittee];
-            });
-            // Добавим выбранный комитет в форму
-            const currentCommittees = form.getFieldValue("committeeIds") || [];
-            form.setFieldValue("committeeIds", [...currentCommittees, newCommittee.id]);
-            message.success("Комитет добавлен");
+            }
+            if (newCommittee?.id == null) {
+              throw new Error("API не вернул ID созданного комитета");
+            }
+            const currentCommittees = Array.isArray(form.getFieldValue("committeeIds"))
+              ? form.getFieldValue("committeeIds")
+              : [];
+            const currentIds = currentCommittees.map(String);
+            if (!currentIds.includes(String(newCommittee.id))) {
+              form.setFieldValue("committeeIds", [...currentCommittees, String(newCommittee.id)]);
+            }
+            refreshCommitteeData();
+            message.success("Комитет сохранён в API");
             setNewCommitteeOpen(false);
             setNewCommitteeName("");
           } catch (e) {
-            message.error(e?.message || "Не удалось добавить комитет");
+            message.error(e?.message || "Не удалось сохранить комитет в API");
           }
         }}
       >
@@ -1590,11 +1550,9 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           }}
         />
         <div className="admin-hint" style={{ marginTop: 8 }}>
-          Комитет будет добавлен в список и п��явится в выпадающем списке.
+          Комитет будет сохранён в API и станет доступен другим администраторам.
         </div>
       </Modal>
     </div>
   );
 }
-
-

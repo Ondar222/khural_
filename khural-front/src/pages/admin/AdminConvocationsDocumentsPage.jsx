@@ -339,7 +339,7 @@ export default function AdminConvocationsDocumentsPage() {
               {/* Комитеты созыва */}
               {(() => {
                 const convCommittees = committees.filter(c => {
-                  const cConvId = c?.convocation?.id || c?.convocationId || c?.convocation;
+                  const cConvId = c?.convocationComittees?.id || c?.convocation?.id || c?.convocationId || c?.convocation;
                   return String(cConvId) === String(convocation.id);
                 });
                 

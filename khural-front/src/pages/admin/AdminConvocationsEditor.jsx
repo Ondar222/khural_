@@ -1,8 +1,9 @@
 import React from "react";
-import { App, Button, Form, Input, Switch, Select, Space, Tag, Empty } from "antd";
+import { App, Button, Form, Input, InputNumber, Switch, Select, Space, Tag, Empty } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
+import { getConvocationNumber } from "../../utils/convocationIdentity.js";
 
 export default function AdminConvocationsEditor({
   mode,
@@ -22,12 +23,16 @@ export default function AdminConvocationsEditor({
   const [loading, setLoading] = React.useState(mode === "edit");
 
   const numberValue = Form.useWatch("number", form);
+  const nameValue = Form.useWatch("name", form);
   const isActiveValue = Form.useWatch("isActive", form);
   const descriptionValue = Form.useWatch("description", form);
+  const yearsValue = Form.useWatch("years", form);
 
   const extractNumber = React.useCallback((raw) => {
     const s = String(raw || "").trim();
     if (!s) return "";
+    const ordinal = getConvocationNumber(s);
+    if (ordinal) return ordinal;
     // Examples supported: "VII", "VII созыв", "Созыв VII", "Созыв VII (парламент)" etc
     const m =
       s.match(/\b([IVXLCDM]+)\b/i) || // roman
@@ -46,8 +51,13 @@ export default function AdminConvocationsEditor({
       if (!found) return;
       // API использует поле "name" (например, "VII созыв" / "Созыв VII" / "VII")
       form.setFieldsValue({
-        number: extractNumber(found.name || found.number || ""),
+        number: extractNumber(found.number || found.name || ""),
+        name: found.name || "",
         description: found.description || "",
+        years: found.years || "",
+        deputies: found.stats?.deputies ?? null,
+        laws: found.stats?.laws ?? null,
+        resolutions: found.stats?.resolutions ?? null,
         isActive: normalizeBool(found.isActive, true),
       });
     } finally {
@@ -60,16 +70,26 @@ export default function AdminConvocationsEditor({
     setSaving(true);
     try {
       const values = await form.validateFields();
-      // Отправляем все поля: name, description, isActive
+      // Older API versions accept only name; the full static data also remains in local overrides.
       const number = String(values.number || "").trim();
+      const name = String(values.name || "").trim() || number;
       const isActive = normalizeBool(values.isActive, true);
       const payload = {
-        name: number,
+        name,
+        number,
         description: values.description || "",
         isActive,
         // Some deployments expect snake_case
         is_active: isActive,
       };
+      const years = String(values.years || "").trim();
+      if (years) payload.years = years;
+      const stats = Object.fromEntries(
+        ["deputies", "laws", "resolutions"]
+          .filter((key) => values[key] != null && values[key] !== "")
+          .map((key) => [key, Number(values[key])])
+      );
+      if (Object.keys(stats).length > 0) payload.stats = stats;
       if (mode === "create") {
         await onCreate?.(payload);
         message.success("Созыв создан");
@@ -86,30 +106,31 @@ export default function AdminConvocationsEditor({
     }
   };
 
-  const convIdNum = React.useMemo(() => {
-    const n = Number(convocationId);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  }, [convocationId]);
-
   const convIdStr = React.useMemo(() => {
     return String(convocationId || "");
   }, [convocationId]);
 
   const committeesForThisConvocation = React.useMemo(() => {
     if (!convIdStr) return [];
+    const ordinal = getConvocationNumber(convIdStr);
     const list = Array.isArray(committees) ? committees : [];
     return list.filter((c) => {
-      const committeeConvId = String(c?.convocation?.id || c?.convocationId || "");
-      return committeeConvId === convIdStr;
+      const committeeConvId = String(c?.convocationComittees?.id || c?.convocation?.id || c?.convocationId || "");
+      return committeeConvId === convIdStr || (
+        ordinal && getConvocationNumber(c?.convocation ?? committeeConvId) === ordinal
+      );
     });
   }, [committees, convIdStr]);
 
   const availableToAttach = React.useMemo(() => {
     if (!convIdStr) return [];
+    const ordinal = getConvocationNumber(convIdStr);
     const list = Array.isArray(committees) ? committees : [];
     return list.filter((c) => {
-      const committeeConvId = String(c?.convocation?.id || c?.convocationId || "");
-      return committeeConvId !== convIdStr;
+      const committeeConvId = String(c?.convocationComittees?.id || c?.convocation?.id || c?.convocationId || "");
+      return committeeConvId !== convIdStr && !(
+        ordinal && getConvocationNumber(c?.convocation ?? committeeConvId) === ordinal
+      );
     });
   }, [committees, convIdStr]);
 
@@ -141,7 +162,9 @@ export default function AdminConvocationsEditor({
               {mode === "create" ? "Добавить созыв" : "Редактировать созыв"}
             </div>
             {mode === "edit" && numberValue ? (
-              <div className="admin-events-editor__subtitle">{`Созыв ${String(numberValue)}`}</div>
+              <div className="admin-events-editor__subtitle">
+                {`${nameValue || `Созыв ${String(numberValue)}`}${yearsValue ? ` • ${yearsValue}` : ""}`}
+              </div>
             ) : (
               <div className="admin-events-editor__subtitle">Управление созывами</div>
             )}
@@ -171,6 +194,24 @@ export default function AdminConvocationsEditor({
           >
             <Input placeholder="VII" disabled={loading || saving} />
           </Form.Item>
+          <Form.Item label="Отображаемое название" name="name">
+            <Input placeholder="Например: Седьмой созыв Верховного Хурала" disabled={loading || saving} />
+          </Form.Item>
+          <Form.Item label="Годы созыва" name="years">
+            <Input placeholder="2024–2029" disabled={loading || saving} />
+          </Form.Item>
+          <div className="admin-events-editor__section-title">Статистика созыва</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+            <Form.Item label="Депутатов" name="deputies">
+              <InputNumber min={0} style={{ width: "100%" }} disabled={loading || saving} />
+            </Form.Item>
+            <Form.Item label="Законов" name="laws">
+              <InputNumber min={0} style={{ width: "100%" }} disabled={loading || saving} />
+            </Form.Item>
+            <Form.Item label="Постановлений" name="resolutions">
+              <InputNumber min={0} style={{ width: "100%" }} disabled={loading || saving} />
+            </Form.Item>
+          </div>
 
           <Form.Item label="Краткое описание" name="description">
             <TinyMCEEditor
@@ -257,14 +298,30 @@ export default function AdminConvocationsEditor({
                           {c?.isActive ? <Tag color="green">Активный</Tag> : <Tag color="default">Неактивный</Tag>}
                         </div>
                       </div>
+                      {Array.isArray(c?.members) && c.members.length > 0 ? (
+                        <div style={{ display: "grid", gap: 4, fontSize: 13, color: "#475569" }}>
+                          {c.members.map((member, index) => {
+                            const memberName = String(
+                              member?.name || member?.person?.fullName || member?.person?.name || ""
+                            ).trim();
+                            if (!memberName) return null;
+                            return (
+                              <div key={`${id}-member-${index}`}>
+                                {memberName}
+                                {member?.role ? ` — ${member.role}` : ""}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                         <Button
-                          disabled={!canWrite || localStatic}
+                          disabled={!canWrite}
                           onClick={() => navigate(`/admin/committees/edit/${encodeURIComponent(id)}`)}
                         >
                           Редактировать
                         </Button>
-                        <Button danger disabled={!canWrite || localStatic} onClick={() => detach(id)}>
+                        <Button danger disabled={!canWrite} onClick={() => detach(id)}>
                           Убрать из созыва
                         </Button>
                       </div>
@@ -281,4 +338,3 @@ export default function AdminConvocationsEditor({
     </div>
   );
 }
-
