@@ -91,7 +91,10 @@ export default function Commission() {
     commissionFromData &&
     (commissionFromData.bodyHtml ||
       commissionFromData.resolutionSubject ||
-      commissionFromData.documentType);
+      commissionFromData.documentType ||
+      commissionFromData.parentBody ||
+      commissionFromData.resolutionDate ||
+      commissionFromData.resolutionNumber);
 
   if (!id) {
     return (

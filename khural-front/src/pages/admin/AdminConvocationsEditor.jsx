@@ -70,7 +70,6 @@ export default function AdminConvocationsEditor({
     setSaving(true);
     try {
       const values = await form.validateFields();
-      // Older API versions accept only name; the full static data also remains in local overrides.
       const number = String(values.number || "").trim();
       const name = String(values.name || "").trim() || number;
       const isActive = normalizeBool(values.isActive, true);

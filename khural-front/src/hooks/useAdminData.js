@@ -38,6 +38,7 @@ import {
 import {
   commissionPagePayload,
   mergeCommissionsWithPages,
+  readCommissionPage,
 } from "../utils/commissionPages.js";
 import {
   getCommitteeConvocation,
@@ -1547,13 +1548,73 @@ export function useAdminData() {
       if (!current) throw new Error("Комиссия не найдена");
       const updated = { ...current, ...payload, id: sid };
       const pagePayload = commissionPagePayload(updated);
+      const currentPage = Array.isArray(pages)
+        ? pages.find(
+            (page) =>
+              (current.cmsPageId != null &&
+                String(page?.id) === String(current.cmsPageId)) ||
+              String(page?.slug || "") === pagePayload.slug
+          )
+        : null;
+      const pageId = currentPage?.id ?? current.cmsPageId;
+      const localizedContent = Array.isArray(currentPage?.content)
+        ? currentPage.content.map((entry) => ({
+            locale: String(entry?.locale || "ru").toLowerCase(),
+            title: String(entry?.title || pagePayload.title),
+            description: entry?.description ?? undefined,
+            content: pagePayload.content,
+            blocks: Array.isArray(entry?.blocks) ? entry.blocks : undefined,
+          }))
+        : [];
+      if (
+        localizedContent.length > 0 &&
+        !localizedContent.some((entry) => entry.locale === "ru")
+      ) {
+        localizedContent.push({
+          locale: "ru",
+          title: pagePayload.title,
+          content: pagePayload.content,
+        });
+      }
+      const updatePayload =
+        localizedContent.length > 0
+          ? { ...pagePayload, content: localizedContent }
+          : pagePayload;
 
       setBusy(true);
       try {
-        if (current.cmsPageId != null) {
-          await AboutApi.updatePage(current.cmsPageId, pagePayload);
-        } else {
+        if (pageId != null) {
+          await AboutApi.updatePage(pageId, updatePayload);
+        } else if (Array.isArray(pages)) {
           await AboutApi.createPage(pagePayload);
+        } else {
+          throw new Error(
+            "Не удалось загрузить страницы CMS. Обновите список и повторите сохранение."
+          );
+        }
+        const savedPages = await AboutApi.listAdminPages();
+        const savedCommission = savedPages
+          .map(readCommissionPage)
+          .find((commission) => String(commission?.id) === sid);
+        const fieldsToVerify = [
+          "name",
+          "parentBody",
+          "documentType",
+          "resolutionDate",
+          "resolutionNumber",
+          "resolutionSubject",
+          "bodyHtml",
+        ];
+        if (
+          !savedCommission ||
+          fieldsToVerify.some(
+            (field) =>
+              String(savedCommission[field] ?? "") !== String(updated[field] ?? "")
+          )
+        ) {
+          throw new Error(
+            "API не подтвердило сохранение комиссии. Изменения не опубликованы."
+          );
         }
         message.success("Комиссия сохранена в общей базе");
         await reload();
@@ -1561,7 +1622,7 @@ export function useAdminData() {
         setBusy(false);
       }
     },
-    [commissions, message, reload]
+    [commissions, message, pages, reload]
   );
 
   const deleteCommission = React.useCallback(

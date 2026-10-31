@@ -211,7 +211,6 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const structureType = Form.useWatch("structureType", form);
   const isDeceased = Form.useWatch("isDeceased", form);
   const fullNameValue = Form.useWatch("fullName", form);
-  const initialStatusRef = React.useRef(null);
   const [newFactionOpen, setNewFactionOpen] = React.useState(false);
   const [newFactionName, setNewFactionName] = React.useState("");
   const [newDistrictOpen, setNewDistrictOpen] = React.useState(false);
@@ -770,11 +769,6 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             } catch (_) {}
           }
         }
-        initialStatusRef.current = {
-          mandateEnded: Boolean(normalized?.mandateEnded),
-          isDeceased: Boolean(normalized?.isDeceased),
-          isActive: normalized?.isActive !== undefined ? Boolean(normalized?.isActive) : true,
-        };
         // Извлекаем текущее фото для отображения (та же логика, что в Government.jsx)
         const currentPhoto = normalizeFilesUrl(
           pickFirstLink(src?.image) ||
@@ -814,38 +808,16 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     if (current && !allowed.has(current)) form.setFieldValue("role", undefined);
   }, [structureType, form]);
 
-  const saveOverridesUpdate = React.useCallback((id, body) => {
-    const next = readDeputiesOverrides();
-    const updatedById = next.updatedById && typeof next.updatedById === "object" ? next.updatedById : {};
-    writeDeputiesOverrides({
-      ...next,
-      updatedById: {
-        ...updatedById,
-        [String(id)]: { ...body, id: String(id) },
-      },
-    });
-  }, []);
-
-  // Persist status fields locally so the checkbox "works" even if backend ignores these fields.
-  const saveOverridesStatus = React.useCallback((id, statusPatch) => {
+  const clearOverridesUpdate = React.useCallback((id) => {
     const key = String(id || "");
     if (!key) return;
     const next = readDeputiesOverrides();
     const updatedById = next.updatedById && typeof next.updatedById === "object" ? next.updatedById : {};
-    const prev = updatedById[key] && typeof updatedById[key] === "object" ? updatedById[key] : {};
+    delete updatedById[key];
     writeDeputiesOverrides({
       ...next,
-      updatedById: {
-        ...updatedById,
-        [key]: { ...prev, ...statusPatch, id: key },
-      },
+      updatedById,
     });
-  }, []);
-
-  const saveOverridesCreate = React.useCallback((item) => {
-    const next = readDeputiesOverrides();
-    const created = Array.isArray(next.created) ? next.created : [];
-    writeDeputiesOverrides({ ...next, created: [item, ...created] });
   }, []);
 
   const onSave = async () => {
@@ -853,54 +825,39 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
     setSaving(true);
     try {
       const values = await form.validateFields();
-      console.log("[AdminDeputyEditor] Save debug - Form convocationIds:", values.convocationIds);
       const bodyRaw = {
         ...values,
-        // Для API отправляем description, локально храним biography
+        // The API stores biography in its description field.
         description: values.biography || "",
         bio: undefined,
       };
       const body = await enrichRelations(bodyRaw);
-      console.log("[AdminDeputyEditor] Save debug - Body convocationIds:", body.convocationIds);
 
       if (mode === "create") {
-        try {
-          const created = await PersonsApi.create(toPersonsApiBody(body));
-          const id = created?.id ?? created?._id ?? created?.personId;
-          if (id && photoFile) await PersonsApi.uploadMedia(id, photoFile);
-          // If admin set any non-default status, persist it locally too (backend may ignore these fields).
-          const statusPatch = {
-            mandateEnded: Boolean(body?.mandateEnded),
-            isDeceased: Boolean(body?.isDeceased),
-            isActive: body?.isActive !== undefined ? Boolean(body?.isActive) : true,
-          };
-          if (id && (statusPatch.mandateEnded || statusPatch.isDeceased || statusPatch.isActive === false)) {
-            saveOverridesStatus(id, statusPatch);
+        const created = await PersonsApi.create(toPersonsApiBody(body));
+        const id = created?.id ?? created?._id ?? created?.personId;
+        if (photoFile && id) {
+          try {
+            await PersonsApi.uploadMedia(id, photoFile);
+          } catch (e) {
+            message.error(`Депутат создан, но фото не загружено: ${e?.message || "ошибка API"}`);
           }
-          message.success("Депутат создан");
-          reload();
-          navigate("/admin/deputies");
-        } catch {
-          const localId = `local-${Date.now()}`;
-          saveOverridesCreate({ ...body, id: localId });
-          message.warning("Создано локально (сервер недоступен или нет прав)");
-          reload();
-          navigate("/admin/deputies");
+        } else if (photoFile) {
+          message.warning("Депутат создан, но сервер не вернул ID для загрузки фото");
         }
+        message.success("Депутат создан");
+        reload();
+        navigate("/admin/deputies");
         return;
       }
 
-      // edit
       const id = String(deputyId || "");
       if (!id) throw new Error("Не удалось определить ID депутата");
-      try {
-        const payload = toPersonsApiBody(body);
-        console.log("[AdminDeputyEditor] Sending PATCH payload:", { mandateEnded: payload.mandateEnded, isDeceased: payload.isDeceased, ...payload });
-        await PersonsApi.patch(id, payload);
-        if (photoFile) {
+      await PersonsApi.patch(id, toPersonsApiBody(body));
+      clearOverridesUpdate(id);
+      if (photoFile) {
+        try {
           await PersonsApi.uploadMedia(id, photoFile);
-          // После загрузки фото обновляем URL текущего фото
-          // Перезагружаем данные депутата, чтобы получить новый imageId
           const updated = await PersonsApi.getById(id).catch(() => null);
           if (updated) {
             const newPhoto = normalizeFilesUrl(
@@ -914,49 +871,17 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             );
             setCurrentPhotoUrl(newPhoto);
           }
+        } catch (e) {
+          message.error(`Данные депутата сохранены, но фото не загружено: ${e?.message || "ошибка API"}`);
+          reload();
+          return;
         }
-        // Persist status locally when it changes (backend may not store these fields).
-        const statusPatch = {
-          mandateEnded: Boolean(body?.mandateEnded),
-          isDeceased: Boolean(body?.isDeceased),
-          isActive: body?.isActive !== undefined ? Boolean(body?.isActive) : true,
-        };
-        const prev = initialStatusRef.current;
-        const changed =
-          !prev ||
-          Boolean(prev.mandateEnded) !== Boolean(statusPatch.mandateEnded) ||
-          Boolean(prev.isDeceased) !== Boolean(statusPatch.isDeceased) ||
-          Boolean(prev.isActive) !== Boolean(statusPatch.isActive);
-        if (changed) saveOverridesStatus(id, statusPatch);
-        // IMPORTANT: Also save full body to overrides to preserve fields that backend might ignore
-        // (e.g., convocationIds, committeeIds if backend doesn't support them yet)
-        saveOverridesUpdate(id, { ...body, id });
-        console.log("[AdminDeputyEditor] Save debug - Saved to localStorage:", { 
-          id, 
-          convocationIds: body.convocationIds,
-          saved: readDeputiesOverrides()?.updatedById?.[id]?.convocationIds 
-        });
-        message.success("Депутат обновлён");
-        reload();
-        navigate("/admin/deputies");
-      } catch {
-        // If data patch fails (often due to validation), still try to upload photo so it appears on the site.
-        if (photoFile) {
-          try {
-            await PersonsApi.uploadMedia(id, photoFile);
-            message.success("Фото загружено");
-            reload();
-            navigate("/admin/deputies");
-            return;
-          } catch {
-            // fall through to local override warning
-          }
-        }
-        saveOverridesUpdate(id, { ...body, id });
-        message.warning("Обновлено локально (сервер недоступен или нет прав)");
-        reload();
-        navigate("/admin/deputies");
       }
+      message.success("Депутат обновлён");
+      reload();
+      navigate("/admin/deputies");
+    } catch (e) {
+      message.error(e?.message || "Не удалось сохранить депутата в API");
     } finally {
       setSaving(false);
     }

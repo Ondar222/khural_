@@ -1,6 +1,6 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Button, Input, Form } from "antd";
+import { App, Button, Input, Form } from "antd";
 import { useHashRoute } from "../../Router.jsx";
 import AdminShell from "./AdminShell.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
@@ -18,6 +18,7 @@ const DETAIL_FIELDS = [
 export default function AdminCommissionsEditPage() {
   const adminData = useAdminData();
   const { navigate, route } = useHashRoute();
+  const { message } = App.useApp();
   const id = React.useMemo(() => {
     const match = route?.match(/\/admin\/commissions\/edit\/(.+)/);
     return match ? decodeURIComponent(match[1]) : "";
@@ -63,19 +64,26 @@ export default function AdminCommissionsEditPage() {
     async (values) => {
       const nameRaw = values.name != null ? String(values.name) : "";
       const name = stripHtmlTags(nameRaw).trim();
-      if (!name) return;
-      await adminData.updateCommission(id, {
-        name,
-        parentBody: values.parentBody != null ? String(values.parentBody).trim() : undefined,
-        documentType: values.documentType != null ? String(values.documentType).trim() : undefined,
-        resolutionDate: values.resolutionDate != null ? String(values.resolutionDate).trim() : undefined,
-        resolutionNumber: values.resolutionNumber != null ? String(values.resolutionNumber).trim() : undefined,
-        resolutionSubject: values.resolutionSubject != null ? String(values.resolutionSubject).trim() : undefined,
-        bodyHtml: values.bodyHtml != null ? String(values.bodyHtml).trim() : undefined,
-      });
-      navigate("/admin/commissions");
+      if (!name) {
+        message.error("Введите название комиссии");
+        return;
+      }
+      try {
+        await adminData.updateCommission(id, {
+          name,
+          parentBody: values.parentBody != null ? String(values.parentBody).trim() : undefined,
+          documentType: values.documentType != null ? String(values.documentType).trim() : undefined,
+          resolutionDate: values.resolutionDate != null ? String(values.resolutionDate).trim() : undefined,
+          resolutionNumber: values.resolutionNumber != null ? String(values.resolutionNumber).trim() : undefined,
+          resolutionSubject: values.resolutionSubject != null ? String(values.resolutionSubject).trim() : undefined,
+          bodyHtml: values.bodyHtml != null ? String(values.bodyHtml).trim() : undefined,
+        });
+        navigate("/admin/commissions");
+      } catch (e) {
+        message.error(e?.message || "Не удалось сохранить комиссию");
+      }
     },
-    [adminData, id, navigate]
+    [adminData, id, message, navigate]
   );
 
   if (!id) {

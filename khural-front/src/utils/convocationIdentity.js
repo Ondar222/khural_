@@ -102,11 +102,11 @@ export function mergeConvocationsPreferApi(apiList, fallbackList) {
     }
 
     for (const field of ["number", "title", "years", "description", "isActive"]) {
-      if ((target[field] == null || target[field] === "") && fallback[field] != null && fallback[field] !== "") {
+      if (!Object.hasOwn(target, field) && fallback[field] != null && fallback[field] !== "") {
         target[field] = fallback[field];
       }
     }
-    if (!target.name && fallback.name) target.name = fallback.name;
+    if (!Object.hasOwn(target, "name") && fallback.name) target.name = fallback.name;
     if (fallback.stats && typeof fallback.stats === "object" && !Array.isArray(fallback.stats)) {
       const apiStats =
         target.stats && typeof target.stats === "object" && !Array.isArray(target.stats)

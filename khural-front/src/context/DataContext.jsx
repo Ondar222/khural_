@@ -499,14 +499,14 @@ function mergeCommitteesPreferApi(apiList, staticList) {
         ? byNameAndConvocation.get(`${nameKey}|${convocationKey}`)
         : null);
     if (target) {
-      if (!target.title && c?.title) target.title = c.title;
-      if (!target.name && c?.name) target.name = c.name;
-      if (!target.description && c?.description) target.description = c.description;
+      if (!Object.hasOwn(target, "title") && c?.title) target.title = c.title;
+      if (!Object.hasOwn(target, "name") && c?.name) target.name = c.name;
+      if (!Object.hasOwn(target, "description") && c?.description) target.description = c.description;
       if (!Array.isArray(target.members) && Array.isArray(c?.members)) target.members = c.members;
       if (!Array.isArray(target.staff) && Array.isArray(c?.staff)) target.staff = c.staff;
-      if (!target.convocation && c?.convocation) target.convocation = c.convocation;
-      if ((!Array.isArray(target.plans) || target.plans.length === 0) && Array.isArray(c?.plans) && c.plans.length > 0) target.plans = c.plans;
-      if ((!Array.isArray(target.activities) || target.activities.length === 0) && Array.isArray(c?.activities) && c.activities.length > 0) target.activities = c.activities;
+      if (!Object.hasOwn(target, "convocation") && c?.convocation) target.convocation = c.convocation;
+      if (!Object.hasOwn(target, "plans") && Array.isArray(c?.plans)) target.plans = c.plans;
+      if (!Object.hasOwn(target, "activities") && Array.isArray(c?.activities)) target.activities = c.activities;
       continue;
     }
     out.push(c);
