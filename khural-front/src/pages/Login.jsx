@@ -59,7 +59,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const res = await login(values);
+      const res = await login({ ...values, email: values.email.trim() });
       if (res?.user) setLoginUser(res.user);
       // Показываем сообщение об успешном входе
       message.success("Вход выполнен успешно");
@@ -70,7 +70,17 @@ export default function Login() {
 
       // Более понятные сообщения для пользователя
       if (e?.status === 403) {
-        errorMessage = "Аккаунт заблокирован или нет доступа. Обратитесь к администратору.";
+        const rawServerMessage = e?.data?.message ?? e?.data?.error;
+        const serverMessage = Array.isArray(rawServerMessage)
+          ? rawServerMessage.join(", ").trim()
+          : typeof rawServerMessage === "string"
+            ? rawServerMessage.trim()
+            : "";
+        const hasSpecificReason =
+          serverMessage && !/^(forbidden|request failed: 403)$/i.test(serverMessage);
+        errorMessage = hasSpecificReason
+          ? `Нет доступа: ${serverMessage}`
+          : "Сервер отклонил вход (403). Аккаунт может быть заблокирован или вход ограничен. Обратитесь к администратору.";
       } else if (e?.status === 401) {
         errorMessage = "Неверный email или пароль. Проверьте правильность введенных данных.";
       } else if (e?.status === 405) {
@@ -142,14 +152,21 @@ export default function Login() {
                   }
                 ]}
               >
-                <Input type="email" placeholder="you@example.org" />
+                <Input
+                  type="email"
+                  placeholder="you@example.org"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                />
               </Form.Item>
               <Form.Item
                 label="Пароль"
                 name="password"
                 rules={[{ required: true, message: "Введите пароль" }]}
               >
-                <Input.Password placeholder="••••••••" />
+                <Input.Password placeholder="••••••••" autoComplete="current-password" />
               </Form.Item>
               <Form.Item style={{ marginBottom: 0 }}>
                 <Button type="primary" htmlType="submit" loading={loading} block>
