@@ -1138,9 +1138,12 @@ a {
 .resources-portals__tile {
   min-width: 0;
   width: 100%;
-  height: 120px;
+  height: auto;
+  min-height: 120px;
   box-sizing: border-box;
   gap: 10px;
+  font-size: 14px;
+  line-height: 1.35;
 }
 .resources-portals__label {
   flex: 1 1 auto;
@@ -1148,6 +1151,8 @@ a {
   max-width: 100%;
   overflow-wrap: anywhere;
   word-break: break-word;
+  font-size: 14px;
+  line-height: 1.35;
 }
 .resources-portals__arrow {
   flex-shrink: 0;

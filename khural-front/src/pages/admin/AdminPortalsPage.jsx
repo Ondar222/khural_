@@ -15,56 +15,67 @@ const DEFAULT_PORTALS = [
   {
     id: "portal-1",
     label: "НОРМАТИВНО-ПРАВОВЫЕ АКТЫ В РОССИЙСКОЙ ФЕДЕРАЦИИ",
+    labelTy: "РОССИЯ ФЕДЕРАЦИЯЗЫНДА НОРМАТИВТИГ ЭРГЕ-ХООЙЛУ АКТЫЛАРЫ",
     href: "http://pravo.minjust.ru/",
   },
   {
     id: "portal-2",
     label: "ПАРЛАМЕНТ РЕСПУБЛИКИ ТЫВА",
+    labelTy: "ТЫВА РЕСПУБЛИКАНЫҢ ПАРЛАМЕНТИЗИ",
     href: "http://gov.tuva.ru/",
   },
   {
     id: "portal-3",
     label: "ОФИЦИАЛЬНЫЙ ИНТЕРНЕТ-ПОРТАЛ ПРАВОВОЙ ИНФОРМАЦИИ",
+    labelTy: "ЭРГЕ-ХООЙЛУ МЕДЭЭЛЕРИНИҢ АЛБАН ЕЗУЗУНУҢ ИНТЕРНЕТ-ПОРТАЛЫ",
     href: "http://pravo.gov.ru/",
   },
   {
     id: "portal-4",
     label: "ОБЩЕСТВЕННАЯ ПАЛАТА РЕСПУБЛИКИ ТЫВА",
+    labelTy: "ТЫВА РЕСПУБЛИКАНЫҢ ХӨЙ-НИИТИ ПАЛАТАЗЫ",
     href: "http://palata.tuva.ru/",
   },
   {
     id: "portal-5",
     label: "ФЕДЕРАЛЬНЫЙ ПОРТАЛ ПРОЕКТОВ НОРМАТИВНЫХ ПРАВОВЫХ АКТОВ",
+    labelTy: "НОРМАТИВТИГ ЭРГЕ-ХООЙЛУ АКТЫЛАРЫНЫҢ ТӨЛЕВИЛЕЛДЕРИНИҢ ФЕДЕРАЛДЫГ ПОРТАЛЫ",
     href: "http://regulation.gov.ru/",
   },
   {
     id: "portal-6",
     label: "ГАС ЗАКОНОТВОРЧЕСТВО",
+    labelTy: "ГАС ХООЙЛУ ЧОГААДЫЛГАЗЫ",
     href: "http://parliament.gov.ru/",
   },
   {
     id: "portal-7",
     label: "ПОРТАЛ ГОСУДАРСТВЕННЫХ УСЛУГ",
+    labelTy: "КҮРҮНЕ АЧЫ-ДУЗАЗЫНЫҢ ПОРТАЛЫ",
     href: "http://gosuslugi.ru/",
   },
   {
     id: "portal-8",
     label: "МИНИСТЕРСТВО ЮСТИЦИИ РОССИЙСКОЙ ФЕДЕРАЦИИ",
+    labelTy: "РОССИЯ ФЕДЕРАЦИЯЗЫНЫҢ ЮСТИЦИЯ ЯАМЫЗЫ",
     href: "http://minjust.ru/",
   },
   {
     id: "portal-9",
     label: "ФЕДЕРАЛЬНЫЙ ПОРТАЛ УПРАВЛЕНЧЕСКИХ КАДРОВ",
+    labelTy: "ЭРГЕЛЕП-БАШКАРЫЛГА КАДРЛАРЫНЫҢ ФЕДЕРАЛДЫГ ПОРТАЛЫ",
     href: "http://gossluzhba.gov.ru/",
   },
   {
     id: "portal-10",
     label: "УПОЛНОМЕЧЕННЫЙ ПО ЗАЩИТЕ ПРАВ ПРЕДПРИНИМАТЕЛЕЙ В РЕСПУБЛИКЕ ТЫВА",
+    labelTy: "ТЫВА РЕСПУБЛИКАДА САЙГАРЛЫКЧЫЛАРНЫҢ ЭРГЕЛЕРИН КАМГАЛААР ТАЛАЗЫ-БИЛЕ ДОЛУ ДЕМДЕГЛЕТТИНГЕН",
     href: "http://upp.rtyva.ru/",
   },
   {
     id: "portal-11",
     label: "ИЗБИРАТЕЛЬНАЯ КОММИССИЯ РЕСПУБЛИКИ ТЫВА",
+    labelTy: "ТЫВА РЕСПУБЛИКАНЫҢ СОҢГУЛДА КОММИССИЯЗЫ",
     href: "http://www.tyva.izbirkom.ru/",
   },
 ];
@@ -161,6 +172,7 @@ export default function AdminPortalsPage() {
             ...overrides.updatedById,
             [editingPortal.id]: {
               label: values.label.trim(),
+              labelTy: values.labelTy?.trim() || "",
               href: values.href.trim(),
             },
           },
@@ -172,6 +184,7 @@ export default function AdminPortalsPage() {
         const newPortal = {
           id: `portal-${Date.now()}`,
           label: values.label.trim(),
+          labelTy: values.labelTy?.trim() || "",
           href: values.href.trim(),
         };
         const updated = {
@@ -219,6 +232,7 @@ export default function AdminPortalsPage() {
     setEditingPortal(portal);
     form.setFieldsValue({
       label: portal.label || "",
+      labelTy: portal.labelTy || "",
       href: portal.href || "",
     });
     setModalOpen(true);
@@ -507,6 +521,14 @@ export default function AdminPortalsPage() {
             rules={[{ required: true, message: "Введите название портала" }]}
           >
             <Input placeholder="Например: НОРМАТИВНО-ПРАВОВЫЕ АКТЫ В РОССИЙСКОЙ ФЕДЕРАЦИИ" />
+          </Form.Item>
+
+          <Form.Item
+            label="Название на тувинском"
+            name="labelTy"
+            extra="Если заполнено, при выборе языка TY будет показано это название."
+          >
+            <Input placeholder="Тувинский перевод названия" />
           </Form.Item>
 
           <Form.Item
