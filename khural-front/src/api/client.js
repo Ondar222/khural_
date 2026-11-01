@@ -188,6 +188,7 @@ export async function apiFetch(
     baseUrl: baseUrlOverride,
     timeout: timeoutMs,
     quiet = false,
+    cacheMode = "default",
   } = {}
 ) {
   const baseUrl = normalizeBaseUrl(baseUrlOverride) || getApiBaseUrl();
@@ -240,6 +241,7 @@ export async function apiFetch(
     method,
     headers: finalHeaders,
     body: body ? jsonBody : undefined,
+    cache: cacheMode,
     ...(controller ? { signal: controller.signal } : {}),
   };
 
@@ -282,6 +284,7 @@ export async function apiFetch(
         retry: false,
         baseUrl: baseUrlOverride,
         timeout: timeoutMs,
+        cacheMode,
       });
     }
 
@@ -299,6 +302,7 @@ export async function apiFetch(
           baseUrl: baseUrlOverride,
           timeout: timeoutMs,
           quiet,
+          cacheMode,
         });
       }
       // refresh failed => clear tokens and trigger logout
@@ -794,6 +798,13 @@ export const AppealsApi = {
 };
 
 export const AboutApi = {
+  async getAdminPage(id) {
+    return apiFetch(`/pages/${encodeURIComponent(id)}`, {
+      method: "GET",
+      auth: true,
+      cacheMode: "no-store",
+    });
+  },
   async listAdminPages() {
     const response = await apiFetch("/pages", { method: "GET", auth: true });
     const pages = normalizePageList(response);
@@ -963,6 +974,12 @@ export const AboutApi = {
       body: content,
       auth: true,
     });
+  },
+  async deletePageContent(id, contentId) {
+    return apiFetch(
+      `/pages/${encodeURIComponent(id)}/content/${encodeURIComponent(contentId)}`,
+      { method: "DELETE", auth: true }
+    );
   },
   async deletePage(id) {
     // Согласно Swagger, endpoint - /pages/{id}

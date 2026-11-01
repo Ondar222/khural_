@@ -211,6 +211,8 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
   const structureType = Form.useWatch("structureType", form);
   const isDeceased = Form.useWatch("isDeceased", form);
   const fullNameValue = Form.useWatch("fullName", form);
+  const biographyValue = Form.useWatch("biography", form);
+  const receptionScheduleValue = Form.useWatch("receptionSchedule", form);
   const [newFactionOpen, setNewFactionOpen] = React.useState(false);
   const [newFactionName, setNewFactionName] = React.useState("");
   const [newDistrictOpen, setNewDistrictOpen] = React.useState(false);
@@ -1176,11 +1178,13 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           <div className="admin-deputy-editor__section-title">Биография</div>
           <Form.Item
             label="Биография"
-            name="biography"
             tooltip="Любой HTML: p, h1-h6, strong/em, ul/ol/li, a, img и т.д. Сохраняется как есть."
-            getValueFromEvent={(value) => value}
           >
             <TinyMCEEditor
+              value={biographyValue ?? ""}
+              onChange={(content) => {
+                form.setFieldsValue({ biography: content });
+              }}
               height={400}
               disabled={loading || saving}
               placeholder="Биография..."
@@ -1208,11 +1212,13 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
             <div className="admin-deputy-editor__section-title">Приём граждан</div>
             <Form.Item
               label="График приема граждан"
-              name="receptionSchedule"
               tooltip="Описание"
-              getValueFromEvent={(value) => value}
             >
               <TinyMCEEditor
+                value={receptionScheduleValue ?? ""}
+                onChange={(content) => {
+                  form.setFieldsValue({ receptionSchedule: content });
+                }}
                 height={300}
                 disabled={loading || saving}
                 placeholder="<p>Пн–Пт: 09:00–18:00</p>\n<p>Сб: 10:00–14:00</p>"

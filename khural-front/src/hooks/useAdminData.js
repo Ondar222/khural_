@@ -36,6 +36,7 @@ import {
   DEFAULT_COMMISSIONS_LIST,
 } from "../utils/commissionsData.js";
 import {
+  getCommissionContentRecords,
   commissionPagePayload,
   mergeCommissionsWithPages,
   readCommissionPage,
@@ -1557,34 +1558,29 @@ export function useAdminData() {
           )
         : null;
       const pageId = currentPage?.id ?? current.cmsPageId;
-      const localizedContent = Array.isArray(currentPage?.content)
-        ? currentPage.content.map((entry) => ({
-            locale: String(entry?.locale || "ru").toLowerCase(),
-            title: String(entry?.title || pagePayload.title),
-            description: entry?.description ?? undefined,
-            content: pagePayload.content,
-            blocks: Array.isArray(entry?.blocks) ? entry.blocks : undefined,
-          }))
-        : [];
-      if (
-        localizedContent.length > 0 &&
-        !localizedContent.some((entry) => entry.locale === "ru")
-      ) {
-        localizedContent.push({
-          locale: "ru",
-          title: pagePayload.title,
-          content: pagePayload.content,
-        });
-      }
-      const updatePayload =
-        localizedContent.length > 0
-          ? { ...pagePayload, content: localizedContent }
-          : pagePayload;
 
       setBusy(true);
+      let newContentIds = new Set();
       try {
         if (pageId != null) {
-          await AboutApi.updatePage(pageId, updatePayload);
+          await AboutApi.updatePage(pageId, {
+            slug: pagePayload.slug,
+            title: pagePayload.title,
+            isPublished: pagePayload.isPublished,
+          });
+          const createdContent = await AboutApi.savePageContent(pageId, [
+            {
+              locale: "ru",
+              title: pagePayload.title,
+              content: pagePayload.content,
+            },
+          ]);
+          newContentIds = new Set(
+            (Array.isArray(createdContent) ? createdContent : [createdContent])
+              .map((entry) => entry?.id)
+              .filter((contentId) => contentId != null)
+              .map(String)
+          );
         } else if (Array.isArray(pages)) {
           await AboutApi.createPage(pagePayload);
         } else {
@@ -1592,7 +1588,10 @@ export function useAdminData() {
             "Не удалось загрузить страницы CMS. Обновите список и повторите сохранение."
           );
         }
-        const savedPage = await AboutApi.getPublishedPageBySlug(pagePayload.slug);
+        const savedPage =
+          pageId != null
+            ? await AboutApi.getAdminPage(pageId)
+            : await AboutApi.getPublishedPageBySlug(pagePayload.slug);
         const savedCommission = readCommissionPage(savedPage);
         const fieldsToVerify = [
           "name",
@@ -1615,6 +1614,37 @@ export function useAdminData() {
           throw new Error(
             `API приняло запрос, но не подтвердило сохранение комиссии (${reason}). Обновите страницу и попробуйте снова.`
           );
+        }
+        if (pageId != null) {
+          const contentRecords = getCommissionContentRecords(savedPage, sid);
+          const newlySavedRussianRecord = contentRecords.find(
+            (record) =>
+              record.locale === "ru" && newContentIds.has(record.id)
+          );
+          const recordsToRemove = newlySavedRussianRecord
+            ? contentRecords.filter(
+                (record) =>
+                  record.locale === "ru" &&
+                  record.id !== newlySavedRussianRecord.id
+              )
+            : [];
+          const cleanupFailures = [];
+          for (const record of recordsToRemove) {
+            try {
+              await AboutApi.deletePageContent(pageId, record.id);
+            } catch (error) {
+              console.error(
+                `Failed to remove old commission content ${record.id}:`,
+                error
+              );
+              cleanupFailures.push(record.id);
+            }
+          }
+          if (cleanupFailures.length > 0) {
+            message.warning(
+              "Комиссия сохранена, но старые версии контента не удалось удалить"
+            );
+          }
         }
         message.success("Комиссия сохранена в общей базе");
         await reload();

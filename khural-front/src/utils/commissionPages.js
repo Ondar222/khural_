@@ -32,15 +32,56 @@ function parseCommissionContent(content) {
 function getCommissionStored(page) {
   for (const source of [page?.content, page?.localizedContent]) {
     const entries = Array.isArray(source) ? source : source ? [source] : [];
-    for (const entry of entries) {
-      const content = typeof entry === "string" ? entry : entry?.content;
-      const stored = parseCommissionContent(content);
-      if (stored) return stored;
-    }
+    const localeSortedEntries = entries
+      .map((entry, index) => ({
+        entry,
+        index,
+        stored: parseCommissionContent(
+          typeof entry === "string" ? entry : entry?.content
+        ),
+      }))
+      .filter((item) => item.stored)
+      .sort((a, b) => {
+        const aIsRussian = String(a.entry?.locale || "").toLowerCase() === "ru";
+        const bIsRussian = String(b.entry?.locale || "").toLowerCase() === "ru";
+        if (aIsRussian !== bIsRussian) {
+          return Number(bIsRussian) - Number(aIsRussian);
+        }
+
+        const aId = Number(a.entry?.id);
+        const bId = Number(b.entry?.id);
+        if (Number.isFinite(aId) && Number.isFinite(bId) && aId !== bId) {
+          return bId - aId;
+        }
+
+        return a.index - b.index;
+      });
+    if (localeSortedEntries.length > 0) return localeSortedEntries[0].stored;
     const stored = parseCommissionContent(source);
     if (stored) return stored;
   }
   return null;
+}
+
+export function getCommissionContentRecords(page, commissionId) {
+  const records = new Map();
+  for (const source of [page?.content, page?.localizedContent]) {
+    const entries = Array.isArray(source) ? source : [];
+    for (const entry of entries) {
+      const stored = parseCommissionContent(entry?.content);
+      if (
+        entry?.id == null ||
+        String(stored?.id || "") !== String(commissionId)
+      ) {
+        continue;
+      }
+      records.set(String(entry.id), {
+        id: String(entry.id),
+        locale: String(entry.locale || "ru").toLowerCase(),
+      });
+    }
+  }
+  return [...records.values()];
 }
 
 export function readCommissionPage(page) {
