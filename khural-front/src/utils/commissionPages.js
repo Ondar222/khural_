@@ -12,32 +12,47 @@ export function commissionPageSlug(id) {
   return `${COMMISSION_PAGE_SLUG_PREFIX}${safeId}`;
 }
 
-function getPageContent(page) {
-  const content = page?.content;
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    const item = content.find((entry) => String(entry?.locale || "").toLowerCase() === "ru") || content[0];
-    return item?.content ?? "";
+function parseCommissionContent(content) {
+  if (content && typeof content === "object" && !Array.isArray(content)) {
+    return content?.type === COMMISSION_PAGE_TYPE && content?.version === 1
+      ? content
+      : null;
   }
-  return "";
+  if (typeof content === "string") {
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed?.type === COMMISSION_PAGE_TYPE && parsed?.version === 1) return parsed;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function getCommissionStored(page) {
+  for (const source of [page?.content, page?.localizedContent]) {
+    const entries = Array.isArray(source) ? source : source ? [source] : [];
+    for (const entry of entries) {
+      const content = typeof entry === "string" ? entry : entry?.content;
+      const stored = parseCommissionContent(content);
+      if (stored) return stored;
+    }
+    const stored = parseCommissionContent(source);
+    if (stored) return stored;
+  }
+  return null;
 }
 
 export function readCommissionPage(page) {
   const slug = String(page?.slug || "");
   if (!slug.startsWith(COMMISSION_PAGE_SLUG_PREFIX)) return null;
 
-  let stored;
-  try {
-    const content = getPageContent(page);
-    stored = typeof content === "string" ? JSON.parse(content) : content;
-  } catch {
-    return null;
-  }
-  if (stored?.type !== COMMISSION_PAGE_TYPE || stored?.version !== 1) return null;
+  const stored = getCommissionStored(page);
+  if (!stored) return null;
 
   const id = String(stored.id || slug.slice(COMMISSION_PAGE_SLUG_PREFIX.length));
   return {
-    ...stored.commission,
+    ...(stored.commission || {}),
     id,
     name: String(stored.commission?.name || page?.title || ""),
     cmsPageId: page?.id,
@@ -91,13 +106,13 @@ export function commissionPagePayload(commission, { deleted = false } = {}) {
   return {
     slug: commissionPageSlug(id),
     title: name,
-    content: {
+    content: JSON.stringify({
       type: COMMISSION_PAGE_TYPE,
       version: 1,
       id,
       deleted,
       commission: { id, name, ...details },
-    },
+    }),
     isPublished: true,
   };
 }

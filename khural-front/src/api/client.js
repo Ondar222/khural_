@@ -868,6 +868,12 @@ export const AboutApi = {
       }
     }
   },
+  async getPublishedPageBySlug(slug) {
+    return apiFetch(`/pages/slug/${encodeURIComponent(slug)}`, {
+      method: "GET",
+      auth: false,
+    });
+  },
   async createPage(dto = {}) {
     // Swagger DTO: CreatePageDto { slug, title, content?: PageContentDto[], parentId?, order?, isPublished?, publishedAt? }
     const slug = String(dto?.slug || "").trim().replace(/^\/+|\/+$/g, "");
@@ -944,6 +950,13 @@ export const AboutApi = {
     };
 
     return apiFetch(`/pages/${encodeURIComponent(id)}`, { method: "PATCH", body, auth: true });
+  },
+  async savePageContent(id, content) {
+    return apiFetch(`/pages/${encodeURIComponent(id)}/content`, {
+      method: "POST",
+      body: content,
+      auth: true,
+    });
   },
   async deletePage(id) {
     // Согласно Swagger, endpoint - /pages/{id}

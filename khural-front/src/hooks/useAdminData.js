@@ -1592,10 +1592,8 @@ export function useAdminData() {
             "Не удалось загрузить страницы CMS. Обновите список и повторите сохранение."
           );
         }
-        const savedPages = await AboutApi.listAdminPages();
-        const savedCommission = savedPages
-          .map(readCommissionPage)
-          .find((commission) => String(commission?.id) === sid);
+        const savedPage = await AboutApi.getPublishedPageBySlug(pagePayload.slug);
+        const savedCommission = readCommissionPage(savedPage);
         const fieldsToVerify = [
           "name",
           "parentBody",
@@ -1605,9 +1603,17 @@ export function useAdminData() {
           "resolutionSubject",
           "bodyHtml",
         ];
-        if (!savedCommission) {
+        const mismatchedFields = fieldsToVerify.filter(
+          (field) =>
+            updated[field] !== undefined &&
+            String(savedCommission?.[field] ?? "") !== String(updated[field] ?? "")
+        );
+        if (!savedCommission || mismatchedFields.length > 0) {
+          const reason = !savedCommission
+            ? "страница не найдена при повторном чтении"
+            : `не совпали поля: ${mismatchedFields.join(", ")}`;
           throw new Error(
-            "API не подтвердило сохранение комиссии. Изменения не опубликованы."
+            `API приняло запрос, но не подтвердило сохранение комиссии (${reason}). Обновите страницу и попробуйте снова.`
           );
         }
         message.success("Комиссия сохранена в общей базе");

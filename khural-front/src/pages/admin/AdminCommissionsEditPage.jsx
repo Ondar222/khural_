@@ -25,6 +25,10 @@ export default function AdminCommissionsEditPage() {
   }, [route]);
   const [form] = Form.useForm();
 
+  // Watch TinyMCE fields so we can sync them into the form
+  const resolutionSubjectValue = Form.useWatch("resolutionSubject", form);
+  const bodyHtmlValue = Form.useWatch("bodyHtml", form);
+
   const commission = React.useMemo(
     () => (Array.isArray(adminData.commissions) ? adminData.commissions.find((c) => String(c?.id) === id) : null),
     [adminData.commissions, id]
@@ -68,6 +72,10 @@ export default function AdminCommissionsEditPage() {
         message.error("Введите название комиссии");
         return;
       }
+      console.log("[AdminCommissionsEdit] 🔍 Отправка данных:", {
+        resolutionSubject: values.resolutionSubject,
+        bodyHtml: values.bodyHtml,
+      });
       try {
         await adminData.updateCommission(id, {
           name,
@@ -145,9 +153,12 @@ export default function AdminCommissionsEditPage() {
           <Form.Item
             name="resolutionSubject"
             label="Тема постановления"
-            getValueFromEvent={(v) => v}
           >
             <TinyMCEEditor
+              value={resolutionSubjectValue ?? ""}
+              onChange={(content) => {
+                form.setFieldsValue({ resolutionSubject: content });
+              }}
               placeholder="О НАГРАДНОЙ КОМИССИИ ВЕРХОВНОГО ХУРАЛА..."
               height={100}
               minHeight={60}
@@ -156,10 +167,13 @@ export default function AdminCommissionsEditPage() {
           <Form.Item
             name="bodyHtml"
             label="Текст постановления"
-            getValueFromEvent={(v) => v}
             tooltip="Основной текст постановления: абзацы, списки, ссылки"
           >
             <TinyMCEEditor
+              value={bodyHtmlValue ?? ""}
+              onChange={(content) => {
+                form.setFieldsValue({ bodyHtml: content });
+              }}
               placeholder="В соответствии с постановлением... 1. Утвердить..."
               height={420}
               minHeight={280}
