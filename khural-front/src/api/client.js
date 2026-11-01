@@ -77,6 +77,12 @@ function normalizePageList(payload) {
   return Array.isArray(value) ? value : null;
 }
 
+function serializePageContent(content) {
+  if (typeof content === "string") return content;
+  if (content == null) return "";
+  return JSON.stringify(content);
+}
+
 export function getAuthToken() {
   try {
     const direct = sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
@@ -886,7 +892,7 @@ export const AboutApi = {
           locale: String(c?.locale || locale || "ru").toLowerCase(),
           title: String(c?.title || title || "").trim(),
           description: c?.description ?? undefined,
-          content: c?.content ?? null,
+          content: serializePageContent(c?.content),
           blocks: Array.isArray(c?.blocks) ? c.blocks : undefined,
         }))
       : typeof rawContent === "string"
@@ -924,7 +930,7 @@ export const AboutApi = {
           locale: String(c?.locale || locale || "ru").toLowerCase(),
           title: String(c?.title || title || "").trim(),
           description: c?.description ?? undefined,
-          content: c?.content ?? null,
+          content: serializePageContent(c?.content),
           blocks: Array.isArray(c?.blocks) ? c.blocks : undefined,
         }))
       : typeof rawContent === "string"
