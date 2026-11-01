@@ -41,12 +41,13 @@ function normalizeUser(u) {
     toRoleString(u?.role_id) ||
     toRoleString(u?.roleId) ||
     "user";
+  const normalizedRole = String(roleStr).trim().toLowerCase();
   const adminAccess =
     Boolean(u?.admin) ||
     Boolean(u?.isAdmin) ||
     Boolean(u?.admin_access) ||
     Boolean(u?.role?.admin_access) ||
-    String(roleStr).toLowerCase() === "admin";
+    ["admin", "administrator", "админ", "администратор"].includes(normalizedRole);
   
   // Формируем полное имя из surname и name; если имя и фамилия совпадают — показываем один раз
   const last = String(lastName).trim();

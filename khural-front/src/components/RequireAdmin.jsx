@@ -11,8 +11,8 @@ function safeNextPath(next) {
 }
 
 function isAdminUser(u) {
-  const role = String(u?.role || "").toLowerCase();
-  return Boolean(u?.admin) || role === "admin";
+  const role = String(u?.role || "").trim().toLowerCase();
+  return Boolean(u?.admin) || ["admin", "administrator", "админ", "администратор"].includes(role);
 }
 
 export default function RequireAdmin({ children }) {
@@ -44,4 +44,3 @@ export default function RequireAdmin({ children }) {
   if (!isAdminUser(user)) return null;
   return <>{children}</>;
 }
-
