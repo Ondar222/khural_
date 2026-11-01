@@ -9,6 +9,7 @@ import {
   getCommitteeReportsMeta,
   buildInitialCommitteeReports,
   getConvocationNumber,
+  mergeCommitteeReportsWithDefaults,
 } from "../../data/committeeReportsAdmin.js";
 
 /** Генерируем id для нового документа */
@@ -24,7 +25,7 @@ export default function AdminCommitteeReportsPage() {
   const [convocation, setConvocation] = React.useState(null);
   const [committeeReports, setCommitteeReports] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
-  const [saving, setSaving] = React.useState(false);
+  const [, setSaving] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState(false);
   const [modalDoc, setModalDoc] = React.useState(null);
   const [modalContext, setModalContext] = React.useState(null); // { committeeIndex, year, type }
@@ -37,7 +38,7 @@ export default function AdminCommitteeReportsPage() {
   const convNumber = adminData.authenticated
     ? getConvocationNumber(convocation)
     : (selectedStaticConv ? Number(selectedStaticConv) : null);
-  const { committees, years } = getCommitteeReportsMeta(convNumber);
+  const { years } = getCommitteeReportsMeta(convNumber);
 
   // Загрузка списка созывов (только для авторизованных)
   React.useEffect(() => {
@@ -58,7 +59,7 @@ export default function AdminCommitteeReportsPage() {
       }
     })();
     return () => { alive = false; };
-  }, [adminData.authenticated]);
+  }, [adminData.authenticated, selectedConvocationId]);
 
   // Загрузка выбранного созыва и committeeReports из API (только для авторизованных)
   React.useEffect(() => {
@@ -84,11 +85,12 @@ export default function AdminCommitteeReportsPage() {
           return;
         }
         const apiData = conv.committeeReports;
-        if (apiData && Array.isArray(apiData.committees) && Array.isArray(apiData.documentsByCommittee)) {
-          setCommitteeReports(apiData);
-        } else {
-          setCommitteeReports(buildInitialCommitteeReports(num));
-        }
+        setCommitteeReports(
+          mergeCommitteeReportsWithDefaults(
+            apiData,
+            buildInitialCommitteeReports(num)
+          )
+        );
       } catch (e) {
         console.error(e);
         setConvocation(null);
@@ -207,22 +209,6 @@ export default function AdminCommitteeReportsPage() {
     });
   };
 
-  const saveToServer = async () => {
-    if (!convocation || !committeeReports || !adminData.canWrite) return;
-    setSaving(true);
-    try {
-      await ConvocationsApi.patch(convocation.id, {
-        ...convocation,
-        committeeReports,
-      });
-      message.success("Сохранено");
-    } catch (e) {
-      message.error(e?.message || "Ошибка сохранения");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const convocationOptions = React.useMemo(() => {
     if (!adminData.authenticated) {
       return [
@@ -234,7 +220,9 @@ export default function AdminCommitteeReportsPage() {
       .filter((c) => getConvocationNumber(c) === 3 || getConvocationNumber(c) === 4)
       .map((c) => ({
         value: String(c.id),
-        label: c.name || c.number != null ? `${c.number} созыв` : `Созыв ${c.id}`,
+        label:
+          c.name ||
+          (c.number != null ? `${c.number} созыв` : `Созыв ${c.id}`),
       }));
   }, [adminData.authenticated, convocations]);
 
@@ -276,11 +264,11 @@ export default function AdminCommitteeReportsPage() {
               <div className="admin-committee-reports__toolbar-title">
                 {convocation.name || `${convNumber} созыв`}
               </div>
-              {adminData.authenticated && (
-                <Button type="primary" loading={saving} onClick={saveToServer} disabled={!adminData.canWrite}>
-                  Сохранить на сервер
-                </Button>
-              )}
+            </div>
+
+            <div className="admin-card" style={{ marginBottom: 16, color: "#6b7280" }}>
+              Архивные отчеты и повестки показаны для просмотра. Импорт и изменение данных API
+              пока не выполняются.
             </div>
 
             <Collapse
@@ -306,7 +294,7 @@ export default function AdminCommitteeReportsPage() {
                               onAdd={() => openAddDoc(committeeIndex, year, "agendas")}
                               onEdit={(d) => openEditDoc(committeeIndex, year, "agendas", d)}
                               onDelete={(id) => deleteDoc(committeeIndex, year, "agendas", id)}
-                              canWrite={adminData.canWrite}
+                              canWrite={false}
                             />
                           </div>
                           <div className="admin-committee-reports__section">
@@ -316,7 +304,7 @@ export default function AdminCommitteeReportsPage() {
                               onAdd={() => openAddDoc(committeeIndex, year, "reports")}
                               onEdit={(d) => openEditDoc(committeeIndex, year, "reports", d)}
                               onDelete={(id) => deleteDoc(committeeIndex, year, "reports", id)}
-                              canWrite={adminData.canWrite}
+                              canWrite={false}
                             />
                           </div>
                         </div>
@@ -337,7 +325,7 @@ export default function AdminCommitteeReportsPage() {
 
         {!adminData.authenticated && committeeReports && (
           <div className="admin-card admin-committee-reports__guest-notice">
-            Просмотр данных из раздела «Отчеты комитетов». Чтобы редактировать и сохранять изменения, войдите в админку.
+            Архивные отчеты и повестки доступны только для просмотра. Импорт и изменение данных API пока не выполняются.
           </div>
         )}
       </div>

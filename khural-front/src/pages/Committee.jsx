@@ -9,6 +9,19 @@ import { isDocumentFileUrl } from "../utils/documentFile.js";
 import { CommitteesApi, ConvocationsApi } from "../api/client.js";
 import { toCommitteeHtml } from "../utils/committeeHtml.js";
 import { getDocumentLinkedEntities } from "../utils/documentMentions.js";
+import {
+  getArchivedCommitteeReportIndexes,
+  getCommitteeReportsFromApiData,
+  getCommitteeReportsMeta,
+  buildInitialCommitteeReports,
+  normalizeCommitteeReportName,
+} from "../data/committeeReportsAdmin.js";
+import { loadCommitteeApiDocuments } from "../data/committeeReportsApi.js";
+import {
+  getCommitteeConvocation,
+  getCommitteeConvocationId,
+  getConvocationNumber,
+} from "../utils/convocationIdentity.js";
 import { MailIcon, PhoneIcon, PinIcon, GlobeIcon } from "../components/icons/LinearIcons.jsx";
 
 function normalizeCommitteeTitle(value) {
@@ -107,6 +120,38 @@ function deduplicateCommitteesByRichness(list) {
     }
   }
   return Array.from(byName.values());
+}
+
+function uniqueCommitteeDocuments(items) {
+  const seen = new Set();
+  return (Array.isArray(items) ? items : []).filter((doc) => {
+    const year = String(doc?.date || doc?.year || "").match(/\d{4}/)?.[0] || "";
+    const key = `${year}:${String(doc?.fileLink || doc?.url || doc?.fileId || doc?.title || "").trim().toLowerCase()}`;
+    if (!key || key === `${year}:` || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function classifyCommitteeDocument(doc) {
+  const metadata =
+    doc?.metadata && typeof doc.metadata === "object" ? doc.metadata : {};
+  const text = [
+    doc?.reportCategory,
+    metadata.reportCategory,
+    metadata.category,
+    doc?.category,
+    doc?.type,
+    doc?.title,
+    doc?.desc,
+    metadata.title,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (/повестк|agenda/.test(text)) return "agenda";
+  if (/отч[её]т|report/.test(text)) return "report";
+  return "";
 }
 
 export default function Committee() {
@@ -394,13 +439,21 @@ export default function Committee() {
 
   // Load documents from convocations for this committee
   const [convocationDocuments, setConvocationDocuments] = React.useState([]);
+  const [apiCommitteeReports, setApiCommitteeReports] = React.useState(null);
+  const [committeeEndpointDocs, setCommitteeEndpointDocs] = React.useState({
+    reports: [],
+    agendas: [],
+  });
+  const [committeeEndpointDocsError, setCommitteeEndpointDocsError] = React.useState("");
   // Отчёты и повестки, загруженные с сайта khural.rtyva.ru (import-committee-reports)
   const [siteReportsData, setSiteReportsData] = React.useState(null);
 
   const committeeIdForDocs = committee?.id;
+  const committeeConvocationId = getCommitteeConvocationId(committee);
   React.useEffect(() => {
     if (!committeeIdForDocs) {
       setConvocationDocuments([]);
+      setApiCommitteeReports(null);
       return;
     }
     
@@ -408,8 +461,14 @@ export default function Committee() {
     (async () => {
       try {
         // Load all convocations
-        const convocations = await ConvocationsApi.list({ activeOnly: false }).catch(() => []);
+        const [convocations, currentConvocation] = await Promise.all([
+          ConvocationsApi.list({ activeOnly: false }).catch(() => []),
+          committeeConvocationId != null
+            ? ConvocationsApi.getById(committeeConvocationId).catch(() => null)
+            : Promise.resolve(null),
+        ]);
         if (!alive) return;
+        setApiCommitteeReports(currentConvocation?.committeeReports || null);
         
         // Extract documents for this committee from all convocations
         const committeeId = String(committeeIdForDocs);
@@ -432,7 +491,40 @@ export default function Committee() {
     })();
     
     return () => { alive = false; };
-  }, [committeeIdForDocs]);
+  }, [committeeIdForDocs, committeeConvocationId]);
+
+  React.useEffect(() => {
+    if (!committeeIdForDocs || !committeeConvocationId) {
+      setCommitteeEndpointDocs({ reports: [], agendas: [] });
+      setCommitteeEndpointDocsError("");
+      return;
+    }
+
+    let alive = true;
+    loadCommitteeApiDocuments(committeeIdForDocs, committeeConvocationId)
+      .then((documents) => {
+        if (alive) {
+          setCommitteeEndpointDocs({
+            reports: documents.reports,
+            agendas: documents.agendas,
+          });
+          setCommitteeEndpointDocsError("");
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load committee reports and agendas:", error);
+        if (alive) {
+          setCommitteeEndpointDocs({ reports: [], agendas: [] });
+          setCommitteeEndpointDocsError(
+            error?.message || "Не удалось загрузить отчёты и повестки комитета из API"
+          );
+        }
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [committeeIdForDocs, committeeConvocationId]);
 
   // Загрузка отчётов/повесток с сайта (committee_reports_from_site.json)
   React.useEffect(() => {
@@ -456,10 +548,87 @@ export default function Committee() {
     return String(num);
   }, [committee]);
 
+  const archivedCommitteeDocs = React.useMemo(() => {
+    if (!committee) return { reports: [], agendas: [] };
+    const committeeName = committee.name || committee.title;
+    const allReports = { reports: [], agendas: [] };
+    for (const numericConvocation of [3, 4]) {
+      const { years } = getCommitteeReportsMeta(numericConvocation);
+      const staticData = buildInitialCommitteeReports(numericConvocation);
+      const archiveIndexes = getArchivedCommitteeReportIndexes(
+        numericConvocation,
+        committeeName
+      );
+      for (const staticIndex of archiveIndexes) {
+        const staticDocs = getCommitteeReportsFromApiData(
+          staticData,
+          staticIndex,
+          years,
+          (fileId) => normalizeFilesUrl(`/files/v2/${fileId}`)
+        );
+        if (!staticDocs) continue;
+        for (const category of ["reports", "agendas"]) {
+          for (const year of years) {
+            allReports[category].push(
+              ...(staticDocs[category]?.[year] || []).map((doc) => ({
+                ...doc,
+                date: String(year),
+                fileLink: doc.url,
+              }))
+            );
+          }
+        }
+      }
+    }
+
+    const currentConvocation = getCommitteeConvocation(committee);
+    const apiConvocationNumber = getConvocationNumber(currentConvocation);
+    const numericConvocation =
+      apiConvocationNumber === "III" ? 3 : apiConvocationNumber === "IV" ? 4 : null;
+    const { years: apiYears } = getCommitteeReportsMeta(numericConvocation);
+    const apiNames = Array.isArray(apiCommitteeReports?.committees)
+      ? apiCommitteeReports.committees
+      : [];
+    const normalizedName = normalizeCommitteeReportName(committeeName);
+    const apiIndex = apiNames.findIndex(
+      (name) => normalizeCommitteeReportName(name) === normalizedName
+    );
+    if (apiIndex >= 0 && apiYears.length > 0) {
+      const apiDocs = getCommitteeReportsFromApiData(
+        apiCommitteeReports,
+        apiIndex,
+        apiYears,
+        (fileId) => normalizeFilesUrl(`/files/v2/${fileId}`)
+      );
+      for (const category of ["reports", "agendas"]) {
+        for (const year of apiYears) {
+          allReports[category].push(
+            ...(apiDocs?.[category]?.[year] || []).map((doc) => ({
+              ...doc,
+              date: String(year),
+              fileLink: doc.url,
+            }))
+          );
+        }
+      }
+    }
+
+    return {
+      reports: uniqueCommitteeDocuments(allReports.reports),
+      agendas: uniqueCommitteeDocuments(allReports.agendas),
+    };
+  }, [apiCommitteeReports, committee]);
+
   // Get reports, plans, activities, staff (only if committee exists)
   // Combine committee's own reports/agendas with documents from convocations and from site import
-  const committeeReports = committee ? (Array.isArray(committee.reports) ? committee.reports : []) : [];
-  const committeeAgendas = committee ? (Array.isArray(committee.agendas) ? committee.agendas : []) : [];
+  const committeeReports = React.useMemo(
+    () => (Array.isArray(committee?.reports) ? committee.reports : []),
+    [committee]
+  );
+  const committeeAgendas = React.useMemo(
+    () => (Array.isArray(committee?.agendas) ? committee.agendas : []),
+    [committee]
+  );
   
   // Документы с сайта для этого созыва (общие отчёты по комитетам созыва показываем каждому комитету)
   const siteDocsForCommittee = React.useMemo(() => {
@@ -485,16 +654,94 @@ export default function Committee() {
     return { reports, agendas };
   }, [siteReportsData, committeeConvocationKey]);
 
+  // Документы из общего раздела «Документы», явно связанные с комитетом по ID,
+  // метаданным или упоминанию названия.
+  const committeeLinkedDocs = React.useMemo(() => {
+    if (!committee || !Array.isArray(allDocuments) || allDocuments.length === 0) return [];
+    const list = [];
+    const committeeForMatch = { id: committee.id, name: committee.name, title: committee.title };
+    for (const d of allDocuments) {
+      const title = typeof d.title === "string" ? d.title : (d?.title?.name ?? d?.title?.title ?? String(d?.title ?? ""));
+      const desc = (() => {
+        const raw = d.desc ?? d.description ?? "";
+        if (typeof raw === "string") return raw;
+        if (Array.isArray(raw)) return raw.join(" ");
+        return raw ? String(raw) : "";
+      })();
+      const linked = getDocumentLinkedEntities((title || "") + " " + (desc || ""), { committees: [committeeForMatch] });
+      const metadata =
+        d?.metadata && typeof d.metadata === "object" ? d.metadata : {};
+      const documentCommitteeId =
+        d?.committeeId ?? metadata.committeeId ?? metadata.committee_id;
+      const documentCommitteeName =
+        d?.committeeName ??
+        metadata.committeeName ??
+        metadata.committee_name ??
+        metadata.committee?.name;
+      const documentCommitteeIds = [
+        ...(Array.isArray(d?.committeeIds) ? d.committeeIds : []),
+        ...(Array.isArray(metadata.committeeIds) ? metadata.committeeIds : []),
+      ];
+      const isLinkedById =
+        (documentCommitteeId != null &&
+          String(documentCommitteeId) === String(committee.id)) ||
+        documentCommitteeIds.some((id) => String(id) === String(committee.id));
+      const isLinkedByName =
+        documentCommitteeName &&
+        normalizeCommitteeReportName(documentCommitteeName) ===
+          normalizeCommitteeReportName(committee.name || committee.title);
+      const isLinkedByText = linked.committees.some(
+        (linkedCommittee) => String(linkedCommittee.id) === String(committee.id)
+      );
+      if (isLinkedById || isLinkedByName || isLinkedByText) {
+        list.push({
+          id: d.id,
+          title,
+          desc,
+          number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
+          url: d.url,
+          fileLink: d.url,
+          fileId: d.fileId || metadata.fileId || d.pdfFileId || "",
+          date: d.date || d.publishedAt || d.createdAt || "",
+          category: classifyCommitteeDocument(d),
+          reportCategory: d.reportCategory || metadata.reportCategory || "",
+          metadata,
+        });
+      }
+    }
+    return list;
+  }, [committee, allDocuments]);
+
   // Merge convocation documents with committee's own and site-imported documents
   const reports = React.useMemo(() => {
     const convReports = convocationDocuments.filter(doc => doc.category === "report");
-    return [...committeeReports, ...convReports, ...(siteDocsForCommittee.reports || [])];
-  }, [committeeReports, convocationDocuments, siteDocsForCommittee.reports]);
+    const linkedReports = committeeLinkedDocs.filter(
+      (doc) => doc.category === "report"
+    );
+    return uniqueCommitteeDocuments([
+      ...committeeReports,
+      ...convReports,
+      ...(siteDocsForCommittee.reports || []),
+      ...archivedCommitteeDocs.reports,
+      ...linkedReports,
+      ...committeeEndpointDocs.reports,
+    ]);
+  }, [archivedCommitteeDocs.reports, committeeEndpointDocs.reports, committeeLinkedDocs, committeeReports, convocationDocuments, siteDocsForCommittee.reports]);
   
   const agendas = React.useMemo(() => {
     const convAgendas = convocationDocuments.filter(doc => doc.category === "agenda");
-    return [...committeeAgendas, ...convAgendas, ...(siteDocsForCommittee.agendas || [])];
-  }, [committeeAgendas, convocationDocuments, siteDocsForCommittee.agendas]);
+    const linkedAgendas = committeeLinkedDocs.filter(
+      (doc) => doc.category === "agenda"
+    );
+    return uniqueCommitteeDocuments([
+      ...committeeAgendas,
+      ...convAgendas,
+      ...(siteDocsForCommittee.agendas || []),
+      ...archivedCommitteeDocs.agendas,
+      ...linkedAgendas,
+      ...committeeEndpointDocs.agendas,
+    ]);
+  }, [archivedCommitteeDocs.agendas, committeeAgendas, committeeEndpointDocs.agendas, committeeLinkedDocs, convocationDocuments, siteDocsForCommittee.agendas]);
   
   const plans = committee && Array.isArray(committee.plans) ? committee.plans : [];
   const activities = committee && Array.isArray(committee.activities) ? committee.activities : [];
@@ -518,33 +765,6 @@ export default function Committee() {
   // Group by year (must be before early return)
   const { grouped: agendasByYear, sortedYears: agendaYears } = groupByYear(agendas);
   const { grouped: reportsByYear, sortedYears: reportYears } = groupByYear(reports);
-
-  // Документы из общего раздела «Документы», в названии/описании которых упомянут этот комитет
-  const committeeLinkedDocs = React.useMemo(() => {
-    if (!committee || !Array.isArray(allDocuments) || allDocuments.length === 0) return [];
-    const list = [];
-    const committeeForMatch = { id: committee.id, name: committee.name, title: committee.title };
-    for (const d of allDocuments) {
-      const title = typeof d.title === "string" ? d.title : (d?.title?.name ?? d?.title?.title ?? String(d?.title ?? ""));
-      const desc = (() => {
-        const raw = d.desc ?? d.description ?? "";
-        if (typeof raw === "string") return raw;
-        if (Array.isArray(raw)) return raw.join(" ");
-        return raw ? String(raw) : "";
-      })();
-      const linked = getDocumentLinkedEntities((title || "") + " " + (desc || ""), { committees: [committeeForMatch] });
-      if (linked.committees.some((c) => String(c.id) === String(committee.id))) {
-        list.push({
-          id: d.id,
-          title,
-          desc,
-          number: typeof d.number === "string" ? d.number : d.number ? String(d.number) : "",
-          url: d.url,
-        });
-      }
-    }
-    return list;
-  }, [committee, allDocuments]);
 
   // Group all documents by category and year (for "Documents" view)
   const documentsByCategoryAndYear = React.useMemo(() => {
@@ -962,6 +1182,12 @@ export default function Committee() {
                     Отчеты
                   </button>
                 </div>
+
+                {committeeEndpointDocsError ? (
+                  <div role="alert" style={{ marginBottom: 16, color: "#b91c1c" }}>
+                    {committeeEndpointDocsError}
+                  </div>
+                ) : null}
 
                 {reportsCategory === "agendas" ? (
                   <>

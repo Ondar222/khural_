@@ -209,7 +209,9 @@ export async function apiFetch(
   
   const finalHeaders = {
     Accept: "application/json",
-    ...(body ? { "Content-Type": "application/json" } : {}),
+    ...(body && !(typeof FormData !== "undefined" && body instanceof FormData)
+      ? { "Content-Type": "application/json" }
+      : {}),
     ...(headers || {}),
   };
   if (auth) {
@@ -218,17 +220,21 @@ export async function apiFetch(
   }
   
   let res;
-  let jsonBody;
+  let requestBody;
   if (body) {
-    try {
-      jsonBody = JSON.stringify(body);
-    } catch (e) {
-      const err = new Error(
-        `Ошибка формирования запроса: данные содержат несериализуемые объекты (например, объект редактора). ` +
-          `Проверьте поля формы. Технически: ${e?.message || String(e)}`
-      );
-      err.serializationError = true;
-      throw err;
+    if (typeof FormData !== "undefined" && body instanceof FormData) {
+      requestBody = body;
+    } else {
+      try {
+        requestBody = JSON.stringify(body);
+      } catch (e) {
+        const err = new Error(
+          `Ошибка формирования запроса: данные содержат несериализуемые объекты (например, объект редактора). ` +
+            `Проверьте поля формы. Технически: ${e?.message || String(e)}`
+        );
+        err.serializationError = true;
+        throw err;
+      }
     }
   }
 
@@ -240,7 +246,7 @@ export async function apiFetch(
   const fetchOptions = {
     method,
     headers: finalHeaders,
-    body: body ? jsonBody : undefined,
+    body: body ? requestBody : undefined,
     cache: cacheMode,
     ...(controller ? { signal: controller.signal } : {}),
   };
@@ -1773,6 +1779,64 @@ export const CommitteesApi = {
   async removeMember(id, memberId) {
     return apiFetch(`/committees/${id}/members/${memberId}`, {
       method: "DELETE",
+      auth: true,
+    });
+  },
+  async getReportYears(id, convocationId) {
+    const qs = new URLSearchParams({ convocationId: String(convocationId) });
+    return apiFetch(`/committees/${id}/reports/years?${qs}`, {
+      method: "GET",
+      auth: false,
+    });
+  },
+  async getReport(id, convocationId, year) {
+    const qs = new URLSearchParams({
+      convocationId: String(convocationId),
+      year: String(year),
+    });
+    return apiFetch(`/committees/${id}/reports?${qs}`, {
+      method: "GET",
+      auth: false,
+    });
+  },
+  async uploadReport(id, { file, convocationId, year, name }) {
+    const body = new FormData();
+    body.append("files", file);
+    body.append("convocationId", String(convocationId));
+    body.append("year", String(year));
+    if (name) body.append("name", name);
+    return apiFetch(`/committees/${id}/reports/files`, {
+      method: "POST",
+      body,
+      auth: true,
+    });
+  },
+  async getAgendaYears(id, convocationId) {
+    const qs = new URLSearchParams({ convocationId: String(convocationId) });
+    return apiFetch(`/committees/${id}/agendas/years?${qs}`, {
+      method: "GET",
+      auth: false,
+    });
+  },
+  async getAgenda(id, convocationId, year) {
+    const qs = new URLSearchParams({
+      convocationId: String(convocationId),
+      year: String(year),
+    });
+    return apiFetch(`/committees/${id}/agendas?${qs}`, {
+      method: "GET",
+      auth: false,
+    });
+  },
+  async uploadAgenda(id, { file, convocationId, year, name }) {
+    const body = new FormData();
+    body.append("files", file);
+    body.append("convocationId", String(convocationId));
+    body.append("year", String(year));
+    if (name) body.append("name", name);
+    return apiFetch(`/committees/${id}/agendas/files`, {
+      method: "POST",
+      body,
       auth: true,
     });
   },

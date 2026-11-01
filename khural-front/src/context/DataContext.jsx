@@ -1202,18 +1202,39 @@ export default function DataProvider({ children }) {
               typeof d.category === "string"
                 ? d.category
                 : d.category?.name || d.category?.title || "";
+            const metadata =
+              d.metadata && typeof d.metadata === "object" && !Array.isArray(d.metadata)
+                ? d.metadata
+                : {};
+            const fileId = d.pdfFile?.id || d.pdfFileId || metadata.fileId || "";
             // Файл: pdfFile.link (CDN бэкенда) или legacy previewUrl
-            const fileUrl = d.pdfFile?.link || d.previewUrl || "";
+            const fileUrl =
+              d.pdfFile?.link ||
+              d.previewUrl ||
+              metadata.url ||
+              metadata.fileLink ||
+              (fileId ? `/files/v2/${fileId}` : "");
             return {
               id: d.id,
               title: String(d.title || "").trim(),
               desc: String(d.content || "").trim(),
-              date: d.publishedAt || d.createdAt || "",
+              date: d.publishedAt || d.createdAt || metadata.date || metadata.year || "",
               number: d.number ? String(d.number) : "",
               category: categoryName,
               categoryId: d.category?.id ?? null,
               type: d.type,
               url: fileUrl ? normalizeFilesUrl(fileUrl) : "",
+              fileId,
+              committeeId: d.committeeId ?? metadata.committeeId ?? null,
+              committeeIds: Array.isArray(d.committeeIds)
+                ? d.committeeIds
+                : Array.isArray(metadata.committeeIds)
+                  ? metadata.committeeIds
+                  : undefined,
+              committeeName: d.committeeName ?? metadata.committeeName ?? "",
+              convocationId: d.convocationId ?? metadata.convocationId ?? null,
+              reportCategory: d.reportCategory ?? metadata.reportCategory ?? metadata.category ?? "",
+              metadata,
             };
           });
 

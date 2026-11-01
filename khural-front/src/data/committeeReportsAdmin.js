@@ -18,6 +18,40 @@ export const CONV3_YEARS = [2023, 2022, 2021, 2020, 2019];
 /** Годы для 4 созыва */
 export const CONV4_YEARS = [2025, 2024];
 
+const COMMITTEE_ARCHIVE_MATCHERS = {
+  3: [
+    /аграр|земел|эколог/,
+    /безопас|правопоряд/,
+    /бюджет|налог|эконом|предприним/,
+    /федерал|самоуправ|обществен|информацион|межрегион|международ|средств.*массов/,
+    /здравоохран|здоров|социаль|занятост/,
+    /конституцион|государственн|самоуправ/,
+    /образован|культур|молодеж|наук|спорт/,
+    /энергет|строительств|транспорт|жилищ|инфраструктур|промышлен/,
+  ],
+  4: [/конституцион|местному самоуправ/],
+};
+
+export function normalizeCommitteeReportName(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .replace(/[ёЁ]/g, "е")
+    .replace(/[‐‑‒–—-]/g, " ")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+export function getArchivedCommitteeReportIndexes(convocationNumber, committeeName) {
+  const matchers = COMMITTEE_ARCHIVE_MATCHERS[Number(convocationNumber)] || [];
+  const normalizedName = normalizeCommitteeReportName(committeeName);
+  if (!normalizedName) return [];
+  return matchers.flatMap((matcher, index) =>
+    matcher.test(normalizedName) ? [index] : []
+  );
+}
+
 /**
  * По номеру созыва (3 или 4) возвращает { committees, years }.
  */
@@ -70,6 +104,69 @@ export function buildInitialCommitteeReports(convocationNumber) {
   return { committees: [...committees], documentsByCommittee };
 }
 
+function mergeDocumentLists(primary, fallback) {
+  const result = [];
+  const seen = new Set();
+  for (const doc of [...(Array.isArray(primary) ? primary : []), ...(Array.isArray(fallback) ? fallback : [])]) {
+    if (!doc || typeof doc !== "object") continue;
+    const key = String(doc.fileId || doc.url || doc.title || doc.id || "").trim().toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(doc);
+  }
+  return result;
+}
+
+export function mergeCommitteeReportsWithDefaults(apiData, defaults) {
+  if (
+    !apiData ||
+    !Array.isArray(apiData.committees) ||
+    !Array.isArray(apiData.documentsByCommittee)
+  ) {
+    return defaults;
+  }
+
+  const names = [...apiData.committees];
+  const normalizedIndexes = new Map(
+    names.map((name, index) => [normalizeCommitteeReportName(name), index])
+  );
+  for (const name of defaults.committees) {
+    const key = normalizeCommitteeReportName(name);
+    if (!normalizedIndexes.has(key)) {
+      normalizedIndexes.set(key, names.length);
+      names.push(name);
+    }
+  }
+
+  const documentsByCommittee = names.map((name) => {
+    const key = normalizeCommitteeReportName(name);
+    const apiIndex = normalizedIndexes.get(key);
+    const defaultIndex = defaults.committees.findIndex(
+      (defaultName) => normalizeCommitteeReportName(defaultName) === key
+    );
+    const apiDocuments = apiData.documentsByCommittee[apiIndex] || {};
+    const defaultDocuments =
+      defaultIndex >= 0 ? defaults.documentsByCommittee[defaultIndex] || {} : {};
+    const mergeByYear = (category) => {
+      const byYear = {};
+      const yearSet = new Set([
+        ...Object.keys(defaultDocuments[category] || {}),
+        ...Object.keys(apiDocuments[category] || {}),
+      ]);
+      for (const year of yearSet) {
+        byYear[year] = mergeDocumentLists(
+          apiDocuments[category]?.[year],
+          defaultDocuments[category]?.[year]
+        );
+      }
+      return byYear;
+    };
+    return { agendas: mergeByYear("agendas"), reports: mergeByYear("reports") };
+  });
+
+  return { committees: names, documentsByCommittee };
+}
+
 /**
  * Определить номер созыва по объекту созыва из API (number или name).
  */
@@ -81,8 +178,16 @@ export function getConvocationNumber(convocation) {
     if (num === 3 || num === 4) return num;
   }
   const name = String(convocation.name || convocation?.title || "").toLowerCase();
-  if (name.includes("3") && name.includes("созыв")) return 3;
-  if (name.includes("4") && name.includes("созыв")) return 4;
+  if (
+    (name.includes("3") && name.includes("созыв")) ||
+    name.includes("трет") ||
+    name.includes("iii")
+  ) return 3;
+  if (
+    (name.includes("4") && name.includes("созыв")) ||
+    name.includes("четвер") ||
+    name.includes("iv")
+  ) return 4;
   return null;
 }
 

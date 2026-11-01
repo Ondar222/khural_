@@ -5,6 +5,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { normalizeBool } from "../../utils/bool.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import { DocumentsApi, API_BASE_URL } from "../../api/client.js";
+import AdminCommitteeAttachments from "./AdminCommitteeAttachments.jsx";
 import { MailIcon, PhoneIcon, PinIcon, UserIcon, AlertIcon, GlobeIcon } from "../../components/icons/LinearIcons.jsx";
 
 export default function AdminCommitteesEditor({
@@ -861,6 +862,19 @@ export default function AdminCommitteesEditor({
               )}
             </Form.List>
           </div>
+
+          {mode === "edit" ? (
+            <>
+              <Divider style={{ margin: "24px 0 16px" }} />
+              <AdminCommitteeAttachments
+                committeeId={committeeId}
+                committeeName={nameValue}
+                convocation={selectedConvocation}
+                convocations={convocations}
+                canWrite={canWrite}
+              />
+            </>
+          ) : null}
 
           <Divider style={{ margin: "24px 0 16px" }} />
 
