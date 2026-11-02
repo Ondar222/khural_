@@ -137,27 +137,49 @@ function toEventRow(e) {
 }
 
 function pickSlideImage(s) {
-  const img = s?.image;
+  const img = s?.coverImage || s?.image || s?.imageId || s?.image_id;
   if (!img) return "";
-  if (typeof img === "string") return img;
+  if (typeof img === "string") {
+    return img.startsWith("/") || /^(https?:|data:|blob:)/i.test(img)
+      ? img
+      : normalizeFilesUrl(`/files/v2/${img}`);
+  }
   if (img?.link) return img.link;
   if (img?.file?.link) return img.file.link;
   if (img?.url) return img.url;
+  const fileId = img?.id || img?.file?.id;
+  if (fileId) return normalizeFilesUrl(`/files/v2/${fileId}`);
   return "";
 }
 
 function toSliderRow(s) {
   const fromContext = s && (s.desc !== undefined || s.link !== undefined);
+  const content = Array.isArray(s?.content) ? s.content : [];
+  const tyvContent =
+    content.find((entry) => ["tyv", "ty"].includes(String(entry?.locale || entry?.lang || "").toLowerCase())) ||
+    {};
   return {
     id: String(s?.id ?? Math.random().toString(36).slice(2)),
     title: String(s?.title || ""),
     description: String(s?.description ?? s?.desc ?? s?.subtitle ?? ""),
-    titleTy: s?.titleTy ?? s?.title_ty ?? "",
-    descriptionTy: s?.descTy ?? s?.descriptionTy ?? s?.description_ty ?? "",
+    titleTy: s?.titleTy ?? s?.title_ty ?? tyvContent.title ?? "",
+    descriptionTy:
+      s?.descTy ??
+      s?.descriptionTy ??
+      s?.description_ty ??
+      tyvContent.description ??
+      tyvContent.desc ??
+      tyvContent.content ??
+      "",
     url: String(s?.url ?? s?.link ?? s?.href ?? ""),
     isActive: s?.isActive !== false,
     order: Number(s?.order ?? 0),
     image: fromContext ? String(s?.image || "") : pickSlideImage(s),
+    images: Array.isArray(s?.gallery)
+      ? s.gallery
+      : Array.isArray(s?.images)
+        ? s.images
+        : [],
     __raw: s,
   };
 }
@@ -1130,7 +1152,7 @@ export function useAdminData() {
     }
   }, [message, reload, reloadDataContext, setDataContextEvents, dataContextEvents]);
 
-  const createSlide = React.useCallback(async ({ title, description, url, isActive, titleTy, descriptionTy }) => {
+  const createSlide = React.useCallback(async ({ title, description, url, buttonLink, isActive, titleTy, descriptionTy, content }) => {
     setBusy(true);
     try {
       if (Array.isArray(slider) && slider.length >= 5) {
@@ -1139,8 +1161,9 @@ export function useAdminData() {
       const createPayload = {
         title: title || "",
         description: description || "",
-        url: url || "",
+        buttonLink: buttonLink || url || "",
         isActive: isActive ?? true,
+        ...(Array.isArray(content) && content.length ? { content } : {}),
       };
       if (titleTy != null && String(titleTy).trim()) createPayload.titleTy = String(titleTy).trim();
       if (descriptionTy != null && String(descriptionTy).trim()) createPayload.descriptionTy = String(descriptionTy).trim();
@@ -1159,7 +1182,7 @@ export function useAdminData() {
           desc: String(description || ""),
           titleTy: titleTy != null ? String(titleTy).trim() : "",
           descTy: descriptionTy != null ? String(descriptionTy).trim() : "",
-          link: String(url || ""),
+          link: String(buttonLink || url || ""),
           image: "",
           isActive: isActive ?? true,
           order: 0,
@@ -1176,14 +1199,14 @@ export function useAdminData() {
   }, [message, reload, reloadDataContext, slider]);
 
   const updateSlide = React.useCallback(async (id, body) => {
-    const { title, description, url, isActive, titleTy, descriptionTy, content } = body || {};
+    const { title, description, url, buttonLink, isActive, titleTy, descriptionTy, content } = body || {};
     setBusy(true);
     try {
       // Формируем payload с content[] для локализации — так бэкенд сохраняет переводы в БД
       const payload = {
         title: title || "",
         description: description || "",
-        url: url || "",
+        buttonLink: buttonLink || url || "",
         isActive: isActive ?? true,
       };
       
@@ -1227,7 +1250,7 @@ export function useAdminData() {
         desc: String(payload.description),
         titleTy: titleTy || "",
         descTy: descriptionTy || "",
-        link: String(payload.url),
+        link: String(payload.buttonLink),
         isActive: payload.isActive,
       });
       setSlider((prev) =>
@@ -1239,7 +1262,7 @@ export function useAdminData() {
                 description: String(payload.description),
                 titleTy: titleTy || "",
                 descTy: descriptionTy || "",
-                url: String(payload.url),
+                url: String(payload.buttonLink),
                 isActive: payload.isActive,
               }
             : s
@@ -1313,6 +1336,58 @@ export function useAdminData() {
       setBusy(false);
     }
   }, [message, reload, reloadDataContext]);
+
+  const uploadSlideImages = React.useCallback(async (id, files) => {
+    const selectedFiles = Array.isArray(files) ? files.filter(Boolean) : [];
+    if (!selectedFiles.length) return;
+    setBusy(true);
+    try {
+      const looksLocal = String(id || "").startsWith("imp-") || String(id || "").startsWith("local-");
+      if (!looksLocal) {
+        try {
+          await SliderApi.uploadGallery(id, selectedFiles);
+          message.success("Изображения загружены");
+          await reload();
+          reloadDataContext();
+          return;
+        } catch {
+          // Use the existing local override fallback when the API is unavailable.
+        }
+      }
+      const images = await Promise.all(
+        selectedFiles.map(
+          (file) =>
+            new Promise((resolve, reject) => {
+              if (!file || typeof FileReader === "undefined") {
+                reject(new Error("Не удалось прочитать изображение"));
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = () => {
+                if (typeof reader.result === "string") resolve(reader.result);
+                else reject(new Error("Не удалось прочитать изображение"));
+              };
+              reader.onerror = () => reject(new Error("Не удалось прочитать изображение"));
+              reader.readAsDataURL(file);
+            })
+        )
+      );
+      const existing = (Array.isArray(slider) ? slider : []).find((slide) => String(slide?.id) === String(id));
+      const mergedImages = [...new Set([...(existing?.images || []), ...images])];
+      updateSlideOverride(String(id), { images: mergedImages });
+      setSlider((prev) =>
+        (Array.isArray(prev) ? prev : []).map((slide) =>
+          String(slide?.id) === String(id)
+            ? { ...slide, images: mergedImages }
+            : slide
+        )
+      );
+      message.warning("Изображения сохранены локально (сервер недоступен или нет прав)");
+      reloadDataContext();
+    } finally {
+      setBusy(false);
+    }
+  }, [message, reload, reloadDataContext, slider]);
 
   const reorderSlides = React.useCallback(async (ids) => {
     setBusy(true);
@@ -1776,6 +1851,7 @@ export function useAdminData() {
     updateSlide,
     deleteSlide,
     uploadSlideImage,
+    uploadSlideImages,
     reorderSlides,
     
     // CRUD Appeals

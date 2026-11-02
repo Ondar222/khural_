@@ -73,6 +73,7 @@ function normalizeSlide(slide) {
     descTy: toText(slide?.descTy ?? slide?.descriptionTy ?? slide?.description_ty),
     link: toText(slide?.link ?? slide?.url ?? slide?.href),
     image: toText(slide?.image),
+    images: Array.isArray(slide?.images) ? slide.images.map(toText).filter(Boolean) : [],
     isActive: slide?.isActive === false ? false : true,
     order: Number(slide?.order ?? 0),
   };
@@ -112,6 +113,9 @@ export function updateSlideOverride(id, patch) {
   if (Object.prototype.hasOwnProperty.call(p, "url")) normalized.link = toText(p.url);
   if (Object.prototype.hasOwnProperty.call(p, "href")) normalized.link = toText(p.href);
   if (Object.prototype.hasOwnProperty.call(p, "image")) normalized.image = toText(p.image);
+  if (Object.prototype.hasOwnProperty.call(p, "images")) {
+    normalized.images = Array.isArray(p.images) ? p.images.map(toText).filter(Boolean) : [];
+  }
   if (Object.prototype.hasOwnProperty.call(p, "titleTy")) normalized.titleTy = toText(p.titleTy);
   if (Object.prototype.hasOwnProperty.call(p, "descTy")) normalized.descTy = toText(p.descTy);
   if (Object.prototype.hasOwnProperty.call(p, "descriptionTy")) normalized.descTy = toText(p.descriptionTy);
@@ -150,5 +154,4 @@ export function setSliderOrder(ids) {
 
 export const SLIDER_OVERRIDES_STORAGE_KEY = STORAGE_KEY;
 export const SLIDER_OVERRIDES_EVENT_NAME = EVENT_NAME;
-
 

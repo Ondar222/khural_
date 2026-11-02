@@ -4,6 +4,8 @@ import { useHashRoute } from "../../Router.jsx";
 import { SliderApi } from "../../api/client.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import { useTranslation } from "../../hooks/index.js";
+import { normalizeFilesUrl } from "../../utils/filesUrl.js";
+import { readSliderOverrides } from "../../utils/sliderOverrides.js";
 
 function splitDateAndDescription(desc) {
   const s = String(desc || "");
@@ -31,13 +33,24 @@ function pickText(...vals) {
   return "";
 }
 
-export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpdate, onUploadImage, busy, canWrite }) {
+function getTyvContent(slide) {
+  const content = Array.isArray(slide?.content) ? slide.content : [];
+  return (
+    content.find((entry) => ["tyv", "ty"].includes(String(entry?.locale || entry?.lang || "").toLowerCase())) ||
+    null
+  );
+}
+
+export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpdate, onUploadImage, onUploadImages, busy, canWrite }) {
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(mode === "edit");
   const [saving, setSaving] = React.useState(false);
-  const [imageFile, setImageFile] = React.useState(null);
+  const [coverFile, setCoverFile] = React.useState(null);
+  const [galleryFiles, setGalleryFiles] = React.useState([]);
+  const [existingCover, setExistingCover] = React.useState("");
+  const [existingGallery, setExistingGallery] = React.useState([]);
   const titleValue = Form.useWatch("title", form);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation({ defaultFrom: "ru", defaultTo: "tyv" });
 
@@ -95,6 +108,8 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
       try {
         const local =
           (Array.isArray(items) ? items : []).find((s) => String(s?.id) === String(id)) || null;
+        const overrides = readSliderOverrides();
+        const localOverride = overrides.updatedById?.[id] || null;
         const fromApi = await SliderApi.getById(id).catch(() => null);
 
         // Merge carefully: API may return partial/empty object; do not wipe local values with empty strings.
@@ -116,8 +131,60 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
               : true;
 
         const dateSplit = splitDateAndDescription(descriptionRaw);
-        const titleTy = pickText(fromApi?.titleTy, local?.titleTy);
-        const descriptionTyRaw = pickText(fromApi?.descriptionTy, fromApi?.descTy, local?.descriptionTy, local?.descTy);
+        const apiTyvContent = getTyvContent(fromApi);
+        const localTyvContent = getTyvContent(local);
+        const titleTy = pickText(
+          fromApi?.titleTy,
+          fromApi?.title_ty,
+          apiTyvContent?.title,
+          local?.titleTy,
+          local?.title_ty,
+          localTyvContent?.title,
+          localOverride?.titleTy
+        );
+        const descriptionTyRaw = pickText(
+          fromApi?.descriptionTy,
+          fromApi?.descTy,
+          fromApi?.description_ty,
+          apiTyvContent?.description,
+          apiTyvContent?.desc,
+          apiTyvContent?.content,
+          local?.descriptionTy,
+          local?.descTy,
+          localTyvContent?.description,
+          localTyvContent?.desc,
+          localTyvContent?.content,
+          localOverride?.descTy
+        );
+        const existingImages = [
+          ...(Array.isArray(fromApi?.gallery) ? fromApi.gallery : []),
+          ...(Array.isArray(fromApi?.images) ? fromApi.images : []),
+          ...(Array.isArray(local?.images) ? local.images : []),
+          ...(Array.isArray(localOverride?.images) ? localOverride.images : []),
+        ];
+        const toImageUrl = (image) => {
+          if (!image) return "";
+          if (typeof image === "string") {
+            return image.startsWith("/") || /^(https?:|data:|blob:)/i.test(image) ? image : `/files/v2/${image}`;
+          }
+          const link = image?.link || image?.url || image?.file?.link || image?.file?.url;
+          if (link) return link;
+          const fileId = image?.id || image?.file?.id || image?.imageId || image?.image_id;
+          return fileId ? `/files/v2/${fileId}` : "";
+        };
+        const cover = toImageUrl(
+          localOverride?.image ||
+            local?.image ||
+            fromApi?.coverImage ||
+            fromApi?.image ||
+            fromApi?.imageId ||
+            fromApi?.image_id
+        );
+        const gallery = [...new Set(existingImages.map(toImageUrl).filter(Boolean))];
+        if (alive) {
+          setExistingCover(cover);
+          setExistingGallery(gallery);
+        }
         form.setFieldsValue({
           title: title || "",
           date: dateSplit.date || "",
@@ -176,7 +243,10 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
         }
         const created = await onCreate?.(payload);
         const createdId = created?.id;
-        if (createdId && imageFile) await onUploadImage?.(createdId, imageFile);
+        const cover = coverFile?.originFileObj || coverFile;
+        const gallery = galleryFiles.map((file) => file.originFileObj || file);
+        if (createdId && cover) await onUploadImage?.(createdId, cover);
+        if (createdId && gallery.length) await onUploadImages?.(createdId, gallery);
         message.success("Слайд создан");
         navigate("/admin/slider");
         return;
@@ -185,7 +255,10 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
       const id = String(slideId || "");
       if (!id) throw new Error("Не удалось определить ID слайда");
       await onUpdate?.(id, payload);
-      if (imageFile) await onUploadImage?.(id, imageFile);
+      const cover = coverFile?.originFileObj || coverFile;
+      const gallery = galleryFiles.map((file) => file.originFileObj || file);
+      if (cover) await onUploadImage?.(id, cover);
+      if (gallery.length) await onUploadImages?.(id, gallery);
       message.success("Слайд обновлён");
       navigate("/admin/slider");
     } catch (e) {
@@ -285,20 +358,54 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
             </Form.Item>
           </div>
 
-          <Form.Item label="Картинка слайда" tooltip="Загружается через API /slider/{id}/image">
+          <Form.Item label="Обложка слайда" tooltip="Используется в слайдере на главной странице">
             <Upload
-              accept={undefined}
+              accept="image/*"
               maxCount={1}
-              beforeUpload={(file) => {
-                setImageFile(file);
-                return false;
-              }}
+              fileList={coverFile ? [coverFile] : []}
+              beforeUpload={() => false}
+              onChange={({ fileList }) => setCoverFile(fileList[0] || null)}
               showUploadList={true}
             >
-              <Button disabled={loading || saving}>Выбрать картинку</Button>
+              <Button disabled={loading || saving}>Выбрать обложку</Button>
             </Upload>
+            {existingCover ? (
+              <div style={{ marginTop: 12 }}>
+                <img
+                  src={normalizeFilesUrl(existingCover)}
+                  alt="Текущая обложка"
+                  style={{ width: 160, height: 90, objectFit: "cover", borderRadius: 6 }}
+                />
+              </div>
+            ) : null}
+            <div className="admin-hint">Обложка отображается в слайдере на главной странице.</div>
+          </Form.Item>
+
+          <Form.Item label="Изображения для детальной страницы" tooltip="Можно загрузить несколько изображений для карусели">
+            <Upload
+              accept="image/*"
+              multiple
+              fileList={galleryFiles}
+              beforeUpload={() => false}
+              onChange={({ fileList }) => setGalleryFiles(fileList)}
+              showUploadList={true}
+            >
+              <Button disabled={loading || saving}>Выбрать изображения</Button>
+            </Upload>
+            {existingGallery.length ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                {existingGallery.map((image, index) => (
+                  <img
+                    key={`${image}-${index}`}
+                    src={normalizeFilesUrl(image)}
+                    alt={`Изображение ${index + 1}`}
+                    style={{ width: 96, height: 64, objectFit: "cover", borderRadius: 6 }}
+                  />
+                ))}
+              </div>
+            ) : null}
             <div className="admin-hint">
-              Картинка применится после сохранения. В списке можно быстро заменить через кнопку «Картинка».
+              Изображения будут показаны в карусели на детальной странице слайда.
             </div>
           </Form.Item>
         </Form>
@@ -306,5 +413,3 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
     </div>
   );
 }
-
-

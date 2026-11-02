@@ -252,6 +252,26 @@ function allImageLinks(images) {
   return images.map((img) => firstFileLink(img)).filter((url) => url && url.trim());
 }
 
+function sliderImageUrl(image) {
+  if (!image) return "";
+  if (typeof image === "string") {
+    const value = image.trim();
+    return value.startsWith("/") || /^(https?:|data:|blob:)/i.test(value)
+      ? value
+      : joinApiBase(`/files/v2/${value}`);
+  }
+  return firstFileLink(image);
+}
+
+function sliderGalleryLinks(slide) {
+  const gallery = Array.isArray(slide?.gallery)
+    ? slide.gallery
+    : Array.isArray(slide?.images)
+      ? slide.images
+      : [];
+  return [...new Set(gallery.map(sliderImageUrl).filter(Boolean))];
+}
+
 function ensureUniqueIds(items) {
   const seen = new Set();
   return (Array.isArray(items) ? items : []).map((item, idx) => {
@@ -1328,6 +1348,7 @@ export default function DataProvider({ children }) {
               descTy: String(s?.descTy ?? s?.descriptionTy ?? ""),
               link: String(s?.link || s?.url || s?.href || "/news"),
               image: String(s?.image || ""),
+              images: Array.isArray(s?.images) ? s.images.map(String).filter(Boolean) : [],
               isActive: true,
               order: i + 1,
             }));
@@ -1366,6 +1387,8 @@ export default function DataProvider({ children }) {
                 ) || ""
               ).trim();
               const link = pick(s.buttonLink, s.link, s.url, s.href) || "";
+              const image = sliderImageUrl(s.coverImage || s.image || s.imageId || s.image_id);
+              const images = sliderGalleryLinks(s);
               return {
                 id: String(s.id ?? ""),
                 title: title || s.title || "",
@@ -1373,7 +1396,8 @@ export default function DataProvider({ children }) {
                 titleTy: titleTy || s.titleTy || "",
                 descTy: descTy || pick(s.descTy, s.descriptionTy) || "",
                 link: link || "/news",
-                image: firstFileLink(s.image) || "",
+                image,
+                images,
                 isActive: s.isActive !== false,
                 order: Number(s.order || 0),
               };

@@ -44,11 +44,10 @@ export default function AdminSliderCreatePage() {
         onCreate={adminData.createSlide}
         onUpdate={adminData.updateSlide}
         onUploadImage={adminData.uploadSlideImage}
+        onUploadImages={adminData.uploadSlideImages}
         busy={adminData.busy}
         canWrite={adminData.canWrite}
       />
     </AdminShell>
   );
 }
-
-

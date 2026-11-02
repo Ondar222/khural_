@@ -80,6 +80,28 @@ export default function NewsSliderDetail() {
     if (!id) return null;
     return list.find((s) => String(s?.id ?? "") === id) || null;
   }, [slides, slideId]);
+  const images = React.useMemo(() => {
+    const gallery = Array.isArray(item?.images)
+      ? item.images
+      : Array.isArray(item?.gallery)
+        ? item.gallery
+        : [];
+    const sources = gallery.length ? gallery : item?.image ? [item.image] : [];
+    const normalized = sources
+      .map((image) => {
+        if (typeof image === "string") return image;
+        return image?.link || image?.url || image?.file?.link || image?.file?.url ||
+          (image?.id || image?.file?.id ? `/files/v2/${image.id || image.file.id}` : "");
+      })
+      .filter(Boolean)
+      .map(normalizeFilesUrl);
+    return [...new Set(normalized)];
+  }, [item]);
+  const [activeImage, setActiveImage] = React.useState(0);
+
+  React.useEffect(() => {
+    setActiveImage(0);
+  }, [slideId]);
 
   // Перевод текущей новости (слайда) через Translator — если ...Ty полей нет
   const [translatedItem, setTranslatedItem] = React.useState(null);
@@ -188,15 +210,83 @@ export default function NewsSliderDetail() {
 
             <div className="news-detail">
               <article className="card" style={{ padding: 16 }}>
-                {item?.image ? (
-                  <div style={{ height: 340, overflow: "hidden", borderRadius: 12, background: "#f3f4f6" }}>
+                {images.length ? (
+                  <div style={{ position: "relative", height: 340, overflow: "hidden", borderRadius: 12, background: "#f3f4f6" }}>
                     <img
-                      src={normalizeFilesUrl(item.image)}
+                      src={images[activeImage] || images[0]}
                       alt=""
                       loading="lazy"
                       decoding="async"
                       style={{ width: "100%", height: "100%", objectFit: "contain", objectPosition: "center" }}
                     />
+                    {images.length > 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          aria-label="Предыдущее изображение"
+                          onClick={() => setActiveImage((index) => (index - 1 + images.length) % images.length)}
+                          style={{
+                            position: "absolute",
+                            left: 12,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            width: 40,
+                            height: 40,
+                            border: 0,
+                            borderRadius: "50%",
+                            background: "rgba(0,0,0,.5)",
+                            color: "#fff",
+                            fontSize: 28,
+                            lineHeight: 1,
+                            cursor: "pointer",
+                          }}
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Следующее изображение"
+                          onClick={() => setActiveImage((index) => (index + 1) % images.length)}
+                          style={{
+                            position: "absolute",
+                            right: 12,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            width: 40,
+                            height: 40,
+                            border: 0,
+                            borderRadius: "50%",
+                            background: "rgba(0,0,0,.5)",
+                            color: "#fff",
+                            fontSize: 28,
+                            lineHeight: 1,
+                            cursor: "pointer",
+                          }}
+                        >
+                          ›
+                        </button>
+                        <div style={{ position: "absolute", bottom: 10, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 8 }}>
+                          {images.map((image, index) => (
+                            <button
+                              key={`${image}-${index}`}
+                              type="button"
+                              aria-label={`Изображение ${index + 1} из ${images.length}`}
+                              aria-current={index === activeImage ? "true" : undefined}
+                              onClick={() => setActiveImage(index)}
+                              style={{
+                                width: 9,
+                                height: 9,
+                                padding: 0,
+                                border: 0,
+                                borderRadius: "50%",
+                                background: index === activeImage ? "#fff" : "rgba(255,255,255,.55)",
+                                cursor: "pointer",
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
                   </div>
                 ) : null}
 
@@ -361,4 +451,3 @@ export default function NewsSliderDetail() {
     </section>
   );
 }
-

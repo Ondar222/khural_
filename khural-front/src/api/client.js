@@ -645,10 +645,7 @@ export const PublicApi = {
 
 export const SliderApi = {
   async list({ all = false } = {}) {
-    const qs = new URLSearchParams();
-    if (all) qs.set("all", "true");
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return apiFetch(`/slider${suffix}`, { method: "GET", auth: false });
+    return apiFetch(all ? "/slider/all" : "/slider", { method: "GET", auth: false });
   },
   async getById(id) {
     return apiFetch(`/slider/${id}`, { method: "GET", auth: false });
@@ -666,6 +663,18 @@ export const SliderApi = {
     const fd = new FormData();
     fd.append("image", file);
     return apiFetchMultipart(`/slider/${id}/image`, {
+      method: "POST",
+      formData: fd,
+      auth: true,
+    });
+  },
+  async uploadGallery(id, files) {
+    const fd = new FormData();
+    const arr = Array.isArray(files) ? files : files ? [files] : [];
+    arr.forEach((file) => {
+      if (file) fd.append("gallery", file);
+    });
+    return apiFetchMultipart(`/slider/${id}/gallery`, {
       method: "POST",
       formData: fd,
       auth: true,
