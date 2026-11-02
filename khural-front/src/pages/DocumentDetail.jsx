@@ -3,10 +3,21 @@ import { useHashRoute } from "../Router.jsx";
 import { DocumentsApi } from "../api/client.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
-import { isDocumentFileUrl, isHtmlBlob, isPdfBlob, externalViewerUrl } from "../utils/documentFile.js";
+import {
+  getDocumentSourceUrl,
+  getDocumentFileUrl,
+  isDocumentFileUrl,
+  isHtmlBlob,
+  isPdfBlob,
+  externalViewerUrl,
+} from "../utils/documentFile.js";
 import DataState from "../components/DataState.jsx";
 import DocumentActions from "../components/DocumentActions.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+
+function looksLikeHtml(value) {
+  return /<\/?[a-z][\s\S]*>/i.test(String(value || ""));
+}
 
 function renderDocDesc(raw) {
   const decoded = decodeHtmlEntities(raw);
@@ -49,14 +60,8 @@ export default function DocumentDetail() {
         if (!cancelled) {
           setDoc(data);
           // Determine PDF URL
-          const pdfUrl = normalizeFilesUrl(
-            data?.pdfFile?.link ||
-              data?.url ||
-              data?.file?.link ||
-              data?.metadata?.pdfFileTyLink ||
-              ""
-          );
-          if (pdfUrl && looksLikePdf(pdfUrl)) {
+          const pdfUrl = getDocumentSourceUrl(normalizeFilesUrl(getDocumentFileUrl(data)));
+          if (pdfUrl && isDocumentFileUrl(pdfUrl)) {
             setPdfSrc(pdfUrl);
           }
         }
@@ -203,13 +208,7 @@ export default function DocumentDetail() {
     );
   }
 
-  const pdfUrl = normalizeFilesUrl(
-    doc?.pdfFile?.link ||
-      doc?.url ||
-      doc?.file?.link ||
-      doc?.metadata?.pdfFileTyLink ||
-      ""
-  );
+  const pdfUrl = getDocumentSourceUrl(normalizeFilesUrl(getDocumentFileUrl(doc)));
   const hasFile = isDocumentFileUrl(pdfUrl);
   const detailHref = pdfUrl ? "" : (doc?.id ? `/documents/${doc.id}` : "");
 
@@ -409,4 +408,3 @@ export default function DocumentDetail() {
     </section>
   );
 }
-

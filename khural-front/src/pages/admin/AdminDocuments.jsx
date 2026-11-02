@@ -4,6 +4,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
+import { getDocumentFileUrl } from "../../utils/documentFile.js";
 
 const TYPE_OPTIONS = [
   { value: "laws", label: "Законы" },
@@ -51,7 +52,7 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
   }, []);
 
   const renderFilesTag = React.useCallback((row) => {
-    const hasRu = row?.pdfFile?.link || row?.pdfFile?.id || row?.file?.link || row?.url;
+    const hasRu = getDocumentFileUrl(row) || row?.pdfFile?.id;
     const hasTy = row?.metadata?.pdfFileTyId || row?.metadata?.pdfFileTyLink;
     if (hasRu && hasTy) return <Tag color="green">RU + TY</Tag>;
     if (hasRu) return <Tag color="blue">RU</Tag>;
@@ -137,7 +138,7 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
       width: 200,
       render: (_, row) => {
         const isFromJson = String(row?.id ?? "").startsWith("zakony-") || String(row?.id ?? "").startsWith("postamovleniya-");
-        const fileUrl = row?.file?.link || row?.pdfFile?.link || row?.url;
+        const fileUrl = getDocumentFileUrl(row);
         return (
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
             {fileUrl ? (
@@ -379,6 +380,5 @@ export default function AdminDocuments({ items, onCreate, onUpdate, onDelete, bu
     </div>
   );
 }
-
 
 

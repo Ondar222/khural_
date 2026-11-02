@@ -5,6 +5,7 @@ import {
   downloadName,
   embeddedViewerUrl,
   externalViewerUrl,
+  getDocumentSourceUrl,
   isDocumentFileUrl,
   isHtmlBlob,
   isPdfBlob,
@@ -100,7 +101,7 @@ const MSG = {
 /* ---------- component ---------- */
 
 export default function PdfPreviewModal({ open, onClose, url, title }) {
-  const pdfSrc = React.useMemo(() => normalizeUrl(url), [url]);
+  const pdfSrc = React.useMemo(() => getDocumentSourceUrl(normalizeUrl(url)), [url]);
   const [blobSrc, setBlobSrc] = React.useState("");
   const [status, setStatus] = React.useState("loading");
   const [directHref, setDirectHref] = React.useState("");

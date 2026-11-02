@@ -7,7 +7,7 @@ import { useHashRoute } from "../../Router.jsx";
 import { DocumentsApi } from "../../api/client.js";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../../utils/html.js";
-import { isDocumentFileUrl } from "../../utils/documentFile.js";
+import { getDocumentFileUrl, isDocumentFileUrl } from "../../utils/documentFile.js";
 import { getDocumentLinkedEntities } from "../../utils/documentMentions.js";
 import PdfPreviewModal from "../../components/PdfPreviewModal.jsx";
 import DocumentActions from "../../components/DocumentActions.jsx";
@@ -84,14 +84,14 @@ function mapApiRow(d) {
     typeof d.category === "string"
       ? d.category
       : d.category?.name || d.category?.title || "";
-  const fileUrl = d.pdfFile?.link || d.previewUrl || "";
+  const fileUrl = getDocumentFileUrl(d);
   return {
     id: d.id,
     title: typeof d.title === "string" ? d.title : d?.title?.name || d?.title?.title || String(d.title || ""),
     desc: String(d.content || d.desc || "").trim(),
     number: d.number ? String(d.number) : "",
     date: d.publishedAt || d.date || d.createdAt || "",
-    url: normalizeFilesUrl(fileUrl || d.url || ""),
+    url: normalizeFilesUrl(fileUrl),
     category: cat || "federal",
     type: d.type,
   };

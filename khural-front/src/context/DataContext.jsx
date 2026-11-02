@@ -30,6 +30,7 @@ import {
   getConvocationNumber,
 } from "../utils/convocationIdentity.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
+import { getDocumentFileUrl } from "../utils/documentFile.js";
 import { normalizeConvocationToCanonical, mapOldSiteConvocationIdToCanonical } from "../utils/convocationLabels.js";
 import { buildFactionOptions, buildDistrictOptions } from "../utils/deputyFilterOptions.js";
 
@@ -1227,13 +1228,8 @@ export default function DataProvider({ children }) {
                 ? d.metadata
                 : {};
             const fileId = d.pdfFile?.id || d.pdfFileId || metadata.fileId || "";
-            // Файл: pdfFile.link (CDN бэкенда) или legacy previewUrl
-            const fileUrl =
-              d.pdfFile?.link ||
-              d.previewUrl ||
-              metadata.url ||
-              metadata.fileLink ||
-              (fileId ? `/files/v2/${fileId}` : "");
+            // Prefer the file imported into the current backend over legacy URLs.
+            const fileUrl = getDocumentFileUrl(d) || (fileId ? `/files/v2/${fileId}` : "");
             return {
               id: d.id,
               title: String(d.title || "").trim(),

@@ -8,7 +8,7 @@ import DataState from "../components/DataState.jsx";
 import ScrollToTop from "../components/ScrollToTop.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { decodeHtmlEntities } from "../utils/html.js";
-import { isDocumentFileUrl } from "../utils/documentFile.js";
+import { getDocumentFileUrl, isDocumentFileUrl } from "../utils/documentFile.js";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 import DocumentActions from "../components/DocumentActions.jsx";
 import { DocumentIcon } from "../components/icons/LinearIcons.jsx";
@@ -48,7 +48,7 @@ function renderDocDesc(raw) {
 function mapApiDoc(d) {
   const categoryName =
     typeof d.category === "string" ? d.category : d.category?.name || d.category?.title || "";
-  const fileUrl = d.pdfFile?.link || d.previewUrl || "";
+  const fileUrl = getDocumentFileUrl(d);
   return {
     id: d.id,
     title: String(d.title || "").trim(),

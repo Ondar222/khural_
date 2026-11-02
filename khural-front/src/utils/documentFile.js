@@ -29,30 +29,65 @@ const HTML_EXT_RE = /\.html?(?=([?#]|$))/i;
 /** Ссылка на файл бэкенда без расширения в пути — тип известен только из ответа сервера. */
 const BACKEND_FILE_NO_EXT_RE =
   /(?:^|\/)(?:api\/)?files\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?=([?#]|$))/i;
+const BACKEND_FILE_V2_NO_EXT_RE =
+  /(?:^|\/)(?:api\/)?files\/v2\/[A-Za-z0-9._-]+(?=([?#]|$))/i;
+
+/** Prefer the file uploaded to the current backend over legacy document URLs. */
+export function getDocumentFileUrl(document) {
+  const metadata =
+    document?.metadata && typeof document.metadata === "object" ? document.metadata : {};
+  return (
+    document?.pdfFile?.link ||
+    document?.pdfFile?.url ||
+    document?.previewUrl ||
+    document?.file?.link ||
+    document?.file?.url ||
+    document?.url ||
+    metadata.pdfFileTyLink ||
+    metadata.pdfFileTyUrl ||
+    metadata.url ||
+    metadata.fileLink ||
+    ""
+  );
+}
+
+/** Google Viewer links wrap the actual public document URL in the `url` query. */
+export function getDocumentSourceUrl(url) {
+  const value = String(url || "").trim();
+  if (!value) return "";
+  try {
+    const parsed = new URL(value, typeof window !== "undefined" ? window.location.origin : "https://khural.yurta.site");
+    if (parsed.hostname !== "docs.google.com" || parsed.pathname !== "/viewer") return value;
+    return parsed.searchParams.get("url") || value;
+  } catch {
+    return value;
+  }
+}
 
 /** Это реально ссылка на файл документа, а не на страницу сайта? */
 export function isDocumentFileUrl(url) {
-  const s = String(url || "").trim();
+  const s = getDocumentSourceUrl(url);
   if (!s) return false;
   if (/^(data|blob):/i.test(s)) return true;
   if (BACKEND_FILE_RE.test(s)) return true;
+  if (BACKEND_FILE_V2_NO_EXT_RE.test(s)) return true;
   if (HTML_EXT_RE.test(s)) return false;
   return DOC_EXT_RE.test(s);
 }
 
 /** Покажет ли браузер этот файл сам (PDF/картинка) — иначе нужен внешний просмотрщик. */
 export function canOpenInline(url) {
-  const s = String(url || "").trim();
+  const s = getDocumentSourceUrl(url);
   if (!s) return false;
   if (/^(data|blob):/i.test(s)) return true;
   // Для файлов бэкенда тип неизвестен до загрузки — считаем просматриваемым (обычно это PDF).
-  if (BACKEND_FILE_NO_EXT_RE.test(s)) return true;
+  if (BACKEND_FILE_NO_EXT_RE.test(s) || BACKEND_FILE_V2_NO_EXT_RE.test(s)) return true;
   return INLINE_EXT_RE.test(s);
 }
 
 /** Расширение файла по ссылке (без точки). Для /files/<uuid> неизвестно — пустая строка. */
 export function getFileExt(url) {
-  const m = String(url || "").match(/\.([a-z0-9]{1,5})(?=([?#]|$))/i);
+  const m = getDocumentSourceUrl(url).match(/\.([a-z0-9]{1,5})(?=([?#]|$))/i);
   return m ? m[1].toLowerCase() : "";
 }
 
@@ -85,13 +120,13 @@ function toAbsolute(url) {
  * Нужна, чтобы «Открыть в новой вкладке» показывало документ, а не скачивало doc/xls/tiff.
  */
 export function externalViewerUrl(url) {
-  const abs = toAbsolute(url);
+  const abs = toAbsolute(getDocumentSourceUrl(url));
   return `https://docs.google.com/viewer?url=${encodeURIComponent(abs)}&embedded=false`;
 }
 
 /** Внешний просмотрщик внутри iframe (требует embedded=true). */
 export function embeddedViewerUrl(url) {
-  const abs = toAbsolute(url);
+  const abs = toAbsolute(getDocumentSourceUrl(url));
   return `https://docs.google.com/viewer?url=${encodeURIComponent(abs)}&embedded=true`;
 }
 

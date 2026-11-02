@@ -2,6 +2,7 @@ import React from "react";
 import {
   DOC_FILE_MISSING_HINT,
   downloadName,
+  getDocumentSourceUrl,
   isDocumentFileUrl,
 } from "../utils/documentFile.js";
 
@@ -80,7 +81,7 @@ export default function DocumentActions({
   missingHint = DOC_FILE_MISSING_HINT,
   noFileLabel = "Смотреть",
 }) {
-  const fileUrl = isDocumentFileUrl(url) ? String(url) : "";
+  const fileUrl = isDocumentFileUrl(url) ? getDocumentSourceUrl(url) : "";
   const pageHref = !fileUrl && href ? String(href) : "";
   const hasAny = fileUrl || pageHref;
 
