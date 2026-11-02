@@ -100,7 +100,7 @@ function formatConvocationLabel(token) {
 function getFiltersFromRoute(route) {
   const query = route?.split("?")[1]?.split("#")[0] || "";
   const params = new URLSearchParams(query);
-  const requestedStatus = String(params.get("status") || "active").toLowerCase();
+  const requestedStatus = String(params.get("status") || "all").toLowerCase();
   return {
     convocation: normalizeConvocationToken(params.get("convocation") || "Все"),
     status: STATUS_OPTIONS.some((option) => option.value === requestedStatus) ? requestedStatus : "active",
@@ -566,9 +566,12 @@ export default function DeputiesV2() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const deputies = React.useMemo(() => {
-    const withApi = mergeByIdPreferApi(baseDeputies, apiDeputies);
+    // The standalone API request may return only a partial list; DataContext
+    // supplements it with the complete deputies dataset before marking it ready.
+    const apiList = loading?.deputies ? [] : apiDeputies;
+    const withApi = mergeByIdPreferApi(baseDeputies, apiList);
     return mergeDeputies(withApi, overrides);
-  }, [baseDeputies, apiDeputies, overrides]);
+  }, [baseDeputies, apiDeputies, overrides, loading?.deputies]);
 
   const getDeputyConvocations = React.useCallback((d) => {
     const list = Array.isArray(d?.convocations) ? d.convocations : [];
@@ -589,7 +592,7 @@ export default function DeputiesV2() {
   const [committeeId, setCommitteeId] = React.useState(initialFilters.committeeId);
   const [faction, setFaction] = React.useState(initialFilters.faction);
   const [district, setDistrict] = React.useState(initialFilters.district);
-  // Public default: hide ended/deceased deputies (they are available in /deputies/ended)
+  // Direct visits to /deputies show all deputies; explicit status filters narrow the list.
   const [status, setStatus] = React.useState(initialFilters.status);
 
   // Reset page when filters change
@@ -974,4 +977,3 @@ export default function DeputiesV2() {
     </section>
   );
 }
-

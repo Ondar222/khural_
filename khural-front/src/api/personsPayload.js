@@ -51,9 +51,11 @@ function normalizeBool(input) {
 }
 
 function normalizeStringArray(input) {
+  if (input === undefined || input === null) return undefined;
   const arr = Array.isArray(input) ? input : input ? [input] : [];
-  const out = arr.map((x) => String(x ?? "").trim()).filter(Boolean);
-  return out.length ? out : undefined;
+  return arr
+    .map((x) => String((x && typeof x === "object" ? x.id : x) ?? "").trim())
+    .filter(Boolean);
 }
 
 export function toPersonsApiBody(input) {
@@ -146,27 +148,17 @@ export function toPersonsApiBody(input) {
     body.district_ids = dIds;
   }
   const cIds = normalizeStringArray(convocationIds);
-  if (cIds) {
-    // Бэкенд ожидает реальные числовые ID созывов из своей БД:
-    // I→12, II→5, III→4, IV→6 (справочник /persons/convocations/all).
-    const toConvocationId = (id) => {
-      const s = String(id).trim().toUpperCase();
-      const romanToBackendId = { I: 12, II: 5, III: 4, IV: 6 };
-      if (romanToBackendId[s] !== undefined) return romanToBackendId[s];
-      const n = parseInt(id, 10);
-      if (Number.isFinite(n)) return n;
-      return id;
-    };
-    body.convocationIds = cIds.map(toConvocationId);
-    body.convocation_ids = cIds.map(toConvocationId);
+  if (cIds !== undefined) {
+    body.convocationIds = cIds;
+    body.convocation_ids = cIds;
   }
   const comIds = normalizeStringArray(committeeIds);
-  if (comIds) {
+  if (comIds !== undefined) {
     body.committeeIds = comIds;
     body.committee_ids = comIds;
   }
   const catIds = normalizeStringArray(categoryIds);
-  if (catIds) {
+  if (catIds !== undefined) {
     body.categoryIds = catIds;
     body.category_ids = catIds;
   }
@@ -217,5 +209,4 @@ export function toPersonsApiBody(input) {
 
   return body;
 }
-
 

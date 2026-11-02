@@ -1,4 +1,51 @@
 // Simple API client with auth token support and JSON helpers
+import { getConvocationNumber } from "../utils/convocationIdentity.js";
+
+const ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+
+function getConvocationOrdinal(value) {
+  const roman = getConvocationNumber(value);
+  if (roman) return roman;
+  const candidates =
+    value && typeof value === "object" ? [value.number, value.name, value.title, value.id] : [value];
+  for (const candidate of candidates) {
+    const match = String(candidate ?? "").trim().match(/^(?:созыв\s*)?(\d+)(?:\s*созыв)?$/i);
+    const number = match ? Number(match[1]) : 0;
+    if (number >= 1 && number <= ROMAN_NUMERALS.length) return ROMAN_NUMERALS[number - 1];
+  }
+  return "";
+}
+
+async function resolvePersonConvocationIds(person) {
+  const input =
+    person?.convocationIds !== undefined ? person.convocationIds : person?.convocation_ids;
+  if (input === undefined) return person;
+  if (!Array.isArray(input)) {
+    throw new Error("Список созывов депутата должен быть массивом ID");
+  }
+  if (input.length === 0) {
+    return { ...person, convocationIds: [], convocation_ids: [] };
+  }
+
+  const convocations = await ConvocationsApi.list({ activeOnly: false });
+  const ids = input.map((value) => {
+    const valueId = value && typeof value === "object" ? value.id : value;
+    const exactMatch = convocations.find(
+      (convocation) => String(convocation?.id ?? "") === String(valueId ?? "")
+    );
+    if (exactMatch?.id != null) return exactMatch.id;
+
+    const ordinal = getConvocationOrdinal(value);
+    const ordinalMatch = ordinal
+      ? convocations.find((convocation) => getConvocationOrdinal(convocation) === ordinal)
+      : null;
+    if (ordinalMatch?.id != null) return ordinalMatch.id;
+    throw new Error(`Созыв «${String(valueId ?? value)}» не найден в справочнике API`);
+  });
+  const uniqueIds = [...new Set(ids)];
+  return { ...person, convocationIds: uniqueIds, convocation_ids: uniqueIds };
+}
+
 function normalizeBaseUrl(value) {
   if (!value) return "";
   const str = String(value).trim();
@@ -1126,19 +1173,22 @@ export const PersonsApi = {
 
   // Admin (requires auth)
   async create(person) {
-    return apiFetch("/persons", { method: "POST", body: person, auth: true });
+    const body = await resolvePersonConvocationIds(person);
+    return apiFetch("/persons", { method: "POST", body, auth: true });
   },
   async patch(id, partial) {
+    const body = await resolvePersonConvocationIds(partial);
     return apiFetch(`/persons/${id}`, {
       method: "PATCH",
-      body: partial,
+      body,
       auth: true,
     });
   },
   async put(id, full) {
+    const body = await resolvePersonConvocationIds(full);
     return apiFetch(`/persons/${id}`, {
       method: "PUT",
-      body: full,
+      body,
       auth: true,
     });
   },
