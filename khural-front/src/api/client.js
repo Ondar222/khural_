@@ -472,32 +472,133 @@ export const PublicApi = {
   async listNews() {
     return apiFetch("/news", { method: "GET", auth: false });
   },
-  /** Перевод не должен блокировать интерфейс надолго. */
+  /** Перевод не должен блокировать интерфейс надолго; при проблемах используем fallback. */
   TRANSLATION_TIMEOUT_MS: 20000,
 
+  /**
+   * Перевод через Google Translate (fallback, если бэкенд не работает)
+   */
+  async translateWithGoogle(text, from, to) {
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      // Google возвращает массив вида [[["перевод","оригинал",...]],...]
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        return data[0].filter(segment => Array.isArray(segment)).map(segment => segment[0]).join('');
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
   async translate(text, from, to) {
-    const result = await apiFetch("/translation/public/translate", {
+    // Пробуем без авторизации сначала (для публичного доступа)
+    const opts = {
       method: "POST",
       body: { text, from, to },
       auth: false,
       timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
       quiet: true,
-    });
-    if (typeof result?.translated !== "string") {
-      throw new Error("Translation API returned an invalid response");
     }
-    return { original: text, translated: result.translated, from, to };
+    let publicError = null;
+    try {
+      const result = await apiFetch("/translation/translate", opts);
+      // Проверяем, вернулся ли реальный перевод (не тот же ли самый текст)
+      if (result && result.translated && result.translated !== text) {
+        return { original: text, translated: result.translated, from, to };
+      }
+    } catch (error) {
+      publicError = error;
+    }
+
+    // Повторяем запрос с токеном только при отказе в авторизации, не при медленном/недоступном API.
+    const token = getAuthToken();
+    if (token && publicError?.status === 401) {
+      const authOpts = {
+        method: "POST",
+        body: { text, from, to },
+        auth: true,
+        timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
+        quiet: true,
+      };
+      try {
+        const result = await apiFetch("/translation/translate", authOpts);
+        if (result && result.translated && result.translated !== text) {
+          return { original: text, translated: result.translated, from, to };
+        }
+      } catch {
+        // Continue through the configured fallback.
+      }
+    }
+
+    // Используем batch endpoint только если single endpoint ответил без перевода или не найден.
+    if (!publicError || publicError.status === 404 || publicError.status === 405) {
+      try {
+        const batchResult = await apiFetch("/translation/translate-batch", {
+          method: "POST",
+          body: { texts: [text], from, to },
+          auth: Boolean(token),
+          timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
+          quiet: true,
+        });
+        const translated = Array.isArray(batchResult?.translated) ? batchResult.translated[0] : null;
+        if (translated && translated !== text) {
+          return { original: text, translated, from, to };
+        }
+      } catch {
+        // Continue through the configured fallback.
+      }
+    }
+
+    // Fallback на Google Translate
+    const googleTranslated = await PublicApi.translateWithGoogle(text, from, to);
+    if (googleTranslated && googleTranslated !== text) {
+      return { original: text, translated: googleTranslated, from, to };
+    }
+
+    // Если ничего не помогло - возвращаем оригинал
+    return { original: text, translated: text, from, to };
   },
 
   /**
    * Перевод массива текстов одним запросом (меньше запросов → меньше 429).
+   * Если сервер недоступен или ограничивает запросы, дополняет результат fallback-переводом.
    */
   async translateBatch(texts, from, to) {
     if (!Array.isArray(texts) || texts.length === 0) {
       return { translated: [], rateLimited: false };
     }
+
+    const fallbackTranslations = async (initial = texts) => {
+      const translated = [...initial];
+      let nextIndex = 0;
+      const worker = async () => {
+        while (nextIndex < texts.length) {
+          const index = nextIndex++;
+          if (translated[index] && translated[index] !== texts[index]) continue;
+          const fallback = await PublicApi.translateWithGoogle(texts[index], from, to);
+          if (fallback) translated[index] = fallback;
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(4, texts.length) }, () => worker())
+      );
+      return translated;
+    };
+
     if (Date.now() < translationBatchCooldownUntil) {
-      throw new Error("Translation is temporarily rate-limited; retry shortly");
+      return {
+        translated: await fallbackTranslations(),
+        rateLimited: true,
+      };
     }
 
     const requestKey = `${from}->${to}::${JSON.stringify(texts)}`;
@@ -506,29 +607,31 @@ export const PublicApi = {
     }
 
     const request = (async () => {
-      let result;
       try {
-        result = await apiFetch("/translation/public/translate-batch", {
+        const result = await apiFetch("/translation/translate-batch", {
           method: "POST",
           body: { texts, from, to },
-          auth: false,
+          auth: true,
           timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
           quiet: true,
         });
-      } catch (error) {
-        if (error?.status === 429) {
-          translationBatchCooldownUntil = Date.now() + 60_000;
+        const translated = Array.isArray(result?.translated) ? result.translated : texts;
+        if (translated.length !== texts.length) {
+          translationBatchCooldownUntil = Date.now() + 15_000;
+          return {
+            translated: await fallbackTranslations(),
+            rateLimited: true,
+          };
         }
-        throw error;
+        const withFallbacks = await fallbackTranslations(translated);
+        return { translated: withFallbacks, rateLimited: false };
+      } catch (error) {
+        translationBatchCooldownUntil = Date.now() + (error?.status === 429 ? 60_000 : 15_000);
+        return {
+          translated: await fallbackTranslations(),
+          rateLimited: true,
+        };
       }
-      if (
-        !Array.isArray(result?.translated) ||
-        result.translated.length !== texts.length ||
-        result.translated.some((translation) => typeof translation !== "string")
-      ) {
-        throw new Error("Translation API returned an invalid batch response");
-      }
-      return { translated: result.translated, rateLimited: false };
     })();
 
     translationBatchRequests.set(requestKey, request);
