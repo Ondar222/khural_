@@ -125,6 +125,10 @@ function translationCacheKey(from, to, text) {
   return `${from}->${to}::${text}`;
 }
 
+function normalizeTranslationText(text) {
+  return String(text ?? "").replace(/(^|[^А-Яа-яЁё])деады(?=$|[^А-Яа-яЁё])/giu, "$1Дээди");
+}
+
 // Модульный кэш переводов (общий для всех экземпляров хука на клиенте)
 const translationCache = new Map();
 
@@ -282,7 +286,7 @@ export function useTranslation(options = {}) {
             });
 
           // Восстанавливаем HTML структуру с переведенным текстом
-          const translated = reconstructHtml(segments, translatedTextsMap);
+          const translated = normalizeTranslationText(reconstructHtml(segments, translatedTextsMap));
 
           return {
             original: text,
@@ -293,7 +297,7 @@ export function useTranslation(options = {}) {
         } else {
           // Обычный текст без HTML - переводим как есть
           const result = await PublicApi.translate(text, from, to);
-          const translated = extractTranslatedText(result);
+          const translated = normalizeTranslationText(extractTranslatedText(result));
 
           return {
             original: text,
@@ -338,7 +342,7 @@ export function useTranslation(options = {}) {
       const cacheKeyStr = translationCacheKey(from, to, text);
       const cachedTranslation = translationCache.get(cacheKeyStr);
       if (cachedTranslation) {
-        return { original: text, translated: cachedTranslation, from, to };
+        return { original: text, translated: normalizeTranslationText(cachedTranslation), from, to };
       }
 
       // Single-flight: пока запрос в полёте — ждём его результат
@@ -349,8 +353,12 @@ export function useTranslation(options = {}) {
         );
       }
       const result = await inflightRequests.get(cacheKeyStr);
-      translationCache.set(cacheKeyStr, result.translated);
-      return result;
+      const normalizedResult = {
+        ...result,
+        translated: normalizeTranslationText(result.translated),
+      };
+      translationCache.set(cacheKeyStr, normalizedResult.translated);
+      return normalizedResult;
     },
     [defaultFrom, defaultTo, translateOnce]
   );
@@ -393,8 +401,9 @@ export function useTranslation(options = {}) {
       const batchResult = await PublicApi.translateBatch(missing, from, to);
       (batchResult.translated || missing).forEach((translated, missingIndex) => {
         const original = missing[missingIndex];
-        const normalizedTranslation =
-          typeof translated === "string" && translated.trim() ? translated : original;
+        const normalizedTranslation = normalizeTranslationText(
+          typeof translated === "string" && translated.trim() ? translated : original
+        );
         const cacheKeyStr = translationCacheKey(from, to, original);
         if (normalizedTranslation !== original) {
           translationCache.set(cacheKeyStr, normalizedTranslation);
