@@ -180,7 +180,7 @@ export default function Header() {
                     navigate("/cabinet/account");
                   }}
                 >
-                  {t("Личный кабинет") || "Личный кабинет"}
+                  {t("personalAccount")}
                 </button>
                 {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
                   <button
@@ -189,7 +189,7 @@ export default function Header() {
                       navigate("/admin");
                     }}
                   >
-                    {t("Панель управления") || "Панель управления"}
+                    {t("adminNavDashboard")}
                   </button>
                 ) : null}
                 <button
@@ -198,7 +198,7 @@ export default function Header() {
                     logout();
                   }}
                 >
-                  {t("Выйти") || "Выйти"}
+                  {t("adminLogout")}
                 </button>
               </>
             ) : (
@@ -291,10 +291,10 @@ export default function Header() {
                 <a href="/about/polnomochiya">{t("Полномочия Верховного Хурала")}</a>
                 <a href="/section">{t("structure")}</a>
                 <a href="/committee">{t("committees")}</a>
-                <a href={PARLIAMENT_LEADERSHIP_HREF}>Руководство парламента</a>
-                <a href="/youth-parliament">Молодежный Хурал</a>
+                <a href={PARLIAMENT_LEADERSHIP_HREF}>{t("Руководство парламента")}</a>
+                <a href="/youth-parliament">{t("Молодежный Хурал")}</a>
                 <a href={MUNICIPAL_COUNCIL_HREF}>
-                  Совет по взаимодействию с представительными органами муниципальных образований
+                  {t("Совет по взаимодействию с представительными органами муниципальных образований")}
                 </a>
                 {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
                 <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
@@ -327,12 +327,12 @@ export default function Header() {
               <Link to="/info">{t("Общие сведения") || "Общие сведения"} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("info")}>
                 <a href="/info">{t("Общие сведения") || "Общие сведения"}</a>
-                <a href="/info/polnomochiya-spikera">Полномочия Председателя</a>
+                <a href="/info/polnomochiya-spikera">{t("aboutPowersSpeaker")}</a>
                 <a href="/info/protivodeystvie-korrupcii">{t("aboutCorruption") || "Противодействие коррупции"}</a>
                 <a href="/info/contacts">{t("aboutContacts") || "Контактная информация"}</a>
-                <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
-                <a href="/info/gosudarstvennye-simvoly">Государственные символы Республики Тыва</a>
-                <a href="/info/prigranichny-subekt">Приграничный субъект</a>
+                <a href="/info/upoln-po-reb">{t("aboutChildRights")}</a>
+                <a href="/info/gosudarstvennye-simvoly">{t("aboutSymbols")}</a>
+                <a href="/info/prigranichny-subekt">{t("aboutBorder")}</a>
                 <hr />
                 <a href="/about/finances">{t("Финансы") || "Финансы"}</a>
                 <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
@@ -369,11 +369,11 @@ export default function Header() {
             >
               <Link to="/news">{t("news")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("news")}>
-                <a href="/news/week">{t("Главные события") || "Главные события"}</a>
+                <a href="/news/week">{t("mainEventsOfWeek")}</a>
                 <hr />
                 <a href="/news?section=actual">{lang === "ty" ? t("hotNews") : t("Актуальные новости") || "Актуальные новости"}</a>
                 <a href="/news?section=all">{lang === "ty" ? t("allNews") : t("Все новости") || "Все новости"}</a>
-                <a href="/news?section=media">{lang === "ty" ? t("media") : t("Медиа") || "Медиа"}</a>
+                <a href="/news?section=media">{t("media")}</a>
                 <hr />
                 {NEWS_EXTRA_LINKS.map((item) => (
                   <a key={item.href} href={item.href}>
@@ -544,10 +544,10 @@ export default function Header() {
             <a href="/about/polnomochiya">{t("Полномочия Верховного Хурала")}</a>
             <a href="/section">{t("structure")}</a>
             <a href="/committee">{t("committees")}</a>
-            <a href={PARLIAMENT_LEADERSHIP_HREF}>Руководство парламента</a>
-            <a href="/youth-parliament">Молодежный Хурал</a>
+            <a href={PARLIAMENT_LEADERSHIP_HREF}>{t("Руководство парламента")}</a>
+            <a href="/youth-parliament">{t("Молодежный Хурал")}</a>
             <a href={MUNICIPAL_COUNCIL_HREF}>
-              Совет по взаимодействию с представительными органами муниципальных образований
+              {t("Совет по взаимодействию с представительными органами муниципальных образований")}
             </a>
             {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
             <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
@@ -562,12 +562,12 @@ export default function Header() {
           <div className="sheet-col">
             <h3>{t("Общие сведения") || "Общие сведения"}</h3>
             <a href="/info">{t("Общие сведения") || "Общие сведения"}</a>
-            <a href="/info/polnomochiya-spikera">Полномочия Председателя</a>
+            <a href="/info/polnomochiya-spikera">{t("aboutPowersSpeaker")}</a>
             <a href="/info/protivodeystvie-korrupcii">{t("aboutCorruption") || "Противодействие коррупции"}</a>
             <a href="/info/contacts">{t("aboutContacts") || "Контактная информация"}</a>
-            <a href="/info/upoln-po-reb">Уполномоченный по правам ребенка</a>
-            <a href="/info/gosudarstvennye-simvoly">Государственные символы Республики Тыва</a>
-            <a href="/info/prigranichny-subekt">Приграничный субъект</a>
+            <a href="/info/upoln-po-reb">{t("aboutChildRights")}</a>
+            <a href="/info/gosudarstvennye-simvoly">{t("aboutSymbols")}</a>
+            <a href="/info/prigranichny-subekt">{t("aboutBorder")}</a>
             <hr />
             <a href="/about/finances">{t("Финансы") || "Финансы"}</a>
             <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
@@ -580,11 +580,11 @@ export default function Header() {
             <h3>{t("deputies")}</h3>
             <a href="/deputies">{t("deputies")}</a>
             <a href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5">{t("deputiesAll")}</a>
-            <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">Депутаты прекратившие полномочия</a>
+            <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты прекратившие полномочия")}</a>
           </div>
           <div className="sheet-col">
             <h3>{t("news")}</h3>
-            <a href="/news/week">{t("Главные события недели") || "Главные события недели"}</a>
+            <a href="/news/week">{t("mainEventsOfWeek")}</a>
             <a href="/news?section=actual">{t("hotNews")}</a>
             <a href="/news?section=all">{t("allNews")}</a>
             <a href="/news?section=media">{t("media")}</a>
@@ -702,7 +702,7 @@ export default function Header() {
                     }}
                     style={{ width: "80%" }}
                   >
-                    {t("Личный кабинет") || "Личный кабинет"}
+                    {t("personalAccount")}
                   </button>
                   {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
                     <button
@@ -713,7 +713,7 @@ export default function Header() {
                       }}
                       style={{ width: "80%" }}
                     >
-                      {t("Панель управления") || "Панель управления"}
+                      {t("adminNavDashboard")}
                     </button>
                   ) : null}
                   <button
@@ -724,7 +724,7 @@ export default function Header() {
                     }}
                     style={{ width: "80%" }}
                   >
-                    {t("Выйти") || "Выйти"}
+                    {t("adminLogout")}
                   </button>
                 </div>
               ) : (
@@ -836,19 +836,19 @@ export default function Header() {
             </a>
             <a className="tile link" href={PARLIAMENT_LEADERSHIP_HREF} onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Руководство парламента
+                {t("Руководство парламента")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/youth-parliament" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Молодежный Хурал
+                {t("Молодежный Хурал")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href={MUNICIPAL_COUNCIL_HREF} onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Совет по взаимодействию с представительными органами муниципальных образований
+                {t("Совет по взаимодействию с представительными органами муниципальных образований")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
@@ -900,7 +900,7 @@ export default function Header() {
             </a>
             <a className="tile link" href="/info/polnomochiya-spikera" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Полномочия Председателя
+                {t("aboutPowersSpeaker")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
@@ -918,19 +918,19 @@ export default function Header() {
             </a>
             <a className="tile link" href="/info/upoln-po-reb" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Уполномоченный по правам ребенка
+                {t("aboutChildRights")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/info/gosudarstvennye-simvoly" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Государственные символы Республики Тыва
+                {t("aboutSymbols")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
             <a className="tile link" href="/info/prigranichny-subekt" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                Приграничный субъект
+                {t("aboutBorder")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
@@ -1147,7 +1147,7 @@ export default function Header() {
             <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("news")}</div>
             <a className="tile link" href="/news/week" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                {t("Главные события") || "Главные события"}
+                {t("mainEventsOfWeek")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
