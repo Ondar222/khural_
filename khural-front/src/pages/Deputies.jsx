@@ -10,7 +10,7 @@ import {
   getFactionsFromBio,
   getDistrictsFromBio,
   normalizeFactionKey,
-  normalizeDistrictKey,
+  districtNamesMatch,
   buildFactionOptions,
   buildDistrictOptions,
 } from "../utils/deputyFilterOptions.js";
@@ -30,11 +30,10 @@ function deputyMatchesFaction(deputy, factionName) {
 
 function deputyMatchesDistrict(deputy, districtName) {
   if (!districtName || districtName === "Все") return true;
-  const key = normalizeDistrictKey(districtName);
   const dDistrict = String(deputy?.district || deputy?.electoralDistrict || "").trim();
-  if (dDistrict && normalizeDistrictKey(dDistrict) === key) return true;
+  if (dDistrict) return districtNamesMatch(dDistrict, districtName);
   const bio = deputy?.biography || deputy?.bio || deputy?.description || "";
-  return getDistrictsFromBio(bio).some((d) => normalizeDistrictKey(d) === key);
+  return getDistrictsFromBio(bio).some((district) => districtNamesMatch(district, districtName));
 }
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];

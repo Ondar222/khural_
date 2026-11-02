@@ -13,7 +13,7 @@ import {
   getDistrictsFromBio,
   normalizeFactionKey,
   canonicalizeFactionDisplay,
-  normalizeDistrictKey,
+  districtNamesMatch,
   buildFactionOptions,
   buildDistrictOptions,
 } from "../utils/deputyFilterOptions.js";
@@ -40,20 +40,11 @@ function deputyMatchesFaction(deputy, factionName) {
 
 function deputyMatchesDistrict(deputy, districtName) {
   if (!districtName || districtName === "Все") return true;
-  const key = normalizeDistrictKey(districtName);
   const dDistrict = String(deputy?.district || deputy?.electoralDistrict || "").trim();
-  if (dDistrict) {
-    const dKey = normalizeDistrictKey(dDistrict);
-    if (dKey === key) return true;
-    if (key.length >= 2 && (dKey.includes(key) || key.includes(dKey))) return true;
-  }
+  if (dDistrict) return districtNamesMatch(dDistrict, districtName);
   const bio = deputy?.biography || deputy?.bio || deputy?.description || "";
   const fromBio = getDistrictsFromBio(bio);
-  if (fromBio.some((d) => normalizeDistrictKey(d) === key)) return true;
-  return fromBio.some((d) => {
-    const dKey = normalizeDistrictKey(d);
-    return key.length >= 2 && (dKey.includes(key) || key.includes(dKey));
-  });
+  return fromBio.some((district) => districtNamesMatch(district, districtName));
 }
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
@@ -104,6 +95,19 @@ function normalizeConvocationToken(raw) {
 
 function formatConvocationLabel(token) {
   return formatConvocationLabelWithYears(token);
+}
+
+function getFiltersFromRoute(route) {
+  const query = route?.split("?")[1]?.split("#")[0] || "";
+  const params = new URLSearchParams(query);
+  const requestedStatus = String(params.get("status") || "active").toLowerCase();
+  return {
+    convocation: normalizeConvocationToken(params.get("convocation") || "Все"),
+    status: STATUS_OPTIONS.some((option) => option.value === requestedStatus) ? requestedStatus : "active",
+    committeeId: params.get("committee") || "Все",
+    faction: params.get("faction") || "Все",
+    district: params.get("district") || "Все",
+  };
 }
 
 function safeParse(json) {
@@ -409,6 +413,7 @@ export default function DeputiesV2() {
   const [overrides, setOverrides] = React.useState(() => readOverrides());
   const [apiDeputies, setApiDeputies] = React.useState([]);
   const [apiBusy, setApiBusy] = React.useState(false);
+  const initialFilters = getFiltersFromRoute(route);
   
   // Filter options from API
   const [apiFactions, setApiFactions] = React.useState([]);
@@ -580,12 +585,12 @@ export default function DeputiesV2() {
 
   // Filters per structure
   // Default: show all deputies (all convocations, all statuses).
-  const [convocation, setConvocation] = React.useState("Все");
-  const [committeeId, setCommitteeId] = React.useState("Все");
-  const [faction, setFaction] = React.useState("Все");
-  const [district, setDistrict] = React.useState("Все");
+  const [convocation, setConvocation] = React.useState(initialFilters.convocation);
+  const [committeeId, setCommitteeId] = React.useState(initialFilters.committeeId);
+  const [faction, setFaction] = React.useState(initialFilters.faction);
+  const [district, setDistrict] = React.useState(initialFilters.district);
   // Public default: hide ended/deceased deputies (they are available in /deputies/ended)
-  const [status, setStatus] = React.useState("active");
+  const [status, setStatus] = React.useState(initialFilters.status);
 
   // Reset page when filters change
   React.useEffect(() => {
@@ -754,46 +759,34 @@ export default function DeputiesV2() {
   }, [convocation, status, committeeId, faction, district]);
 
   React.useEffect(() => {
-    const applyFromHash = () => {
-      const sp = new URLSearchParams(window.location.search || "");
-      const f = sp.get("faction");
-      const d = sp.get("district");
-      const cv = sp.get("convocation");
-      const cm = sp.get("committee");
-      const st = sp.get("status");
-      if (f) setFaction(decodeURIComponent(f));
-      if (d) setDistrict(decodeURIComponent(d));
-      if (cv) setConvocation(normalizeConvocationToken(decodeURIComponent(cv)));
-      if (cm) setCommitteeId(decodeURIComponent(cm));
-      if (st) {
-        const val = String(st).toLowerCase();
-        if (val === "active" || val === "ended" || val === "all") setStatus(val);
-      }
-    };
-    applyFromHash();
-    window.addEventListener("popstate", applyFromHash);
-    window.addEventListener("app:navigate", applyFromHash);
-    return () => {
-      window.removeEventListener("popstate", applyFromHash);
-      window.removeEventListener("app:navigate", applyFromHash);
-    };
-  }, []);
+    const filters = getFiltersFromRoute(route);
+    setConvocation(filters.convocation);
+    setStatus(filters.status);
+    setCommitteeId(filters.committeeId);
+    setFaction(filters.faction);
+    setDistrict(filters.district);
+  }, [route]);
 
-  // Синхронизируем фильтры с URL при их изменении — тогда «Назад» в браузере вернёт на отфильтрованный список
-  React.useEffect(() => {
+  const updateFilter = (key, value) => {
+    const setters = {
+      convocation: setConvocation,
+      status: setStatus,
+      committeeId: setCommitteeId,
+      faction: setFaction,
+      district: setDistrict,
+    };
+    setters[key](value);
+    const values = { convocation, status, committeeId, faction, district, [key]: value };
     const sp = new URLSearchParams();
-    if (convocation && convocation !== "Все") sp.set("convocation", convocation);
-    if (status && status !== "active") sp.set("status", status);
-    if (committeeId && committeeId !== "Все") sp.set("committee", committeeId);
-    if (faction && faction !== "Все") sp.set("faction", faction);
-    if (district && district !== "Все") sp.set("district", district);
+    if (values.convocation && values.convocation !== "Все") sp.set("convocation", values.convocation);
+    if (values.status && values.status !== "active") sp.set("status", values.status);
+    if (values.committeeId && values.committeeId !== "Все") sp.set("committee", values.committeeId);
+    if (values.faction && values.faction !== "Все") sp.set("faction", values.faction);
+    if (values.district && values.district !== "Все") sp.set("district", values.district);
     const q = sp.toString();
     const path = `/deputies${q ? `?${q}` : ""}`;
-    const current = window.location.pathname + (window.location.search || "");
-    if (current !== path) {
-      window.history.replaceState({}, "", path);
-    }
-  }, [convocation, status, committeeId, faction, district]);
+    window.history.replaceState({}, "", path);
+  };
 
   return (
     <section className="section deputies-page">
@@ -818,7 +811,7 @@ export default function DeputiesV2() {
               <div className="filters filters--deputies">
                 <Select
                   value={convocation}
-                  onChange={setConvocation}
+                  onChange={(value) => updateFilter("convocation", value)}
                   popupMatchSelectWidth={false}
                   placement="bottomLeft"
                   options={(Array.isArray(convocations) ? convocations : []).map((c) => ({
@@ -828,7 +821,7 @@ export default function DeputiesV2() {
                 />
                 <Select
                   value={status}
-                  onChange={setStatus}
+                  onChange={(value) => updateFilter("status", value)}
                   popupMatchSelectWidth={false}
                   placement="bottomLeft"
                   options={STATUS_OPTIONS.map((x) => ({
@@ -838,7 +831,7 @@ export default function DeputiesV2() {
                 />
                 <Select
                   value={committeeId}
-                  onChange={setCommitteeId}
+                  onChange={(value) => updateFilter("committeeId", value)}
                   popupMatchSelectWidth={false}
                   placement="bottomLeft"
                   loading={filtersLoading}
@@ -859,7 +852,7 @@ export default function DeputiesV2() {
                 />
                 <Select
                   value={faction}
-                  onChange={setFaction}
+                  onChange={(value) => updateFilter("faction", value)}
                   popupMatchSelectWidth={false}
                   placement="bottomLeft"
                   options={factions.map((x) => ({
@@ -870,7 +863,7 @@ export default function DeputiesV2() {
                 />
                 <Select
                   value={district}
-                  onChange={setDistrict}
+                  onChange={(value) => updateFilter("district", value)}
                   popupMatchSelectWidth={false}
                   placement="bottomLeft"
                   options={districts.map((x) => ({
@@ -981,5 +974,4 @@ export default function DeputiesV2() {
     </section>
   );
 }
-
 

@@ -53,6 +53,7 @@ function normalizeApiDeputyForDetail(p) {
   const faction =
     String(p.faction || "").trim() ||
     (Array.isArray(p.factions) && p.factions[0]?.name ? String(p.factions[0].name).trim() : "");
+  const biography = String(p.description || p.biography || p.bio || "");
   const convocation =
     String(p.convocationNumber || p.convocation || p.convocation_number || "").trim() ||
     (Array.isArray(p.convocations) && p.convocations[0]?.name ? String(p.convocations[0].name).trim() : "");
@@ -112,9 +113,9 @@ function normalizeApiDeputyForDetail(p) {
       phone: String(p.phoneNumber || p.phone_number || p.phone || p.contacts?.phone || "").trim(),
       email: String(p.email || p.contacts?.email || "").trim(),
     },
-    biography: p.biography || p.bio || p.description || "",
-    bio: p.bio || (p.biography || p.description || ""),
-    description: p.description || (p.biography || p.bio || ""),
+    biography,
+    bio: biography,
+    description: biography,
     position: String(p.position || p.role || "").trim(),
   };
 }
@@ -173,8 +174,12 @@ export default function Government() {
         const res = await PersonsApi.getById(selectedId);
         if (!alive) return;
         let normalized = normalizeApiDeputyForDetail(res);
-        // Обогащаем данные из JSON файлов (фото, биография, контакты и т.д.)
+        const apiBiography = normalized?.biography || "";
+        // The API/admin description is authoritative; enrich only other profile fields.
         normalized = await enrichDeputyFromPersonInfo(normalized);
+        if (normalized) {
+          normalized = { ...normalized, biography: apiBiography, bio: apiBiography, description: apiBiography };
+        }
         if (alive) setSelectedDeputy(normalized);
       } catch (error) {
         console.error("Failed to fetch deputy:", error);
@@ -185,7 +190,7 @@ export default function Government() {
             // Локальные данные уже обогащены из JSON в DataContext, но обогатим еще раз на всякий случай
             let normalized = normalizeApiDeputyForDetail(localDeputy);
             normalized = await enrichDeputyFromPersonInfo(normalized);
-            setSelectedDeputy(normalized);
+            if (alive) setSelectedDeputy(normalized);
           } else {
             setSelectedDeputy(null);
           }
@@ -330,12 +335,15 @@ export default function Government() {
 
   if (selected) {
     const dataset = section === "Депутаты" ? deputies : government;
+    const hasSelectedDeputy =
+      section === "Депутаты" && String(selectedDeputy?.id) === String(selected);
     const item =
-      (section === "Депутаты" && selectedDeputy) ||
-      dataset.find((p) => String(p?.id) === String(selected));
+      section === "Депутаты"
+        ? hasSelectedDeputy ? selectedDeputy : null
+        : dataset.find((p) => String(p?.id) === String(selected));
     if (!item) {
       // Если депутат не найден, показываем загрузку или ошибку
-      if (section === "Депутаты" && !selectedDeputy) {
+      if (section === "Депутаты" && !hasSelectedDeputy) {
         return (
           <section className="section">
             <div className="container">

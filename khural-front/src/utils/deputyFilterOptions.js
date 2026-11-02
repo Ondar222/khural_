@@ -80,6 +80,21 @@ export function normalizeDistrictKey(s) {
   return String(s || "").trim().replace(/\s+/g, " ").toLowerCase().replace(/№\s*/g, "№");
 }
 
+export function districtNamesMatch(left, right) {
+  const leftKey = normalizeDistrictKey(left);
+  const rightKey = normalizeDistrictKey(right);
+  if (!leftKey || !rightKey) return false;
+  if (leftKey === rightKey) return true;
+
+  const extractNumber = (value) => {
+    if (/^\d+$/.test(value)) return value;
+    return value.match(/№\s*(\d+)\b|(?:избирательный\s+)?округ\s*#?\s*(\d+)/i)?.slice(1).find(Boolean) || "";
+  };
+  const leftNumber = extractNumber(leftKey);
+  const rightNumber = extractNumber(rightKey);
+  return Boolean(leftNumber && rightNumber && leftNumber === rightNumber);
+}
+
 const toStr = (item) => {
   if (typeof item === "string") return item.trim();
   if (item && typeof item === "object") return String(item.name || item.title || item.label || item).trim();

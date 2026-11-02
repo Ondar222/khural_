@@ -2202,6 +2202,17 @@ export default function PageBySlug() {
     ? t("← Назад к общим сведениям")
     : t("← Назад");
 
+  const hideBackButton =
+    isInfoIndex ||
+    isInfoFinance ||
+    isInfoDistricts ||
+    isInfoLawmap ||
+    isOpenData ||
+    isInfoOmbHuman ||
+    isInfoOmbChild ||
+    isInfoPersonnel ||
+    isInfoGranisa;
+
   // Получаем заголовок с переводом
   const title = isCodeOfHonor
     ? t(CODE_OF_HONOR_TITLE) || CODE_OF_HONOR_TITLE
@@ -2558,11 +2569,13 @@ export default function PageBySlug() {
       <div className="container">
         <div className="page-grid">
           <div style={!isInfoHistory && !isInfoPolnomochiya ? undefined : { gridColumn: '1 / -1' }}>
-            <div style={{ marginBottom: 16 }}>
-              <a href={backUrl} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
-                {backText}
-              </a>
-            </div>
+            {!hideBackButton && (
+              <div style={{ marginBottom: 16 }}>
+                <a href={backUrl} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                  {backText}
+                </a>
+              </div>
+            )}
             <h1 className="h1-compact">{title}</h1>
             <DataState
               loading={loading}

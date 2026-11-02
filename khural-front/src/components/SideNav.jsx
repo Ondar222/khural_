@@ -658,7 +658,7 @@ export default function SideNav({
     return [path, searchStr, hashStr];
   }, [route]);
 
-  // Мемоизируем ссылки: приоритет - overrideLinks, затем загруженные страницы + defaultLinks, затем defaultLinks
+  // Мемоизируем ссылки: фиксированный порядок ссылок раздела, затем дополнительные страницы CMS.
   const links = React.useMemo(() => {
     // Если переданы свои ссылки вручную, используем их
     if (Array.isArray(overrideLinks) && overrideLinks.length) return overrideLinks;
@@ -689,8 +689,7 @@ export default function SideNav({
 
     // Если загружаем страницы И это не раздел новостей/трансляций, добавляем их к стандартным ссылкам
     if (loadPages && pagesLinks.length > 0 && detectedSection !== 'news' && detectedSection !== 'broadcast') {
-      // Добавляем загруженные страницы в начало списка
-      return [...pagesLinks, ...sectionDefaultLinks];
+      return [...sectionDefaultLinks, ...pagesLinks];
     }
 
     // Иначе используем стандартные ссылки раздела (или пустой массив для разделов без специфичных ссылок)
