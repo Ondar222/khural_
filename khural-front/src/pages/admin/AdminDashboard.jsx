@@ -90,7 +90,7 @@ export default function AdminDashboard({
           value={adminPagesLoading ? "—" : adminPagesCount ?? "—"}
           href="/admin/pages"
         />
-        {/* <StatCard label="Документы" value={stats.documents ?? 0} href="/admin/documents" /> */}
+        <StatCard label="Документы" value={statsReady ? stats.documents ?? 0 : "—"} href="/admin/documents" />
         <StatCard label={t("adminDashboardSlider")} value={statsReady ? stats.slides ?? 0 : "—"} href="/admin/slider" />
         <StatCard label={t("adminDashboardNews")} value={statsReady ? stats.news ?? 0 : "—"} href="/admin/news" />
         <StatCard label={t("adminDashboardEvents")} value={statsReady ? stats.events ?? 0 : "—"} href="/admin/events" />
@@ -119,11 +119,11 @@ export default function AdminDashboard({
           description={t("adminDashboardManagePagesDesc")}
           href="/admin/pages"
         />
-        {/* <QuickAction
+        <QuickAction
           title="Загрузить документ"
-          description="Законы, постановления, инициативы и т.д."
-          href="/admin/documents"
-        /> */}
+          description="Добавить закон, постановление, инициативу и другой документ"
+          href="/admin/documents/create"
+        />
         <QuickAction
           title={t("adminDashboardAddEvent")}
           description={t("adminDashboardAddEventDesc")}

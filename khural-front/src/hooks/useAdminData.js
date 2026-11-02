@@ -664,7 +664,41 @@ export function useAdminData() {
       ...(Array.isArray(zakony2Data) ? zakony2Data : []).map(parseZakony).filter(Boolean),
       ...(Array.isArray(postamovleniyaData) ? postamovleniyaData : []).map(parsePostamovleniya).filter(Boolean),
     ];
-    const docsList = fromJson.length > 0 ? fromJson : (Array.isArray(apiDocs) && apiDocs.length ? apiDocs : toDocumentsFallback(fb.documents));
+    const docsList = Array.isArray(apiDocs) && apiDocs.length
+      ? (() => {
+          const normalizeTitle = (value) =>
+            String(value || "").replace(/\s+/g, " ").trim().toLocaleLowerCase("ru-RU");
+          const legacyById = new Map(
+            fromJson.map((doc) => [String(doc.id).replace(/^(zakony|postamovleniya)-/, ""), doc])
+          );
+          const legacyByTitle = new Map(fromJson.map((doc) => [normalizeTitle(doc.title), doc]));
+          const matchedLegacyIds = new Set();
+          const matchedLegacyTitles = new Set();
+          const apiDocuments = apiDocs.map((doc) => {
+            const legacyId = String(doc?.metadata?.legacyId ?? "");
+            const titleKey = normalizeTitle(doc?.title);
+            const legacyDoc = (legacyId && legacyById.get(legacyId)) || legacyByTitle.get(titleKey);
+            if (!legacyDoc) return doc;
+            if (legacyId) matchedLegacyIds.add(legacyId);
+            matchedLegacyTitles.add(normalizeTitle(legacyDoc.title));
+            return {
+              ...legacyDoc,
+              ...doc,
+              id: doc.id,
+              title: doc.title || legacyDoc.title,
+              metadata: { ...legacyDoc.metadata, ...doc.metadata },
+            };
+          });
+          const unimportedLegacyDocs = fromJson.filter((doc) => {
+            const legacyId = String(doc.id).replace(/^(zakony|postamovleniya)-/, "");
+            const titleKey = normalizeTitle(doc.title);
+            return !matchedLegacyIds.has(legacyId) && !matchedLegacyTitles.has(titleKey);
+          });
+          return [...apiDocuments, ...unimportedLegacyDocs];
+        })()
+      : fromJson.length > 0
+        ? fromJson
+        : toDocumentsFallback(fb.documents);
     setDocuments((Array.isArray(docsList) ? docsList : []).filter((d) => !deletedDocs.has(String(d?.id ?? ""))));
     if (Array.isArray(apiSlider) && apiSlider.length) {
       setSlider(apiSlider.map(toSliderRow));
