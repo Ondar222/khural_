@@ -88,7 +88,12 @@ export function districtNamesMatch(left, right) {
 
   const extractNumber = (value) => {
     if (/^\d+$/.test(value)) return value;
-    return value.match(/№\s*(\d+)\b|(?:избирательный\s+)?округ\s*#?\s*(\d+)/i)?.slice(1).find(Boolean) || "";
+    return value
+      .match(
+        /№\s*(\d+)\b|(?:избирательный\s+)?округ\s*#?\s*№?\s*(\d+)\b|^\s*(\d+)\s*(?:-й|ый)?\s*округ/i
+      )
+      ?.slice(1)
+      .find(Boolean) || "";
   };
   const leftNumber = extractNumber(leftKey);
   const rightNumber = extractNumber(rightKey);

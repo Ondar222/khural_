@@ -41,10 +41,12 @@ function deputyMatchesFaction(deputy, factionName) {
 function deputyMatchesDistrict(deputy, districtName) {
   if (!districtName || districtName === "Все") return true;
   const dDistrict = String(deputy?.district || deputy?.electoralDistrict || "").trim();
-  if (dDistrict) return districtNamesMatch(dDistrict, districtName);
   const bio = deputy?.biography || deputy?.bio || deputy?.description || "";
   const fromBio = getDistrictsFromBio(bio);
-  return fromBio.some((district) => districtNamesMatch(district, districtName));
+  return (
+    (dDistrict && districtNamesMatch(dDistrict, districtName)) ||
+    fromBio.some((district) => districtNamesMatch(district, districtName))
+  );
 }
 
 const CONVOCATION_ORDER = ["VIII", "VII", "VI", "V", "IV", "III", "II", "I", "Все"];
@@ -610,7 +612,22 @@ export default function DeputiesV2() {
       ...(Array.isArray(apiDistricts) ? apiDistricts : []).map(toStr).filter(Boolean),
       ...(Array.isArray(structureDistricts) ? structureDistricts : []).map(toStr).filter(Boolean),
     ];
-    const merged = buildDistrictOptions(existing, deputies);
+    const allDistricts = buildDistrictOptions(existing, deputies);
+    const numberedDistricts = new Set();
+    const otherDistricts = [];
+    allDistricts.forEach((value) => {
+      const match = String(value).match(
+        /№\s*(\d+)\b|(?:избирательный\s+)?округ\s*#?\s*№?\s*(\d+)\b|^\s*(\d+)\s*(?:-й|ый)?\s*округ/i
+      );
+      const number = match?.slice(1).find(Boolean);
+      if (number) numberedDistricts.add(Number(number));
+      else otherDistricts.push(value);
+    });
+    for (let number = 1; number <= 16; number += 1) numberedDistricts.add(number);
+    const merged = [
+      ...[...numberedDistricts].sort((a, b) => a - b).map((number) => `Округ №${number}`),
+      ...otherDistricts,
+    ];
     return ["Все", ...merged];
   }, [apiDistricts, structureDistricts, deputies]);
 
