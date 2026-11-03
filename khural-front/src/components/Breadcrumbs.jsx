@@ -8,6 +8,11 @@ import {
   PERSONNEL_TITLE,
   getPersonnelPage,
 } from "../content/personnel.js";
+import {
+  INFO_CORRUPTION_SLUG,
+  INFO_CORRUPTION_NORMATIVERNIE_SLUG,
+  getCorruptionLocalPage,
+} from "../content/corruption.js";
 
 // Static titles for base pages (will be translated via t())
 const TITLES_KEYS = {
@@ -258,6 +263,62 @@ export default function Breadcrumbs() {
           });
           crumbs.push({ label: page?.title ? t(page.title) || page.title : pathParts.slice(1).join("/") });
         }
+        return crumbs;
+      }
+
+      if (firstPart === "protivodeystvie-korrupcii") {
+        const corruptionRoot = `/${INFO_CORRUPTION_SLUG}`;
+        const corruptionTitle = t("Противодействие коррупции");
+        if (pathParts.length === 1) {
+          crumbs.push({ label: corruptionTitle });
+          return crumbs;
+        }
+
+        crumbs.push({ label: corruptionTitle, href: corruptionRoot });
+        const pageSlug = base.slice(1);
+        const page = getCorruptionLocalPage(pageSlug);
+        if (pathParts[1] === "normativnye-akty" && pathParts.length > 2) {
+          const normativeTitle = t("Нормативные правовые и иные акты в сфере противодействия коррупции");
+          crumbs.push({ label: normativeTitle, href: `/${INFO_CORRUPTION_NORMATIVERNIE_SLUG}` });
+        }
+        const childTitles = {
+          "komissiya-deputatov": "Комиссия по контролю за сведениями о доходах",
+          "metodicheskie-materialy": "Методические материалы",
+          "obratnaya-svyaz": "Сообщить о фактах коррупции",
+          "formy-dokumentov": "Формы документов",
+          "spavki-bk": "Программа «Справки БК»",
+        };
+        const title = page?.title || childTitles[pathParts[1]];
+        if (title) crumbs.push({ label: t(title) || title });
+        return crumbs;
+      }
+
+      if (firstPart === "prigranichny-subekt") {
+        const title = t("Приграничный субъект");
+        if (pathParts.length === 1) {
+          crumbs.push({ label: title });
+          return crumbs;
+        }
+
+        crumbs.push({ label: title, href: "/info/prigranichny-subekt" });
+        const childTitles = {
+          shablony: "Шаблоны заявлений и ходатайств",
+          "shema-uslugi": "Схема предоставления услуги",
+          "individualny-propusk": "Ходатайство на получение индивидуального пропуска",
+          "kollektivny-propusk": "Ходатайство на получение коллективного пропуска",
+          "zayavlenie-zakonnogo-predstavitelya": "Заявление законного представителя",
+          "zayavlenie-individualny-propusk": "Заявление на индивидуальный пропуск",
+          "zayavlenie-kollektivny-propusk": "Заявление на коллективный пропуск",
+          "zayavlenie-promyslovaya-deyatelnost": "Заявление на промысловую деятельность",
+          "zayavlenie-hoz-deyatelnost": "Заявление на разрешение хозяйственной деятельности",
+        };
+        const childTitle = childTitles[pathParts[1]];
+        if (childTitle) crumbs.push({ label: t(childTitle) || childTitle });
+        return crumbs;
+      }
+
+      if (firstPart === "contacts") {
+        crumbs.push({ label: t("Контактная информация") || "Контактная информация" });
         return crumbs;
       }
 

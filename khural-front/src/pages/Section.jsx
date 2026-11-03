@@ -9,6 +9,8 @@ import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../u
 import { getApparatusNavLinks } from "../utils/apparatusLinks.js";
 import { APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
 import { normalizeBool } from "../utils/bool.js";
+import DocumentActions from "../components/DocumentActions.jsx";
+import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
 
 // CSS для loader-анимации
 const loaderStyles = `
@@ -1607,6 +1609,7 @@ export default function SectionPage() {
   const { committees, commissions, factions: structureFactions, government, deputies, convocations } = useData();
   const { t } = useI18n();
   const focus = q.get("focus");
+  const [councilAgendaPreview, setCouncilAgendaPreview] = React.useState(null);
 
   // Inject loader styles on mount
   React.useEffect(() => {
@@ -2409,24 +2412,38 @@ export default function SectionPage() {
                   ← {COUNCIL_BASE_TITLE}
                 </a>
                 <h1 className="no-gold-underline">Повестки заседаний Совета</h1>
-                <ul className="section-list" style={{ marginTop: 16 }}>
-                  {COUNCIL_AGENDAS.map((item, i) => (
-                    <li key={i} style={{ marginBottom: 8 }}>
-                      {item.url ? (
-                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="link">
-                          {item.label}
-                        </a>
-                      ) : (
-                        <span>{item.label}</span>
-                      )}
-                      {item.size ? <span style={{ color: "#6b7280", marginLeft: 8 }}>({item.size})</span> : null}
-                    </li>
+                <div className="council-agendas" aria-label="Документы заседаний Совета">
+                  {COUNCIL_AGENDAS.map((item) => (
+                    <article className="council-agenda-card" key={item.url || item.label}>
+                      <div className="council-agenda-card__filetype" aria-hidden="true">DOCX</div>
+                      <div className="council-agenda-card__content">
+                        <h2 className="council-agenda-card__title">{item.label}</h2>
+                        <div className="council-agenda-card__meta">
+                          <span>Документ Word</span>
+                          {item.size ? <span>{item.size}</span> : null}
+                        </div>
+                        <div className="council-agenda-card__actions">
+                          <DocumentActions
+                            url={item.url}
+                            title={item.label}
+                            openLabel="Предпросмотр"
+                            onPreview={() => setCouncilAgendaPreview({ url: item.url, title: item.label })}
+                          />
+                        </div>
+                      </div>
+                    </article>
                   ))}
-                </ul>
+                </div>
               </div>
               <SideNav loadPages={true} autoSection={true} />
             </div>
           </div>
+          <PdfPreviewModal
+            open={Boolean(councilAgendaPreview)}
+            onClose={() => setCouncilAgendaPreview(null)}
+            url={councilAgendaPreview?.url}
+            title={councilAgendaPreview?.title}
+          />
         </section>
       );
     }

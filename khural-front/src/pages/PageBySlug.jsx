@@ -77,7 +77,9 @@ import {
   PERSONNEL_ROOT_PATH,
 } from "../content/personnel.js";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
+import DocumentActions from "../components/DocumentActions.jsx";
 import { useAdminData } from "../hooks/useAdminData.js";
+import { useData } from "../context/DataContext.jsx";
 import DataState from "../components/DataState.jsx";
 import SideNav from "../components/SideNav.jsx";
 import { normalizeSlugAlias } from "../utils/slugAliases.js";
@@ -89,6 +91,13 @@ import {
 } from "../utils/pages.js";
 import { useAutomaticTranslation } from "../hooks/useTranslation.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../content/forMedia.js";
+import {
+  CORRUPTION_LOCAL_PAGE_SLUGS,
+  INFO_CORRUPTION_NORMATIVERNIE_SLUG,
+  INFO_CORRUPTION_PLAN_SLUG,
+  INFO_CORRUPTION_SLUG,
+  getCorruptionLocalPage,
+} from "../content/corruption.js";
 
 /** Статический контент страницы «Кодекс чести мужчины Тувы» (источник: khural.yurta.site). */
 const CODE_OF_HONOR_SLUG = "code-of-honor";
@@ -1324,42 +1333,74 @@ const INFO_POLNOMOCHIYA_SPEAKER_HTML = `
 `;
 
 // === Противодействие коррупции ===
-const INFO_CORRUPTION_SLUG = "info/protivodeystvie-korrupcii";
 const INFO_CORRUPTION_TITLE = "Противодействие коррупции";
 const INFO_CORRUPTION_HTML = `
-<div style="display:grid; gap:12px;">
-  <div class="card" style="padding: 20px; line-height: 1.8;">
-    <h1 style="margin:0 0 16px 0; font-size: 22px; font-weight: 700; color: #111827;">Противодействие коррупции</h1>
-    <p style="margin:0 0 16px 0; font-size: 14px; color: #6b7280;">Уважаемые посетители сайта! При выборе федеральных нормативных правовых актов осуществляется переход на официальный интернет-портал правовой информации (www.pravo.gov.ru), где действующие федеральные законы, указы Президента Российской Федерации и постановления Правительства Российской Федерации содержатся в актуальном состоянии.</p>
-    <ul style="margin:0; padding-left: 20px;">
-      <li><a href="/${INFO_CORRUPTION_SLUG}/normativnye-akty" style="color: #003366;">Нормативные правовые и иные акты в сфере противодействия коррупции</a></li>
-      <li><a href="/${INFO_CORRUPTION_SLUG}/komissiya-deputatov" style="color: #003366;">Комиссия по контролю за достоверностью сведений, представляемых депутатами</a></li>
-      <li><a href="/${INFO_CORRUPTION_SLUG}/metodicheskie-materialy" style="color: #003366;">Методические материалы</a></li>
-      <li><a href="/${INFO_CORRUPTION_SLUG}/obratnaya-svyaz" style="color: #003366;">Обратная связь для сообщений о фактах коррупции</a></li>
-      <li><a href="/${INFO_CORRUPTION_SLUG}/formy-dokumentov" style="color: #003366;">Формы документов, связанных с противодействием коррупции</a></li>
-      <li><a href="/${INFO_CORRUPTION_SLUG}/spavki-bk" style="color: #003366;">Специальное программное обеспечение «Справки БК»</a></li>
-      <li><a href="/${INFO_CORRUPTION_SLUG}/protivodeystvie-korrupcii-plan" style="color: #003366;">План противодействия коррупции</a></li>
-    </ul>
-  </div>
+<div class="corruption-landing">
+  <p class="corruption-intro">Уважаемые посетители сайта! Федеральные нормативные правовые акты размещены на официальном интернет-портале правовой информации и представлены в актуальном состоянии.</p>
+  <nav class="corruption-nav-grid" aria-label="Разделы противодействия коррупции">
+    <a class="corruption-nav-card" href="/${INFO_CORRUPTION_SLUG}/normativnye-akty"><span class="corruption-nav-card__number">01</span><span class="corruption-nav-card__title">Нормативные правовые акты</span><span class="corruption-nav-card__arrow" aria-hidden="true">→</span></a>
+    <a class="corruption-nav-card" href="/${INFO_CORRUPTION_SLUG}/komissiya-deputatov"><span class="corruption-nav-card__number">02</span><span class="corruption-nav-card__title">Комиссия по контролю за сведениями о доходах</span><span class="corruption-nav-card__arrow" aria-hidden="true">→</span></a>
+    <a class="corruption-nav-card" href="/${INFO_CORRUPTION_SLUG}/metodicheskie-materialy"><span class="corruption-nav-card__number">03</span><span class="corruption-nav-card__title">Методические материалы</span><span class="corruption-nav-card__arrow" aria-hidden="true">→</span></a>
+    <a class="corruption-nav-card" href="/${INFO_CORRUPTION_SLUG}/obratnaya-svyaz"><span class="corruption-nav-card__number">04</span><span class="corruption-nav-card__title">Сообщить о фактах коррупции</span><span class="corruption-nav-card__arrow" aria-hidden="true">→</span></a>
+    <a class="corruption-nav-card" href="/${INFO_CORRUPTION_SLUG}/formy-dokumentov"><span class="corruption-nav-card__number">05</span><span class="corruption-nav-card__title">Формы документов</span><span class="corruption-nav-card__arrow" aria-hidden="true">→</span></a>
+    <a class="corruption-nav-card" href="/${INFO_CORRUPTION_SLUG}/spavki-bk"><span class="corruption-nav-card__number">06</span><span class="corruption-nav-card__title">Программа «Справки БК»</span><span class="corruption-nav-card__arrow" aria-hidden="true">→</span></a>
+    <a class="corruption-nav-card" href="/${INFO_CORRUPTION_SLUG}/protivodeystvie-korrupcii-plan"><span class="corruption-nav-card__number">07</span><span class="corruption-nav-card__title">План противодействия коррупции</span><span class="corruption-nav-card__arrow" aria-hidden="true">→</span></a>
+  </nav>
 </div>
 `;
 
-const INFO_CORRUPTION_NORMATIVERNIE_SLUG = "info/protivodeystvie-korrupcii/normativnye-akty";
+function getCorruptionDocumentMatches(documents, slug, pageHtml) {
+  const searchText = (value) => String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+  const staticLinks = [...String(pageHtml || "").matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)];
+  const linkedPaths = new Set(
+    staticLinks
+      .map(([, attributes]) => attributes.match(/\bhref=["']([^"']+)["']/i)?.[1] || "")
+      .filter(Boolean)
+      .map((url) => {
+        try {
+          return new URL(url, window.location.origin).pathname.toLowerCase();
+        } catch {
+          return url.toLowerCase();
+        }
+      })
+  );
+  const linkedTitles = new Set(
+    staticLinks
+      .map(([, , text]) => searchText(text))
+      .filter(Boolean)
+  );
+  const pageTerms = slug.endsWith("/formy-dokumentov")
+    ? ["коррупц", "антикоррупц", "справки бк", "сведения о доходах", "форма справки"]
+    : slug.endsWith("/spavki-bk")
+      ? ["справки бк", "справк бк", "доходах", "коррупц", "антикоррупц"]
+      : slug.endsWith("/protivodeystvie-korrupcii-plan")
+        ? ["план противодействия коррупции", "план мероприятий по противодействию коррупции", "антикоррупц"]
+        : ["коррупц", "антикоррупц", "справки бк", "справк бк", "достоверность сведений", "конфликт интересов"];
+
+  return (Array.isArray(documents) ? documents : []).filter((doc) => {
+    const title = searchText(doc?.title);
+    if (!title) return false;
+    const text = searchText([doc.title, doc.desc, doc.category, doc.type].join(" "));
+    if (!pageTerms.some((term) => text.includes(term))) return false;
+
+    const url = String(doc.url || "");
+    let path = url.toLowerCase();
+    try {
+      path = new URL(url, window.location.origin).pathname.toLowerCase();
+    } catch {
+      // Keep relative or legacy file paths as-is.
+    }
+    return !linkedTitles.has(title) && (!path || !linkedPaths.has(path));
+  });
+}
+
 const INFO_CORRUPTION_NORMATIVERNIE_TITLE = "Нормативные правовые и иные акты в сфере противодействия коррупции";
-const INFO_CORRUPTION_NORMATIVERNIE_HTML = `
-<div style="display:grid; gap:12px;">
-  <div class="card" style="padding: 20px;">
-    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Нормативные правовые и иные акты в сфере противодействия коррупции</h1>
-    <ul style="margin:0; padding-left: 20px;">
-      <li style="margin-bottom:8px;"><strong>Федеральные законы</strong></li>
-      <li style="margin-bottom:8px;"><strong>Указы Президента Российской Федерации</strong></li>
-      <li style="margin-bottom:8px;"><strong>Постановления Правительства Российской Федерации</strong></li>
-      <li style="margin-bottom:8px;"><strong>Законы Республики Тыва</strong></li>
-      <li><strong>План мероприятий по противодействию коррупции</strong></li>
-    </ul>
-  </div>
-</div>
-`;
+const INFO_CORRUPTION_NORMATIVERNIE_HTML =
+  getCorruptionLocalPage(INFO_CORRUPTION_NORMATIVERNIE_SLUG).html;
 
 const INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_SLUG = "info/protivodeystvie-korrupcii/komissiya-deputatov";
 const INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_TITLE = "Комиссия по контролю за достоверностью сведений, представляемых депутатами";
@@ -1432,50 +1473,17 @@ const INFO_CORRUPTION_OBRATNAYA_SVYAZ_HTML = `
 const INFO_CORRUPTION_FORMY_DOKUMENTOV_SLUG = "info/protivodeystvie-korrupcii/formy-dokumentov";
 const INFO_CORRUPTION_FORMY_DOKUMENTOV_TITLE = "Формы документов, связанных с противодействием коррупции";
 const INFO_CORRUPTION_FORMY_DOKUMENTOV_HTML = `
-<div style="display:grid; gap:12px;">
-  <div class="card" style="padding: 20px;">
-    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Формы документов, связанных с противодействием коррупции</h1>
-    <ul style="margin:0; padding-left: 20px;">
-      <li style="margin-bottom:8px;"><a href="/upload/docs/188/1.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма справки о доходах, расходах, имуществе и обязательствах имущественного характера <span style="color: #6b7280;">(139 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="/upload/docs/188/2.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма обращения гражданина, юридического лица по фактам коррупционных правонарушений <span style="color: #6b7280;">(28.5 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="/upload/docs/188/3.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма сведений об адресах сайтов и (или) страниц сайтов в информационно-телекоммуникационной сети «Интернет» <span style="color: #6b7280;">(64.5 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="/upload/docs/188/4.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма заявления служащего (работника) о невозможности по объективным причинам представить сведения о доходах, об имуществе и обязательствах имущественного характера своих супруги (супруга) и несовершеннолетних детей <span style="color: #6b7280;">(35.5 КБ)</span></a></li>
-      <li style="margin-top: 16px;"><strong>Специальное программное обеспечение для заполнения справки о доходах, об имуществе и обязательствах имущественного характера</strong></li>
-      <li><a href="/upload/docs/188/5.docx" target="_blank" rel="noreferrer" style="color: #003366;">Форма уведомления представителя нанимателя (работодате <span style="color: #6b7280;">(скачать)</span></a></li>
-    </ul>
-  </div>
-</div>
+<p>Актуальные формы документов доступны в каталоге документов раздела. Загрузите файл в каталог, чтобы документ появился здесь для просмотра и скачивания.</p>
 `;
 
 const INFO_CORRUPTION_SPAVKE_BK_SLUG = "info/protivodeystvie-korrupcii/spavki-bk";
 const INFO_CORRUPTION_SPAVKE_BK_TITLE = 'Специальное программное обеспечение "Справки БК"';
 const INFO_CORRUPTION_SPAVKE_BK_HTML = `
-<div style="display:grid; gap:12px;">
-  <div class="card" style="padding: 20px;">
-    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">Специальное программное обеспечение «Справки БК»</h1>
-    <ul style="margin:0; padding-left: 20px;">
-      <li style="margin-bottom:8px;"><a href="/upload/docs/185/spavki_bk.exe" target="_blank" rel="noreferrer" style="color: #003366;">СПО Справки БК (версия 2.5.5) от 31.01.2024 <span style="color: #6b7280;">(20139.1 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="/upload/docs/185/novely.docx" target="_blank" rel="noreferrer" style="color: #003366;">Основные новеллы <span style="color: #6b7280;">(25.6 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="/upload/docs/185/instrukciya.docx" target="_blank" rel="noreferrer" style="color: #003366;">Инструкция о порядке заполнения справок о доходах (в формате doc) <span style="color: #6b7280;">(41.5 КБ)</span></a></li>
-      <li style="margin-bottom:8px;"><a href="/upload/docs/185/opisanie.docx" target="_blank" rel="noreferrer" style="color: #003366;">Описание специального программного обеспечения (в формате doc) <span style="color: #6b7280;">(458 КБ)</span></a></li>
-      <li><a href="/upload/docs/185/metod_rekomendacii_2025.pdf" target="_blank" rel="noreferrer" style="color: #003366;">МЕТОДИЧЕСКИЕ РЕКОМЕНДАЦИИ в 2025 году (за отчетный 2024 год) <span style="color: #6b7280;">(163.3 КБ)</span></a></li>
-    </ul>
-  </div>
-</div>
+<p>Материалы для программы «Справки БК» отображаются здесь из каталога документов. Если нужного файла нет, его необходимо загрузить в админке.</p>
 `;
 
-const INFO_CORRUPTION_PLAN_SLUG = "info/protivodeystvie-korrupcii/protivodeystvie-korrupcii-plan";
 const INFO_CORRUPTION_PLAN_TITLE = "План противодействия коррупции";
-const INFO_CORRUPTION_PLAN_HTML = `
-<div style="display:grid; gap:12px;">
-  <div class="card" style="padding: 20px;">
-    <h1 style="margin:0 0 16px 0; font-size: 20px; font-weight: 700; color: #111827;">План противодействия коррупции</h1>
-    <ul style="margin:0; padding-left: 20px;">
-      <li><a href="/upload/docs/233/protivodeystvie_korrupcii_2018-2020.pdf" target="_blank" rel="noreferrer" style="color: #003366;">План противодействия коррупции в Верховном Хурале (парламенте) Республики Тыва на 2018 – 2020 годы <span style="color: #6b7280;">(105.5 КБ)</span></a></li>
-    </ul>
-  </div>
-</div>
-`;
+const INFO_CORRUPTION_PLAN_HTML = getCorruptionLocalPage(INFO_CORRUPTION_PLAN_SLUG).html;
 
 // === Контактная информация ===
 const INFO_CONTACTS_SLUG = "info/contacts";
@@ -1712,11 +1720,35 @@ function getSlugFromPath() {
 export default function PageBySlug() {
   const { lang, t } = useI18n();
   const adminData = useAdminData();
+  const { ensureDocuments } = useData();
   const [slug, setSlug] = React.useState(() => normalizeSlugAlias(getSlugFromPath()));
   const [page, setPage] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
   const [docPreview, setDocPreview] = React.useState(null); // { url, title } — предпросмотр PDF из статического HTML
+  const [corruptionDocuments, setCorruptionDocuments] = React.useState([]);
+  const [corruptionDocumentsLoading, setCorruptionDocumentsLoading] = React.useState(false);
+  const isCorruptionPage = slug === INFO_CORRUPTION_SLUG || slug.startsWith(`${INFO_CORRUPTION_SLUG}/`);
+
+  React.useEffect(() => {
+    if (!isCorruptionPage) return undefined;
+    let alive = true;
+    setCorruptionDocumentsLoading(true);
+    ensureDocuments()
+      .then((items) => {
+        if (alive) setCorruptionDocuments(Array.isArray(items) ? items : []);
+      })
+      .catch((documentError) => {
+        console.error("Не удалось загрузить документы раздела противодействия коррупции:", documentError);
+        if (alive) setCorruptionDocuments([]);
+      })
+      .finally(() => {
+        if (alive) setCorruptionDocumentsLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [ensureDocuments, isCorruptionPage]);
 
   // Ссылки вида <a data-doc-preview> внутри статического HTML открываем в модалке, а не переходом.
   const onHtmlContentClick = React.useCallback((e) => {
@@ -1803,6 +1835,7 @@ export default function PageBySlug() {
       INFO_PERSONNEL_KOMISSII_SOSTAV_SLUG,
       INFO_PERSONNEL_KOMISSII_RESHENIYA_SLUG,
       INFO_CORRUPTION_SLUG,
+      ...CORRUPTION_LOCAL_PAGE_SLUGS,
       INFO_CORRUPTION_NORMATIVERNIE_SLUG,
       INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_SLUG,
       INFO_CORRUPTION_KOMISSIYA_VYPISKI_SLUG,
@@ -1925,6 +1958,7 @@ export default function PageBySlug() {
   const isInfoPolnomochiyaSpeaker = slug === INFO_POLNOMOCHIYA_SPEAKER_SLUG;
   const isInfoCorruption = slug === INFO_CORRUPTION_SLUG;
   const isInfoCorruptionNormativnye = slug === INFO_CORRUPTION_NORMATIVERNIE_SLUG;
+  const corruptionLocalPage = getCorruptionLocalPage(slug);
   const isInfoCorruptionKomissiyaDeputatov = slug === INFO_CORRUPTION_KOMISSIYA_DEPUTATOV_SLUG;
   const isInfoCorruptionKomissiyaVypiski = slug === INFO_CORRUPTION_KOMISSIYA_VYPISKI_SLUG;
   const isInfoCorruptionKomissiyaInformaciya = slug === INFO_CORRUPTION_KOMISSIYA_INFORMACSIYA_SLUG;
@@ -2009,6 +2043,7 @@ export default function PageBySlug() {
       isInfoPolnomochiyaSpeaker ||
       isInfoContacts ||
       isInfoGosimvoli ||
+      isCorruptionPage ||
       isInfoCorruption ||
       isInfoCorruptionNormativnye ||
       isInfoCorruptionKomissiyaDeputatov ||
@@ -2094,6 +2129,7 @@ export default function PageBySlug() {
     isInfoPersonnelKomissiiSostav ||
     isInfoPersonnelKomissiiResheniya ||
     isInfoPolnomochiyaSpeaker ||
+    isCorruptionPage ||
     isInfoCorruption ||
     isInfoCorruptionNormativnye ||
     isInfoCorruptionKomissiyaDeputatov ||
@@ -2118,10 +2154,7 @@ export default function PageBySlug() {
     isInfoGranisaZayavlenieHoz;
 
   // Подстраницы «Противодействие коррупции» — назад к списку коррупционных разделов
-  const isInfoCorruptionSub = isInfoCorruptionNormativnye || isInfoCorruptionKomissiyaDeputatov ||
-    isInfoCorruptionKomissiyaVypiski || isInfoCorruptionKomissiyaInformaciya ||
-    isInfoCorruptionMetodicheskie || isInfoCorruptionObratnayaSvyaz ||
-    isInfoCorruptionFormyDokumentov || isInfoCorruptionSpavkeBK || isInfoCorruptionPlan;
+  const isInfoCorruptionSub = isCorruptionPage && !isInfoCorruption;
   // Подстраницы «Приграничный субъект» — назад к списку документов
   const isInfoGranisaSub = isInfoGranisaShablony || isInfoGranisaShema || isInfoGranisaIndivPropusk ||
     isInfoGranisaKolPropusk || isInfoGranisaZayavlenieZakon || isInfoGranisaZayavlenieIndiv ||
@@ -2281,7 +2314,9 @@ export default function PageBySlug() {
                                       ? t(INFO_OMBUDSMAN_CHILD_TITLE) || INFO_OMBUDSMAN_CHILD_TITLE
                                       : isInfoPolnomochiyaSpeaker
                                         ? t(INFO_POLNOMOCHIYA_SPEAKER_TITLE) || INFO_POLNOMOCHIYA_SPEAKER_TITLE
-                                        : isInfoCorruption
+                                        : corruptionLocalPage
+                                          ? t(corruptionLocalPage.title) || corruptionLocalPage.title
+                                          : isInfoCorruption
                                           ? t(INFO_CORRUPTION_TITLE) || INFO_CORRUPTION_TITLE
                                           : isInfoCorruptionNormativnye
                                             ? t(INFO_CORRUPTION_NORMATIVERNIE_TITLE) || INFO_CORRUPTION_NORMATIVERNIE_TITLE
@@ -2438,7 +2473,9 @@ export default function PageBySlug() {
                                       ? INFO_OMBUDSMAN_CHILD_HTML
                                       : isInfoPolnomochiyaSpeaker
                                         ? INFO_POLNOMOCHIYA_SPEAKER_HTML
-                                        : isInfoCorruption
+                                        : corruptionLocalPage
+                                          ? corruptionLocalPage.html
+                                          : isInfoCorruption
                                           ? INFO_CORRUPTION_HTML
                                           : isInfoCorruptionNormativnye
                                             ? INFO_CORRUPTION_NORMATIVERNIE_HTML
@@ -2536,6 +2573,9 @@ export default function PageBySlug() {
     html,
     lang === "ty" && !hasLocalizedPageHtml(page, locale)
   );
+  const relatedCorruptionDocuments = isCorruptionPage
+    ? getCorruptionDocumentMatches(corruptionDocuments, slug, html)
+    : [];
 
   // Определяем slug для админки
   const adminPageSlug = isCodeOfHonor
@@ -2587,10 +2627,14 @@ export default function PageBySlug() {
               empty={!isStaticPage && !loading && !page}
               emptyDescription="Страница не найдена"
             >
-              <div className="card" style={{ padding: 18 }}>
+              <div
+                className={isCorruptionPage ? "corruption-page-content" : "card"}
+                style={isCorruptionPage ? undefined : { padding: 18 }}
+              >
                 {html ? (
                   <div
                     data-no-auto-translate
+                    className={isCorruptionPage ? "corruption-html" : undefined}
                     onClick={onHtmlContentClick}
                     dangerouslySetInnerHTML={{ __html: displayHtml }}
                   />
@@ -2598,6 +2642,48 @@ export default function PageBySlug() {
                   <div>—</div>
                 )}
               </div>
+              {isCorruptionPage ? (
+                <section className="corruption-documents" aria-labelledby="corruption-documents-title">
+                  <div className="corruption-documents__heading">
+                    <span className="corruption-documents__eyebrow">Материалы раздела</span>
+                    <h2 id="corruption-documents-title">Документы по теме</h2>
+                  </div>
+                  {corruptionDocumentsLoading && relatedCorruptionDocuments.length === 0 ? (
+                    <p className="corruption-documents__loading">Загружаем документы из каталога…</p>
+                  ) : relatedCorruptionDocuments.length > 0 ? (
+                    <div className="corruption-document-list">
+                      {relatedCorruptionDocuments.map((doc) => {
+                        const url = doc.url || "";
+                        const detailHref = /^\d+$/.test(String(doc.id)) ? `/documents/${doc.id}` : "";
+                        return (
+                          <article className="corruption-document-card" key={doc.id || `${doc.title}-${url}`}>
+                            <span className="corruption-document-card__icon" aria-hidden="true">DOC</span>
+                            <div className="corruption-document-card__body">
+                              <h3>{doc.title}</h3>
+                              <p>{doc.category || doc.date || "Документ из общего каталога"}</p>
+                              <div className="corruption-document-card__actions">
+                                <DocumentActions
+                                  url={url}
+                                  title={doc.title}
+                                  href={detailHref}
+                                  openLabel="Предпросмотр"
+                                  noFileLabel="Подробнее"
+                                  onPreview={url ? () => setDocPreview({ url, title: doc.title }) : undefined}
+                                />
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="corruption-documents__empty">
+                      <p>Подходящих документов пока нет в каталоге.</p>
+                      <a className="btn btn--primary" href="/admin/documents/create">Добавить документ в админке</a>
+                    </div>
+                  )}
+                </section>
+              ) : null}
               {canEdit && (
                 <div style={{ marginTop: 20 }}>
                   <a href={`/admin/pages/edit/${adminPageSlug}`} className="btn" style={{ fontSize: 14 }}>
