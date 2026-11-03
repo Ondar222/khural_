@@ -75,6 +75,14 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
   const cmsSlug = React.useMemo(() => titleToCmsSlug(title), [title]);
   // Переводим заголовок
   const translatedTitle = React.useMemo(() => t(title), [title, t]);
+  // Длинный заголовок Совета — чуть компактнее, без подчёркивания
+  const titleClass =
+    [
+      noGoldUnderline ? "no-gold-underline" : null,
+      title === COUNCIL_BASE_TITLE ? "h1-compact" : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
 
   React.useEffect(() => {
     let alive = true;
@@ -126,7 +134,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
                   </a>
                 </div>
               )}
-              <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{pageTitle}</h1>
+              <h1 className={titleClass}>{pageTitle}</h1>
               <div className="card" style={{ padding: 18, marginTop: 20 }}>
                 {html ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <div>—</div>}
               </div>
@@ -149,7 +157,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
         <div className="container">
           <div className="page-grid">
             <div>
-              <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{translatedTitle}</h1>
+              <h1 className={titleClass}>{translatedTitle}</h1>
               <div style={{ padding: 40, textAlign: "center", color: "#6b7280" }}>Загрузка...</div>
             </div>
             <SideNav loadPages={true} autoSection={true} />
@@ -174,7 +182,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
         <div className="container">
           <div className="page-grid">
             <div>
-              <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{translatedTitle}</h1>
+              <h1 className={titleClass}>{translatedTitle}</h1>
               <div className="card" style={{ padding: 18, marginTop: 20 }}>
                 <div dangerouslySetInnerHTML={{ __html: staticHtml }} />
               </div>
@@ -198,7 +206,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
                 </a>
               </div>
             )}
-            <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{translatedTitle}</h1>
+            <h1 className={titleClass}>{translatedTitle}</h1>
             <div className="card" style={{ padding: 24, marginTop: 20 }}>
               <p style={{ marginTop: 0, marginBottom: 16 }}>
                 Раздел «{translatedTitle}» пока не заполнен. Вы можете создать страницу в админке.
@@ -1699,6 +1707,7 @@ export default function SectionPage() {
       title === "Депутатские фракции" ||
       title === "Фракции в Верховном Хурале" ||
       title === "Комиссии" ||
+      title === COUNCIL_BASE_TITLE ||
       title === "Молодежный Хурал" ||
       title === "Повестки комитетов" ||
       title === "Отчеты комитетов" ||
@@ -2152,7 +2161,7 @@ export default function SectionPage() {
           <div className="container">
             <div className="page-grid">
               <div>
-                <h1 className={noGoldUnderline ? "no-gold-underline" : undefined}>{title}</h1>
+                <h1 className="no-gold-underline h1-compact">{title}</h1>
                 <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12 }}>
                   {COUNCIL_NAV.map((item) => (
                     <a

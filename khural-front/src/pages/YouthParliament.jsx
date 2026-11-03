@@ -47,7 +47,7 @@ export default function YouthParliament() {
       <div className="container">
         <div className="page-grid">
           <div>
-            <h1 className="youth-parliament__title">{title}</h1>
+            <h1 className="youth-parliament__title h1-compact">{title}</h1>
 
             <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12 }}>
               {links.map((link) => (
