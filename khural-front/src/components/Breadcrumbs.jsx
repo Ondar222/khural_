@@ -2,6 +2,7 @@ import React from "react";
 import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
+import { CommitteesApi } from "../api/client.js";
 import Link from "./Link.jsx";
 import {
   PERSONNEL_ROOT_PATH,
@@ -71,6 +72,40 @@ export default function Breadcrumbs() {
   const { committees, slides } = useData();
   const { t, lang } = useI18n();
 
+  // Fallback: если committee не найден в контексте, загружаем по ID из API
+  const [fetchedCommitteeTitle, setFetchedCommitteeTitle] = React.useState("");
+
+  const committeeIdFromUrl = React.useMemo(() => {
+    if (base !== "/committee") return null;
+    try {
+      return new URLSearchParams((route || "").split("?")[1]).get("id");
+    } catch {
+      return null;
+    }
+  }, [base, route]);
+
+  React.useEffect(() => {
+    if (!committeeIdFromUrl) {
+      setFetchedCommitteeTitle("");
+      return;
+    }
+    // Проверяем, есть ли комитет в контексте
+    const found = (committees || []).find((x) => String(x?.id ?? "") === String(committeeIdFromUrl));
+    if (found?.title || found?.name) {
+      setFetchedCommitteeTitle(""); // не нужно, есть в контексте
+      return;
+    }
+    let alive = true;
+    CommitteesApi.getById(committeeIdFromUrl)
+      .then((c) => {
+        if (alive && c) setFetchedCommitteeTitle(String(c.title || c.name || ""));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [committeeIdFromUrl, committees]);
+
   // Build hierarchical trail
   const trail = React.useMemo(() => {
     const crumbs = [{ label: t("Главная"), href: "/" }];
@@ -81,10 +116,11 @@ export default function Breadcrumbs() {
       try {
         const sp = new URLSearchParams((route || "").split("?")[1]);
         const id = sp.get("id");
-        const c = (committees || []).find((x) => x.id === id);
-        if (c?.title) {
+        const c = (committees || []).find((x) => String(x?.id ?? "") === String(id ?? ""));
+        const title = c?.title || c?.name || fetchedCommitteeTitle;
+        if (title) {
           crumbs.push({ label: t("Комитеты"), href: "/committee" });
-          crumbs.push({ label: c.title });
+          crumbs.push({ label: title });
           return crumbs;
         }
       } catch {}
@@ -355,7 +391,7 @@ export default function Breadcrumbs() {
         href: "/youth-parliament" 
       });
       if (base !== "/youth-parliament") {
-        const slug = base.slice(16); // Remove "/youth-parliament/"
+        const slug = base.slice(18); // Remove "/youth-parliament/"
         const firstSegment = slug.split("/")[0];
         const titles = {
           "regulation": lang === "ty" ? "Дүрүм" : lang === "ru" ? "Положение" : "Regulation",
@@ -425,7 +461,7 @@ export default function Breadcrumbs() {
       crumbs.push({ label: t(titleKey) });
     }
     return crumbs;
-  }, [base, route, committees, slides, t]);
+  }, [base, route, committees, slides, t, fetchedCommitteeTitle]);
 
   // Hide on home
   if (base === "/") return null;

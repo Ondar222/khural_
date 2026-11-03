@@ -113,7 +113,7 @@ const defaultLinks = [
   PERSONNEL_NAV_LINKS,
   { label: "Законодательная карта", href: "/info/zakon-karta" },
   { label: "История парламентаризма", href: "/about/istoriya-parlamentarizma" },
-  { label: "Полномочия", href: "/info/polnomochiya" },
+  { label: "Полномочия", href: "/about/polnomochiya" },
 ];
 
 // Стандартные ссылки для раздела "Обращения" (как в Header)
@@ -195,7 +195,7 @@ const defaultLinksAbout = [
   { label: "Молодежный Хурал", href: "/youth-parliament" },
   { label: "Представительство в Совете Федерации", href: "/struct/council" },
   { label: "История парламентаризма", href: "/about/istoriya-parlamentarizma" },
-  { label: "Полномочия", href: "/info/polnomochiya" },
+  { label: "Полномочия", href: "/about/polnomochiya" },
 ];
 
 // Стандартные ссылки для раздела "Деятельность"
@@ -218,6 +218,18 @@ const defaultLinksCommittees = [
   { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
   { label: "Повестки комитетов", href: "/section?title=" + encodeURIComponent("Повестки комитетов") },
   { label: "Представительство в Совете Федерации", href: "/struct/council" },
+];
+
+// Стандартные ссылки для раздела "Молодежный Хурал"
+const defaultLinksYouth = [
+  { label: "Главная Молодежного Хурала", href: "/youth-parliament" },
+  { label: "Положение", href: "/youth-parliament/regulation" },
+  { label: "Состав", href: "/youth-parliament/composition" },
+  { label: "Отчеты", href: "/youth-parliament/reports" },
+  { label: "Контакты", href: "/youth-parliament/contacts" },
+  { label: "Повестки", href: "/youth-parliament/agendas" },
+  { label: "Проект «Дуза»", href: "/youth-parliament/duza-project" },
+  { label: "Регламент", href: "/youth-parliament/rules" },
 ];
 
 // Отдельный мемоизированный компонент ссылки
@@ -685,6 +697,8 @@ export default function SideNav({
       sectionDefaultLinks = defaultLinksActivity;
     } else if (detectedSection === 'committees') {
       sectionDefaultLinks = defaultLinksCommittees;
+    } else if (detectedSection === 'youth') {
+      sectionDefaultLinks = defaultLinksYouth;
     }
 
     // Если загружаем страницы И это не раздел новостей/трансляций, добавляем их к стандартным ссылкам

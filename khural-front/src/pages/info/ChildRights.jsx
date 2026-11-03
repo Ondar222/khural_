@@ -6,7 +6,7 @@ import ScrollToTop from "../../components/ScrollToTop.jsx";
 export default function ChildRights() {
   const { t } = useI18n();
   const links = [
-    { label: t("aboutHistory"), href: "/about/history" },
+    { label: t("aboutHistory"), href: "/about/istoriya-parlamentarizma" },
     { label: t("aboutPowersHural"), href: "/info/hural-powers" },
     { label: t("aboutPowersSpeaker"), href: "/info/speaker-powers" },
     { label: t("aboutStaff"), href: "/about/staff" },

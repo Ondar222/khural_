@@ -3,6 +3,11 @@
 // алиасный URL (например /about/districts) давал тот же контент и то же меню,
 // что и канонический (/info/iokrug).
 export const SLUG_ALIASES = {
+  // История парламентаризма
+  "about/history": "about/istoriya-parlamentarizma",
+  // Полномочия Верховного Хурала
+  "about/powers": "about/polnomochiya",
+  "info/polnomochiya": "about/polnomochiya",
   // Противодействие коррупции
   "info/anti-corruption": "info/protivodeystvie-korrupcii",
   // Приграничный субъект

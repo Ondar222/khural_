@@ -1764,7 +1764,19 @@ export default function PageBySlug() {
   }, []);
 
   React.useEffect(() => {
-    const update = () => setSlug(normalizeSlugAlias(getSlugFromPath()));
+    const update = () => {
+      const currentSlug = getSlugFromPath();
+      const normalizedSlug = normalizeSlugAlias(currentSlug);
+      if (currentSlug !== normalizedSlug) {
+        window.history.replaceState(
+          {},
+          "",
+          `/${normalizedSlug}${window.location.search}${window.location.hash}`,
+        );
+      }
+      setSlug(normalizedSlug);
+    };
+    update();
     window.addEventListener("popstate", update);
     window.addEventListener("app:navigate", update);
     return () => {
@@ -1806,7 +1818,6 @@ export default function PageBySlug() {
       INFO_LAWMAP_SLUG,
       INFO_HISTORY_SLUG,
       INFO_POLNOMOCHIYA_SLUG,
-      "info/polnomochiya",
       OPENDATA_SLUG,
       INFO_OMBUDSMAN_HUMAN_SLUG,
       INFO_OMBUDSMAN_CHILD_SLUG,
@@ -1927,7 +1938,7 @@ export default function PageBySlug() {
   const isInfoDistricts = slug === INFO_DISTRICTS_SLUG;
   const isInfoLawmap = slug === INFO_LAWMAP_SLUG;
   const isInfoHistory = slug === INFO_HISTORY_SLUG;
-  const isInfoPolnomochiya = slug === INFO_POLNOMOCHIYA_SLUG || slug === "info/polnomochiya";
+  const isInfoPolnomochiya = slug === INFO_POLNOMOCHIYA_SLUG;
   const isOpenData = slug === OPENDATA_SLUG;
   const isInfoOmbHuman = slug === INFO_OMBUDSMAN_HUMAN_SLUG;
   const isInfoOmbChild = slug === INFO_OMBUDSMAN_CHILD_SLUG;

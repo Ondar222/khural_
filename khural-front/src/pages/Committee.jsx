@@ -814,8 +814,22 @@ export default function Committee() {
   const rest = members.filter((m) => m.id !== leader?.id);
   const backToCommittee = committee ? encodeURIComponent(`/committee?id=${encodeURIComponent(committee.id)}`) : "";
 
-  // Если нет id - показываем список комитетов
+  // Если нет id — показываем список комитетов.
+  // Если id есть, но комитет ещё не загрузился — показываем спиннер.
+  const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search || "") : new URLSearchParams();
+  const hasCommitteeId = urlParams.get("id") != null;
+
   if (!committee) {
+    if (hasCommitteeId) {
+      return (
+        <section className="section">
+          <div className="container" style={{ padding: "80px 0", textAlign: "center" }}>
+            <div style={{ fontSize: 20, color: "#6b7280" }}>Загрузка комитета…</div>
+          </div>
+        </section>
+      );
+    }
+
     const getChairman = (c) => {
       if (!c) return null;
       if (typeof c.head === "string" && c.head.trim()) return c.head.trim();
@@ -1805,7 +1819,7 @@ export default function Committee() {
               </div>
             )}
           </div>
-          <SideNav links={committeeNavLinks} />
+          {committeeNavLinks ? <SideNav links={committeeNavLinks} /> : null}
         </div>
       </div>
       <PdfPreviewModal

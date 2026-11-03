@@ -4,6 +4,7 @@ import { useI18n } from "../context/I18nContext.jsx";
 import DataState from "../components/DataState.jsx";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import { pickMenuLabel } from "../utils/pagesOverrides.js";
+import { normalizeSlugAlias } from "../utils/slugAliases.js";
 
 // Статический список всех доступных страниц (используется когда API пуст или недоступен)
 const STATIC_PAGES = [
@@ -18,7 +19,7 @@ const STATIC_PAGES = [
   { slug: "info/upoln-po-prav", title: "Уполномоченный по правам человека" },
   { slug: "info/upoln-po-reb", title: "Уполномоченный по правам ребенка" },
   { slug: "info/polnomochiya-spikera", title: "Полномочия Председателя" },
-  { slug: "info/polnomochiya", title: "Полномочия Верховного Хурала" },
+  { slug: "about/polnomochiya", title: "Полномочия Верховного Хурала" },
   { slug: "info/protivodeystvie-korrupcii", title: "Противодействие коррупции" },
   { slug: "info/protivodeystvie-korrupcii/normativnye-akty", title: "Нормативные правовые акты (коррупция)" },
   { slug: "info/protivodeystvie-korrupcii/komissiya-deputatov", title: "Комиссия депутатов по контролю за достоверностью сведений о доходах" },
@@ -81,7 +82,19 @@ export default function PagesIndex() {
         if (!alive) return;
         const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
         if (arr.length > 0) {
-          setItems(arr);
+          const seenSlugs = new Set();
+          setItems(
+            arr
+              .map((item) => ({
+                ...item,
+                slug: normalizeSlugAlias(String(item.slug || "")),
+              }))
+              .filter((item) => {
+                if (!item.slug || seenSlugs.has(item.slug)) return false;
+                seenSlugs.add(item.slug);
+                return true;
+              }),
+          );
         } else {
           setItems(STATIC_PAGES);
         }
@@ -129,6 +142,5 @@ export default function PagesIndex() {
     </section>
   );
 }
-
 
 
