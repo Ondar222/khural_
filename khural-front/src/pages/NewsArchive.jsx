@@ -1,5 +1,5 @@
 import React from "react";
-import { DatePicker, message, Pagination } from "antd";
+import { DatePicker, message, Pagination, Select } from "antd";
 import ruRU from "antd/locale/ru_RU";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
@@ -142,27 +142,20 @@ export default function NewsArchive() {
     return source.map((c) => ({ id: c.id, name: String(c.name).trim() })).filter((c) => c.name);
   }, [apiCategories, news]);
 
-  // Пункты бокового меню «Новости» — фиксированные + категории + доп. ссылки
+  // Categories are filters, not navigation links in the sidebar.
   const newsMenuLinks = React.useMemo(() => {
-    const categoryItems = cats.map((c) => ({
-      label: c.name,
-      href: `/news?category=${encodeURIComponent(c.name)}`,
-    }));
     const base = [
       { label: "Главные события", href: "/news/week" },
       { label: "Актуальные новости", href: "/news?section=actual" },
       { label: "Все новости", href: "/news?section=all" },
       { label: "Медиа", href: "/news?section=media" },
     ];
-    const categoriesGroup = categoryItems.length
-      ? [{ label: "Категории", children: categoryItems }]
-      : [];
     const extra = NEWS_EXTRA_LINKS.map((item) => ({
       label: item.labelKey ? t(item.labelKey) : item.labelRu,
       href: item.href,
     }));
-    return [...base, ...categoriesGroup, ...extra];
-  }, [t, cats]);
+    return [...base, ...extra];
+  }, [t]);
 
   const filtered = React.useMemo(
     () => {
@@ -524,73 +517,47 @@ export default function NewsArchive() {
               <div className="filters filters--news">
                 <div className="filters__field">
                   <label className="filters__label">Дата</label>
-                    <DatePicker
-                      value={date ? dayjs(date) : null}
-                      onChange={(dateObj) => {
-                        const newDate = dateObj ? dateObj.format("YYYY-MM-DD") : "";
-                        setDate(newDate);
-                        setCurrentPage(1);
-                        const h = window.location.pathname;
-                        const params = new URLSearchParams(window.location.search || "");
-                        params.delete("page");
-                        if (section && section !== "all") params.set("section", section);
-                        else params.delete("section");
-                        if (newDate) params.set("date", newDate);
-                        else params.delete("date");
-                        const next = params.toString() ? `${h}?${params.toString()}` : h;
-                        window.history.pushState({}, "", next);
-                        window.dispatchEvent(new Event("app:navigate"));
-                      }}
-                      style={{ width: "100%", height: "54px" }}
-                      placeholder="Выберите дату"
-                      format="DD.MM.YYYY"
-                      locale={ruRU.DatePicker}
-                      size="large"
-                    />
+                  <DatePicker
+                    value={date ? dayjs(date) : null}
+                    onChange={(dateObj) => {
+                      const newDate = dateObj ? dateObj.format("YYYY-MM-DD") : "";
+                      setDate(newDate);
+                      setCurrentPage(1);
+                      const h = window.location.pathname;
+                      const params = new URLSearchParams(window.location.search || "");
+                      params.delete("page");
+                      if (section && section !== "all") params.set("section", section);
+                      else params.delete("section");
+                      if (newDate) params.set("date", newDate);
+                      else params.delete("date");
+                      const next = params.toString() ? `${h}?${params.toString()}` : h;
+                      window.history.pushState({}, "", next);
+                      window.dispatchEvent(new Event("app:navigate"));
+                    }}
+                    style={{ width: "100%", height: "54px" }}
+                    placeholder="Выберите дату"
+                    format="DD.MM.YYYY"
+                    locale={ruRU.DatePicker}
+                    size="large"
+                  />
+                </div>
+                <div className="filters__field">
+                  <label className="filters__label">Категория</label>
+                  <Select
+                    value={category}
+                    onChange={setCategoryAndUrl}
+                    options={[
+                      { value: "", label: "Все категории" },
+                      ...cats.map((c) => ({ value: c.name, label: c.name })),
+                    ]}
+                    showSearch
+                    optionFilterProp="label"
+                    popupMatchSelectWidth={false}
+                    size="large"
+                    placeholder="Выберите категорию"
+                  />
                 </div>
               </div>
-
-              {/* Категории: пилюли на десктопе, select на мобильных */}
-              {cats.length > 0 && (
-                <div className="news-cats">
-                  <div className="news-cats--pills" role="tablist" aria-label="Категории новостей">
-                    <button
-                      type="button"
-                      className={`news-cats__pill${!category ? " is-active" : ""}`}
-                      onClick={() => setCategoryAndUrl("")}
-                    >
-                      Все
-                    </button>
-                    {cats.map((c) => (
-                      <button
-                        key={c.id ?? c.name}
-                        type="button"
-                        className={`news-cats__pill${category && category.toLowerCase() === String(c.name).toLowerCase() ? " is-active" : ""}`}
-                        onClick={() => setCategoryAndUrl(c.name)}
-                      >
-                        {c.name}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="news-cats--select">
-                    <div className="news-filter">
-                      <span className="news-filter__label">Категория</span>
-                      <select
-                        className="news-filter-select"
-                        value={category}
-                        onChange={(e) => setCategoryAndUrl(e.target.value)}
-                      >
-                        <option value="">Все категории</option>
-                        {cats.map((c) => (
-                          <option key={c.id ?? c.name} value={c.name}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <DataState
                 loading={false}
