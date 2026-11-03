@@ -2205,6 +2205,7 @@ export default function PageBySlug() {
   const hideBackButton =
     isInfoIndex ||
     isInfoFinance ||
+    isFederationCouncil ||
     isForMedia ||
     isMothersCommandments ||
     isCodeOfHonor ||

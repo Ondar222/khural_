@@ -4840,6 +4840,7 @@ a.btn.btn--primary:focus-visible {
 .section-page h1,
 .section-page h2,
 .section-page h3,
+.youth-parliament__title,
 .sidenav h3 {
   padding-bottom: 10px;
 }
@@ -4852,6 +4853,7 @@ a.btn.btn--primary:focus-visible {
 .section-page h1::after,
 .section-page h2::after,
 .section-page h3::after,
+.youth-parliament__title::after,
 .sidenav h3::after {
   content: "";
   position: absolute;
