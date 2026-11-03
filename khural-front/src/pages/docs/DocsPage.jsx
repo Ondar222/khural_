@@ -308,7 +308,7 @@ export default function DocsPage() {
   }, [docs, deputies, committees, convocations]);
 
   const visibleDocs = React.useMemo(() => {
-    let list = docs;
+    let list = slug === "resolutions" ? docs.filter((d) => isDocumentFileUrl(d.url)) : docs;
     if (filterEntity) {
       const { type, id } = filterEntity;
       list = list.filter((d) => {
@@ -322,7 +322,7 @@ export default function DocsPage() {
       });
     }
     return list;
-  }, [docs, filterEntity, docLinkedMap]);
+  }, [docs, filterEntity, docLinkedMap, slug]);
 
   // Серверная пагинация: общее число страниц из apiTotal + статические
   const staticCount = staticMapped.length;
@@ -558,14 +558,9 @@ export default function DocsPage() {
                 href: "/docs/initiatives",
               },
               {
-                label: "Законодательная инициатива гражданами",
-                href: "/docs/civic",
-              },
-              {
                 label: "Реализация поправок в Конституцию РФ",
                 href: "/docs/constitution",
               },
-              { label: "Законопроекты", href: "/docs/bills" },
             ]}
           />
         </div>

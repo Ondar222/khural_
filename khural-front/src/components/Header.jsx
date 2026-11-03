@@ -357,9 +357,7 @@ export default function Header() {
                 </a>
                 <a href="/docs/resolutions">{t("docsResolutions")}</a>
                 <a href="/docs/initiatives">{t("docsInitiatives")}</a>
-                <a href="/docs/civic">{t("docsCivic")}</a>
                 <a href="/docs/constitution">{t("docsConstitution")}</a>
-                <a href="/docs/bills">{t("docsBills")}</a>
               </div>
             </div>
             <div
@@ -602,9 +600,7 @@ export default function Header() {
             </a>
             <a href="/docs/resolutions">{t("docsResolutions")}</a>
             <a href="/docs/initiatives">{t("docsInitiatives")}</a>
-            <a href="/docs/civic">{t("docsCivic")}</a>
             <a href="/docs/constitution">{t("docsConstitution")}</a>
-            <a href="/docs/bills">{t("docsBills")}</a>
           </div>
           <div className="sheet-col">
             <h3>{t("appeals")}</h3>
@@ -1119,21 +1115,9 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <a className="tile link" href="/docs/civic" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("docsCivic")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
             <a className="tile link" href="/docs/constitution" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("docsConstitution")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/docs/bills" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("docsBills")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>

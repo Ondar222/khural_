@@ -548,14 +548,9 @@ export default function Documents() {
                 href: "/docs/initiatives",
               },
               {
-                label: "Законодательная инициатива гражданами",
-                href: "/docs/civic",
-              },
-              {
                 label: "Реализация поправок в Конституцию РФ",
                 href: "/docs/constitution",
               },
-              { label: "Законопроекты", href: "/docs/bills" },
             ]}
           />
         </div>
