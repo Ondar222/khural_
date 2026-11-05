@@ -785,13 +785,22 @@ export default function Government() {
           <SideNav
             links={[
               { label: "Общие сведения", href: "/about" },
+              { label: "История парламентаризма в Республике Тыва", href: "/about/istoriya-parlamentarizma" },
+              { label: "Полномочия Верховного Хурала", href: "/about/polnomochiya" },
               { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-              { label: "Руководство", href: "/government" },
               { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
+              { label: "Руководство", href: "/government" },
+              { label: "Молодежный Хурал", href: "/youth-parliament" },
+              {
+                label: "Совет по взаимодействию с представительными органами муниципальных образований",
+                href:
+                  "/section?title=" +
+                  encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
+              },
               { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
               { label: "Депутатские фракции", href: "/about?tab=structure&focus=factions" },
               { label: "Представительство в Совете Федерации", href: "/struct/council" },
-              { label: "Молодежный Хурал", href: "/youth-parliament" },
+              { label: "Аппарат Верховного Хурала", href: "/apparatus" },
             ]}
           />
         </div>

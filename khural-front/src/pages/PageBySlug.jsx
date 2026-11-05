@@ -2623,7 +2623,7 @@ export default function PageBySlug() {
     <section className="section">
       <div className="container">
         <div className="page-grid">
-          <div style={!isInfoHistory && !isInfoPolnomochiya ? undefined : { gridColumn: '1 / -1' }}>
+          <div>
             {!hideBackButton && (
               <div style={{ marginBottom: 16 }}>
                 <a href={backUrl} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
@@ -2704,23 +2704,17 @@ export default function PageBySlug() {
               )}
             </DataState>
           </div>
-          {!isInfoHistory && !isInfoPolnomochiya && (
-            <SideNav
-              title={isFederationCouncil ? undefined : (isInfoSection ? undefined : (isCodeOfHonor || isMothersCommandments ? undefined : title))}
-              links={isFederationCouncil ? [
-                { label: "Общие сведения", href: "/about" },
-                { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-                { label: "Руководство", href: "/government" },
-                { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
-                { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
-                { label: "Депутатские фракции", href: "/about?tab=structure&focus=factions" },
-                { label: "Представительство в Совете Федерации", href: "/struct/council" },
-                { label: "Молодежный Хурал", href: "/youth-parliament" },
-              ] : undefined}
-              loadPages={true}
-              autoSection={true}
-            />
-          )}
+          <SideNav
+            title={
+              isFederationCouncil || isInfoHistory || isInfoPolnomochiya
+                ? undefined
+                : isInfoSection || isCodeOfHonor || isMothersCommandments
+                  ? undefined
+                  : title
+            }
+            loadPages={true}
+            autoSection={true}
+          />
         </div>
       </div>
       <PdfPreviewModal

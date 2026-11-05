@@ -184,18 +184,24 @@ const defaultLinksDeputies = [
 ];
 
 // Стандартные ссылки для раздела "О Хурале" (без дублирования с "Общими сведениями")
-const defaultLinksAbout = [
+// Экспортируется, чтобы страницы, где SideNav рендерится с явным links=...,
+// не разъезжались по составу с меню раздела.
+export const defaultLinksAbout = [
   { label: "Общие сведения", href: "/about" },
+  { label: "История парламентаризма в Республике Тыва", href: "/about/istoriya-parlamentarizma" },
+  { label: "Полномочия Верховного Хурала", href: "/about/polnomochiya" },
   { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
+  { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
   { label: "Руководство парламента", href: "/section?title=" + encodeURIComponent("Руководство парламента") },
+  { label: "Молодежный Хурал", href: "/youth-parliament" },
   {
     label: "Совет по взаимодействию с представительными органами муниципальных образований",
     href: "/section?title=" + encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
   },
-  { label: "Молодежный Хурал", href: "/youth-parliament" },
+  { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
+  { label: "Депутатские фракции", href: "/section?title=" + encodeURIComponent("Депутатские фракции") },
   { label: "Представительство в Совете Федерации", href: "/struct/council" },
-  { label: "История парламентаризма", href: "/about/istoriya-parlamentarizma" },
-  { label: "Полномочия", href: "/about/polnomochiya" },
+  { label: "Аппарат Верховного Хурала", href: "/apparatus" },
 ];
 
 // Стандартные ссылки для раздела "Деятельность"
@@ -551,6 +557,7 @@ export default function SideNav({
       if (pathname === '/struct/council') return "Представительство в Совете Федерации";
       if (pathname === '/youth-parliament') return "Молодежный Хурал";
       if (pathname === '/about/istoriya-parlamentarizma') return "История парламентаризма";
+      if (pathname === '/about/polnomochiya') return "Полномочия Верховного Хурала";
       
       // Проверяем query параметры для страницы /about
       if (pathname === '/about' || pathname === '/about/') {

@@ -96,7 +96,7 @@ export default function Footer() {
                 <a href="https://t.me/s/tuva_parlament" target="_blank" rel="noreferrer">
                   {t("telegram")}
                 </a>
-                <a href="https://t.me/s/tuva_parlament" target="_blank" rel="noreferrer">
+                <a href="https://max.ru/khuraltyva/AZ-yY-ezegk" target="_blank" rel="noreferrer">
                   Макс
                 </a>
               </nav>

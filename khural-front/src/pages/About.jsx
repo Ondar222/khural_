@@ -376,13 +376,22 @@ export default function About() {
             className="sidenav--about"
             links={[
               { label: t("Общие сведения"), href: "/about" },
+              { label: t("История парламентаризма в Республике Тыва"), href: "/about/istoriya-parlamentarizma" },
+              { label: t("Полномочия Верховного Хурала"), href: "/about/polnomochiya" },
               { label: t("Структура парламента"), href: "/about?tab=structure&focus=overview" },
-              { label: t("Руководство"), href: "/government" },
               { label: t("Комитеты"), href: "/about?tab=structure&focus=committees" },
+              { label: t("Руководство"), href: "/government" },
+              { label: t("Молодежный Хурал"), href: "/youth-parliament" },
+              {
+                label: t("Совет по взаимодействию с представительными органами муниципальных образований"),
+                href:
+                  "/section?title=" +
+                  encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
+              },
               { label: t("Комиссии"), href: "/about?tab=structure&focus=commissions" },
               { label: t("Депутатские фракции"), href: "/about?tab=structure&focus=factions" },
               { label: t("Представительство в Совете Федерации"), href: "/struct/council" },
-              { label: t("Молодежный Хурал"), href: "/youth-parliament" },
+              { label: t("Аппарат Верховного Хурала"), href: "/apparatus" },
             ]}
             loadPages={true}
             autoSection={true}
