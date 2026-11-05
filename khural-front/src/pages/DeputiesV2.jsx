@@ -276,7 +276,7 @@ function normalizeApiDeputy(p) {
     convocation,
     convocationNumber: convocation,
     convocations,
-    mandateEnded: Boolean(p.mandateEnded ?? p.mandate_ended),
+    mandateEnded: Boolean(p.mandateEnded ?? p.mandate_ended ?? p.isActive === false),
     isDeceased: Boolean(p.isDeceased ?? p.is_deceased),
     contacts,
     photo,

@@ -1759,6 +1759,9 @@ export default function DataProvider({ children }) {
             avatar_id: p.avatar_id || p.avatarId || undefined,
             // Сохраняем объект image для доступа к вложенным полям
             image: p.image || undefined,
+            // Статусные поля: isActive=false → mandateEnded=true (API присылает null)
+            mandateEnded: Boolean(p.mandateEnded ?? p.mandate_ended ?? p.isActive === false),
+            isDeceased: Boolean(p.isDeceased ?? p.is_deceased),
           };
         });
         const enriched = mapped.map((d) => {
