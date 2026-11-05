@@ -8,7 +8,7 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { formatConvocationLabelWithYears } from "../utils/convocationLabels.js";
 import { PersonsApi } from "../api/client.js";
 import { useHashRoute } from "../Router.jsx";
-import { MailIcon, PhoneIcon, BuildingIcon } from "../components/icons/LinearIcons.jsx";
+import { MailIcon, PhoneIcon, BuildingIcon, ClockIcon } from "../components/icons/LinearIcons.jsx";
 
 function nonBlank(x) {
   return x != null && String(x).trim() !== "";
@@ -751,7 +751,7 @@ export default function Government() {
                           )}
                           {p.reception && (
                             <li>
-                              <span>⏰</span>
+                              <span><ClockIcon size={15} /></span>
                               <span>
                                 {t("Приём:")} {p.reception}
                               </span>
