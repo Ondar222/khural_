@@ -1533,10 +1533,116 @@ function ApparatusPersonCard({ p, href }) {
   return <div className={className}>{cardContent}</div>;
 }
 
-function ApparatusSectionDetail({ title, backHref, navLinks }) {
+function findDeputyByName(deputies, name) {
+  const normalized = String(name || "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (!normalized) return null;
+  const deputiesList = Array.isArray(deputies) ? deputies : [];
+
+  // Точное совпадение
+  const exact = deputiesList.find((d) => {
+    const dName = String(d.name || "").trim().toLowerCase().replace(/\s+/g, " ");
+    return dName === normalized;
+  });
+  if (exact) return exact;
+
+  // Нечёткое совпадение: по Фамилии + Инициалы
+  const parts = normalized.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    const surname = parts[0];
+    // Имя (полное или инициал)
+    const firstname = parts[1];
+    // Отчество (если есть)
+    const patronymic = parts.slice(2).join(" ");
+
+    // Сначала ищем точное совпадение Фамилия + Имя
+    const bySurnameFirstname = deputiesList.find((d) => {
+      const dParts = String(d.name || "").trim().toLowerCase().replace(/\s+/g, " ").split(/\s+/);
+      if (dParts[0] !== surname) return false;
+      // Имя может быть полным или инициалом
+      if (dParts[1] === firstname) return true;
+      // Или инициал совпадает
+      if (dParts[1].length === 1 && dParts[1] === firstname) return true;
+      // Или полное имя начинается с инициала
+      if (firstname.length === 1 && dParts[1].startsWith(firstname)) return true;
+      return false;
+    });
+    if (bySurnameFirstname) return bySurnameFirstname;
+
+    // Если есть отчество — ищем по Ф + И + О
+    if (patronymic) {
+      const byAll = deputiesList.find((d) => {
+        const dParts = String(d.name || "").trim().toLowerCase().replace(/\s+/g, " ").split(/\s+/);
+        if (dParts[0] !== surname) return false;
+        if (dParts[1] !== firstname) return false;
+        return dParts.slice(2).join(" ") === patronymic;
+      });
+      if (byAll) return byAll;
+    }
+  }
+
+  // Fallback: совпадение только по фамилии, если она уникальна среди кандидатов с таким именем
+  if (parts.length >= 1) {
+    const matches = deputiesList.filter((d) => {
+      const dParts = String(d.name || "").trim().toLowerCase().split(/\s+/);
+      return dParts[0] === parts[0];
+    });
+    // Если только один кандидат с такой фамилией — возвращаем его
+    if (matches.length === 1) return matches[0];
+  }
+
+  return null;
+}
+
+// Собираем нормализованный URL фото — те же источники, что на /deputies
+function resolveDeputyPhoto(d) {
+  if (!d) return "";
+  const sources = [
+    d.photo,
+    d.photoUrl,
+    d.photo_url,
+    d.IE_PREVIEW_PICTURE,
+    d.previewPictureUrl,
+    d.image?.link,
+    d.image?.url,
+  ].filter(Boolean);
+  if (sources.length === 0) return "";
+  // Первое — normalizeFilesUrl
+  return normalizeFilesUrl(sources[0]);
+}
+
+function ApparatusSectionDetail({ title, backHref, navLinks, deputies }) {
   const data = APPARATUS_SECTIONS?.[title];
   if (!data) return null;
   const people = Array.isArray(data.people) ? data.people : [];
+
+  // Сопоставляем каждого человека из APPARATUS_SECTIONS с данными депутатов
+  const mergedPeople = React.useMemo(() => {
+    return people.map((p) => {
+      const deputy = findDeputyByName(deputies, p.name);
+      if (deputy) {
+        // Депутат найден: подтягиваем фото, контакты, но сохраняем role из APPARATUS_SECTIONS
+        const photoSrc = resolveDeputyPhoto(deputy);
+        return {
+          ...p,
+          photo: photoSrc || p.photo,
+          contacts: {
+            ...p.contacts,
+            phone: deputy.contacts?.phone || deputy.phoneNumber || deputy.phone || p.phone || "",
+            email: deputy.contacts?.email || deputy.email || p.email || "",
+          },
+          deputyId: deputy.id,
+          foundFromDeputies: true,
+        };
+      }
+      // Депутат не найден — подтягиваем фото из p.photo (если есть)
+      return {
+        ...p,
+        deputyId: null,
+        foundFromDeputies: false,
+      };
+    });
+  }, [people, deputies]);
+
   return (
     <section className="section section-page">
       <div className="container">
@@ -1552,15 +1658,110 @@ function ApparatusSectionDetail({ title, backHref, navLinks }) {
             <h1 className="no-gold-underline section-page__title">{data.title || title}</h1>
             {data.description ? <p style={{ marginTop: 0, maxWidth: 860 }}>{data.description}</p> : null}
 
-            {people.length ? (
-              <div className="apparatus-person-grid">
-                {people.map((p, i) => (
-                  <ApparatusPersonCard
-                    key={`${p.name || "p"}-${i}`}
-                    p={p}
-                    href={`/section?title=${encodeURIComponent(title)}&person=${i}`}
-                  />
-                ))}
+            {mergedPeople.length ? (
+              <div className="grid cols-3" style={{ marginTop: 16, gap: 16, gridAutoRows: 'minmax(0, auto)' }}>
+                {mergedPeople.map((p, i) => {
+                  const photoSrc = normalizeFilesUrl(p.photo || "");
+                  const phone = p.contacts?.phone || p.phone || "";
+                  const email = p.contacts?.email || p.email || "";
+                  // Всегда делаем ссылку — если депутат найден, на /government, иначе на person detail
+                  const linkHref = p.deputyId
+                    ? `/government?type=dep&id=${encodeURIComponent(String(p.deputyId))}${backHref ? `&back=${encodeURIComponent(backHref)}` : ""}`
+                    : `/section?title=${encodeURIComponent(title)}&person=${i}`;
+
+                  return (
+                    <a
+                      key={`${p.name || "p"}-${i}`}
+                      href={linkHref}
+                      className="gov-card"
+                      style={{
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '100%',
+                        // Имя: max 2 строки
+                        // Роль: max 2 строки
+                      }}
+                    >
+                      <div className="gov-card__top">
+                        {photoSrc ? (
+                          <img
+                            className="gov-card__avatar"
+                            src={photoSrc}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            onError={(e) => {
+                              const img = e.target;
+                              const currentSrc = img.src;
+                              if (/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(currentSrc) && !img.dataset.proxyTried) {
+                                img.dataset.proxyTried = "true";
+                                img.src = currentSrc.replace(/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i, "");
+                              } else {
+                                img.style.display = "";
+                                img.removeAttribute("src");
+                                img.classList.remove("gov-card__avatar");
+                                img.classList.add("gov-card__avatar-placeholder");
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="gov-card__avatar-placeholder" aria-hidden="true" />
+                        )}
+                      </div>
+                      <div className="gov-card__body">
+                        <div
+                          className="gov-card__name"
+                          style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            lineHeight: '1.3',
+                            minHeight: '2.6em',
+                          }}
+                        >
+                          {p.name}
+                        </div>
+                        <div
+                          className="gov-card__role"
+                          style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            lineHeight: '1.3',
+                            minHeight: '1.56em',
+                            fontSize: '13px',
+                            opacity: 0.85,
+                          }}
+                        >
+                          {p.role || "Сотрудник"}
+                        </div>
+                        <ul className="gov-meta" style={{ gap: '4px' }}>
+                          {phone ? (
+                            <li style={{ fontSize: '13px' }}>
+                              <span><PhoneIcon size={13} /></span>
+                              <span>{phone}</span>
+                            </li>
+                          ) : null}
+                          {email ? (
+                            <li style={{ fontSize: '13px' }}>
+                              <span><MailIcon size={13} /></span>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</span>
+                            </li>
+                          ) : null}
+                        </ul>
+                      </div>
+                      <div className="gov-card__actions">
+                        <span className="gov-card__btn">Подробнее</span>
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
             ) : (
               <div className="card" style={{ padding: 18, marginTop: 14 }}>
@@ -1698,6 +1899,7 @@ export default function SectionPage() {
           title={title}
           backHref={`/section?title=${encodeURIComponent("Структура Аппарата")}`}
           navLinks={navLinks}
+          deputies={deputies}
         />
       );
     }
