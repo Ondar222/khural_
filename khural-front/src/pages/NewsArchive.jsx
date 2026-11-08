@@ -14,14 +14,14 @@ import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
 import { useNewsCategories, categoriesFromNews } from "../hooks/useNewsCategories.js";
+import { resolveNewsCategory } from "../utils/newsCategoryAutofill.js";
 
 const NEWS_PAGE_SIZE = 12;
 
-// Категория новости: в API это объект {id, name}, в fallback-JSON — строка
+// Категория новости: в API это объект {id, name}, в fallback-JSON — строка.
+// Если категория не задана или общая («Новости») — автоопределяем по тексту.
 function getCategoryLabel(item) {
-  const c = item?.category;
-  if (!c) return "";
-  return typeof c === "string" ? c : String(c.name || c.title || "").trim();
+  return resolveNewsCategory(item).label;
 }
 
 function looksLikeHtml(s) {
@@ -134,12 +134,24 @@ export default function NewsArchive() {
     };
   }, []);
 
-  // Категории: сначала из API, при пустом ответе — из самих новостей
+  // Категории: сначала из API, при пустом ответе — из самих новостей.
+  // Дополнительно: собираем авто-категории из новостей с общей категорией «Новости».
   const { categories: apiCategories } = useNewsCategories();
   const cats = React.useMemo(() => {
     const fromApi = apiCategories || [];
     const source = fromApi.length ? fromApi : categoriesFromNews(news);
-    return source.map((c) => ({ id: c.id, name: String(c.name).trim() })).filter((c) => c.name);
+    const result = source.map((c) => ({ id: c.id, name: String(c.name).trim() })).filter((c) => c.name);
+    const seen = new Set(result.map((c) => c.name.toLowerCase()));
+
+    // Добавляем авто-категории из новостей с общей категорией
+    for (const n of (news || [])) {
+      const resolved = resolveNewsCategory(n);
+      if (resolved.label && resolved.inferred && !seen.has(resolved.label.toLowerCase())) {
+        result.push({ id: `auto:${resolved.label}`, name: resolved.label });
+        seen.add(resolved.label.toLowerCase());
+      }
+    }
+    return result;
   }, [apiCategories, news]);
 
   // Categories are filters, not navigation links in the sidebar.
@@ -166,15 +178,10 @@ export default function NewsArchive() {
         result = result.filter((n) => String(n.date || "").slice(0, 10) === date);
       }
 
-      // Фильтр по категории
+      // Фильтр по категории (с учётом автоопределения по тексту)
       if (category) {
         const target = String(category).trim().toLowerCase();
-        result = result.filter((n) => {
-          const c = n?.category;
-          if (!c) return false;
-          const label = typeof c === "string" ? c : (c.name || c.title || String(c));
-          return label.trim().toLowerCase() === target;
-        });
+        result = result.filter((n) => resolveNewsCategory(n).label.trim().toLowerCase() === target);
       }
 
       // Фильтр по разделу (секции)
