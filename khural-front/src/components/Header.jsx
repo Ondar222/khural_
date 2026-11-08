@@ -17,8 +17,7 @@ import {
 } from "../utils/pagesOverrides.js";
 // removed unused UI icon libs
 
-const PARLIAMENT_LEADERSHIP_HREF =
-  `/section?title=${encodeURIComponent("Руководство парламента")}`;
+const PARLIAMENT_LEADERSHIP_HREF = "/government";
 const MUNICIPAL_COUNCIL_HREF =
   `/section?title=${encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований")}`;
 

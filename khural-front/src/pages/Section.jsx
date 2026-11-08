@@ -53,6 +53,21 @@ const SECTION_TITLE_TO_SLUG = {
   "Для СМИ": "for-media",
 };
 
+/**
+ * Редирект со старой страницы «Руководство парламента» на канонический /government.
+ * Страницы дублировали друг друга, оставлен один адрес.
+ */
+function RedirectToGovernment() {
+  React.useEffect(() => {
+    window.location.replace("/government");
+  }, []);
+  return (
+    <div className="section container" style={{ padding: "2rem", textAlign: "center" }}>
+      <p>Переход к руководству парламента…</p>
+    </div>
+  );
+}
+
 function slugifyTitle(input) {
   return String(input || "")
     .trim()
@@ -2793,23 +2808,8 @@ export default function SectionPage() {
     }
 
     if (title === "Руководство парламента" || title === "Руководство Верховного Хурала (парламента) Республики Тыва") {
-      const back = `/section?title=${encodeURIComponent("Руководство парламента")}`;
-      return (
-        <section className="section section-page">
-          <div className="container">
-            <div className="page-grid">
-              <div className="page-grid__main">
-                <h1 className="no-gold-underline">{title === "Руководство парламента" ? title : "Руководство парламента"}</h1>
-                <p style={{ marginTop: 0 }}>
-                  Состав формируется автоматически по полю <strong>Тип структуры</strong> у депутата.
-                </p>
-                <DeputyGrid deputies={deputies} structureType="parliament_leadership" backHref={back} />
-              </div>
-              <SideNav loadPages={true} autoSection={true} />
-            </div>
-          </div>
-        </section>
-      );
+      // Канонический URL — /government (объединение с дублирующейся страницей)
+      return <RedirectToGovernment />;
     }
 
     // Раздел «Отчеты комитетов» (лендинг + страницы 3 и 4 созывов)

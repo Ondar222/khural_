@@ -81,7 +81,7 @@ function isRouteActive(currentPathname, currentSearch, currentHash, href) {
 const defaultLinks = [
   { label: "Общие сведения", href: "/about" },
   { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-  { label: "Руководство парламента", href: "/section?title=" + encodeURIComponent("Руководство парламента") },
+  { label: "Руководство", href: "/government" },
   { label: "Депутаты", href: "/deputies?convocation=VIII" },
   { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
   { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
@@ -192,7 +192,7 @@ export const defaultLinksAbout = [
   { label: "Полномочия Верховного Хурала", href: "/about/polnomochiya" },
   { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
   { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
-  { label: "Руководство парламента", href: "/section?title=" + encodeURIComponent("Руководство парламента") },
+  { label: "Руководство", href: "/government" },
   { label: "Молодежный Хурал", href: "/youth-parliament" },
   {
     label: "Совет по взаимодействию с представительными органами муниципальных образований",
@@ -218,7 +218,7 @@ const defaultLinksActivity = [
 const defaultLinksCommittees = [
   { label: "Общие сведения", href: "/about" },
   { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-  { label: "Руководство парламента", href: "/section?title=" + encodeURIComponent("Руководство парламента") },
+  { label: "Руководство", href: "/government" },
   { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
   { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
   { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
