@@ -16,6 +16,7 @@ import RequireAuth from "./components/RequireAuth.jsx";
 import RequireAdmin from "./components/RequireAdmin.jsx";
 import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import AutomaticPageTranslator from "./components/AutomaticPageTranslator.jsx";
+import CookieBanner from "./components/CookieBanner.jsx";
 import { App as AntApp, ConfigProvider, theme } from "antd";
 
 // Ленивая загрузка тяжёлых страниц: раньше все ~90 страниц попадали
@@ -376,6 +377,7 @@ export default function App() {
                       </AppErrorBoundary>
                     </main>
                     {!isAdmin ? <Footer /> : null}
+                    {!isAdmin ? <CookieBanner /> : null}
                   </div>
                 </DataGate>
               </DataProvider>

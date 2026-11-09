@@ -1,5 +1,6 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
+import { openCookieSettings } from "../utils/cookieConsent.js";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined, PrinterOutlined } from "@ant-design/icons";
 
 export default function Footer() {
@@ -84,6 +85,15 @@ export default function Footer() {
               <h4>{t("docs")}</h4>
               <nav>
                 <a href="/pd-policy">{t("pdPolicy")}</a>
+                <a
+                  href="#cookie-settings"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openCookieSettings();
+                  }}
+                >
+                  {t("Настройки cookie")}
+                </a>
                 <a href="/license">{t("license")}</a>
               </nav>
             </div>
