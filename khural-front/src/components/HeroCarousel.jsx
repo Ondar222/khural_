@@ -133,7 +133,6 @@ export default function HeroCarousel() {
   const baseSlides = React.useMemo(() => {
     // Slider must come from backend/admin only (no code fallbacks)
     const base = Array.isArray(dataSlides) ? dataSlides : [];
-    console.log("[HeroCarousel] Raw slides from DataContext:", base);
     return base.map((s) => {
       const slide = {
         id: String(s?.id ?? "").trim(),
@@ -144,7 +143,6 @@ export default function HeroCarousel() {
         link: s?.link ? String(s.link) : "/news",
         image: s?.image || "",
       };
-      console.log("[HeroCarousel] Mapped slide:", slide);
       return slide;
     });
   }, [dataSlides]);
@@ -174,7 +172,7 @@ export default function HeroCarousel() {
     if (active >= slides.length) setActive(0);
   }, [active, slides.length]);
 
-  // Перевод слайдов hero через Translator — если ...Ty полей нет
+  // Перевод слайдов hero через Translator — только для полей без перевода из админки
   const [translatedSlides, setTranslatedSlides] = React.useState(() => new Map());
 
   React.useEffect(() => {
@@ -183,6 +181,16 @@ export default function HeroCarousel() {
       setTranslatedSlides(new Map());
       return;
     }
+
+    // Если у всех слайдов уже есть перевод из админки — автоматический перевод не нужен.
+    const needsAutoTranslation = slides.some(
+      (s) => !String(s?.titleTy || "").trim() || !String(s?.descTy || "").trim()
+    );
+    if (!needsAutoTranslation) {
+      setTranslatedSlides(new Map());
+      return;
+    }
+
     const items = slides.map((s) => ({
       id: s?.id,
       title: s?.title,
@@ -208,27 +216,32 @@ export default function HeroCarousel() {
   if (!slides.length) return null;
 
   const current = slides[active] || slides[0];
-  console.log("[HeroCarousel] Current slide:", current);
-  console.log("[HeroCarousel] Lang:", lang);
-  console.log("[HeroCarousel] useTy check:", {
-    isTy: lang === "ty" || lang === "tyv",
-    hasTitleTy: !!current?.titleTy,
-    hasDescTy: !!current?.descTy,
-    titleTy: current?.titleTy?.substring(0, 50),
-    descTy: current?.descTy?.substring(0, 50),
-  });
-  
-  const useTy = (lang === "ty" || lang === "tyv") && (current?.titleTy || current?.descTy || translatedSlides?.get(String(current?.id))?.title);
+  const isTy = lang === "ty" || lang === "tyv";
   const slideTr = translatedSlides?.get(String(current?.id));
-  const desc = useTy && (current?.descTy || slideTr?.excerpt)
-    ? String(current?.descTy || slideTr?.excerpt || "").trim()
-    : (current?.desc ? String(current?.desc).trim() : "");
-  const previewText = stripHtmlToText(desc);
-  const { date, description } = splitDateAndDescription(previewText);
-  const subtitleText = String(description || "").trim();
+
+  // Приоритет: перевод из админки → автоматический перевод → оригинал (RU).
+  const adminTitleTy = String(current?.titleTy || "").trim();
+  const adminDescTy = String(current?.descTy || "").trim();
+  const autoTitle = String(slideTr?.title || "").trim();
+  const autoDesc = String(slideTr?.excerpt || "").trim();
+
+  const displayTitle = isTy
+    ? adminTitleTy || autoTitle || current?.title || ""
+    : current?.title || "";
+
+  const descSource = isTy
+    ? adminDescTy || autoDesc || current?.desc || ""
+    : current?.desc || "";
+
+  const ruPreviewText = stripHtmlToText(current?.desc);
+  const ruSplit = splitDateAndDescription(ruPreviewText);
+  const descPreviewText = stripHtmlToText(descSource);
+  const descSplit = splitDateAndDescription(descPreviewText);
+  // Если в переводе из админки нет даты — берём её из русской версии слайда.
+  const date = descSplit.date || (isTy ? ruSplit.date : "");
+  const subtitleText = String(descSplit.description || "").trim();
   // On mobile, keep subtitle short to avoid overflowing the hero card.
   const subtitlePreview = truncateWords(subtitleText, isMobile ? 15 : 30);
-  const displayTitle = useTy && (current?.titleTy || slideTr?.title) ? String(current?.titleTy || slideTr?.title).trim() : (current?.title || "");
   const href = current?.id
     ? `/news/slider/${encodeURIComponent(String(current.id))}`
     : "/news";
@@ -272,13 +285,16 @@ export default function HeroCarousel() {
           )}
         </div>
         <div className="caption center">
-          <div className="hero__panel">
+          <div className="hero__panel" translate="no" data-no-auto-translate>
+            {date ? <div className="hero__date">{date}</div> : null}
             <h1 className="title center">{displayTitle}</h1>
             {subtitlePreview ? <p className="hero__desc">{subtitlePreview}</p> : null}
-            {date ? <div className="hero__date">{date}</div> : null}
             <div className="hero__actions">
               <a className="hero__btn" href={href}>
-                {t("more")} <span aria-hidden="true">→</span>
+                <span>{t("more")}</span>
+                <span className="hero__btn-arrow" aria-hidden="true">
+                  →
+                </span>
               </a>
             </div>
           </div>
