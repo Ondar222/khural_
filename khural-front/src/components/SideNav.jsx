@@ -6,6 +6,7 @@ import { AboutApi } from "../api/client.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import { pickMenuLabel, applyPagesOverridesToTree } from "../utils/pagesOverrides.js";
 import { normalizePathBySlugAliases } from "../utils/slugAliases.js";
+import { DEFAULT_COMMISSIONS_LIST } from "../utils/commissionsData.js";
 import {
   PERSONNEL_ROOT_PATH,
   PERSONNEL_TITLE,
@@ -224,6 +225,21 @@ const defaultLinksCommittees = [
   { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
   { label: "Повестки комитетов", href: "/section?title=" + encodeURIComponent("Повестки комитетов") },
   { label: "Представительство в Совете Федерации", href: "/struct/council" },
+];
+
+// Стандартные ссылки для раздела "Комиссии" (список комиссий из админки/структуры)
+const defaultLinksCommissions = [
+  { label: "Общие сведения", href: "/about" },
+  { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
+  { label: "Руководство", href: "/government" },
+  { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
+  { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
+  ...DEFAULT_COMMISSIONS_LIST.map((c) => ({
+    label: String(c?.name || c?.id || ""),
+    href: `/commission?id=${encodeURIComponent(String(c?.id || ""))}`,
+  })),
+  { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
+  { label: "Повестки комитетов", href: "/section?title=" + encodeURIComponent("Повестки комитетов") },
 ];
 
 // Стандартные ссылки для раздела "Молодежный Хурал"
@@ -704,6 +720,8 @@ export default function SideNav({
       sectionDefaultLinks = defaultLinksActivity;
     } else if (detectedSection === 'committees') {
       sectionDefaultLinks = defaultLinksCommittees;
+    } else if (detectedSection === 'commissions') {
+      sectionDefaultLinks = defaultLinksCommissions;
     } else if (detectedSection === 'youth') {
       sectionDefaultLinks = defaultLinksYouth;
     }

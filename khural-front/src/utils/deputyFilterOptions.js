@@ -1,5 +1,8 @@
 import { decodeHtmlEntities } from "./html.js";
 
+/** Официальные фракции Верховного Хурала (текущий созыв). */
+export const OFFICIAL_FACTIONS = ["Единая Россия", "КПРФ", "ЛДПР", "Новые люди"];
+
 /** Извлекает названия фракций из текста биографии. */
 export function getFactionsFromBio(bioRaw) {
   if (!bioRaw || typeof bioRaw !== "string") return [];
@@ -120,7 +123,7 @@ export function buildFactionOptions(existingFactions, deputies) {
   const fromBio = (Array.isArray(deputies) ? deputies : []).flatMap((d) =>
     getFactionsFromBio(d?.biography || d?.bio || d?.description || "")
   );
-  const raw = [...fromExisting, ...fromDeputies, ...fromBio].filter(Boolean);
+  const raw = [...OFFICIAL_FACTIONS, ...fromExisting, ...fromDeputies, ...fromBio].filter(Boolean);
   const merged = Array.from(new Set(raw.map(canonicalizeFactionDisplay))).filter(Boolean);
   merged.sort((a, b) => a.localeCompare(b, "ru"));
   return merged;

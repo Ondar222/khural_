@@ -1618,9 +1618,20 @@ export default function DataProvider({ children }) {
               const str = typeof val === "string" ? val : (val?.name || val?.title || String(val || ""));
               return positionForCard(str) || (str.length <= 80 ? str : "");
             })(),
-            // Биография - из API или локальных данных
-            bio: pick(p.biography, p.bio) || localResolved?.bio || "",
-            biography: pick(p.biography, p.bio) || localResolved?.biography || "",
+            // Биография - из API или локальных данных.
+            // В API биография хранится в поле description, поэтому используем его
+            // как fallback: иначе на страницах фракций не определяется партийная
+            // принадлежность депутата (см. getFactionsFromBio).
+            bio:
+              pick(p.biography, p.bio, p.description) ||
+              localResolved?.bio ||
+              localResolved?.biography ||
+              "",
+            biography:
+              pick(p.biography, p.bio, p.description) ||
+              localResolved?.biography ||
+              localResolved?.bio ||
+              "",
             district: (() => {
               const apiVal =
                 pick(p.electoralDistrict, p.electoral_district) ||
