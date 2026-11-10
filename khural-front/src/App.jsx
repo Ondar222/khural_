@@ -58,6 +58,7 @@ const MapPage = lazy(() => import("./pages/Map.jsx"));
 const Apparatus = lazy(() => import("./pages/Apparatus.jsx"));
 const SectionPage = lazy(() => import("./pages/Section.jsx"));
 const Commission = lazy(() => import("./pages/Commission.jsx"));
+const LegacyNotFound = lazy(() => import("./pages/LegacyCommissionRoutes.jsx"));
 const DocsPage = lazy(() => import("./pages/docs/DocsPage.jsx"));
 const ActivitySectionPage = lazy(() => import("./pages/activity/ActivitySection.jsx"));
 const BudgetDynamicPage = lazy(() => import("./pages/BudgetDynamicPage.jsx"));
@@ -370,7 +371,7 @@ export default function App() {
                             "/pd-policy": PdPolicy,
                             "/license": License,
                             "/sitemap": Sitemap,
-                            "*": NotFound,
+                            "*": LegacyNotFound,
                           }}
                           />
                         </React.Suspense>

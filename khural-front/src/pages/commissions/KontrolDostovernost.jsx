@@ -62,7 +62,13 @@ export default function KontrolDostovernost() {
         29 ноября 2024 г.;
         <br />№ _______ ПВХ-IV
       </p>
-      <a href="/struct/komissii/262/5912/">Постановление о комиссии</a>
+      <a
+        href="https://khural.rtyva.ru/struct/komissii/262/5912/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Постановление о комиссии
+      </a>
     </div>
   );
 }

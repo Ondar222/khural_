@@ -167,7 +167,7 @@ export default function Nagradnaya() {
           <ul style={{ listStyle: "none", padding: 0 }}>
             <li style={{ marginBottom: "1rem" }}>
               <a
-                href="/struct/komissii/114/13818/"
+                href="https://khural.rtyva.ru/struct/komissii/114/13818/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -179,7 +179,7 @@ export default function Nagradnaya() {
             </li>
             <li style={{ marginBottom: "1rem" }}>
               <a
-                href="/struct/komissii/114/13812/"
+                href="https://khural.rtyva.ru/struct/komissii/114/13812/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -190,7 +190,7 @@ export default function Nagradnaya() {
             </li>
             <li style={{ marginBottom: "1rem" }}>
               <a
-                href="/struct/komissii/114/13820/"
+                href="https://khural.rtyva.ru/struct/komissii/114/13820/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -209,21 +209,11 @@ export default function Nagradnaya() {
             </li>
             <li style={{ marginBottom: "1rem", display: "flex", flexDirection: "column" }}>
               <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert("Бланк Наградного листа будет доступен в ближайшее время");
-                }}
-              >
-                Бланк Наградного листа
-              </a>
-              <a
-                href="/images/%D0%9E%D0%B1%D1%80%D0%B0%D0%B7%D0%B5%D1%86%20%D0%BD%D0%B0%D0%B3%D1%80%D0%B0%D0%B4%D0%BD%D0%BE%D0%B3%D0%BE%20%D0%BB%D0%B8%D1%81%D1%82%D0%B0.doc"
+                href="https://khural.rtyva.ru/struct/komissii/114/"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ marginLeft: "1rem" }}
               >
-                Скачать бланк
+                Бланк Наградного листа
               </a>
             </li>
           </ul>

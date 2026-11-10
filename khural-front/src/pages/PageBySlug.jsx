@@ -83,6 +83,7 @@ import { useData } from "../context/DataContext.jsx";
 import DataState from "../components/DataState.jsx";
 import SideNav from "../components/SideNav.jsx";
 import { normalizeSlugAlias } from "../utils/slugAliases.js";
+import { resolveLegacyCommissionTarget } from "../utils/legacyCommissionPaths.js";
 import {
   extractPageHtml,
   extractPageTitle,
@@ -1888,6 +1889,14 @@ export default function PageBySlug() {
   React.useEffect(() => {
     const update = () => {
       const currentSlug = getSlugFromPath();
+      // Устаревшие адреса комиссий (старый сайт /struct/komissii/...,
+      // дубли CMS commission-data-*) — редирект на /commission?id=...
+      const legacyTarget = resolveLegacyCommissionTarget(window.location.pathname);
+      if (legacyTarget) {
+        window.history.replaceState({}, "", `${legacyTarget}${window.location.search}${window.location.hash}`);
+        window.dispatchEvent(new Event("app:navigate"));
+        return;
+      }
       const normalizedSlug = normalizeSlugAlias(currentSlug);
       if (currentSlug !== normalizedSlug) {
         window.history.replaceState(
