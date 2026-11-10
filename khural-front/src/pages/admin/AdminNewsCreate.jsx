@@ -1,11 +1,12 @@
 import React from "react";
 // TMP_MARKER
-import { App, Button, Input, Form, Upload, Select, DatePicker, Switch } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { App, Button, Input, Form, Upload, Select, DatePicker, Switch, Radio, Space } from "antd";
+import { DeleteOutlined, PlusOutlined, VideoCameraOutlined } from "@ant-design/icons";
 import { useHashRoute } from "../../Router.jsx";
 import { useTranslation } from "../../hooks/index.js";
 import { NewsApi } from "../../api/client.js";
 import { useNewsCategories } from "../../hooks/useNewsCategories.js";
+import { MEDIA_CATEGORY_NAME, buildVideoEmbedHtml } from "../../utils/newsMedia.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 
 // Функция для сжатия изображения (более агрессивное сжатие)
@@ -129,6 +130,10 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
   const [coverImage, setCoverImage] = React.useState(null);
   const [creatingCategory, setCreatingCategory] = React.useState(false);
   const [newCategoryName, setNewCategoryName] = React.useState("");
+  // Тип записи: обычная новость или медиа (фотоальбом / видеозапись)
+  const [recordType, setRecordType] = React.useState("news");
+  const isMedia = recordType === "media";
+  const [videoUrls, setVideoUrls] = React.useState([""]);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
   const {
     categories,
@@ -171,6 +176,42 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
   }, [newCategoryName, categories, form, antdMessage, reloadCategories]);
 
   // Категории загружаются через useNewsCategories
+  // Находит (при необходимости — создаёт) категорию «Медиа» и возвращает её id
+  const ensureMediaCategory = React.useCallback(async () => {
+    const findMedia = (cats) =>
+      (cats || []).find(
+        (c) => String(c.name || "").trim().toLowerCase() === MEDIA_CATEGORY_NAME.toLowerCase()
+      ) || null;
+    let found = findMedia(categories);
+    if (!found) {
+      try {
+        await NewsApi.createCategory({ name: MEDIA_CATEGORY_NAME });
+        const cats = await reloadCategories(true);
+        found = findMedia(cats);
+      } catch (error) {
+        antdMessage.error(`Не удалось создать категорию «${MEDIA_CATEGORY_NAME}»: ${error?.message || "API"}`);
+      }
+    }
+    return found?.id ?? null;
+  }, [categories, reloadCategories, antdMessage]);
+
+  // При переключении в режим «Медиа» сразу подставляем категорию «Медиа»
+  const handleRecordTypeChange = React.useCallback(
+    async (nextType) => {
+      setRecordType(nextType);
+      if (nextType === "media") {
+        const id = await ensureMediaCategory();
+        if (id != null) form.setFieldValue("categoryId", id);
+      }
+    },
+    [ensureMediaCategory, form]
+  );
+
+  const addVideoUrl = () => setVideoUrls((prev) => [...prev, ""]);
+  const removeVideoUrl = (idx) => setVideoUrls((prev) => prev.filter((_, i) => i !== idx));
+  const setVideoUrl = (idx, value) =>
+    setVideoUrls((prev) => prev.map((v, i) => (i === idx ? value : v)));
+
   // Очищаем ошибку при изменении
   React.useEffect(() => {
     if (translationError) {
@@ -277,12 +318,25 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
+
+      const cleanVideoUrls = videoUrls.map((u) => String(u || "").trim()).filter(Boolean);
+
+      // Для медиа нужно хотя бы одно фото или ссылка на видео
+      if (isMedia && !coverImage && images.length === 0 && cleanVideoUrls.length === 0) {
+        antdMessage.warning("Для медиа-записи добавьте хотя бы одно фото или ссылку на видео");
+        return;
+      }
+
       // Получаем контент из текстовых полей (raw HTML) и удаляем base64 изображения
-      const contentRu = removeBase64Images(decodeHtmlEntities(values.contentRu || ""));
+      let contentRu = removeBase64Images(decodeHtmlEntities(values.contentRu || ""));
       const contentTy = removeBase64Images(decodeHtmlEntities(values.contentTy || ""));
       const shortRu = removeBase64Images(decodeHtmlEntities(values.shortDescriptionRu || ""));
       const shortTy = removeBase64Images(decodeHtmlEntities(values.shortDescriptionTy || ""));
+
+      // Медиа: встраиваем видеозаписи в контент (iframe-эмбеды)
+      if (isMedia && cleanVideoUrls.length > 0) {
+        contentRu = `${contentRu}${buildVideoEmbedHtml(cleanVideoUrls)}`;
+      }
       
       // Формируем массив локализованного контента
       const contentArray = [];
@@ -338,7 +392,13 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       // Добавляем JSON поля
       // categoryId - необязательное поле, отправляем только если выбрано
       // реальное число (в fallback-списках id мог быть названием категории)
-      const categoryIdNum = Number(values.categoryId);
+      let categoryIdNum = Number(values.categoryId);
+      // Медиа: гарантируем категорию «Медиа»
+      if (isMedia && !(Number.isInteger(categoryIdNum) && categoryIdNum > 0)) {
+        const mediaId = await ensureMediaCategory();
+        if (mediaId != null) categoryIdNum = Number(mediaId);
+      }
+      if (!isMedia && categoryIdNum === 0) categoryIdNum = Number.NaN;
       if (Number.isInteger(categoryIdNum) && categoryIdNum > 0) {
         formData.append("categoryId", String(categoryIdNum));
       }
@@ -460,11 +520,28 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
       <div className="admin-news-editor__hero">
         <div className="admin-news-editor__hero-row">
           <div className="admin-news-editor__hero-left">
-            <div className="admin-news-editor__kicker">Новости</div>
-            <div className="admin-news-editor__title">Создание новости</div>
-            <div className="admin-news-editor__subtitle">Заполните поля и нажмите «Сохранить»</div>
+            <div className="admin-news-editor__kicker">{isMedia ? "Медиа" : "Новости"}</div>
+            <div className="admin-news-editor__title">
+              {isMedia ? "Создание медиазаписи" : "Создание новости"}
+            </div>
+            <div className="admin-news-editor__subtitle">
+              {isMedia
+                ? "Загрузите фотографии и/или добавьте ссылки на видеозаписи"
+                : "Заполните поля и нажмите «Сохранить»"}
+            </div>
           </div>
           <div className="admin-news-editor__hero-actions">
+            <Radio.Group
+              value={recordType}
+              onChange={(e) => handleRecordTypeChange(e.target.value)}
+              optionType="button"
+              buttonStyle="solid"
+              disabled={!canWrite}
+              options={[
+                { value: "news", label: "Новость" },
+                { value: "media", label: "Медиа (фото/видео)" },
+              ]}
+            />
             <Button onClick={() => navigate("/admin/news")}>Отмена</Button>
             <Button type="primary" onClick={handleSubmit} loading={busy} disabled={!canWrite}>
               Сохранить
@@ -499,7 +576,9 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
           </div>
         </div>
 
-        {/* 2 ряд: Краткие описания */}
+        {/* 2-3 ряды: Описания и контент (только для новостей) */}
+        {!isMedia && (
+          <>
         <div className="admin-news-editor__lang-grid">
           <div className="admin-card">
             <div className="admin-news-editor__section-title">Краткое описание (TY)</div>
@@ -580,7 +659,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
             </div>
             <Form.Item
               name="contentRu"
-              rules={[{ required: true, message: "Укажите контент" }]}
+              rules={[{ required: !isMedia, message: "Укажите контент" }]}
               getValueFromEvent={(value) => value}
               style={{ marginBottom: 0 }}
             >
@@ -592,6 +671,8 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
             </Form.Item>
           </div>
         </div>
+          </>
+        )}
 
         {/* Остальное: Основное и Публикация */}
         <div className="admin-news-editor__grid">
@@ -756,6 +837,46 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
           </Upload>
         </div>
       </div>
+
+      {/* Видеозаписи (только для медиа): ссылки на YouTube / Rutube / ВК */}
+      {isMedia && (
+        <div className="admin-card" style={{ marginTop: 16 }}>
+          <div className="admin-news-editor__section-title">
+            <Space>
+              <VideoCameraOutlined />
+              Видеозаписи (ссылки)
+            </Space>
+          </div>
+          <div style={{ color: "#666", marginBottom: 12 }}>
+            Добавьте ссылки на видео (YouTube, Rutube, ВКонтакте). Видео будут встроены в запись.
+          </div>
+          {videoUrls.map((url, idx) => (
+            <div key={idx} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+              <Input
+                value={url}
+                onChange={(e) => setVideoUrl(idx, e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+                disabled={busy || !canWrite}
+              />
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => removeVideoUrl(idx)}
+                disabled={videoUrls.length === 1 || !canWrite}
+              />
+            </div>
+          ))}
+          <Button
+            type="dashed"
+            icon={<PlusOutlined />}
+            onClick={addVideoUrl}
+            disabled={!canWrite}
+            style={{ width: "100%" }}
+          >
+            Добавить видео
+          </Button>
+        </div>
+      )}
 
       {!canWrite ? (
         <div className="admin-card admin-card--warning" style={{ marginTop: 16 }}>

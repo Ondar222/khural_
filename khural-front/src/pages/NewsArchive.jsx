@@ -15,6 +15,7 @@ import "dayjs/locale/ru";
 import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
 import { useNewsCategories, categoriesFromNews } from "../hooks/useNewsCategories.js";
 import { resolveNewsCategory } from "../utils/newsCategoryAutofill.js";
+import { isMediaNews } from "../utils/newsMedia.js";
 
 const NEWS_PAGE_SIZE = 12;
 
@@ -189,12 +190,8 @@ export default function NewsArchive() {
         // Актуальные новости - показываем только последние (с категорией или без special фильтрации)
         // Можно фильтровать по категории или показывать все
       } else if (section === "media") {
-        // Медиа - показываем новости с изображениями или видео
-        result = result.filter((n) => {
-          const hasImages = Array.isArray(n.images) && n.images.length > 0;
-          const hasImage = !!n.image;
-          return hasImages || hasImage;
-        });
+        // Медиа - только новости категории «Медиа» (фотоальбомы / видеозаписи)
+        result = result.filter((n) => isMediaNews(n));
       }
       // section === "all" - показываем все новости (без дополнительной фильтрации)
 
