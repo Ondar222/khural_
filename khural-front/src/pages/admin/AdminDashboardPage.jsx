@@ -6,6 +6,13 @@ import { useAdminData } from "../../hooks/useAdminData.js";
 import { useBroadcastLinks } from "../../hooks/useBroadcastLinks.js";
 import { AboutApi } from "../../api/client.js";
 import { countAdminPageRows } from "../../utils/adminPagesCatalog.js";
+import {
+  readPortalsOverrides,
+  mergePortalsWithOverrides,
+  PORTALS_OVERRIDES_EVENT_NAME,
+  PORTALS_OVERRIDES_STORAGE_KEY,
+} from "../../utils/portalsOverrides.js";
+import { DEFAULT_PORTALS } from "./AdminPortalsPage.jsx";
 import { useI18n } from "../../context/I18nContext.jsx";
 
 export default function AdminDashboardPage() {
@@ -16,6 +23,29 @@ export default function AdminDashboardPage() {
   const { message } = App.useApp();
   const [adminPagesCount, setAdminPagesCount] = React.useState(null);
   const [adminPagesLoading, setAdminPagesLoading] = React.useState(true);
+  const [portalsCount, setPortalsCount] = React.useState(null);
+
+  const reloadPortalsCount = React.useCallback(() => {
+    try {
+      const overrides = readPortalsOverrides();
+      setPortalsCount(mergePortalsWithOverrides(DEFAULT_PORTALS, overrides).length);
+    } catch {
+      setPortalsCount(null);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    reloadPortalsCount();
+    const onStorage = (e) => {
+      if (!e || e.key === PORTALS_OVERRIDES_STORAGE_KEY) reloadPortalsCount();
+    };
+    window.addEventListener(PORTALS_OVERRIDES_EVENT_NAME, reloadPortalsCount);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(PORTALS_OVERRIDES_EVENT_NAME, reloadPortalsCount);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [reloadPortalsCount]);
 
   const reloadAdminPagesCount = React.useCallback(async () => {
     setAdminPagesLoading(true);
@@ -77,12 +107,13 @@ export default function AdminDashboardPage() {
         stats={adminData.stats}
         statsReady={adminData.statsReady}
         onReload={async () => {
-          await Promise.all([adminData.reload(), reloadBroadcasts(), reloadAdminPagesCount()]);
+          await Promise.all([adminData.reload(), reloadBroadcasts(), reloadAdminPagesCount(), Promise.resolve().then(reloadPortalsCount)]);
         }}
         adminPagesCount={adminPagesCount}
         adminPagesLoading={adminPagesLoading}
         broadcastsCount={broadcasts.length}
         broadcastsLoading={broadcastsLoading}
+        portalsCount={portalsCount}
         onReloadSuccess={() => message.success(t("adminDashboardRefreshDone"))}
       />
     </AdminShell>

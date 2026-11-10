@@ -11,7 +11,7 @@ import {
 } from "../../utils/portalsOverrides.js";
 
 // Импортируем существующие порталы из Resources.jsx
-const DEFAULT_PORTALS = [
+export const DEFAULT_PORTALS = [
   {
     id: "portal-1",
     label: "НОРМАТИВНО-ПРАВОВЫЕ АКТЫ В РОССИЙСКОЙ ФЕДЕРАЦИИ",

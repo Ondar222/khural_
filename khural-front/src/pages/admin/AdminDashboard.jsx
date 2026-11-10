@@ -38,6 +38,7 @@ export default function AdminDashboard({
   adminPagesLoading,
   broadcastsCount,
   broadcastsLoading,
+  portalsCount,
   onReload,
   onReloadSuccess,
 }) {
@@ -99,6 +100,11 @@ export default function AdminDashboard({
           label={t("adminDashboardBroadcasts")}
           value={broadcastsLoading ? "—" : broadcastsCount}
           href="/admin/broadcast"
+        />
+        <StatCard
+          label={t("adminDashboardPortals")}
+          value={portalsCount ?? "—"}
+          href="/admin/portals"
         />
         {/* <StatCard label="ENV доки" value={"—"} href="/admin/env" /> */}
       </div>
