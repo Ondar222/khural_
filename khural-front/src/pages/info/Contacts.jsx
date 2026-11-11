@@ -9,7 +9,7 @@ export default function InfoContacts() {
     { label: t("aboutHistory"), href: "/about/istoriya-parlamentarizma" },
     { label: t("aboutPowersHural"), href: "/info/hural-powers" },
     { label: t("aboutPowersSpeaker"), href: "/info/speaker-powers" },
-    { label: t("aboutStaff"), href: "/about/staff" },
+    { label: t("aboutStaff"), href: "/info/personnel" },
     { label: t("aboutCorruption"), href: "/info/anti-corruption" },
     { label: t("aboutContacts"), href: "/info/contacts" },
     { label: t("aboutOmbudsman"), href: "/info/ombudsman" },

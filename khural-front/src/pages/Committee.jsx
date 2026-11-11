@@ -806,12 +806,38 @@ export default function Committee() {
 
   // Resolve members only if committee exists
   const members = committee ? ((committee.members || []).map(resolveMember).filter(Boolean)) : [];
-  // Находим председателя (тот, у кого роль содержит "председатель")
-  const leader = members.find((m) => 
-    m.role && m.role.toLowerCase().includes("председатель")
-  ) || members[0];
+  // Председатель комитета: приоритет — председатель из данных админки (head) или член комитета
+  // с ролью «Председатель»; только если председателя не нашли — первого члена комитета (fallback).
+  const headName = String(committee?.head || "").trim();
+  const memberChairman = members.find(
+    (m) => m?.role && String(m.role).toLowerCase().includes("председатель")
+  ) || null;
+  const headDeputy = headName
+    ? (deputies || []).find(
+        (d) => d && typeof d.name === "string" && d.name.trim().toLowerCase() === headName.toLowerCase()
+      ) || null
+    : null;
+  const leader =
+    memberChairman ||
+    (headName
+      ? {
+          id: headDeputy?.id || "",
+          name: headName,
+          role: memberChairman?.role || "Председатель комитета",
+          photo: memberChairman?.photo || headDeputy?.photo || "",
+          phone: memberChairman?.phone || headDeputy?.contacts?.phone || "",
+          email: memberChairman?.email || headDeputy?.contacts?.email || "",
+          address: memberChairman?.address || "",
+        }
+      : members[0] || null);
   // Остальные члены (исключаем председателя)
-  const rest = members.filter((m) => m.id !== leader?.id);
+  const rest = members.filter((m) => {
+    if (!leader) return true;
+    if (leader.id && m.id === leader.id) return false;
+    if (memberChairman && memberChairman.id && m.id === memberChairman.id) return false;
+    if (headName && m.name && String(m.name).toLowerCase() === headName.toLowerCase()) return false;
+    return true;
+  });
   const backToCommittee = committee ? encodeURIComponent(`/committee?id=${encodeURIComponent(committee.id)}`) : "";
 
   // Если нет id — показываем список комитетов.
@@ -1007,20 +1033,8 @@ export default function Committee() {
                   </div>
                 ) : null}
 
-                {/* Руководитель (если задан вручную в админке и нет членов) */}
-                {!leader && committee.head ? (
-                  <div style={{ marginTop: 24 }}>
-                    <h2 style={{ marginTop: 0 }}>Руководитель</h2>
-                    <div className="card" style={{ padding: 18 }}>
-                      <div style={{ fontWeight: 800, fontSize: 16 }}>{committee.head}</div>
-                      <div style={{ marginTop: 6, color: "#6b7280" }}>
-                        Руководитель комитета (указан в админке)
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
+                {/* Председатель (в т.ч. председатель из админки — head) */}
 
-                {/* Председатель */}
             {leader ? (
               <>
                 <h2 style={{ marginTop: 24 }}>Председатель</h2>

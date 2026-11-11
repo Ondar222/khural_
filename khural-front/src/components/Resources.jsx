@@ -3,6 +3,7 @@ import GosWidget from "./GosWidget.jsx";
 import BroadcastWidget from "./BroadcastWidget.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
+import { formatBroadcastTitle } from "../content/broadcasts.js";
 import {
   readPortalsOverrides,
   mergePortalsWithOverrides,
@@ -19,9 +20,9 @@ const DEFAULT_PORTALS = [
   },
   {
     id: "portal-2",
-    label: "ПАРЛАМЕНТ РЕСПУБЛИКИ ТЫВА",
-    labelTy: "ТЫВА РЕСПУБЛИКАНЫҢ ПАРЛАМЕНТИЗИ",
-    href: "http://gov.tuva.ru/",
+    label: "ПРАВИТЕЛЬСТВО РЕСПУБЛИКИ ТЫВА",
+    labelTy: "ТЫВА РЕСПУБЛИКАНЫҢ АЖЫЛ ДУГАЙЫ",
+    href: "https://rtyva.ru/",
   },
   {
     id: "portal-3",
@@ -170,7 +171,7 @@ export default function Resources() {
             return (
               <div className="broadcasts-home">
                 {top4.map((item, index) => {
-                  const title = item.title || `${t("Трансляция")} ${index + 1}`;
+                  const title = item.title || formatBroadcastTitle(item, `${t("Трансляция")} ${index + 1}`);
                   return (
                     <div key={String(item.id ?? item.watchUrl ?? index)} className="broadcasts-home__item">
                       <div className="broadcasts-home__video">

@@ -2,7 +2,8 @@ import React from "react";
 import "./GosWidget.css";
 
 const widgetScriptUrl = "https://pos.gosuslugi.ru/bin/script.min.js";
-const widgetFormUrl = "https://pos.gosuslugi.ru/form";
+export const GOSUSLUGI_FORM_URL = "https://pos.gosuslugi.ru/form";
+const widgetFormUrl = GOSUSLUGI_FORM_URL;
 let widgetScriptPromise;
 
 function loadWidgetScript() {

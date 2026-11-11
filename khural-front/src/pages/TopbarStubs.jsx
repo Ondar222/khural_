@@ -1,4 +1,5 @@
 import React from "react";
+import { GOSUSLUGI_FORM_URL } from "../components/GosuslugiWidget.jsx";
 
 export function Feedback() {
   return (
@@ -16,11 +17,13 @@ export function Feedback() {
               <a href="">переданы лично</a>
             </li>
             <li>
-              <a href="/appeals/letter">отправлены по почте</a>
+              <a href="https://khural.yurta.site/appeals" target="_blank" rel="noopener noreferrer">
+                отправены по «Почте России»
+              </a>
             </li>
             <li>
-              <a href="/appeals/online">
-                отправлены в электронном виде через официальный сайт
+              <a href={GOSUSLUGI_FORM_URL} target="_blank" rel="noopener noreferrer">
+                отправены через платформу обратной связи «Решаем вместе»
               </a>
             </li>
           </ul>

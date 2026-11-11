@@ -58,7 +58,7 @@ export default function Footer() {
               </div>
             </div>
             <div className="footer-copyright">
-              <p>{t("© 2026 ВЕРХОВНЫЙ ХУРАЛ РТ.")}</p>
+              <p>{t("© 2026 ВЕРХОВНЫЙ ХУРАЛ (ПАРЛАМЕНТ) РТ")}</p>
               <p>{t("ВСЕ ПРАВА ЗАЩИЩЕНЫ.")}</p>
               <p className="footer-dev">{t("Разработано Lana Soft")}</p>
             </div>
@@ -103,9 +103,6 @@ export default function Footer() {
                 <a href="https://vk.com/public114457376" target="_blank" rel="noreferrer">
                   {t("vk")}
                 </a>
-                <a href="https://t.me/s/tuva_parlament" target="_blank" rel="noreferrer">
-                  {t("telegram")}
-                </a>
                 <a href="https://max.ru/khuraltyva/AZ-yY-ezegk" target="_blank" rel="noreferrer">
                   Макс
                 </a>
@@ -126,14 +123,14 @@ export default function Footer() {
             <div className="contact-item">
               <PhoneOutlined className="contact-icon" style={phoneIconStyle} aria-hidden="true" />
               <div className="contact-text">
-                <strong>{lang === "ty" ? "ТЕЛЕФОН:" : "Телефон:"}</strong>{" "}
+                <strong>{lang === "ty" ? "КАНЦЕЛЯРИЯ:" : "Канцелярия:"}</strong>{" "}
                 <a href="tel:+73942297295">+7 (39422) 2-10-43</a>
               </div>
             </div>
             <div className="contact-item">
               <PrinterOutlined className="contact-icon" aria-hidden="true" />
               <div className="contact-text">
-                <strong>{lang === "ty" ? "ФАКС:" : "Факс:"}</strong>{" "}
+                <strong>{lang === "ty" ? "ПРИЕМНАЯ:" : "Приемная:"}</strong>{" "}
                 <span>+7 (39422) 2-16-32</span>
               </div>
             </div>

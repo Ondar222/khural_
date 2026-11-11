@@ -6,6 +6,7 @@ import SideNav from "../components/SideNav.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
+import { formatBroadcastTitle } from "../content/broadcasts.js";
 
 const BROADCAST_PAGE_SIZE = 6;
 
@@ -91,7 +92,10 @@ export default function Broadcast() {
                   const itemId = String(item.id ?? item.url);
                   const title =
                     item.title ||
-                    `Трансляция ${(currentPage - 1) * BROADCAST_PAGE_SIZE + index + 1}`;
+                    formatBroadcastTitle(
+                      item,
+                      `Трансляция ${(currentPage - 1) * BROADCAST_PAGE_SIZE + index + 1}`
+                    );
                   const isPlayerActive = activeBroadcastId === itemId;
                   return (
                     <div

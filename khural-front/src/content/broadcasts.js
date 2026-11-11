@@ -80,6 +80,35 @@ export function getBroadcastUrls(url) {
   return { embedUrl: null, watchUrl: url };
 }
 
+/** Читаемая дата трансляции: DD.MM.YYYY (если не поддаётся парсу — возвращаем исходную строку). */
+export function formatBroadcastDate(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = String(d.getFullYear());
+  return `${dd}.${mm}.${yyyy}`;
+}
+
+/**
+ * Формат названия трансляции: «Название+дата».
+ * Если название не найдено — берём «Трансляция+дата» (или просто «Трансляция»).
+ */
+export function formatBroadcastTitle(item, fallbackName) {
+  const sourceUrl = text(item?.sourceUrl ?? item?.source_url ?? item?.url);
+  const externalId = text(item?.externalId ?? item?.external_id);
+  let name = text(item?.title);
+  if (!name && sourceUrl) name = getBroadcastTitle(sourceUrl);
+  if (!name && externalId && Object.prototype.hasOwnProperty.call(BROADCAST_TITLES, externalId)) {
+    name = BROADCAST_TITLES[externalId];
+  }
+  name = name || fallbackName || "Трансляция";
+  const date = formatBroadcastDate(item?.publishedAt ?? item?.published_at);
+  return date ? `${name} + ${date}` : name;
+}
+
 const text = (v) => (typeof v === "string" ? v.trim() : v == null ? "" : String(v).trim());
 
 /**
@@ -97,7 +126,15 @@ export function fromApiBroadcast(item, index = 0) {
   return {
     id: item.id ?? externalId ?? url,
     url,
-    title: text(item.title) || getBroadcastTitle(url) || getBroadcastTitle(derived.watchUrl) || "",
+    title: formatBroadcastTitle(
+      {
+        ...item,
+        sourceUrl: sourceUrl || url,
+        url,
+        publishedAt: item.publishedAt ?? item.published_at,
+      },
+      text(item.title) || getBroadcastTitle(url) || getBroadcastTitle(derived.watchUrl)
+    ),
     description: text(item.description),
     provider: text(item.provider ?? item.type) || "vk",
     embedUrl: text(item.embedUrl ?? item.embed_url) || derived.embedUrl || null,
@@ -120,7 +157,7 @@ export function fromStaticBroadcastLink(url, index = 0) {
   return {
     id: `static-${index}`,
     url: text(url),
-    title: getBroadcastTitle(url) || "",
+    title: formatBroadcastTitle({ url, sourceUrl: text(url), publishedAt: "" }, getBroadcastTitle(url)),
     description: "",
     provider: text(url).includes("youtu") ? "youtube" : "vk",
     embedUrl: derived.embedUrl || null,

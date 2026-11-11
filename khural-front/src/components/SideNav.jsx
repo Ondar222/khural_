@@ -141,7 +141,7 @@ const defaultLinksNews = [
   { label: "Все новости", href: "/news?section=all" },
   { label: "Медиа", href: "/news?section=media" },
   // Дополнительные ссылки новостей (фиксированные)
-  { label: "Новости председателя", href: "/news?category=новости председателя" },
+  { label: "Новости Председателя", href: "/news?category=новости председателя" },
   { label: "Кодекс чести мужчины Тувы", href: "/code-of-honor" },
   { label: "Свод заповедей матерей Тувы", href: "/mothers-commandments" },
   { label: "Для СМИ", href: "/for-media" },
@@ -154,7 +154,7 @@ const defaultLinksBroadcast = [
   { label: "Актуальные новости", href: "/news?section=actual" },
   { label: "Все новости", href: "/news?section=all" },
   { label: "Медиа", href: "/news?section=media" },
-  { label: "Новости председателя", href: "/news?category=новости председателя" },
+  { label: "Новости Председателя", href: "/news?category=новости председателя" },
   { label: "Кодекс чести мужчины Тувы", href: "/code-of-honor" },
   { label: "Свод заповедей матерей Тувы", href: "/mothers-commandments" },
   { label: "Для СМИ", href: "/for-media" },
@@ -460,7 +460,7 @@ export default function SideNav({
       if (sectionParam === 'actual') return "Актуальные новости";
       if (sectionParam === 'all') return "Все новости";
       if (sectionParam === 'media') return "Медиа";
-      if (categoryParam && String(categoryParam).toLowerCase().includes('новости председателя')) return "Новости председателя";
+      if (categoryParam && String(categoryParam).toLowerCase().includes('новости председателя')) return "Новости Председателя";
       return "Новости";
     }
     

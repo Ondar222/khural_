@@ -20,9 +20,9 @@ export const DEFAULT_PORTALS = [
   },
   {
     id: "portal-2",
-    label: "ПАРЛАМЕНТ РЕСПУБЛИКИ ТЫВА",
-    labelTy: "ТЫВА РЕСПУБЛИКАНЫҢ ПАРЛАМЕНТИЗИ",
-    href: "http://gov.tuva.ru/",
+    label: "ПРАВИТЕЛЬСТВО РЕСПУБЛИКИ ТЫВА",
+    labelTy: "ТЫВА РЕСПУБЛИКАНЫҢ АЖЫЛ ДУГАЙЫ",
+    href: "https://rtyva.ru/",
   },
   {
     id: "portal-3",

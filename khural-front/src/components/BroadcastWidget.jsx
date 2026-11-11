@@ -3,7 +3,7 @@ import { VideoIcon, RssIcon } from "./icons/LinearIcons.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { BroadcastsApi } from "../api/client.js";
-import { getBroadcastTitle } from "../content/broadcasts.js";
+import { formatBroadcastTitle } from "../content/broadcasts.js";
 
 function getVkEmbedUrl(vkStreamKey, vkStreamUrl) {
   const src = vkStreamUrl || null;
@@ -101,11 +101,10 @@ function parseBroadcastFromSettings(settings) {
 function mapApiBroadcast(item, fallbackTitle) {
   if (!item || typeof item !== "object") return null;
   const sourceUrl = item.sourceUrl || item.source_url || item.url || "";
-  const title =
-    item.title ||
-    getBroadcastTitle(sourceUrl) ||
-    fallbackTitle ||
-    "";
+  const title = formatBroadcastTitle(
+    { ...item, sourceUrl, url: sourceUrl, publishedAt: item.publishedAt ?? item.published_at },
+    fallbackTitle
+  );
 
   return {
     type: item.type || item.provider || "vk",

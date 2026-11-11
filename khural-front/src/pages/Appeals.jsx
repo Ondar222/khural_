@@ -1,7 +1,7 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
-import GosuslugiWidget from "../components/GosuslugiWidget.jsx";
+import GosuslugiWidget, { GOSUSLUGI_FORM_URL } from "../components/GosuslugiWidget.jsx";
 import { MailIcon } from "../components/icons/LinearIcons.jsx";
 
 export default function Appeals() {
@@ -23,13 +23,23 @@ export default function Appeals() {
           <ul className="appeals-page__methods-list">
             <li><strong>переданы лично</strong></li>
             <li>
-              <a href="/appeals/letter" className="link appeals-page__link">
-                отправлены по почте
+              <a
+                href="https://khural.yurta.site/appeals"
+                className="link appeals-page__link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                отправены по «Почте России»
               </a>
             </li>
             <li>
-              <a href="/appeals/online" className="link appeals-page__link">
-                отправлены в электронном виде через официальный сайт
+              <a
+                href={GOSUSLUGI_FORM_URL}
+                className="link appeals-page__link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                отправены через платформу обратной связи «Решаем вместе»
               </a>
             </li>
           </ul>
@@ -73,9 +83,14 @@ export default function Appeals() {
             <div className="appeals-page__card appeals-page__card--online">
               <h3 className="appeals-page__card-title">Электронная приемная</h3>
               <p className="appeals-page__card-desc">
-                Отправьте обращение через официальный сайт в электронном виде
+                Отправьте обращение через платформу обратной связи «Решаем вместе»
               </p>
-              <a href="/appeals/online" className="btn btn--primary appeals-page__btn">
+              <a
+                href={GOSUSLUGI_FORM_URL}
+                className="btn btn--primary appeals-page__btn"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Подать обращение онлайн
               </a>
             </div>
