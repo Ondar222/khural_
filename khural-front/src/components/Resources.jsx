@@ -3,7 +3,7 @@ import GosWidget from "./GosWidget.jsx";
 import BroadcastWidget from "./BroadcastWidget.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
-import { resolveBroadcastTitle } from "../content/broadcasts.js";
+import { hasRealBroadcastName, resolveBroadcastTitle } from "../content/broadcasts.js";
 import {
   readPortalsOverrides,
   mergePortalsWithOverrides,
@@ -164,47 +164,77 @@ export default function Resources() {
             </a>
           </div>
           <BroadcastWidget compact />
-          {/* 4 актуальные трансляции из /api/broadcasts (live и свежие сверху); остальные — на «Все трансляции» */}
+          {/* 4 актуальные трансляции из /api/broadcasts (live и свежие сверху); только с реальными названиями */}
           {(() => {
-            const top4 = broadcastItems.slice(0, 4);
+            const top4 = broadcastItems.filter((item) => hasRealBroadcastName(item)).slice(0, 4);
             if (top4.length === 0) return null;
             return (
               <div className="broadcasts-home">
-                {top4.map((item, index) => {
-                  const title = item.title || resolveBroadcastTitle(item, t("Трансляция"));
-                  return (
-                    <div key={String(item.id ?? item.watchUrl ?? index)} className="broadcasts-home__item">
-                      <div className="broadcasts-home__video">
-                        {item.embedUrl ? (
-                          <iframe
-                            src={item.embedUrl}
-                            title={title}
-                            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                          />
-                        ) : (
-                          <a
-                            className="broadcasts-home__fallback"
-                            href={item.watchUrl || item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {t("Трансляция")}
-                          </a>
-                        )}
-                      </div>
-                      <div className="broadcasts-home__link">
-                        <a href={item.watchUrl || item.url} target="_blank" rel="noopener noreferrer">
-                          {title}
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })}
+                {top4.map((item, index) => (
+                  <BroadcastHomeItem
+                    key={String(item.id ?? item.watchUrl ?? index)}
+                    item={item}
+                    fallbackTitle={t("Трансляция")}
+                  />
+                ))}
               </div>
             );
           })()}
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * Карточка трансляции на главной: полное название + кнопка «▶ / Нажмите, чтобы загрузить видео».
+ * Плеер подгружается по клику, чтобы не тормозить главную страницу.
+ */
+function BroadcastHomeItem({ item, fallbackTitle }) {
+  const { t } = useI18n();
+  const [playerEnabled, setPlayerEnabled] = React.useState(false);
+  const title = item?.title || resolveBroadcastTitle(item, fallbackTitle) || fallbackTitle;
+  const embedUrl = item?.embedUrl || null;
+  const watchUrl = item?.watchUrl || item?.url || "";
+
+  return (
+    <div className="broadcasts-home__item">
+      <div className="broadcasts-home__video">
+        {embedUrl && playerEnabled ? (
+          <iframe
+            src={embedUrl}
+            title={title}
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        ) : embedUrl ? (
+          <button
+            type="button"
+            className="broadcasts-home__load-player"
+            onClick={() => setPlayerEnabled(true)}
+            aria-label={`Загрузить плеер: ${title}`}
+          >
+            {item.thumbnailUrl ? <img src={item.thumbnailUrl} alt="" loading="lazy" /> : null}
+            <span className="broadcasts-home__play" aria-hidden="true">▶</span>
+            <span>{t("Нажмите, чтобы загрузить видео")}</span>
+          </button>
+        ) : (
+          <a
+            className="broadcasts-home__fallback"
+            href={watchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {title}
+          </a>
+        )}
+      </div>
+      <div className="broadcasts-home__link">
+        <a href={watchUrl} target="_blank" rel="noopener noreferrer">
+          {title}
+        </a>
+      </div>
+    </div>
   );
 }

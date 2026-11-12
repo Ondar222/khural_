@@ -47,14 +47,24 @@ export const BROADCAST_TITLES = {
     "Ежегодное послание Главы Республики Тыва Владислава Ховалыга Верховному Хуралу (Парламенту)",
 };
 
-/** Возвращает название трансляции по ссылке или null. */
+/** Извлекает ID видео ВК (или YouTube, с префиксом yt_) из любого представления: URL, "owner_video", "video-xxx_yyy" или bare ID. */
+function getVkVideoId(value) {
+  const s = String(value ?? "").trim();
+  if (!s) return null;
+  const m = s.match(/video-?(-?\d+)_(\d+)/) || s.match(/(-?\d+)_(\d+)/);
+  if (m) return m[2];
+  if (/^\d+$/.test(s)) return s;
+  const yt = s.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+  if (yt) return `yt_${yt[1]}`;
+  return null;
+}
+
+/** Возвращает название трансляции по ссылке, ID или ключу или null. */
 export function getBroadcastTitle(url) {
   if (!url) return null;
-  const vkMatch = url.match(/video-?\d+_(\d+)/);
-  if (vkMatch) return BROADCAST_TITLES[vkMatch[1]] || null;
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-  if (ytMatch) return BROADCAST_TITLES[`yt_${ytMatch[1]}`] || null;
-  return null;
+  const videoId = getVkVideoId(url);
+  if (!videoId) return null;
+  return BROADCAST_TITLES[videoId] || null;
 }
 
 /** Возвращает { embedUrl, watchUrl } для встраивания и ссылки. */
@@ -92,19 +102,42 @@ export function formatBroadcastDate(value) {
   return `${dd}.${mm}.${yyyy}`;
 }
 
+/** Служебное название трансляции, которое используется, когда реального названия нет. */
+const BROADCAST_FALLBACK_NAME = "Трансляция";
+
+/**
+ * Реальное название трансляции (без служебного fallback):
+ * title → sourceUrl → externalId → watchUrl → streamKey → name.
+ * Возвращает пустую строку, если реального названия не найдено.
+ */
+function resolveBroadcastName(item) {
+  const sourceUrl = text(item?.sourceUrl ?? item?.source_url ?? item?.url);
+  const externalId = text(item?.externalId ?? item?.external_id);
+  const watchUrl = text(item?.watchUrl);
+  const streamKey = text(
+    item?.vkStreamKey ?? item?.vk_stream_key ?? item?.stream_key ?? item?.externalId ?? item?.external_id,
+  );
+  const title = text(item?.title);
+  const customName = text(item?.name);
+  const realFromTitle = title && title !== BROADCAST_FALLBACK_NAME ? title : "";
+  if (realFromTitle) return realFromTitle;
+  const fromLink =
+    getBroadcastTitle(sourceUrl) ||
+    getBroadcastTitle(externalId) ||
+    getBroadcastTitle(watchUrl) ||
+    getBroadcastTitle(streamKey);
+  if (fromLink) return fromLink;
+  if (customName && customName !== BROADCAST_FALLBACK_NAME) return customName;
+  return "";
+}
+
 /**
  * Формат названия трансляции: «Название+дата».
  * Если название не найдено — берём «Трансляция+дата» (или просто «Трансляция»).
  */
 export function formatBroadcastTitle(item, fallbackName) {
-  const sourceUrl = text(item?.sourceUrl ?? item?.source_url ?? item?.url);
-  const externalId = text(item?.externalId ?? item?.external_id);
-  let name = text(item?.title);
-  if (!name && sourceUrl) name = getBroadcastTitle(sourceUrl);
-  if (!name && externalId && Object.prototype.hasOwnProperty.call(BROADCAST_TITLES, externalId)) {
-    name = BROADCAST_TITLES[externalId];
-  }
-  name = name || fallbackName || "Трансляция";
+  const name =
+    resolveBroadcastName(item) || text(fallbackName) || BROADCAST_FALLBACK_NAME;
   const date = formatBroadcastDate(item?.publishedAt ?? item?.published_at);
   return date ? `${name} + ${date}` : name;
 }
@@ -171,14 +204,21 @@ export function fromStaticBroadcastLink(url, index = 0) {
   };
 }
 
-/** Прямые эфиры сверху, далее по дате (новые выше), затем по sortOrder бэкенда. */
+/** Сортировка: прямые эфиры сверху, далее реальные трансляции (по порядку бэкенда), затем прочие. */
 export function sortBroadcastItems(items) {
-  return [...(Array.isArray(items) ? items : [])].sort((a, b) => {
+  const arr = Array.isArray(items) ? items : [];
+  const hasRealName = (b) => Boolean(b && hasRealBroadcastName(b));
+  return [...arr].sort((a, b) => {
     if (Boolean(a?.isLive) !== Boolean(b?.isLive)) return a?.isLive ? -1 : 1;
+    const aReal = hasRealName(a);
+    const bReal = hasRealName(b);
+    if (aReal !== bReal) return aReal ? -1 : 1;
+    const sa = Number.isFinite(Number(a?.sortOrder)) ? Number(a.sortOrder) : 0;
+    const sb = Number.isFinite(Number(b?.sortOrder)) ? Number(b.sortOrder) : 0;
+    if (sa !== sb) return sa - sb;
     const ta = Date.parse(a?.publishedAt ?? "") || 0;
     const tb = Date.parse(b?.publishedAt ?? "") || 0;
-    if (ta !== tb) return tb - ta;
-    return (a?.sortOrder ?? 0) - (b?.sortOrder ?? 0);
+    return tb - ta;
   });
 }
 
@@ -187,28 +227,28 @@ export function sortBroadcastItems(items) {
  * Возвращает полное имя трансляции, а не служебный fallback вроде «Трансляция 1».
  */
 export function resolveBroadcastTitle(item, fallbackName) {
-  const sourceUrl = text(item?.sourceUrl ?? item?.source_url ?? item?.url);
-  const externalId = text(item?.externalId ?? item?.external_id);
-  const watchUrl = text(item?.watchUrl);
-  const streamKey = text(
-    item?.vkStreamKey ?? item?.vk_stream_key ?? item?.stream_key ?? item?.externalId ?? item?.external_id,
-  );
-  let name = text(item?.title);
-  if (!name && sourceUrl) name = getBroadcastTitle(sourceUrl);
-  if (!name && externalId && Object.prototype.hasOwnProperty.call(BROADCAST_TITLES, externalId)) {
-    name = BROADCAST_TITLES[externalId];
-  }
-  if (!name && watchUrl) name = getBroadcastTitle(watchUrl);
-  if (!name && streamKey) name = getBroadcastTitle(streamKey);
-  if (!name) name = text(item?.name);
-  return name || text(fallbackName) || "Трансляция";
+  const name = resolveBroadcastName(item);
+  return name || text(fallbackName) || BROADCAST_FALLBACK_NAME;
 }
 
-/** GET /api/broadcasts → отсортированный список опубликованных трансляций. */
+/** Есть ли у трансляции реальное (не служебное) название. */
+export function hasRealBroadcastName(item) {
+  // resolveBroadcastName возвращает реальное имя или пустую строку,
+  // служебный fallback применяется только в resolveBroadcastTitle.
+  const name = resolveBroadcastName(item);
+  return Boolean(name);
+}
+
+/** GET /api/broadcasts → отсортированный список опубликованных трансляций (без безымянных записей). */
 export function normalizeApiBroadcasts(list) {
   const arr = Array.isArray(list) ? list : [];
   return sortBroadcastItems(
-    arr.map((item, i) => fromApiBroadcast(item, i)).filter((item) => item && item.isPublished)
+    arr
+      .map((item, i) => fromApiBroadcast(item, i))
+      .filter((item) => item && item.isPublished)
+      // Безымянные архивные записи на публичных страницах не показываем —
+      // иначе вместо названия выводится служебное «Трансляция». Прямые эфиры оставляем всегда.
+      .filter((item) => item.isLive || hasRealBroadcastName(item))
   );
 }
 
