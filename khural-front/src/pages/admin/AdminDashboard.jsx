@@ -20,17 +20,6 @@ function StatCard({ label, value, href }) {
   return <div className="admin-card admin-stat admin-card--hover">{content}</div>;
 }
 
-function QuickAction({ title, description, href }) {
-  const { t } = useI18n();
-  return (
-    <a className="admin-card admin-action admin-card--hover" href={href}>
-      <div className="admin-action__title">{title}</div>
-      <div className="admin-action__desc">{description}</div>
-      <div className="admin-action__cta">{t("adminDashboardGo")}</div>
-    </a>
-  );
-}
-
 export default function AdminDashboard({
   stats,
   statsReady,
@@ -109,41 +98,6 @@ export default function AdminDashboard({
         {/* <StatCard label="ENV доки" value={"—"} href="/admin/env" /> */}
       </div>
 
-      <div className="admin-cards admin-cards--actions">
-        <QuickAction
-          title={t("adminDashboardAddNews")}
-          description={t("adminDashboardAddNewsDesc")}
-          href="/admin/news"
-        />
-        <QuickAction
-          title={t("adminDashboardAddDeputy")}
-          description={t("adminDashboardAddDeputyDesc")}
-          href="/admin/deputies"
-        />
-        <QuickAction
-          title={t("adminDashboardManagePages")}
-          description={t("adminDashboardManagePagesDesc")}
-          href="/admin/pages"
-        />
-        <QuickAction
-          title="Загрузить документ"
-          description="Добавить закон, постановление, инициативу и другой документ"
-          href="/admin/documents/create"
-        />
-        <QuickAction
-          title={t("adminDashboardAddEvent")}
-          description={t("adminDashboardAddEventDesc")}
-          href="/admin/events"
-        />
-        <QuickAction
-          title={t("adminDashboardSliderAnnouncement")}
-          description={t("adminDashboardSliderAnnouncementDesc")}
-          href="/admin/slider"
-        />
-        {/* <QuickAction title="Обращения граждан" description="Просмотр и обработка обращений" href="/admin/appeals" /> */}
-      </div>
-
-    
     </div>
   );
 }
