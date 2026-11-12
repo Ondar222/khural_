@@ -60,7 +60,7 @@ export function blocksToHtml(blocks) {
     const caption = String(b?.caption ?? "").trim();
     if (type === "text") return content ? `<div class="page-block page-block--text">${content}</div>` : "";
     if (type === "link") {
-      const href = String(b?.url ?? b?.href ?? "#").trim();
+      const href = String(b?.url ?? b?.href ?? b?.content ?? "#").trim();
       const label = caption || content || href;
       return `<div class="page-block page-block--link"><a href="${escapeHtml(href)}">${escapeHtml(label)}</a></div>`;
     }
@@ -143,6 +143,26 @@ function appendNonTextBlocks(html, blocks) {
   return html ? `${html}\n${extra}` : extra;
 }
 
+function isNonTextBlock(block) {
+  return String(block?.type || "text").toLowerCase() !== "text";
+}
+
+/**
+ * Блоки для отображения локали. В админке блоки изображений/файлов хранятся
+ * в русской записи, даже когда у страницы есть перевод текста. Поэтому если
+ * у выбранной локали нет своих нетекстовых блоков, берём их из русской.
+ */
+function pickNonTextBlocks(localizedEntry, content) {
+  const own = Array.isArray(localizedEntry?.blocks)
+    ? localizedEntry.blocks.filter(isNonTextBlock)
+    : [];
+  if (own.length > 0) return own;
+  const ruEntry = (Array.isArray(content) ? content : []).find(
+    (item) => String(item?.locale || "").toLowerCase() === "ru"
+  );
+  return Array.isArray(ruEntry?.blocks) ? ruEntry.blocks.filter(isNonTextBlock) : [];
+}
+
 export function extractPageHtml(page, locale) {
   if (!page) return "";
   const c = page?.content;
@@ -150,7 +170,9 @@ export function extractPageHtml(page, locale) {
     const lc = pickLocalizedContent(page, locale);
     let html = String(lc?.content || "").trim();
     let fromBlocks = blocksToHtml(lc?.blocks);
-    if (html.length >= MIN_CONTENT_LENGTH) return appendNonTextBlocks(html, lc?.blocks);
+    if (html.length >= MIN_CONTENT_LENGTH) {
+      return appendNonTextBlocks(html, pickNonTextBlocks(lc, c));
+    }
     if (fromBlocks && fromBlocks.length >= MIN_CONTENT_LENGTH) return fromBlocks;
     // Выбранная локаль пустая или почти пустая — показываем любую с контентом (приоритет ru)
     const withContent = c.filter(
@@ -165,12 +187,12 @@ export function extractPageHtml(page, locale) {
       const fbBlocks = blocksToHtml(fallback?.blocks);
       if (fbBlocks) return fbBlocks;
     }
-    if (html) return appendNonTextBlocks(html, lc?.blocks);
+    if (html) return appendNonTextBlocks(html, pickNonTextBlocks(lc, c));
     if (fromBlocks) return fromBlocks;
     const anyContent = c.find((x) => String(x?.content ?? "").trim() || (Array.isArray(x?.blocks) && x.blocks.length > 0));
     if (anyContent) {
       const h = String(anyContent?.content || "").trim();
-      if (h) return appendNonTextBlocks(h, anyContent?.blocks);
+      if (h) return appendNonTextBlocks(h, pickNonTextBlocks(anyContent, c));
       return blocksToHtml(anyContent?.blocks);
     }
   }
