@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { PublicApi } from "../api/client.js";
+import { rememberTuvanText } from "../utils/translationMemory.js";
 
 /**
  * Типы языков для перевода
@@ -126,7 +127,10 @@ function translationCacheKey(from, to, text) {
 }
 
 function normalizeTranslationText(text) {
-  return String(text ?? "").replace(/(^|[^А-Яа-яЁё])деады(?=$|[^А-Яа-яЁё])/giu, "$1Дээди");
+  return String(text ?? "")
+    // Частые искажения повторного перевода уже тувинских слов.
+    .replace(/(^|[^А-Яа-яЁё])деады(?=$|[^А-Яа-яЁё])/giu, "$1Дээди")
+    .replace(/(^|[^А-Яа-яЁё])медалер(?=$|[^А-Яа-яЁё])/giu, "$1Медээлер");
 }
 
 // Модульный кэш переводов (общий для всех экземпляров хука на клиенте)
@@ -342,7 +346,9 @@ export function useTranslation(options = {}) {
       const cacheKeyStr = translationCacheKey(from, to, text);
       const cachedTranslation = translationCache.get(cacheKeyStr);
       if (cachedTranslation) {
-        return { original: text, translated: normalizeTranslationText(cachedTranslation), from, to };
+        const translated = normalizeTranslationText(cachedTranslation);
+        rememberTuvanText(translated);
+        return { original: text, translated, from, to };
       }
 
       // Single-flight: пока запрос в полёте — ждём его результат
@@ -358,6 +364,7 @@ export function useTranslation(options = {}) {
         translated: normalizeTranslationText(result.translated),
       };
       translationCache.set(cacheKeyStr, normalizedResult.translated);
+      rememberTuvanText(normalizedResult.translated);
       return normalizedResult;
     },
     [defaultFrom, defaultTo, translateOnce]
@@ -385,7 +392,10 @@ export function useTranslation(options = {}) {
         const original = typeof text === "string" ? text : String(text ?? "");
         const cacheKeyStr = translationCacheKey(from, to, original);
         const cached = translationCache.get(cacheKeyStr);
-        if (cached) return { original, translated: cached, from, to };
+        if (cached) {
+          rememberTuvanText(cached);
+          return { original, translated: cached, from, to };
+        }
         if (original.trim()) {
           if (!missingIndices.has(cacheKeyStr)) {
             missingIndices.set(cacheKeyStr, []);
@@ -408,6 +418,7 @@ export function useTranslation(options = {}) {
         if (normalizedTranslation !== original) {
           translationCache.set(cacheKeyStr, normalizedTranslation);
         }
+        rememberTuvanText(normalizedTranslation);
         (missingIndices.get(cacheKeyStr) || []).forEach((resultIndex) => {
           results[resultIndex] = {
             original: results[resultIndex].original,
@@ -451,6 +462,7 @@ export function useTranslation(options = {}) {
       const excerpt = excerptTy || (await translate(excerptSource, from, to)).translated;
       const contentHtml = contentHtmlTy || (await translate(contentSource, from, to)).translated;
 
+      rememberTuvanText([title, excerpt, contentHtml]);
       return { id: newsItem?.id, title, excerpt, contentHtml };
     },
     [translate, defaultFrom, defaultTo]
@@ -503,7 +515,7 @@ export function useTranslation(options = {}) {
       pending.forEach((item, index) => {
         translatedByField.set(`${item.index}:${item.key}`, translations[index]?.translated || item.text);
       });
-      return prepared.map((item, index) => ({
+      const localized = prepared.map((item, index) => ({
         id: item.id,
         title: item.titleTy || translatedByField.get(`${index}:title`) || item.titleSource,
         excerpt: item.excerptTy || translatedByField.get(`${index}:excerpt`) || item.excerptSource,
@@ -512,6 +524,8 @@ export function useTranslation(options = {}) {
           translatedByField.get(`${index}:contentHtml`) ||
           item.contentSource,
       }));
+      localized.forEach((item) => rememberTuvanText([item.title, item.excerpt, item.contentHtml]));
+      return localized;
     },
     [translateBatch, defaultFrom, defaultTo]
   );

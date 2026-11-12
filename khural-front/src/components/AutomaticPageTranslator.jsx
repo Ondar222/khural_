@@ -1,6 +1,7 @@
 import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useTranslation } from "../hooks/useTranslation.js";
+import { isKnownTuvanText } from "../utils/translationMemory.js";
 
 const translatedNodes = new WeakMap();
 const EXCLUDED_TEXT_ELEMENTS =
@@ -9,6 +10,9 @@ const EXCLUDED_TEXT_ELEMENTS =
 function isTranslatableTextNode(node, root) {
   if (node?.nodeType !== Node.TEXT_NODE || !node.nodeValue?.trim()) return false;
   if (node.nodeValue.trim().length < 3 || !/[А-Яа-яЁё]/.test(node.nodeValue)) return false;
+  // Уже переведённый на тувинский текст (t(), titleTy, результаты перевода)
+  // повторно не переводим: иначе «Медээлер» превращается в «Медалер» и т. п.
+  if (isKnownTuvanText(node.nodeValue)) return false;
   const parent = node.parentElement;
   return Boolean(parent && root.contains(parent) && !parent.closest(EXCLUDED_TEXT_ELEMENTS));
 }
