@@ -21,6 +21,15 @@ const PARLIAMENT_LEADERSHIP_HREF = "/government";
 const MUNICIPAL_COUNCIL_HREF =
   `/section?title=${encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований")}`;
 
+function getHrefPath(href) {
+  const value = String(href || "");
+  try {
+    return new URL(value, "http://localhost").pathname.replace(/\/+$/, "");
+  } catch {
+    return value.split("?")[0].replace(/\/+$/, "");
+  }
+}
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -122,6 +131,51 @@ export default function Header() {
     }
     return `/p/${segs.join("/")}`;
   }, []);
+
+  // CMS-страницы, сгруппированные по первому сегменту slug (разделу сайта).
+  // Нужны, чтобы новые страницы из админки попадали не только в боковое меню,
+  // но и в соответствующие подменю шапки сайта.
+  const cmsPagesBySection = React.useMemo(() => {
+    const map = new Map();
+    const visit = (nodes) => {
+      for (const page of Array.isArray(nodes) ? nodes : []) {
+        const slug = String(page?.slug || "").replace(/^\/+|\/+$/g, "");
+        const segs = slug.split("/").filter(Boolean);
+        if (segs.length >= 2) {
+          const section = segs[0].toLowerCase();
+          const list = map.get(section) || [];
+          list.push({
+            href: pageHref(slug),
+            label: pickMenuLabel(page, localeToken, { prefer: "submenu" }) || slug,
+            depth: Math.max(0, segs.length - 2),
+          });
+          map.set(section, list);
+        }
+        if (Array.isArray(page?.children) && page.children.length) {
+          visit(page.children);
+        }
+      }
+    };
+    visit(pagesTree);
+    return map;
+  }, [pagesTree, localeToken, pageHref]);
+
+  const cmsDropdownLinks = React.useCallback(
+    (sections, existingHrefs = []) => {
+      const used = new Set(existingHrefs.map(getHrefPath));
+      const result = [];
+      for (const section of sections) {
+        for (const link of cmsPagesBySection.get(section) || []) {
+          const path = getHrefPath(link.href);
+          if (used.has(path)) continue;
+          used.add(path);
+          result.push(link);
+        }
+      }
+      return result;
+    },
+    [cmsPagesBySection]
+  );
 
   React.useEffect(() => {
     let alive = true;
@@ -304,6 +358,25 @@ export default function Header() {
                   {t("senateRep")}
                 </a>
                 <a href="/apparatus">{t("apparatus")}</a>
+                {cmsDropdownLinks(["about", "committees", "commissions", "activity"], [
+                  "/about",
+                  "/about/istoriya-parlamentarizma",
+                  "/about/polnomochiya",
+                  "/section",
+                  "/committee",
+                  "/government",
+                  "/youth-parliament",
+                  "/struct/council",
+                  "/apparatus",
+                ]).map((link) => (
+                  <a
+                    key={`cms-about-${link.href}`}
+                    href={link.href}
+                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                  >
+                    {t(link.label)}
+                  </a>
+                ))}
               </div>
             </div>
             <div
@@ -316,6 +389,15 @@ export default function Header() {
                 <a href="/deputies">{t("Действующие депутаты") || "Действующие депутаты"}</a>
                 <a href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5">{t("deputiesAll") || "Депутаты всех созывов"}</a>
                 <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты прекратившие полномочия") || "Депутаты прекратившие полномочия"}</a>
+                {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended"]).map((link) => (
+                  <a
+                    key={`cms-deputies-${link.href}`}
+                    href={link.href}
+                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                  >
+                    {t(link.label)}
+                  </a>
+                ))}
               </div>
             </div>
             <div
@@ -339,6 +421,29 @@ export default function Header() {
                 <a href="/opendata">{t("Открытые данные") || "Открытые данные"}</a>
                 <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
                 <a href={PERSONNEL_ROOT_PATH}>{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
+                {cmsDropdownLinks(["info", "contacts"], [
+                  "/info",
+                  "/info/polnomochiya-spikera",
+                  "/info/protivodeystvie-korrupcii",
+                  "/info/contacts",
+                  "/info/upoln-po-reb",
+                  "/info/gosudarstvennye-simvoly",
+                  "/info/prigranichny-subekt",
+                  "/about/finances",
+                  "/info/iokrug",
+                  "/info/zakon-karta",
+                  "/opendata",
+                  "/info/upoln-po-prav",
+                  PERSONNEL_ROOT_PATH,
+                ]).map((link) => (
+                  <a
+                    key={`cms-info-${link.href}`}
+                    href={link.href}
+                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                  >
+                    {t(link.label)}
+                  </a>
+                ))}
               </div>
             </div>
             <div
@@ -357,6 +462,20 @@ export default function Header() {
                 <a href="/docs/resolutions">{t("docsResolutions")}</a>
                 <a href="/docs/initiatives">{t("docsInitiatives")}</a>
                 <a href="/docs/constitution">{t("docsConstitution")}</a>
+                {cmsDropdownLinks(["documents", "docs"], [
+                  "/docs/laws",
+                  "/docs/resolutions",
+                  "/docs/initiatives",
+                  "/docs/constitution",
+                ]).map((link) => (
+                  <a
+                    key={`cms-docs-${link.href}`}
+                    href={link.href}
+                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                  >
+                    {t(link.label)}
+                  </a>
+                ))}
               </div>
             </div>
             <div
@@ -375,6 +494,15 @@ export default function Header() {
                 {NEWS_EXTRA_LINKS.map((item) => (
                   <a key={item.href} href={item.href}>
                     {item.labelKey ? t(item.labelKey) : t(item.labelRu) || item.labelRu}
+                  </a>
+                ))}
+                {cmsDropdownLinks(["news", "broadcast"], ["/news", "/news/week", "/broadcast"]).map((link) => (
+                  <a
+                    key={`cms-news-${link.href}`}
+                    href={link.href}
+                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                  >
+                    {t(link.label)}
                   </a>
                 ))}
               </div>
@@ -396,6 +524,26 @@ export default function Header() {
                 <a href="/appeals/legal">{t("Правовое регулирование") || "Правовое регулирование"}</a>
                 <a href="/appeals/schedule">{t("График приема граждан") || "График приема граждан"}</a>
                 <a href="/appeals/minyust">{t("Минюст России") || "Минюст России"}</a>
+                {cmsDropdownLinks(["appeals"], [
+                  "/appeals",
+                  "/appeals/letter",
+                  "/appeals/online",
+                  "/appeals/review",
+                  "/appeals/complaints",
+                  "/appeals/overview",
+                  "/appeals/public-interests",
+                  "/appeals/legal",
+                  "/appeals/schedule",
+                  "/appeals/minyust",
+                ]).map((link) => (
+                  <a
+                    key={`cms-appeals-${link.href}`}
+                    href={link.href}
+                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                  >
+                    {t(link.label)}
+                  </a>
+                ))}
               </div>
             </div>
             <div
@@ -766,12 +914,12 @@ export default function Header() {
                   <RightOutlined aria-hidden="true" />
                 </span>
               </button>
-              <Link to="/deputies" onClick={() => setMobileOpen(false)} className="tile link">
+              <button className="tile link" onClick={() => setMobileSection("deputies")}>
                 <span className="mobile-menu-link-content">
                   {t("deputies")}
                   <RightOutlined aria-hidden="true" />
                 </span>
-              </Link>
+              </button>
               <button className="tile link" onClick={() => setMobileSection("appeals")}>
                 <span className="mobile-menu-link-content">
                   {t("appeals")}
@@ -879,6 +1027,76 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
+            {cmsDropdownLinks(["about", "committees", "commissions", "activity"], [
+              "/about",
+              "/about/istoriya-parlamentarizma",
+              "/about/polnomochiya",
+              "/section",
+              "/committee",
+              "/government",
+              "/youth-parliament",
+              "/struct/council",
+              "/apparatus",
+            ]).map((link) => (
+              <a
+                key={`cms-mobile-about-${link.href}`}
+                className="tile link"
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {t(link.label)}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
+          </>
+        )}
+        {mobileSection === "deputies" && (
+          <>
+            <button className="btn" onClick={() => setMobileSection(null)}>
+              {t("back")}
+            </button>
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("deputies")}</div>
+            <a className="tile link" href="/deputies" onClick={() => setMobileOpen(false)}>
+              <span className="mobile-menu-link-content">
+                {t("Действующие депутаты") || "Действующие депутаты"}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a
+              className="tile link"
+              href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5"
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="mobile-menu-link-content">
+                {t("deputiesAll") || "Депутаты всех созывов"}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            <a
+              className="tile link"
+              href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5"
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="mobile-menu-link-content">
+                {t("Депутаты прекратившие полномочия") || "Депутаты прекратившие полномочия"}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended"]).map((link) => (
+              <a
+                key={`cms-mobile-deputies-${link.href}`}
+                className="tile link"
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {t(link.label)}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
           </>
         )}
         {mobileSection === "info" && (
@@ -966,6 +1184,33 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
+            {cmsDropdownLinks(["info", "contacts"], [
+              "/info",
+              "/info/polnomochiya-spikera",
+              "/info/protivodeystvie-korrupcii",
+              "/info/contacts",
+              "/info/upoln-po-reb",
+              "/info/gosudarstvennye-simvoly",
+              "/info/prigranichny-subekt",
+              "/about/finances",
+              "/info/iokrug",
+              "/info/zakon-karta",
+              "/opendata",
+              "/info/upoln-po-prav",
+              PERSONNEL_ROOT_PATH,
+            ]).map((link) => (
+              <a
+                key={`cms-mobile-info-${link.href}`}
+                className="tile link"
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {t(link.label)}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
           </>
         )}
         {mobileSection === "auth" && (
@@ -1120,6 +1365,24 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
+            {cmsDropdownLinks(["documents", "docs"], [
+              "/docs/laws",
+              "/docs/resolutions",
+              "/docs/initiatives",
+              "/docs/constitution",
+            ]).map((link) => (
+              <a
+                key={`cms-mobile-docs-${link.href}`}
+                className="tile link"
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {t(link.label)}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
           </>
         )}
         {mobileSection === "news" && (
@@ -1161,6 +1424,19 @@ export default function Header() {
               >
                 <span className="mobile-menu-link-content">
                   {item.labelKey ? t(item.labelKey) : t(item.labelRu) || item.labelRu}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
+            {cmsDropdownLinks(["news", "broadcast"], ["/news", "/news/week", "/broadcast"]).map((link) => (
+              <a
+                key={`cms-mobile-news-${link.href}`}
+                className="tile link"
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {t(link.label)}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </a>
@@ -1233,6 +1509,30 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
+            {cmsDropdownLinks(["appeals"], [
+              "/appeals",
+              "/appeals/letter",
+              "/appeals/online",
+              "/appeals/review",
+              "/appeals/complaints",
+              "/appeals/overview",
+              "/appeals/public-interests",
+              "/appeals/legal",
+              "/appeals/schedule",
+              "/appeals/minyust",
+            ]).map((link) => (
+              <a
+                key={`cms-mobile-appeals-${link.href}`}
+                className="tile link"
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {t(link.label)}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
           </>
         )}
         <div className="mobile-drawer__bg" aria-hidden="true" />

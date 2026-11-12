@@ -84,6 +84,39 @@ export function extractPageHtml(page, locale) {
   return String(page?.body || "").trim();
 }
 
+/** HTML-содержимое записи локали (контент или блоки). */
+function getPageEntryHtml(entry) {
+  const html = String(entry?.content || "").trim();
+  if (html.length >= MIN_CONTENT_LENGTH) return html;
+  return blocksToHtml(entry?.blocks);
+}
+
+/** Текст без тегов и лишних пробелов — для сравнения локалей между собой. */
+function normalizeComparableHtml(value) {
+  return String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Запись целевой локали считается переводом только если она реально отличается
+ * от русской версии. Бэкенд иногда создаёт tyv-запись с копией русского текста —
+ * такую копию нужно перевести автоматически, иначе страница остаётся на русском.
+ */
+function isUntranslatedCopy(localizedEntry, content) {
+  const ruEntry = content.find(
+    (item) => String(item?.locale || "").toLowerCase() === "ru"
+  );
+  if (!ruEntry) return false;
+  const localizedText = normalizeComparableHtml(getPageEntryHtml(localizedEntry));
+  const ruText = normalizeComparableHtml(getPageEntryHtml(ruEntry));
+  return Boolean(localizedText) && localizedText === ruText;
+}
+
 export function hasLocalizedPageHtml(page, locale) {
   if (!page) return false;
   const wantedLocale = String(locale || "").toLowerCase();
@@ -93,10 +126,9 @@ export function hasLocalizedPageHtml(page, locale) {
       (item) => String(item?.locale || "").toLowerCase() === wantedLocale
     );
     if (!localized) return false;
-    return (
-      String(localized?.content || "").trim().length >= MIN_CONTENT_LENGTH ||
-      blocksToHtml(localized?.blocks).length >= MIN_CONTENT_LENGTH
-    );
+    if (getPageEntryHtml(localized).length < MIN_CONTENT_LENGTH) return false;
+    if (wantedLocale !== "ru" && isUntranslatedCopy(localized, content)) return false;
+    return true;
   }
   const pageLocale = String(page?.locale || page?.language || "").toLowerCase();
   return pageLocale === wantedLocale && Boolean(extractPageHtml(page, wantedLocale));
