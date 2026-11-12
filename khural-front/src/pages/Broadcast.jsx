@@ -6,7 +6,7 @@ import SideNav from "../components/SideNav.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
-import { formatBroadcastTitle } from "../content/broadcasts.js";
+import { resolveBroadcastTitle } from "../content/broadcasts.js";
 
 const BROADCAST_PAGE_SIZE = 6;
 
@@ -88,14 +88,11 @@ export default function Broadcast() {
                 Архив трансляций
               </h2>
               <div className="broadcast-archive__grid">
-                {pageItems.map((item, index) => {
+                {pageItems.map((item) => {
                   const itemId = String(item.id ?? item.url);
                   const title =
                     item.title ||
-                    formatBroadcastTitle(
-                      item,
-                      `Трансляция ${(currentPage - 1) * BROADCAST_PAGE_SIZE + index + 1}`
-                    );
+                    resolveBroadcastTitle(item, t("Трансляция"));
                   const isPlayerActive = activeBroadcastId === itemId;
                   return (
                     <div

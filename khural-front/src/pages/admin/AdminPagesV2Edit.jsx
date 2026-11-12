@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Form, Input, Select, Space, Card, Switch, message as antdMessage } from "antd";
+import { App, Button, Form, Input, Select, Space, Card, Switch } from "antd";
 import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import { AboutApi, apiFetch, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
@@ -7,6 +7,7 @@ import { getPageOverrideById, upsertPageOverride } from "../../utils/pagesOverri
 import { refreshPagesTree } from "../../utils/cmsPagesTree.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import ImageUploadField from "../../components/ImageUploadField.jsx";
+import VideoUploadField from "../../components/VideoUploadField.jsx";
 import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js";
 import { useTranslation } from "../../hooks/useTranslation.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../../content/forMedia.js";
@@ -21,10 +22,14 @@ function normalizeList(res) {
 async function getPageById(id) {
   // Try the obvious endpoint first
   try {
-    return await apiFetch(`/pages/${encodeURIComponent(id)}`, { method: "GET", auth: true });
+    return await apiFetch(`/pages/${encodeURIComponent(id)}`, {
+      method: "GET",
+      auth: true,
+      cacheMode: "no-store",
+    });
   } catch {
     // Fallback: load list and find
-    const all = normalizeList(await apiFetch("/pages", { method: "GET", auth: true }));
+    const all = normalizeList(await apiFetch("/pages", { method: "GET", auth: true, cacheMode: "no-store" }));
     return all.find((p) => String(p.id) === String(id)) || null;
   }
 }
@@ -40,17 +45,18 @@ const BLOCK_TYPES = [
 ];
 
 /**
- * Для формы изображения храним значение как { fileId, file }:
+ * Для формы медиа храним значение как { fileId, file }:
  * уже загруженный файл (fileId) либо выбранный и ещё не загруженный (file).
  */
 function normalizeBlocksForForm(blocks) {
   return (Array.isArray(blocks) ? blocks : []).map((block) => {
     const type = String(block?.type || "").toLowerCase();
-    if (type !== "image") return block;
+    if (type !== "image" && type !== "video") return block;
     const fileId = block?.fileId ?? block?.file?.id ?? "";
+    const media = fileId ? { fileId: String(fileId) } : undefined;
     return {
       ...block,
-      image: fileId ? { fileId: String(fileId) } : undefined,
+      ...(type === "image" ? { image: media } : { video: media }),
     };
   });
 }
@@ -157,6 +163,7 @@ const FOR_MEDIA_DEFAULTS = {
 
 export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
   const { reload } = useData();
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [busy, setBusy] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
@@ -170,10 +177,10 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
 
   React.useEffect(() => {
     if (translationError) {
-      antdMessage.error("Ошибка при переводе: " + (translationError?.message || "Неизвестная ошибка"));
+      message.error("Ошибка при переводе: " + (translationError?.message || "Неизвестная ошибка"));
       clearError();
     }
-  }, [translationError, clearError]);
+  }, [translationError, message, clearError]);
 
   React.useEffect(() => {
     let alive = true;
@@ -327,7 +334,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         });
       }
       if (contentArray.length === 0) {
-        antdMessage.error("Заполните хотя бы заголовок или контент для русского языка");
+        message.error("Заполните хотя бы заголовок или контент для русского языка");
         setBusy(false);
         return;
       }
@@ -356,7 +363,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         menuTitle: values.menuTitle || null,
         submenuTitle: values.submenuTitle || null,
       });
-      antdMessage.success("Страница сохранена");
+      message.success("Страница сохранена");
 
       // Перечитываем страницу после сохранения: у новых блоков появляются id,
       // а выбранные файлы уже загружены. Без этого повторное сохранение
@@ -375,8 +382,14 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           form.setFieldsValue({
             titleRu: ruReload?.title ?? "",
             contentRu: ruReload?.content ?? "",
-            titleTy: tyvReload?.title ?? "",
-            contentTy: tyvReload?.content ?? "",
+            // TY-заполняем только если сервер вернул локаль tyv;
+            // иначе сохраняем текущие значения (не стираем введённый перевод).
+            ...(tyvReload
+              ? {
+                  titleTy: tyvReload?.title ?? "",
+                  contentTy: tyvReload?.content ?? "",
+                }
+              : {}),
             blocks: blocksReload,
           });
         }
@@ -389,11 +402,11 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       await onDone?.();
     } catch (error) {
       console.error("Failed to save page:", error);
-      antdMessage.error(error?.message || "Не удалось сохранить страницу");
+      message.error(error?.message || "Не удалось сохранить страницу");
     } finally {
       setBusy(false);
     }
-  }, [canWrite, form, id, onDone, reload]);
+  }, [canWrite, form, id, onDone, reload, message]);
 
   const handleTranslate = React.useCallback(
     async (fromLang, toLang) => {
@@ -407,7 +420,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       const content = String(values[contentField] || "").trim();
 
       if (!title && !content) {
-        antdMessage.warning("Заполните поля для перевода");
+        message.warning("Заполните поля для перевода");
         return;
       }
 
@@ -426,12 +439,12 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           [titleTarget]: translatedTitle,
           [contentTarget]: translatedContent,
         });
-        antdMessage.success("Перевод выполнен");
+        message.success("Перевод выполнен");
       } catch (e) {
         console.error("Translation error:", e);
       }
     },
-    [form, translate]
+    [form, translate, message]
   );
 
   const addBlock = React.useCallback(() => {
@@ -485,7 +498,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           </div>
           <div className="admin-page-editor__hero-actions">
             <Button onClick={onDone}>Назад</Button>
-            <Button type="primary" onClick={submit} loading={busy} disabled={!canWrite || loading}>
+            <Button type="primary" onClick={submit} loading={busy} disabled={!canWrite || loading || translating}>
               Сохранить
             </Button>
           </div>
@@ -655,7 +668,11 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
                             >
                               <ImageUploadField disabled={!canWrite || loading || busy} />
                             </Form.Item>
-                            <Form.Item name={[field.name, "alt"]} label="Альтернативный текст">
+                            <Form.Item
+                              name={[field.name, "alt"]}
+                              label="Альтернативный текст"
+                              extra="Показывается под изображением, если подпись не заполнена"
+                            >
                               <Input placeholder="Описание изображения" />
                             </Form.Item>
                             <Form.Item name={[field.name, "caption"]} label="Подпись">
@@ -744,8 +761,34 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
 
                         {blockType === "video" && (
                           <>
-                            <Form.Item name={[field.name, "content"]} label="URL видео" rules={[{ required: true }]}>
-                              <Input placeholder="https://www.youtube.com/embed/..." />
+                            <Form.Item
+                              name={[field.name, "content"]}
+                              label="URL видео"
+                              extra="Ссылка на YouTube/Rutube или загрузите файл ниже"
+                              rules={[
+                                {
+                                  validator: (_rule, value) => {
+                                    const media = form.getFieldValue([
+                                      "blocks",
+                                      field.name,
+                                      "video",
+                                    ]);
+                                    const hasFile =
+                                      Boolean(media?.file) ||
+                                      Boolean(String(media?.fileId || "").trim());
+                                    return hasFile || String(value || "").trim()
+                                      ? Promise.resolve()
+                                      : Promise.reject(
+                                          new Error("Укажите ссылку или загрузите видеофайл")
+                                        );
+                                  },
+                                },
+                              ]}
+                            >
+                              <Input placeholder="https://www.youtube.com/watch?v=..." />
+                            </Form.Item>
+                            <Form.Item name={[field.name, "video"]} label="Видеофайл">
+                              <VideoUploadField disabled={!canWrite || loading || busy} />
                             </Form.Item>
                             <Form.Item name={[field.name, "caption"]} label="Подпись к видео">
                               <Input placeholder="Подпись к видео" />

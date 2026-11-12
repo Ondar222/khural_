@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Form, Input, Select, Space, Card, Switch, message as antdMessage } from "antd";
+import { Button, Form, Input, Select, Space, Card, Switch, App } from "antd";
 import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import { AboutApi, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
@@ -7,7 +7,9 @@ import { upsertPageOverride, PAGES_OVERRIDES_EVENT_NAME } from "../../utils/page
 import { refreshPagesTree } from "../../utils/cmsPagesTree.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import ImageUploadField from "../../components/ImageUploadField.jsx";
+import VideoUploadField from "../../components/VideoUploadField.jsx";
 import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js";
+import { useTranslation } from "../../hooks/useTranslation.js";
 
 function slugify(input) {
   if (!input) return "";
@@ -44,12 +46,21 @@ const BLOCK_TYPES = [
 
 export default function AdminPagesV2Create({ canWrite, onDone }) {
   const { reload } = useData();
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const [busy, setBusy] = React.useState(false);
   const [parents, setParents] = React.useState([]);
   const [documents, setDocuments] = React.useState([]);
   const [loadingDocs, setLoadingDocs] = React.useState(false);
   const blocks = Form.useWatch("blocks", form) || [];
+  const { translate, loading: translating, error: translationError, clearError } = useTranslation();
+
+  React.useEffect(() => {
+    if (translationError) {
+      message.error("Ошибка при переводе: " + (translationError?.message || "Неизвестная ошибка"));
+      clearError();
+    }
+  }, [translationError, message, clearError]);
 
   const prefillParent = React.useMemo(() => {
     const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
@@ -166,6 +177,46 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
     form.setFieldValue("slugLeaf", slugify(title));
   }, [form]);
 
+  const handleTranslate = React.useCallback(
+    async (fromLang, toLang) => {
+      const values = form.getFieldsValue();
+      const titleField = fromLang === "ru" ? "titleRu" : "titleTy";
+      const contentField = fromLang === "ru" ? "contentRu" : "contentTy";
+      const titleTarget = toLang === "tyv" ? "titleTy" : "titleRu";
+      const contentTarget = toLang === "tyv" ? "contentTy" : "contentRu";
+
+      const title = String(values[titleField] || "").trim();
+      const content = String(values[contentField] || "").trim();
+
+      if (!title && !content) {
+        message.warning("Заполните поля для перевода");
+        return;
+      }
+
+      try {
+        const translations = await Promise.all([
+          title ? translate(title, fromLang, toLang) : Promise.resolve({ translated: "" }),
+          content ? translate(content, fromLang, toLang) : Promise.resolve({ translated: "" }),
+        ]);
+        const translatedTitle = String(
+          translations[0]?.translated || (typeof translations[0] === "string" ? translations[0] : "") || ""
+        );
+        const translatedContent = String(
+          translations[1]?.translated || (typeof translations[1] === "string" ? translations[1] : "") || ""
+        );
+        form.setFieldsValue({
+          [titleTarget]: translatedTitle,
+          [contentTarget]: translatedContent,
+        });
+        message.success("Перевод выполнен");
+      } catch (e) {
+        console.error("Translation error:", e);
+        message.error("Ошибка при переводе текста");
+      }
+    },
+    [form, translate, message]
+  );
+
   const submit = React.useCallback(async () => {
     if (!canWrite) return;
     setBusy(true);
@@ -211,19 +262,31 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       // загружаем отдельно через batch-эндпоинт после создания страницы.
       const { contentBlocks, uploadBlocks, files } = collectBlockUploads(values.blocks);
 
+      // Формируем контент с локалями: RU (основной) + TYV (если есть перевод)
+      const contentArray = [];
+      const contentLocale = String(values.locale || "ru").toLowerCase();
+      contentArray.push({
+        locale: contentLocale,
+        title: values.title,
+        content: values.content || "",
+        ...(Array.isArray(contentBlocks) && contentBlocks.length > 0 ? { blocks: contentBlocks } : {}),
+      });
+      const titleTy = String(values.titleTy || "").trim();
+      const contentTy = String(values.contentTy || "").trim();
+      if (titleTy || contentTy) {
+        contentArray.push({
+          locale: "tyv",
+          title: titleTy,
+          content: contentTy,
+        });
+      }
+
       const created = await AboutApi.createPage({
         title: values.title,
         slug: fullSlug,
         isPublished: values.isPublished !== undefined ? Boolean(values.isPublished) : true,
-        locale: values.locale || "ru",
-        content: [
-          {
-            locale: values.locale || "ru",
-            title: values.title,
-            content: values.content || "",
-            blocks: contentBlocks,
-          },
-        ],
+        locale: contentLocale,
+        content: contentArray,
       });
 
       if (created && created.id != null) {
@@ -246,7 +309,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
         menuTitle: values.menuTitle || null,
         submenuTitle: values.submenuTitle || null,
       });
-      antdMessage.success("Страница создана");
+      message.success("Страница создана");
       reload();
 
       // Force reload pages tree in Header
@@ -256,11 +319,11 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       await onDone?.();
     } catch (error) {
       console.error("Failed to create page:", error);
-      antdMessage.error(error?.message || "Не удалось создать страницу");
+      message.error(error?.message || "Не удалось создать страницу");
     } finally {
       setBusy(false);
     }
-  }, [canWrite, form, onDone, reload]);
+  }, [canWrite, form, onDone, reload, message]);
 
   const addBlock = React.useCallback(() => {
     const currentBlocks = form.getFieldValue("blocks") || [];
@@ -321,7 +384,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
           </div>
           <div className="admin-page-editor__hero-actions">
             <Button onClick={onDone}>Назад</Button>
-            <Button type="primary" onClick={submit} loading={busy} disabled={!canWrite}>
+            <Button type="primary" onClick={submit} loading={busy} disabled={!canWrite || busy || translating}>
               Создать
             </Button>
           </div>
@@ -406,6 +469,38 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
             />
           </Form.Item>
 
+          <div className="admin-news-editor__lang-grid" style={{ marginTop: 16 }}>
+            <div className="admin-card">
+              <div className="admin-news-editor__lang-head">
+                <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>
+                  Тувинский язык
+                </div>
+                <Button
+                  type="default"
+                  onClick={() => handleTranslate("ru", "tyv")}
+                  loading={translating}
+                  disabled={!canWrite || translating || busy}
+                >
+                  Получить автоматический перевод
+                </Button>
+              </div>
+              <Form.Item label="Название (TY)" name="titleTy">
+                <Input disabled={busy || !canWrite} placeholder="Название страницы на тувинском" />
+              </Form.Item>
+              <Form.Item
+                label="Содержимое (TY)"
+                name="contentTy"
+                getValueFromEvent={(value) => value}
+              >
+                <TinyMCEEditor
+                  height={300}
+                  placeholder="Содержимое на тувинском"
+                  disabled={busy || !canWrite}
+                />
+              </Form.Item>
+            </div>
+          </div>
+
           <Form.Item label="Блоки контента">
             <Form.List name="blocks">
               {(fields, { add, remove }) => (
@@ -467,7 +562,11 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
                             >
                               <ImageUploadField disabled={!canWrite || busy} />
                             </Form.Item>
-                            <Form.Item name={[field.name, "alt"]} label="Альтернативный текст">
+                            <Form.Item
+                              name={[field.name, "alt"]}
+                              label="Альтернативный текст"
+                              extra="Показывается под изображением, если подпись не заполнена"
+                            >
                               <Input placeholder="Описание изображения" />
                             </Form.Item>
                             <Form.Item name={[field.name, "caption"]} label="Подпись">
@@ -556,8 +655,34 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
                         {blockType === "video" && (
                           <>
-                            <Form.Item name={[field.name, "content"]} label="URL видео" rules={[{ required: true }]}>
-                              <Input placeholder="https://www.youtube.com/embed/..." />
+                            <Form.Item
+                              name={[field.name, "content"]}
+                              label="URL видео"
+                              extra="Ссылка на YouTube/Rutube или загрузите файл ниже"
+                              rules={[
+                                {
+                                  validator: (_rule, value) => {
+                                    const media = form.getFieldValue([
+                                      "blocks",
+                                      field.name,
+                                      "video",
+                                    ]);
+                                    const hasFile =
+                                      Boolean(media?.file) ||
+                                      Boolean(String(media?.fileId || "").trim());
+                                    return hasFile || String(value || "").trim()
+                                      ? Promise.resolve()
+                                      : Promise.reject(
+                                          new Error("Укажите ссылку или загрузите видеофайл")
+                                        );
+                                  },
+                                },
+                              ]}
+                            >
+                              <Input placeholder="https://www.youtube.com/watch?v=..." />
+                            </Form.Item>
+                            <Form.Item name={[field.name, "video"]} label="Видеофайл">
+                              <VideoUploadField disabled={!canWrite || busy} />
                             </Form.Item>
                             <Form.Item name={[field.name, "caption"]} label="Подпись к видео">
                               <Input placeholder="Подпись к видео" />

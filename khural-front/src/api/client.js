@@ -439,7 +439,7 @@ export async function apiFetchText(path, { method = "GET", headers, auth = true 
 export async function tryApiFetch(path, options) {
   try {
     return await apiFetch(path, options);
-  } catch (error) {
+  } catch {
     // Тихо игнорируем ошибки - эта функция для оптимистичных запросов
     return null;
   }
@@ -547,62 +547,39 @@ export const PublicApi = {
   },
 
   async translate(text, from, to) {
-    // Пробуем без авторизации сначала (для публичного доступа)
+    // Эндпоинты перевода требуют авторизацию (AuthGuard на бэкенде), поэтому запросы идут с токеном.
     const opts = {
       method: "POST",
       body: { text, from, to },
-      auth: false,
+      auth: true,
       timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
       quiet: true,
     }
-    let publicError = null;
     try {
       const result = await apiFetch("/translation/translate", opts);
       // Проверяем, вернулся ли реальный перевод (не тот же ли самый текст)
       if (result && result.translated && result.translated !== text) {
         return { original: text, translated: result.translated, from, to };
       }
-    } catch (error) {
-      publicError = error;
+    } catch {
+      // Continue through the configured fallback.
     }
 
-    // Повторяем запрос с токеном только при отказе в авторизации, не при медленном/недоступном API.
-    const token = getAuthToken();
-    if (token && publicError?.status === 401) {
-      const authOpts = {
+    // Используем batch endpoint как следующий шаг (single endpoint мог вернуть исходный текст).
+    try {
+      const batchResult = await apiFetch("/translation/translate-batch", {
         method: "POST",
-        body: { text, from, to },
+        body: { texts: [text], from, to },
         auth: true,
         timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
         quiet: true,
-      };
-      try {
-        const result = await apiFetch("/translation/translate", authOpts);
-        if (result && result.translated && result.translated !== text) {
-          return { original: text, translated: result.translated, from, to };
-        }
-      } catch {
-        // Continue through the configured fallback.
+      });
+      const translated = Array.isArray(batchResult?.translated) ? batchResult.translated[0] : null;
+      if (translated && translated !== text) {
+        return { original: text, translated, from, to };
       }
-    }
-
-    // Используем batch endpoint только если single endpoint ответил без перевода или не найден.
-    if (!publicError || publicError.status === 404 || publicError.status === 405) {
-      try {
-        const batchResult = await apiFetch("/translation/translate-batch", {
-          method: "POST",
-          body: { texts: [text], from, to },
-          auth: Boolean(token),
-          timeout: PublicApi.TRANSLATION_TIMEOUT_MS,
-          quiet: true,
-        });
-        const translated = Array.isArray(batchResult?.translated) ? batchResult.translated[0] : null;
-        if (translated && translated !== text) {
-          return { original: text, translated, from, to };
-        }
-      } catch {
-        // Continue through the configured fallback.
-      }
+    } catch {
+      // Continue through the configured fallback.
     }
 
     // Fallback на Google Translate

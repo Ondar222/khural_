@@ -2,15 +2,19 @@ import { AboutApi } from "../api/client.js";
 import { normalizeFilesUrl } from "./filesUrl.js";
 
 /**
- * URL изображения CMS-блока по его fileId.
+ * URL файла CMS-блока по его fileId.
  * Файлы, загруженные через бэкенд, отдаются по /files/v2/{id}.
  */
-export function cmsImageUrl(fileId) {
+export function cmsFileUrl(fileId) {
   const id = String(fileId ?? "").trim();
   if (!id) return "";
   // Уже готовая ссылка (внешняя или относительная) — только нормализуем.
   if (/^(https?:|data:|blob:|\/)/i.test(id)) return normalizeFilesUrl(id);
   return normalizeFilesUrl(`/files/v2/${id}`);
+}
+
+export function cmsImageUrl(fileId) {
+  return cmsFileUrl(fileId);
 }
 
 /** ID контент-раздела страницы нужной локали (для загрузки файлов блоков). */
@@ -27,7 +31,7 @@ export function findPageContentId(page, locale = "ru") {
  * Разбирает блоки из формы:
  * - contentBlocks — блоки, которые сохраняются обычным PATCH/POST страницы;
  * - uploadBlocks + files — блоки с новыми файлами, их нужно добавить через batch;
- * - replacedBlockIds — id существующих блоков, картинку которых заменили.
+ * - replacedBlockIds — id существующих блоков, файл которых заменили.
  */
 export function collectBlockUploads(blocks) {
   const contentBlocks = [];
@@ -37,15 +41,19 @@ export function collectBlockUploads(blocks) {
 
   (Array.isArray(blocks) ? blocks : []).forEach((block, index) => {
     const type = block?.type || "text";
-    const image = type === "image" ? block?.image || null : null;
+    // Изображение и видео могут содержать выбранный, но ещё не загруженный файл.
+    const isMedia = type === "image" || type === "video";
+    const mediaField =
+      type === "image" ? block?.image : type === "video" ? block?.video : null;
     const pendingFile =
-      image?.file && typeof File !== "undefined" && image.file instanceof File
-        ? image.file
+      mediaField?.file && typeof File !== "undefined" && mediaField.file instanceof File
+        ? mediaField.file
         : null;
-    const fileId =
-      type === "image"
-        ? String(image?.fileId || (pendingFile ? "" : block?.fileId) || "").trim()
-        : String(block?.fileId || "").trim();
+    // Для медиа источник fileId — только поле формы. Если пользователь удалил
+    // файл, поле становится пустым и старый fileId не возвращается.
+    const fileId = String(
+      isMedia ? mediaField?.fileId || "" : block?.fileId || ""
+    ).trim();
 
     const payload = {
       type,
@@ -100,14 +108,14 @@ export async function applyBlockUploads({
 
   if (contentId == null) {
     if (hasUploads) {
-      throw new Error("Не удалось определить раздел контента для загрузки изображения");
+      throw new Error("Не удалось определить раздел контента для загрузки файла");
     }
     return;
   }
 
   if (hasUploads) {
     if (uploadBlocks.length !== files.length) {
-      throw new Error("Не удалось сопоставить изображения и блоки");
+      throw new Error("Не удалось сопоставить файлы и блоки");
     }
     await AboutApi.addBlocksWithFiles(pageId, contentId, uploadBlocks, files);
   }

@@ -182,6 +182,28 @@ export function sortBroadcastItems(items) {
   });
 }
 
+/**
+ * Нормализует название трансляции: title → sourceUrl → externalId → watchUrl → fallback.
+ * Возвращает полное имя трансляции, а не служебный fallback вроде «Трансляция 1».
+ */
+export function resolveBroadcastTitle(item, fallbackName) {
+  const sourceUrl = text(item?.sourceUrl ?? item?.source_url ?? item?.url);
+  const externalId = text(item?.externalId ?? item?.external_id);
+  const watchUrl = text(item?.watchUrl);
+  const streamKey = text(
+    item?.vkStreamKey ?? item?.vk_stream_key ?? item?.stream_key ?? item?.externalId ?? item?.external_id,
+  );
+  let name = text(item?.title);
+  if (!name && sourceUrl) name = getBroadcastTitle(sourceUrl);
+  if (!name && externalId && Object.prototype.hasOwnProperty.call(BROADCAST_TITLES, externalId)) {
+    name = BROADCAST_TITLES[externalId];
+  }
+  if (!name && watchUrl) name = getBroadcastTitle(watchUrl);
+  if (!name && streamKey) name = getBroadcastTitle(streamKey);
+  if (!name) name = text(item?.name);
+  return name || text(fallbackName) || "Трансляция";
+}
+
 /** GET /api/broadcasts → отсортированный список опубликованных трансляций. */
 export function normalizeApiBroadcasts(list) {
   const arr = Array.isArray(list) ? list : [];

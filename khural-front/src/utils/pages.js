@@ -50,6 +50,55 @@ function getBlockImageSrc(block) {
   return fileId ? normalizeFilesUrl(`/files/v2/${fileId}`) : "";
 }
 
+/** URL видео блока: загруженный файл имеет приоритет над ссылкой. */
+function getBlockVideoSrc(block) {
+  const fileId = getBlockFileId(block);
+  if (fileId) return normalizeFilesUrl(`/files/v2/${fileId}`);
+  const direct = String(block?.file?.link ?? block?.link ?? "").trim();
+  if (direct) return normalizeFilesUrl(direct);
+  return String(block?.content ?? block?.url ?? block?.href ?? "").trim();
+}
+
+/** Является ли ссылка прямым видеофайлом (а не страницей видеохостинга). */
+function isDirectVideoSource(src) {
+  const clean = String(src || "").split(/[?#]/)[0].toLowerCase();
+  return (
+    /\.(mp4|webm|ogv|ogg|mov|m4v)$/.test(clean) ||
+    /\/files\//.test(clean) ||
+    /^blob:/.test(clean) ||
+    /^data:video\//.test(clean)
+  );
+}
+
+/** Приводит ссылки YouTube/Vimeo к виду, пригодному для встраивания. */
+function toVideoEmbedUrl(src) {
+  try {
+    const u = new URL(src, "https://khural.local");
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (host === "youtu.be") {
+      const id = u.pathname.split("/").filter(Boolean)[0];
+      return id ? `https://www.youtube.com/embed/${id}` : src;
+    }
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      if (u.pathname === "/watch") {
+        const id = u.searchParams.get("v");
+        if (id) return `https://www.youtube.com/embed/${id}`;
+      }
+      const parts = u.pathname.split("/").filter(Boolean);
+      if (parts[0] === "embed" || parts[0] === "shorts" || parts[0] === "live") {
+        if (parts[1]) return `https://www.youtube.com/embed/${parts[1]}`;
+      }
+    }
+    if (host === "vimeo.com") {
+      const id = u.pathname.split("/").filter(Boolean)[0];
+      if (/^\d+$/.test(id || "")) return `https://player.vimeo.com/video/${id}`;
+    }
+    return src;
+  } catch {
+    return src;
+  }
+}
+
 /** Преобразует блоки контента (из админки) в HTML для отображения на странице. */
 export function blocksToHtml(blocks) {
   if (!Array.isArray(blocks) || blocks.length === 0) return "";
@@ -68,8 +117,11 @@ export function blocksToHtml(blocks) {
       const src = getBlockImageSrc(b);
       if (!src) return "";
       const alt = String(b?.alt ?? "").trim();
-      const figCaption = caption
-        ? `\n<figcaption style="font-size:13px;opacity:.75;margin-top:6px">${escapeHtml(caption)}</figcaption>`
+      // Альтернативный текст показываем под изображением, если подпись не
+      // заполнена. Иначе пользователь вводит его в админке и не видит на сайте.
+      const visibleCaption = caption || alt;
+      const figCaption = visibleCaption
+        ? `\n<figcaption style="font-size:13px;opacity:.75;margin-top:6px">${escapeHtml(visibleCaption)}</figcaption>`
         : "";
       return `<figure class="page-block page-block--image" style="margin:16px 0">\n<img src="${escapeHtml(
         src
@@ -103,6 +155,24 @@ export function blocksToHtml(blocks) {
         ? `\n<figcaption style="font-size:13px;opacity:.75;margin-top:6px">${escapeHtml(caption)}</figcaption>`
         : "";
       return `<figure class="page-block page-block--gallery" style="margin:16px 0;display:grid;gap:10px">\n${imgs}${figCaption}\n</figure>`;
+    }
+    if (type === "video") {
+      const src = getBlockVideoSrc(b);
+      if (!src) return "";
+      const figCaption = caption
+        ? `\n<figcaption style="font-size:13px;opacity:.75;margin-top:6px">${escapeHtml(caption)}</figcaption>`
+        : "";
+      if (isDirectVideoSource(src)) {
+        return `<figure class="page-block page-block--video" style="margin:16px 0">\n<video controls preload="metadata" src="${escapeHtml(
+          src
+        )}" style="display:block;max-width:100%;height:auto;border-radius:8px"></video>${figCaption}\n</figure>`;
+      }
+      const embed = toVideoEmbedUrl(src);
+      return `<figure class="page-block page-block--video" style="margin:16px 0">\n<div style="position:relative;width:100%;padding-top:56.25%;overflow:hidden;border-radius:8px"><iframe src="${escapeHtml(
+        embed
+      )}" title="${escapeHtml(
+        caption || "Видео"
+      )}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>${figCaption}\n</figure>`;
     }
     if (type === "file") {
       const fileId = getBlockFileId(b);

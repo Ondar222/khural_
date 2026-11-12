@@ -3,7 +3,7 @@ import GosWidget from "./GosWidget.jsx";
 import BroadcastWidget from "./BroadcastWidget.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useBroadcastLinks } from "../hooks/useBroadcastLinks.js";
-import { formatBroadcastTitle } from "../content/broadcasts.js";
+import { resolveBroadcastTitle } from "../content/broadcasts.js";
 import {
   readPortalsOverrides,
   mergePortalsWithOverrides,
@@ -171,7 +171,7 @@ export default function Resources() {
             return (
               <div className="broadcasts-home">
                 {top4.map((item, index) => {
-                  const title = item.title || formatBroadcastTitle(item, `${t("Трансляция")} ${index + 1}`);
+                  const title = item.title || resolveBroadcastTitle(item, t("Трансляция"));
                   return (
                     <div key={String(item.id ?? item.watchUrl ?? index)} className="broadcasts-home__item">
                       <div className="broadcasts-home__video">

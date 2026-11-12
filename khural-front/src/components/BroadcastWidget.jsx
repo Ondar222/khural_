@@ -3,7 +3,7 @@ import { VideoIcon, RssIcon } from "./icons/LinearIcons.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { BroadcastsApi } from "../api/client.js";
-import { formatBroadcastTitle } from "../content/broadcasts.js";
+import { formatBroadcastTitle, resolveBroadcastTitle } from "../content/broadcasts.js";
 
 function getVkEmbedUrl(vkStreamKey, vkStreamUrl) {
   const src = vkStreamUrl || null;
@@ -254,7 +254,7 @@ export default function BroadcastWidget({ compact = false } = {}) {
     return null;
   }
 
-  const title = resolvedBroadcast.title || fallbackTitle;
+  const title = resolvedBroadcast?.title || resolveBroadcastTitle(resolvedBroadcast, fallbackTitle);
   const canEmbedIframe =
     Boolean(embedUrl) &&
     (streamType === "youtube" ||
