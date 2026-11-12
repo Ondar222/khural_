@@ -45,6 +45,9 @@ body,
 }
 html {
   scroll-behavior: smooth; /* smooth scroll to anchors */
+  /* Резервируем место под вертикальный скроллбар, чтобы при переходе между
+     страницами разной высоты контент и боковое меню не сдвигались по ширине. */
+  scrollbar-gutter: stable;
 }
 body {
   margin: 0;

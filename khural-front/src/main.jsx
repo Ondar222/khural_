@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import "./setApiBaseUrl.js";
 import App from "./App.jsx";
+import { fetchPagesTree } from "./utils/cmsPagesTree.js";
 import "./styles/index.css";
 
 // Подавляем ошибки от внешних скриптов мониторинга (VK, etc.)
@@ -41,3 +42,7 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Прогреваем кэш дерева страниц заранее, чтобы боковое меню и выпадающие
+// списки в шапке сразу содержали CMS-страницы без «дорисовывания».
+fetchPagesTree();

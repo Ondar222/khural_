@@ -4,6 +4,7 @@ import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from
 import { AboutApi, apiFetch, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { getPageOverrideById, upsertPageOverride } from "../../utils/pagesOverrides.js";
+import { refreshPagesTree } from "../../utils/cmsPagesTree.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import ImageUploadField from "../../components/ImageUploadField.jsx";
 import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js";
@@ -384,6 +385,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       }
 
       reload();
+      await refreshPagesTree();
       await onDone?.();
     } catch (error) {
       console.error("Failed to save page:", error);

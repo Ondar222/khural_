@@ -7,8 +7,8 @@ import Link from "./Link.jsx";
 import { RightOutlined } from "@ant-design/icons";
 import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
 import { PERSONNEL_ROOT_PATH } from "../content/personnel.js";
-import { AboutApi } from "../api/client.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
+import { fetchPagesTree, getCachedPagesTree } from "../utils/cmsPagesTree.js";
 import {
   applyPagesOverridesToTree,
   pickMenuLabel,
@@ -116,7 +116,10 @@ export default function Header() {
     };
   }, [mobileOpen, sheetOpen]);
 
-  const [pagesTree, setPagesTree] = React.useState([]);
+  const [pagesTree, setPagesTree] = React.useState(() => {
+    const cached = getCachedPagesTree();
+    return cached ? applyPagesOverridesToTree(cached) : [];
+  });
 
   const pageHref = React.useCallback((slug) => {
     const segs = String(slug || "")
@@ -179,29 +182,23 @@ export default function Header() {
 
   React.useEffect(() => {
     let alive = true;
-    const loadPagesTree = async () => {
-      try {
-        const res = await AboutApi.listPagesTree({ publishedOnly: true }).catch(() => []);
-        const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
-        if (!alive) return;
-        setPagesTree(applyPagesOverridesToTree(arr));
-      } catch {
-        if (!alive) return;
-        setPagesTree([]);
-      }
+    const loadPagesTree = async (force = false) => {
+      const arr = await fetchPagesTree({ force });
+      if (!alive) return;
+      setPagesTree(applyPagesOverridesToTree(Array.isArray(arr) ? arr : []));
     };
-    
+
     loadPagesTree();
-    
+
     // Listen for page reload events from admin
-    const onPagesReload = () => loadPagesTree();
+    const onPagesReload = () => loadPagesTree(true);
     window.addEventListener("khural:pages-reload", onPagesReload);
-    
+
     return () => {
       alive = false;
       window.removeEventListener("khural:pages-reload", onPagesReload);
     };
-  }, [lang]);
+  }, []);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;

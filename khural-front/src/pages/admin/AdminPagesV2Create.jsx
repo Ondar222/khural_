@@ -4,6 +4,7 @@ import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from
 import { AboutApi, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { upsertPageOverride, PAGES_OVERRIDES_EVENT_NAME } from "../../utils/pagesOverrides.js";
+import { refreshPagesTree } from "../../utils/cmsPagesTree.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import ImageUploadField from "../../components/ImageUploadField.jsx";
 import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js";
@@ -250,9 +251,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
       // Force reload pages tree in Header
       window.dispatchEvent(new CustomEvent(PAGES_OVERRIDES_EVENT_NAME));
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("khural:pages-reload"));
-      }
+      await refreshPagesTree();
 
       await onDone?.();
     } catch (error) {

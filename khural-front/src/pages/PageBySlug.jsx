@@ -2871,7 +2871,12 @@ export default function PageBySlug() {
                 ? undefined
                 : isInfoSection || isCodeOfHonor || isMothersCommandments
                   ? undefined
-                  : title
+                  // Для страниц внутри известного раздела (/deputies/m и т.п.)
+                  // оставляем заголовок раздела, чтобы меню не меняло высоту
+                  // и не «прыгало» при переходе между страницами.
+                  : parentBackUrl
+                    ? undefined
+                    : title
             }
             loadPages={true}
             autoSection={true}

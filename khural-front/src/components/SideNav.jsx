@@ -2,8 +2,8 @@ import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { useHashRoute } from "../Router.jsx";
 import Link from "./Link.jsx";
-import { AboutApi } from "../api/client.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
+import { fetchPagesTree, getCachedPagesTree } from "../utils/cmsPagesTree.js";
 import { pickMenuLabel, applyPagesOverridesToTree } from "../utils/pagesOverrides.js";
 import { normalizePathBySlugAliases } from "../utils/slugAliases.js";
 import { DEFAULT_COMMISSIONS_LIST } from "../utils/commissionsData.js";
@@ -356,7 +356,9 @@ export default function SideNav({
   const { t, lang } = useI18n();
   const { route } = useHashRoute();
   const locale = getPreferredLocaleToken(lang);
-  const [pagesLinks, setPagesLinks] = React.useState([]);
+  // Дерево страниц берём из общего кэша, чтобы при переходах между
+  // страницами меню сразу рисовалось в полном составе и не «прыгало».
+  const [pagesTree, setPagesTree] = React.useState(() => getCachedPagesTree());
 
   // Сырой путь из URL и путь, нормализованный через алиасы slug
   // (/about/districts → /info/iokrug). Нормализованный путь используется для
@@ -623,38 +625,34 @@ export default function SideNav({
     ? (typeof title === "string" ? t(title) : title)
     : t(autoTitle);
 
+  // Ссылки на CMS-страницы раздела. Считаются синхронно из кэша, поэтому
+  // при переходах меню не меняется скачком после ответа сервера.
+  const pagesLinks = React.useMemo(() => {
+    if (!loadPages || !Array.isArray(pagesTree) || pagesTree.length === 0) return [];
+    const filtered = detectedSection ? filterPagesBySection(pagesTree, detectedSection) : pagesTree;
+    return pagesToLinks(applyPagesOverridesToTree(filtered), locale);
+  }, [loadPages, pagesTree, detectedSection, locale]);
+
   // Загружаем страницы из админки, если loadPages = true
   React.useEffect(() => {
     if (!loadPages) return;
     let alive = true;
-    const fetchPages = async () => {
-      try {
-        const res = await AboutApi.listPagesTree({ publishedOnly: true }).catch(() => []);
-        const arr = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
-
-        if (alive) {
-          // Фильтруем страницы по разделу, если указан
-          const filtered = detectedSection ? filterPagesBySection(arr, detectedSection) : arr;
-          const links = pagesToLinks(applyPagesOverridesToTree(filtered), locale);
-          setPagesLinks(links);
-        }
-      } catch (err) {
-        if (alive) setPagesLinks([]);
-      }
+    const load = (force = false) => {
+      fetchPagesTree({ force }).then((arr) => {
+        if (alive) setPagesTree(arr);
+      });
     };
-    fetchPages();
+    load();
 
     // Слушаем событие перезагрузки страниц
-    const onPagesReload = () => {
-      fetchPages();
-    };
+    const onPagesReload = () => load(true);
     window.addEventListener("khural:pages-reload", onPagesReload);
 
     return () => {
       alive = false;
       window.removeEventListener("khural:pages-reload", onPagesReload);
     };
-  }, [loadPages, lang, locale, detectedSection]);
+  }, [loadPages]);
 
   // Force re-render on resize to fix display issues on some devices
   const [, setForceUpdate] = React.useState(0);
