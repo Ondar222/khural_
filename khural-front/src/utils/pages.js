@@ -22,6 +22,34 @@ export function extractPageTitle(page, locale, fallback = "") {
   return String(lc?.title || page?.title || page?.name || fallback || "").trim();
 }
 
+import { normalizeFilesUrl } from "./filesUrl.js";
+
+/** Экранирование значения для вставки в HTML-атрибут/текст. */
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** fileId изображения из блока (поддерживаем разные формы, встречающиеся в API). */
+function getBlockFileId(block) {
+  const raw = block?.fileId ?? block?.file?.id ?? block?.imageId ?? block?.image?.id ?? "";
+  return String(raw ?? "").trim();
+}
+
+/** URL изображения блока: сначала пробуем прямую ссылку, затем fileId. */
+function getBlockImageSrc(block) {
+  const direct = String(
+    block?.url ?? block?.href ?? block?.src ?? block?.file?.link ?? block?.link ?? ""
+  ).trim();
+  if (direct) return normalizeFilesUrl(direct);
+  const fileId = getBlockFileId(block);
+  return fileId ? normalizeFilesUrl(`/files/v2/${fileId}`) : "";
+}
+
 /** Преобразует блоки контента (из админки) в HTML для отображения на странице. */
 export function blocksToHtml(blocks) {
   if (!Array.isArray(blocks) || blocks.length === 0) return "";
@@ -34,12 +62,63 @@ export function blocksToHtml(blocks) {
     if (type === "link") {
       const href = String(b?.url ?? b?.href ?? "#").trim();
       const label = caption || content || href;
-      return `<div class="page-block page-block--link"><a href="${href}">${label}</a></div>`;
+      return `<div class="page-block page-block--link"><a href="${escapeHtml(href)}">${escapeHtml(label)}</a></div>`;
+    }
+    if (type === "image") {
+      const src = getBlockImageSrc(b);
+      if (!src) return "";
+      const alt = String(b?.alt ?? "").trim();
+      const figCaption = caption
+        ? `\n<figcaption style="font-size:13px;opacity:.75;margin-top:6px">${escapeHtml(caption)}</figcaption>`
+        : "";
+      return `<figure class="page-block page-block--image" style="margin:16px 0">\n<img src="${escapeHtml(
+        src
+      )}" alt="${escapeHtml(alt)}" loading="lazy" style="max-width:100%;height:auto;border-radius:8px;display:block" />${figCaption}\n</figure>`;
+    }
+    if (type === "gallery") {
+      const rawIds = Array.isArray(b?.fileIds)
+        ? b.fileIds
+        : Array.isArray(b?.fileId)
+          ? b.fileId
+          : [];
+      const images = rawIds
+        .map((item) => {
+          if (item && typeof item === "object") {
+            return getBlockImageSrc(item);
+          }
+          const fileId = String(item ?? "").trim();
+          return fileId ? normalizeFilesUrl(`/files/v2/${fileId}`) : "";
+        })
+        .filter(Boolean);
+      if (images.length === 0) return "";
+      const imgs = images
+        .map(
+          (src) =>
+            `<img src="${escapeHtml(
+              src
+            )}" alt="" loading="lazy" style="max-width:100%;height:auto;border-radius:8px" />`
+        )
+        .join("\n");
+      const figCaption = caption
+        ? `\n<figcaption style="font-size:13px;opacity:.75;margin-top:6px">${escapeHtml(caption)}</figcaption>`
+        : "";
+      return `<figure class="page-block page-block--gallery" style="margin:16px 0;display:grid;gap:10px">\n${imgs}${figCaption}\n</figure>`;
     }
     if (type === "file") {
-      const link = b?.file?.link ?? b?.link ?? "";
+      const fileId = getBlockFileId(b);
+      const link = normalizeFilesUrl(
+        String(b?.file?.link ?? b?.link ?? "").trim() || (fileId ? `/files/v2/${fileId}` : "")
+      );
       const label = caption || content || "Документ";
-      return link ? `<div class="page-block page-block--file"><a href="${link}">${label}</a></div>` : "";
+      return link
+        ? `<div class="page-block page-block--file"><a href="${escapeHtml(link)}">${escapeHtml(label)}</a></div>`
+        : "";
+    }
+    if (type === "quote") {
+      if (!content) return "";
+      return `<blockquote class="page-block page-block--quote">${content}${
+        caption ? `<cite> — ${escapeHtml(caption)}</cite>` : ""
+      }</blockquote>`;
     }
     return content ? `<div class="page-block">${content}</div>` : "";
   });
@@ -49,6 +128,21 @@ export function blocksToHtml(blocks) {
 /** Минимальная длина контента, чтобы считать его «непустым» (иначе показываем другую локаль). */
 const MIN_CONTENT_LENGTH = 80;
 
+/**
+ * Если у страницы заполнен HTML-контент и есть блоки изображений/файлов,
+ * добавляем такие блоки после контента. Текстовые блоки не дублируем —
+ * они обычно и составляют content.
+ */
+function appendNonTextBlocks(html, blocks) {
+  const extra = blocksToHtml(
+    (Array.isArray(blocks) ? blocks : []).filter(
+      (block) => String(block?.type || "text").toLowerCase() !== "text"
+    )
+  );
+  if (!extra) return html;
+  return html ? `${html}\n${extra}` : extra;
+}
+
 export function extractPageHtml(page, locale) {
   if (!page) return "";
   const c = page?.content;
@@ -56,7 +150,7 @@ export function extractPageHtml(page, locale) {
     const lc = pickLocalizedContent(page, locale);
     let html = String(lc?.content || "").trim();
     let fromBlocks = blocksToHtml(lc?.blocks);
-    if (html.length >= MIN_CONTENT_LENGTH) return html;
+    if (html.length >= MIN_CONTENT_LENGTH) return appendNonTextBlocks(html, lc?.blocks);
     if (fromBlocks && fromBlocks.length >= MIN_CONTENT_LENGTH) return fromBlocks;
     // Выбранная локаль пустая или почти пустая — показываем любую с контентом (приоритет ru)
     const withContent = c.filter(
@@ -67,16 +161,16 @@ export function extractPageHtml(page, locale) {
     const fallback = withContent.find((x) => String(x?.locale || "").toLowerCase() === "ru") || withContent[0];
     if (fallback) {
       const h = String(fallback?.content || "").trim();
-      if (h.length >= MIN_CONTENT_LENGTH) return h;
+      if (h.length >= MIN_CONTENT_LENGTH) return appendNonTextBlocks(h, fallback?.blocks);
       const fbBlocks = blocksToHtml(fallback?.blocks);
       if (fbBlocks) return fbBlocks;
     }
-    if (html) return html;
+    if (html) return appendNonTextBlocks(html, lc?.blocks);
     if (fromBlocks) return fromBlocks;
     const anyContent = c.find((x) => String(x?.content ?? "").trim() || (Array.isArray(x?.blocks) && x.blocks.length > 0));
     if (anyContent) {
       const h = String(anyContent?.content || "").trim();
-      if (h) return h;
+      if (h) return appendNonTextBlocks(h, anyContent?.blocks);
       return blocksToHtml(anyContent?.blocks);
     }
   }

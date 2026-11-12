@@ -5,6 +5,8 @@ import { AboutApi, apiFetch, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { getPageOverrideById, upsertPageOverride } from "../../utils/pagesOverrides.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
+import ImageUploadField from "../../components/ImageUploadField.jsx";
+import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js";
 import { useTranslation } from "../../hooks/useTranslation.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../../content/forMedia.js";
 import BudgetDocumentsEditor from "./BudgetDocumentsEditor.jsx";
@@ -35,6 +37,22 @@ const BLOCK_TYPES = [
   { value: "quote", label: "Цитата" },
   { value: "video", label: "Видео" },
 ];
+
+/**
+ * Для формы изображения храним значение как { fileId, file }:
+ * уже загруженный файл (fileId) либо выбранный и ещё не загруженный (file).
+ */
+function normalizeBlocksForForm(blocks) {
+  return (Array.isArray(blocks) ? blocks : []).map((block) => {
+    const type = String(block?.type || "").toLowerCase();
+    if (type !== "image") return block;
+    const fileId = block?.fileId ?? block?.file?.id ?? "";
+    return {
+      ...block,
+      image: fileId ? { fileId: String(fileId) } : undefined,
+    };
+  });
+}
 
 /** Slug страницы «Кодекс чести мужчины Тувы». */
 const CODE_OF_HONOR_SLUG = "code-of-honor";
@@ -146,6 +164,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
   const [loadingDocs, setLoadingDocs] = React.useState(false);
   const [pageSlug, setPageSlug] = React.useState("");
   const blocks = Form.useWatch("blocks", form) || [];
+  const initialBlockIdsRef = React.useRef([]);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
 
   React.useEffect(() => {
@@ -210,6 +229,12 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           blocksValue = [];
         }
 
+        const formBlocks = normalizeBlocksForForm(blocksValue);
+        initialBlockIdsRef.current = formBlocks
+          .map((block) => block?.id)
+          .filter((blockId) => blockId != null)
+          .map(String);
+
         const legacyContent = typeof page.content === "string" ? page.content : "";
         const isCodeOfHonor = leaf === CODE_OF_HONOR_SLUG;
         const isMothersCommandments = leaf === MOTHERS_COMMANDMENTS_SLUG;
@@ -241,7 +266,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           submenuTitle: ov?.submenuTitle || "",
           parentSlug,
           slugLeaf: leaf,
-          blocks: blocksValue,
+          blocks: formBlocks,
         });
       } finally {
         if (alive) setLoading(false);
@@ -261,15 +286,23 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       const leaf = String(values.slugLeaf || "").trim().replace(/^\/+|\/+$/g, "");
       const fullSlug = parentSlug ? `${parentSlug}/${leaf}` : leaf;
 
-      const contentBlocks = (values.blocks || []).map((block, index) => ({
-        type: block.type || "text",
-        order: block.order !== undefined ? block.order : index,
-        content: block.content || null,
-        caption: block.caption || null,
-        alt: block.alt || null,
-        fileId: block.fileId || null,
-        metadata: block.metadata || null,
-      }));
+      // Блоки с новыми изображениями сохраняются отдельно (batch-загрузка),
+      // а блоки, которые заменили/удалили, нужно убрать со страницы.
+      const { contentBlocks, uploadBlocks, files, replacedBlockIds } =
+        collectBlockUploads(values.blocks);
+
+      const currentBlockIds = new Set(
+        (values.blocks || [])
+          .map((block) => block?.id)
+          .filter((blockId) => blockId != null)
+          .map(String)
+      );
+      const removedBlockIds = Array.from(
+        new Set([
+          ...initialBlockIdsRef.current.filter((blockId) => !currentBlockIds.has(blockId)),
+          ...replacedBlockIds.map(String),
+        ])
+      );
 
       const titleRu = String(values.titleRu ?? "").trim();
       const contentRu = String(values.contentRu ?? "").trim();
@@ -306,6 +339,16 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         content: contentArray,
       });
 
+      await applyBlockUploads({
+        pageId: saved?.id ?? id,
+        page: saved,
+        locale: "ru",
+        uploadBlocks,
+        files,
+        removedBlockIds,
+        reloadPage: () => getPageById(id),
+      });
+
       upsertPageOverride({
         id: saved?.id ?? id,
         slug: saved?.slug || fullSlug,
@@ -314,25 +357,30 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       });
       antdMessage.success("Страница сохранена");
 
-      if (saved == null) {
-        try {
-          const updated = await getPageById(id);
-          if (updated) {
-            const contentArrayReload = Array.isArray(updated.content) ? updated.content : [];
-            const ruReload = contentArrayReload.find((c) => String(c?.locale || "").toLowerCase() === "ru") || contentArrayReload[0] || {};
-            const tyvReload = contentArrayReload.find((c) => String(c?.locale || "").toLowerCase() === "tyv") || {};
-            const blocksReload = ruReload?.blocks || [];
-            form.setFieldsValue({
-              titleRu: ruReload?.title ?? "",
-              contentRu: ruReload?.content ?? "",
-              titleTy: tyvReload?.title ?? "",
-              contentTy: tyvReload?.content ?? "",
-              blocks: blocksReload,
-            });
-          }
-        } catch (e) {
-          console.warn("Could not refetch page after save:", e);
+      // Перечитываем страницу после сохранения: у новых блоков появляются id,
+      // а выбранные файлы уже загружены. Без этого повторное сохранение
+      // загрузило бы изображения ещё раз и создало дубли блоков.
+      try {
+        const updated = await getPageById(id);
+        if (updated) {
+          const contentArrayReload = Array.isArray(updated.content) ? updated.content : [];
+          const ruReload = contentArrayReload.find((c) => String(c?.locale || "").toLowerCase() === "ru") || contentArrayReload[0] || {};
+          const tyvReload = contentArrayReload.find((c) => String(c?.locale || "").toLowerCase() === "tyv") || {};
+          const blocksReload = normalizeBlocksForForm(ruReload?.blocks || []);
+          initialBlockIdsRef.current = blocksReload
+            .map((block) => block?.id)
+            .filter((blockId) => blockId != null)
+            .map(String);
+          form.setFieldsValue({
+            titleRu: ruReload?.title ?? "",
+            contentRu: ruReload?.content ?? "",
+            titleTy: tyvReload?.title ?? "",
+            contentTy: tyvReload?.content ?? "",
+            blocks: blocksReload,
+          });
         }
+      } catch (e) {
+        console.warn("Could not refetch page after save:", e);
       }
 
       reload();
@@ -598,24 +646,12 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
 
                         {blockType === "image" && (
                           <>
-                            <Form.Item name={[field.name, "fileId"]} label="Изображение" rules={[{ required: true }]}>
-                              <Select
-                                placeholder="Выберите изображение"
-                                loading={loadingDocs}
-                                showSearch
-                                allowClear
-                                filterOption={(input, option) =>
-                                  String(option?.label || "")
-                                    .toLowerCase()
-                                    .includes(String(input || "").toLowerCase())
-                                }
-                                options={documents
-                                  .filter((doc) => (doc.type || "").includes("image"))
-                                  .map((doc) => ({
-                                    value: doc.id,
-                                    label: `${doc.title || doc.name || "Изображение"}`,
-                                  }))}
-                              />
+                            <Form.Item
+                              name={[field.name, "image"]}
+                              label="Изображение"
+                              rules={[{ required: true, message: "Загрузите изображение" }]}
+                            >
+                              <ImageUploadField disabled={!canWrite || loading || busy} />
                             </Form.Item>
                             <Form.Item name={[field.name, "alt"]} label="Альтернативный текст">
                               <Input placeholder="Описание изображения" />

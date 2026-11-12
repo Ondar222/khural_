@@ -1043,6 +1043,29 @@ export const AboutApi = {
       { method: "DELETE", auth: true }
     );
   },
+  /**
+   * Добавляет блоки контента вместе с файлами (изображения, документы, видео).
+   * Swagger: POST /pages/{id}/content/{contentId}/blocks/batch (multipart).
+   * Порядок files должен совпадать с порядком блоков, которым нужен файл.
+   */
+  async addBlocksWithFiles(pageId, contentId, blocks, files) {
+    const formData = new FormData();
+    formData.append("blocks", JSON.stringify(Array.isArray(blocks) ? blocks : []));
+    const list = Array.isArray(files) ? files : files ? [files] : [];
+    list.forEach((file) => {
+      if (file) formData.append("files", file);
+    });
+    return apiFetchMultipart(
+      `/pages/${encodeURIComponent(pageId)}/content/${encodeURIComponent(contentId)}/blocks/batch`,
+      { method: "POST", formData, auth: true }
+    );
+  },
+  async deletePageBlock(pageId, contentId, blockId) {
+    return apiFetch(
+      `/pages/${encodeURIComponent(pageId)}/content/${encodeURIComponent(contentId)}/blocks/${encodeURIComponent(blockId)}`,
+      { method: "DELETE", auth: true }
+    );
+  },
   async deletePage(id) {
     // Согласно Swagger, endpoint - /pages/{id}
     return apiFetch(`/pages/${encodeURIComponent(id)}`, {

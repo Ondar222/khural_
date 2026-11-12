@@ -2309,6 +2309,36 @@ export default function PageBySlug() {
   const isInfoPersonnelKomissiiSub = isInfoPersonnelKomissiiRasporyazhenie || isInfoPersonnelKomissiiPolozhenie ||
     isInfoPersonnelKomissiiSostav || isInfoPersonnelKomissiiResheniya;
 
+  // Родительский раздел для CMS-страниц: /deputies/m -> /deputies.
+  // Страницы создаются под выбранным родителем, поэтому «Назад» должна вести
+  // на него, а не на «Общие сведения» (/info).
+  const PARENT_SECTION_LABELS = {
+    news: "← Назад к новостям",
+    deputies: "← Назад к депутатам",
+    documents: "← Назад к документам",
+    docs: "← Назад к документам",
+    about: "← Назад к сведениям о Хурале",
+    committees: "← Назад к комитетам",
+    committee: "← Назад к комитетам",
+    commissions: "← Назад к комиссиям",
+    commission: "← Назад к комиссиям",
+    activity: "← Назад к деятельности",
+    contacts: "← Назад к контактам",
+    appeals: "← Назад к обращениям",
+    broadcast: "← Назад к трансляциям",
+    info: "← Назад к информации",
+    government: "← Назад к правительству",
+    apparatus: "← Назад к аппарату",
+  };
+  const normalizedSlug = String(slug || "").replace(/^\/+|\/+$/g, "");
+  const parentSegments = normalizedSlug.split("/").slice(0, -1);
+  const parentSection = parentSegments[0] || "";
+  const parentBackUrl =
+    parentSegments.length > 0 && PARENT_SECTION_LABELS[parentSection]
+      ? `/${parentSegments.join("/")}`
+      : "";
+  const parentBackText = parentBackUrl ? t(PARENT_SECTION_LABELS[parentSection]) : "";
+
   // Определяем URL для кнопки "Назад"
   const backUrl = isInfoFinanceChecks2016 || isInfoFinanceChecks2018 || isInfoFinanceChecks2019 || isInfoFinanceChecks2020
     ? "/info/finansy/rezultaty-proverok"
@@ -2343,7 +2373,7 @@ export default function PageBySlug() {
     ? "/info"
     : isFederationCouncil
     ? "/info"
-    : "/info";
+    : parentBackUrl || "/info";
 
   // Определяем текст для кнопки "Назад"
   const backText = isInfoFinanceChecks2016 || isInfoFinanceChecks2018 || isInfoFinanceChecks2019 || isInfoFinanceChecks2020
@@ -2375,7 +2405,7 @@ export default function PageBySlug() {
     ? t("← Назад к информации")
     : isMothersCommandments || isCodeOfHonor
     ? t("← Назад к общим сведениям")
-    : t("← Назад");
+    : parentBackText || t("← Назад");
 
   const hideBackButton =
     isInfoIndex ||

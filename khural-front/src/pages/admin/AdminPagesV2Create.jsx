@@ -5,6 +5,8 @@ import { AboutApi, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { upsertPageOverride, PAGES_OVERRIDES_EVENT_NAME } from "../../utils/pagesOverrides.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
+import ImageUploadField from "../../components/ImageUploadField.jsx";
+import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js";
 
 function slugify(input) {
   if (!input) return "";
@@ -204,16 +206,9 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
         title: values.title,
       });
 
-      // Формируем блоки контента
-      const contentBlocks = (values.blocks || []).map((block, index) => ({
-        type: block.type || "text",
-        order: block.order !== undefined ? block.order : index,
-        content: block.content || null,
-        caption: block.caption || null,
-        alt: block.alt || null,
-        fileId: block.fileId || null,
-        metadata: block.metadata || null,
-      }));
+      // Формируем блоки контента. Блоки с новыми файлами (изображения)
+      // загружаем отдельно через batch-эндпоинт после создания страницы.
+      const { contentBlocks, uploadBlocks, files } = collectBlockUploads(values.blocks);
 
       const created = await AboutApi.createPage({
         title: values.title,
@@ -229,6 +224,19 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
           },
         ],
       });
+
+      if (created && created.id != null) {
+        await applyBlockUploads({
+          pageId: created.id,
+          page: created,
+          locale: values.locale || "ru",
+          uploadBlocks,
+          files,
+          reloadPage: () => AboutApi.getAdminPage(created.id),
+        });
+      } else if (uploadBlocks.length > 0) {
+        throw new Error("Сервер не вернул ID созданной страницы");
+      }
 
       // menu/submenu labels are stored as frontend overrides (backend strips unknown fields)
       upsertPageOverride({
@@ -453,24 +461,12 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
                         {blockType === "image" && (
                           <>
-                            <Form.Item name={[field.name, "fileId"]} label="Изображение" rules={[{ required: true }]}>
-                              <Select
-                                placeholder="Выберите изображение"
-                                loading={loadingDocs}
-                                showSearch
-                                allowClear
-                                filterOption={(input, option) =>
-                                  String(option?.label || "")
-                                    .toLowerCase()
-                                    .includes(String(input || "").toLowerCase())
-                                }
-                                options={documents
-                                  .filter((doc) => (doc.type || "").includes("image"))
-                                  .map((doc) => ({
-                                    value: doc.id,
-                                    label: `${doc.title || doc.name || "Изображение"}`,
-                                  }))}
-                              />
+                            <Form.Item
+                              name={[field.name, "image"]}
+                              label="Изображение"
+                              rules={[{ required: true, message: "Загрузите изображение" }]}
+                            >
+                              <ImageUploadField disabled={!canWrite || busy} />
                             </Form.Item>
                             <Form.Item name={[field.name, "alt"]} label="Альтернативный текст">
                               <Input placeholder="Описание изображения" />
