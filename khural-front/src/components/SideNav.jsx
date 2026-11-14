@@ -4,7 +4,8 @@ import { useHashRoute } from "../Router.jsx";
 import Link from "./Link.jsx";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import { fetchPagesTree, getCachedPagesTree } from "../utils/cmsPagesTree.js";
-import { pickMenuLabel, applyPagesOverridesToTree } from "../utils/pagesOverrides.js";
+import { pickMenuLabelInfo, applyPagesOverridesToTree } from "../utils/pagesOverrides.js";
+import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
 import { normalizePathBySlugAliases } from "../utils/slugAliases.js";
 import { DEFAULT_COMMISSIONS_LIST } from "../utils/commissionsData.js";
 import {
@@ -297,7 +298,10 @@ const LinkItem = React.memo(function LinkItem({
 });
 
 // Преобразует дерево страниц в формат ссылок для SideNav
-function pagesToLinks(pages, locale) {
+function pagesToLinks(pages, locale, translateMenuLabel) {
+  const translateLabel = (label, needsTranslation) =>
+    translateMenuLabel ? translateMenuLabel(label, needsTranslation) : label;
+
   return pages.map((p) => {
     const slug = String(p.slug || "");
     const segs = slug.split("/").filter(Boolean).map((s) => encodeURIComponent(s));
@@ -305,13 +309,15 @@ function pagesToLinks(pages, locale) {
     // Генерируем URL: для страниц раздела news используем /news/..., а не /p/news/...
     const href = segs.length > 0 ? `/${segs.join("/")}` : `/p/${segs.join("/")}`;
     
-    const label = pickMenuLabel(p, locale, { prefer: "menu" }) || p.slug;
+    const labelInfo = pickMenuLabelInfo(p, locale, { prefer: "menu" });
+    const label = translateLabel(labelInfo.label || p.slug, !labelInfo.localized);
     const children = Array.isArray(p.children) && p.children.length > 0
       ? p.children.map((c) => {
           const childSlug = String(c.slug || "");
           const childSegs = childSlug.split("/").filter(Boolean).map((s) => encodeURIComponent(s));
           const childHref = childSegs.length > 0 ? `/${childSegs.join("/")}` : `/p/${childSegs.join("/")}`;
-          const childLabel = pickMenuLabel(c, locale, { prefer: "submenu" }) || c.slug;
+          const childInfo = pickMenuLabelInfo(c, locale, { prefer: "submenu" });
+          const childLabel = translateLabel(childInfo.label || c.slug, !childInfo.localized);
           return { href: childHref, label: childLabel };
         })
       : [];
@@ -625,13 +631,36 @@ export default function SideNav({
     ? (typeof title === "string" ? t(title) : title)
     : t(autoTitle);
 
+  // Подписи CMS-страниц, которые нужно перевести в тувинской версии.
+  const menuLabelCandidates = React.useMemo(() => {
+    if (!loadPages || !Array.isArray(pagesTree) || pagesTree.length === 0) return [];
+    const filtered = detectedSection
+      ? filterPagesBySection(pagesTree, detectedSection)
+      : pagesTree;
+    const labels = [];
+    for (const page of filtered) {
+      const info = pickMenuLabelInfo(page, locale, { prefer: "menu" });
+      if (!info.localized && info.label) labels.push(info.label);
+      for (const child of Array.isArray(page?.children) ? page.children : []) {
+        const childInfo = pickMenuLabelInfo(child, locale, { prefer: "submenu" });
+        if (!childInfo.localized && childInfo.label) labels.push(childInfo.label);
+      }
+    }
+    return Array.from(new Set(labels));
+  }, [loadPages, pagesTree, detectedSection, locale]);
+
+  const { translateMenuLabel } = useMenuTranslation(
+    menuLabelCandidates,
+    locale === "tyv"
+  );
+
   // Ссылки на CMS-страницы раздела. Считаются синхронно из кэша, поэтому
   // при переходах меню не меняется скачком после ответа сервера.
   const pagesLinks = React.useMemo(() => {
     if (!loadPages || !Array.isArray(pagesTree) || pagesTree.length === 0) return [];
     const filtered = detectedSection ? filterPagesBySection(pagesTree, detectedSection) : pagesTree;
-    return pagesToLinks(applyPagesOverridesToTree(filtered), locale);
-  }, [loadPages, pagesTree, detectedSection, locale]);
+    return pagesToLinks(applyPagesOverridesToTree(filtered), locale, translateMenuLabel);
+  }, [loadPages, pagesTree, detectedSection, locale, translateMenuLabel]);
 
   // Загружаем страницы из админки, если loadPages = true
   React.useEffect(() => {

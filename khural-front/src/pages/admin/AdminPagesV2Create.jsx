@@ -180,10 +180,12 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   const handleTranslate = React.useCallback(
     async (fromLang, toLang) => {
       const values = form.getFieldsValue();
-      const titleField = fromLang === "ru" ? "titleRu" : "titleTy";
-      const contentField = fromLang === "ru" ? "contentRu" : "contentTy";
-      const titleTarget = toLang === "tyv" ? "titleTy" : "titleRu";
-      const contentTarget = toLang === "tyv" ? "contentTy" : "contentRu";
+      // В форме создания основные поля называются title/content,
+      // а не titleRu/contentRu (как в форме редактирования).
+      const titleField = fromLang === "ru" ? "title" : "titleTy";
+      const contentField = fromLang === "ru" ? "content" : "contentTy";
+      const titleTarget = toLang === "tyv" ? "titleTy" : "title";
+      const contentTarget = toLang === "tyv" ? "contentTy" : "content";
 
       const title = String(values[titleField] || "").trim();
       const content = String(values[contentField] || "").trim();

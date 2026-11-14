@@ -57,24 +57,52 @@ export function getPageOverrideById(id) {
   return (o.byId || {})[String(id)] || null;
 }
 
-export function pickMenuLabel(page, locale, { prefer = "menu" } = {}) {
+/** Пустая подпись или заглушка вроде «—» не считается названием пункта меню. */
+function normalizeMenuTitle(value) {
+  const text = String(value ?? "").trim();
+  return /^[—–-]+$/.test(text) ? "" : text;
+}
+
+/**
+ * Возвращает подпись пункта меню вместе с признаком того, взята ли она из
+ * уже локализованного контента. Для нелокализованных подписей Header/SideNav
+ * могут включить автоматический перевод при переключении языка.
+ */
+export function pickMenuLabelInfo(page, locale, { prefer = "menu" } = {}) {
   // prefer: "menu" | "submenu"
   const id = page?.id;
   const override = id ? getPageOverrideById(id) : null;
   const wantSub = prefer === "submenu";
   const fromOverride = wantSub ? override?.submenuTitle : override?.menuTitle;
-  if (typeof fromOverride === "string" && fromOverride.trim()) return fromOverride.trim();
+  const overrideTitle = normalizeMenuTitle(fromOverride);
+  if (overrideTitle) {
+    return { label: overrideTitle, localized: false, source: "override" };
+  }
 
   // Fallback: localized title from content array when available
   const want = String(locale || "").toLowerCase();
   const c = page?.content;
   if (Array.isArray(c) && c.length) {
     const match = want ? c.find((x) => String(x?.locale || "").toLowerCase() === want) : null;
-    const t = String(match?.title || c[0]?.title || "").trim();
-    if (t) return t;
+    const localizedTitle = normalizeMenuTitle(match?.title);
+    if (localizedTitle) {
+      return { label: localizedTitle, localized: true, source: "content" };
+    }
+    const fallbackTitle = normalizeMenuTitle(c[0]?.title);
+    if (fallbackTitle) {
+      return { label: fallbackTitle, localized: false, source: "content-fallback" };
+    }
   }
 
-  return String(page?.title || page?.name || page?.slug || "").trim();
+  return {
+    label: normalizeMenuTitle(page?.title || page?.name || page?.slug),
+    localized: false,
+    source: "page",
+  };
+}
+
+export function pickMenuLabel(page, locale, options = {}) {
+  return pickMenuLabelInfo(page, locale, options).label;
 }
 
 export function applyPagesOverridesToTree(tree) {

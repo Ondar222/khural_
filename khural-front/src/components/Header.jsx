@@ -11,10 +11,11 @@ import { getPreferredLocaleToken } from "../utils/pages.js";
 import { fetchPagesTree, getCachedPagesTree } from "../utils/cmsPagesTree.js";
 import {
   applyPagesOverridesToTree,
-  pickMenuLabel,
+  pickMenuLabelInfo,
   PAGES_OVERRIDES_EVENT_NAME,
   PAGES_OVERRIDES_STORAGE_KEY,
 } from "../utils/pagesOverrides.js";
+import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
 // removed unused UI icon libs
 
 const PARLIAMENT_LEADERSHIP_HREF = "/government";
@@ -147,9 +148,11 @@ export default function Header() {
         if (segs.length >= 2) {
           const section = segs[0].toLowerCase();
           const list = map.get(section) || [];
+          const labelInfo = pickMenuLabelInfo(page, localeToken, { prefer: "submenu" });
           list.push({
             href: pageHref(slug),
-            label: pickMenuLabel(page, localeToken, { prefer: "submenu" }) || slug,
+            label: labelInfo.label || slug,
+            needsTranslation: !labelInfo.localized,
             depth: Math.max(0, segs.length - 2),
           });
           map.set(section, list);
@@ -162,6 +165,32 @@ export default function Header() {
     visit(pagesTree);
     return map;
   }, [pagesTree, localeToken, pageHref]);
+
+  // Подписи CMS-страниц для автоматического перевода в тувинской версии.
+  const menuLabelCandidates = React.useMemo(() => {
+    const labels = [];
+    for (const list of cmsPagesBySection.values()) {
+      for (const link of list) {
+        if (link.needsTranslation && link.label) labels.push(link.label);
+      }
+    }
+    const visit = (nodes) => {
+      for (const page of Array.isArray(nodes) ? nodes : []) {
+        const info = pickMenuLabelInfo(page, localeToken, { prefer: "menu" });
+        if (!info.localized && info.label) labels.push(info.label);
+        if (Array.isArray(page?.children) && page.children.length) {
+          visit(page.children);
+        }
+      }
+    };
+    visit(pagesTree);
+    return Array.from(new Set(labels));
+  }, [cmsPagesBySection, pagesTree, localeToken]);
+
+  const { translateMenuLabel } = useMenuTranslation(
+    menuLabelCandidates,
+    localeToken === "tyv"
+  );
 
   const cmsDropdownLinks = React.useCallback(
     (sections, existingHrefs = []) => {
@@ -179,6 +208,14 @@ export default function Header() {
     },
     [cmsPagesBySection]
   );
+
+  // Новые CMS-страницы должны выглядеть как остальные пункты подменю:
+  // без собственного размера шрифта и без лишнего отступа у первого уровня.
+  // Отступ оставляем только для вложенных страниц.
+  const cmsDropdownLinkStyle = React.useCallback((depth) => {
+    const level = Number(depth) || 0;
+    return level > 0 ? { paddingLeft: 10 + level * 12 } : undefined;
+  }, []);
 
   React.useEffect(() => {
     let alive = true;
@@ -369,9 +406,9 @@ export default function Header() {
                   <a
                     key={`cms-about-${link.href}`}
                     href={link.href}
-                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                    style={cmsDropdownLinkStyle(link.depth)}
                   >
-                    {t(link.label)}
+                    {translateMenuLabel(link.label, link.needsTranslation)}
                   </a>
                 ))}
               </div>
@@ -390,9 +427,9 @@ export default function Header() {
                   <a
                     key={`cms-deputies-${link.href}`}
                     href={link.href}
-                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                    style={cmsDropdownLinkStyle(link.depth)}
                   >
-                    {t(link.label)}
+                    {translateMenuLabel(link.label, link.needsTranslation)}
                   </a>
                 ))}
               </div>
@@ -436,9 +473,9 @@ export default function Header() {
                   <a
                     key={`cms-info-${link.href}`}
                     href={link.href}
-                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                    style={cmsDropdownLinkStyle(link.depth)}
                   >
-                    {t(link.label)}
+                    {translateMenuLabel(link.label, link.needsTranslation)}
                   </a>
                 ))}
               </div>
@@ -468,9 +505,9 @@ export default function Header() {
                   <a
                     key={`cms-docs-${link.href}`}
                     href={link.href}
-                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                    style={cmsDropdownLinkStyle(link.depth)}
                   >
-                    {t(link.label)}
+                    {translateMenuLabel(link.label, link.needsTranslation)}
                   </a>
                 ))}
               </div>
@@ -497,9 +534,9 @@ export default function Header() {
                   <a
                     key={`cms-news-${link.href}`}
                     href={link.href}
-                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                    style={cmsDropdownLinkStyle(link.depth)}
                   >
-                    {t(link.label)}
+                    {translateMenuLabel(link.label, link.needsTranslation)}
                   </a>
                 ))}
               </div>
@@ -536,9 +573,9 @@ export default function Header() {
                   <a
                     key={`cms-appeals-${link.href}`}
                     href={link.href}
-                    style={{ paddingLeft: 14 + link.depth * 12, fontSize: 13 }}
+                    style={cmsDropdownLinkStyle(link.depth)}
                   >
-                    {t(link.label)}
+                    {translateMenuLabel(link.label, link.needsTranslation)}
                   </a>
                 ))}
               </div>
@@ -553,22 +590,27 @@ export default function Header() {
                 <a href="/pages">{t("Все страницы") || "Все страницы"}</a>
                 {Array.isArray(pagesTree) && pagesTree.length ? <hr /> : null}
                 {(Array.isArray(pagesTree) ? pagesTree : []).slice(0, 25).map((p) => {
-                  const rootLabel = pickMenuLabel(p, localeToken, { prefer: "menu" });
+                  const rootInfo = pickMenuLabelInfo(p, localeToken, { prefer: "menu" });
                   const children = Array.isArray(p?.children) ? p.children : [];
                   return (
                     <React.Fragment key={String(p?.id || p?.slug || Math.random())}>
                       <a href={pageHref(p.slug)} style={{ fontWeight: 800 }}>
-                        {rootLabel || p.slug}
+                        {translateMenuLabel(rootInfo.label || p.slug, !rootInfo.localized)}
                       </a>
-                      {children.slice(0, 25).map((c) => (
-                        <a
-                          key={String(c?.id || c?.slug || Math.random())}
-                          href={pageHref(c.slug)}
-                          style={{ paddingLeft: 14, fontSize: 13 }}
-                        >
-                          {pickMenuLabel(c, localeToken, { prefer: "submenu" }) || c.slug}
-                        </a>
-                      ))}
+                      {children.slice(0, 25).map((c) => {
+                        const childInfo = pickMenuLabelInfo(c, localeToken, {
+                          prefer: "submenu",
+                        });
+                        return (
+                          <a
+                            key={String(c?.id || c?.slug || Math.random())}
+                            href={pageHref(c.slug)}
+                            style={{ paddingLeft: 22 }}
+                          >
+                            {translateMenuLabel(childInfo.label || c.slug, !childInfo.localized)}
+                          </a>
+                        );
+                      })}
                     </React.Fragment>
                   );
                 })}
@@ -1042,7 +1084,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
               >
                 <span className="mobile-menu-link-content">
-                  {t(link.label)}
+                  {translateMenuLabel(link.label, link.needsTranslation)}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </a>
@@ -1089,7 +1131,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
               >
                 <span className="mobile-menu-link-content">
-                  {t(link.label)}
+                  {translateMenuLabel(link.label, link.needsTranslation)}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </a>
@@ -1203,7 +1245,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
               >
                 <span className="mobile-menu-link-content">
-                  {t(link.label)}
+                  {translateMenuLabel(link.label, link.needsTranslation)}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </a>
@@ -1375,7 +1417,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
               >
                 <span className="mobile-menu-link-content">
-                  {t(link.label)}
+                  {translateMenuLabel(link.label, link.needsTranslation)}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </a>
@@ -1433,7 +1475,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
               >
                 <span className="mobile-menu-link-content">
-                  {t(link.label)}
+                  {translateMenuLabel(link.label, link.needsTranslation)}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </a>
@@ -1525,7 +1567,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
               >
                 <span className="mobile-menu-link-content">
-                  {t(link.label)}
+                  {translateMenuLabel(link.label, link.needsTranslation)}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </a>
