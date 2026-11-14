@@ -63,6 +63,14 @@ function normalizeMenuTitle(value) {
   return /^[—–-]+$/.test(text) ? "" : text;
 }
 
+/** Приводит подпись к виду для сравнения («Моя страничка» == «моя  страничка»). */
+function normalizeTitleForCompare(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 /**
  * Возвращает подпись пункта меню вместе с признаком того, взята ли она из
  * уже локализованного контента. Для нелокализованных подписей Header/SideNav
@@ -86,7 +94,20 @@ export function pickMenuLabelInfo(page, locale, { prefer = "menu" } = {}) {
     const match = want ? c.find((x) => String(x?.locale || "").toLowerCase() === want) : null;
     const localizedTitle = normalizeMenuTitle(match?.title);
     if (localizedTitle) {
-      return { label: localizedTitle, localized: true, source: "content" };
+      // У новых страниц бэкенд/админка иногда создаёт локаль tyv с русским же
+      // заголовком. Такую «локализацию» нельзя считать переводом: иначе на
+      // тувинской версии сайта в меню остаётся русский текст.
+      const ruEntry =
+        c.find((x) => String(x?.locale || "").toLowerCase() === "ru") || null;
+      const sourceTitle = normalizeMenuTitle(ruEntry?.title || page?.title || page?.name);
+      const looksLikeCopyOfSource =
+        want === "tyv" &&
+        sourceTitle &&
+        normalizeTitleForCompare(localizedTitle) === normalizeTitleForCompare(sourceTitle);
+
+      if (!looksLikeCopyOfSource) {
+        return { label: localizedTitle, localized: true, source: "content" };
+      }
     }
     const fallbackTitle = normalizeMenuTitle(c[0]?.title);
     if (fallbackTitle) {

@@ -14,6 +14,38 @@ import {
   SYSTEM_ROUTE_DEFS,
 } from "../../utils/adminPagesCatalog.js";
 
+/**
+ * Номер страницы и размер страницы списка храним в sessionStorage, чтобы после
+ * перехода в редактор и возврата (компонент монтируется заново) пользователь
+ * оставался на той же странице пагинации.
+ */
+const PAGINATION_STORAGE_KEY = "khural_admin_pages_pagination_v1";
+const DEFAULT_PAGINATION = { current: 1, pageSize: 10 };
+
+function readStoredPagination() {
+  if (typeof window === "undefined") return DEFAULT_PAGINATION;
+  try {
+    const parsed = JSON.parse(window.sessionStorage?.getItem(PAGINATION_STORAGE_KEY) || "null");
+    const current = Number(parsed?.current);
+    const pageSize = Number(parsed?.pageSize);
+    return {
+      current: Number.isFinite(current) && current > 0 ? Math.floor(current) : 1,
+      pageSize: Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : 10,
+    };
+  } catch {
+    return DEFAULT_PAGINATION;
+  }
+}
+
+function storePagination(next) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage?.setItem(PAGINATION_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // sessionStorage может быть недоступен (приватный режим) — не критично.
+  }
+}
+
 function normalizeList(res) {
   if (Array.isArray(res)) return res;
   let value = res;
@@ -64,6 +96,33 @@ export default function AdminPagesV2List({
   const [loadStatus, setLoadStatus] = React.useState("loading");
   const [, setOvTick] = React.useState(0);
   const [windowWidth, setWindowWidth] = React.useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  const [pagination, setPagination] = React.useState(readStoredPagination);
+
+  const updatePagination = React.useCallback((next) => {
+    setPagination((prev) => {
+      const resolved = typeof next === "function" ? next(prev) : next;
+      if (!resolved || resolved === prev) return prev;
+      const normalized = {
+        current: Number(resolved.current) > 0 ? Math.floor(Number(resolved.current)) : 1,
+        pageSize: Number(resolved.pageSize) > 0 ? Math.floor(Number(resolved.pageSize)) : 10,
+      };
+      if (normalized.current === prev.current && normalized.pageSize === prev.pageSize) {
+        return prev;
+      }
+      storePagination(normalized);
+      return normalized;
+    });
+  }, []);
+
+  const handlePaginationChange = React.useCallback(
+    (page, pageSize) => {
+      // antd/rc-pagination при монтировании с ещё не загруженным списком может
+      // «схлопнуть» страницу до 1. Игнорируем такие вызовы, пока данных нет.
+      if (loadStatus !== "success") return;
+      updatePagination({ current: page, pageSize: pageSize || pagination.pageSize });
+    },
+    [pagination.pageSize, updatePagination, loadStatus]
+  );
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -213,6 +272,25 @@ export default function AdminPagesV2List({
         return String(a.slug || "").localeCompare(String(b.slug || ""));
       });
   }, [items, q, localeMode]);
+
+  // При смене поиска/фильтра языка показываем первую страницу результата.
+  const filterKeyRef = React.useRef({ q, localeMode });
+  React.useEffect(() => {
+    const prev = filterKeyRef.current;
+    if (prev.q === q && prev.localeMode === localeMode) return;
+    filterKeyRef.current = { q, localeMode };
+    updatePagination((current) => (current.current === 1 ? current : { ...current, current: 1 }));
+  }, [q, localeMode, updatePagination]);
+
+  // Если после удаления/фильтра страниц стало меньше — не остаёмся на пустой странице.
+  // Пока данные грузятся, filtered пуст: не сбрасываем сохранённую страницу раньше времени.
+  const maxPage = Math.max(1, Math.ceil(filtered.length / pagination.pageSize));
+  React.useEffect(() => {
+    if (loadStatus !== "success" || busy) return;
+    updatePagination((current) =>
+      current.current > maxPage ? { ...current, current: maxPage } : current
+    );
+  }, [maxPage, loadStatus, busy, updatePagination]);
 
   const deletePage = React.useCallback(
     async (id) => {
@@ -642,10 +720,12 @@ export default function AdminPagesV2List({
           dataSource={filtered}
           loading={busy}
           pagination={{
-            pageSize: 10,
+            current: pagination.current,
+            pageSize: pagination.pageSize,
             showSizeChanger: !isTablet,
             showQuickJumper: !isTablet,
             size: isTablet ? "small" : "default",
+            onChange: handlePaginationChange,
           }}
           scroll={isTablet ? { x: "max-content" } : undefined}
         />
