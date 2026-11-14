@@ -27,6 +27,14 @@
       "destination": "https://khural.yurta.site/:path*"
     },
     {
+      "source": "/gtranslate/:path*",
+      "destination": "https://translate.googleapis.com/:path*"
+    },
+    {
+      "source": "/gdict/:path*",
+      "destination": "https://clients5.google.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

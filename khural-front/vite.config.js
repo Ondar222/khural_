@@ -160,6 +160,20 @@ export default defineConfig({
           });
         },
       },
+      // Proxy для Google Translate API (обход CORS: браузер не может обращаться к translate.googleapis.com напрямую)
+      "/gtranslate": {
+        target: "https://translate.googleapis.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/gtranslate/, ""),
+      },
+      // Proxy для dict-эндпоинта Google (clients5) — не подлежит блокировке gtx
+      "/gdict": {
+        target: "https://clients5.google.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/gdict/, ""),
+      },
       // Proxy для изображений с khural.rtyva.ru для обхода CORS
       "/img-proxy": {
         target: "https://khural.rtyva.ru",
@@ -190,6 +204,18 @@ export default defineConfig({
         target: process.env.VITE_API_PROXY_TARGET || "https://khural.yurta.site",
         changeOrigin: true,
         secure: true,
+      },
+      "/gtranslate": {
+        target: "https://translate.googleapis.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/gtranslate/, ""),
+      },
+      "/gdict": {
+        target: "https://clients5.google.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/gdict/, ""),
       },
     },
   },

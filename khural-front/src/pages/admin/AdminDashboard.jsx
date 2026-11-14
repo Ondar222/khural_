@@ -68,7 +68,7 @@ export default function AdminDashboard({
         </div>
       )}
       <p style={{ gridColumn: "1 / -1", margin: "0 0 8px", color: "#6b7280", fontSize: 13 }}>
-        {t("adminDashboardStatsHint")}
+       
       </p>
       <div className="admin-cards admin-cards--stats">
         <StatCard label={t("adminDashboardConvocations")} value={statsReady ? stats.convocations ?? 0 : "—"} href="/admin/convocations" />

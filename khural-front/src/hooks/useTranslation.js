@@ -254,25 +254,20 @@ export function useTranslation(options = {}) {
             };
           }
 
-          // Переводим все текстовые сегменты параллельно
-          const translationResults = new Array(textSegmentsToTranslate.length);
-          let nextSegment = 0;
-          const translateSegmentWorker = async () => {
-            while (nextSegment < textSegmentsToTranslate.length) {
-              const index = nextSegment++;
-              translationResults[index] = await PublicApi.translate(
-                textSegmentsToTranslate[index].content,
-                from,
-                to
-              );
-            }
-          };
-          await Promise.all(
-            Array.from(
-              { length: Math.min(4, textSegmentsToTranslate.length) },
-              () => translateSegmentWorker()
-            )
+          // Переводим все текстовые сегменты ОДНИМ батч-запросом.
+          // Раньше каждый сегмент шёл отдельным запросом через 4 параллельных
+          // воркера — на больших CMS-страницах это сотни запросов и 429 от переводчика.
+          const batchTranslated = await PublicApi.translateBatch(
+            textSegmentsToTranslate.map((s) => s.content),
+            from,
+            to
           );
+          const translationResults = (batchTranslated?.translated || []).map((translated, i) => ({
+            original: textSegmentsToTranslate[i]?.content,
+            translated: translated || textSegmentsToTranslate[i]?.content,
+            from,
+            to,
+          }));
 
           // Создаем Map для связи индексов сегментов с переведенными текстами
           const translatedTextsMap = new Map();

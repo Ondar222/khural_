@@ -83,6 +83,48 @@ export const API_BASE_URL = resolveApiBaseUrl();
 let translationBatchCooldownUntil = 0;
 const translationBatchRequests = new Map();
 
+/**
+ * Persistent-кэш переводов Google (localStorage): при переходах между страницами
+ * приложение перезагружается, и без кэша одни и те же тексты запрашивались бы заново,
+ * что приводило к лавине запросов и блокировке IP (429 от Google).
+ */
+const GOOGLE_TRANSLATE_CACHE_KEY = "gtranslate_cache_v1";
+const GOOGLE_TRANSLATE_CACHE_LIMIT = 4000;
+
+function PublicApi_loadGoogleCache() {
+  const cache = new Map();
+  try {
+    const raw = globalThis.localStorage?.getItem(GOOGLE_TRANSLATE_CACHE_KEY);
+    if (raw) {
+      const entries = JSON.parse(raw);
+      if (Array.isArray(entries)) {
+        for (const [key, value] of entries) cache.set(key, value);
+      }
+    }
+  } catch {
+    // localStorage недоступен/повреждён — работаем с пустым кэшем.
+  }
+  return cache;
+}
+
+let googleCacheSaveTimer = null;
+function PublicApi_saveGoogleCache(cache) {
+  // Уберегаемся от частых записей: сохраняем пачкой с задержкой.
+  if (googleCacheSaveTimer) return;
+  googleCacheSaveTimer = setTimeout(() => {
+    googleCacheSaveTimer = null;
+    try {
+      let entries = Array.from(cache.entries());
+      if (entries.length > GOOGLE_TRANSLATE_CACHE_LIMIT) {
+        entries = entries.slice(entries.length - GOOGLE_TRANSLATE_CACHE_LIMIT);
+      }
+      globalThis.localStorage?.setItem(GOOGLE_TRANSLATE_CACHE_KEY, JSON.stringify(entries));
+    } catch {
+      // localStorage переполнен/недоступен — кэш остаётся только в памяти.
+    }
+  }, 2000);
+}
+
 /** Пересчитать базу на случай поздней подстановки window.__API_BASE_URL__ */
 export function getApiBaseUrl() {
   return resolveApiBaseUrl() || API_BASE_URL || "/api";
@@ -522,28 +564,219 @@ export const PublicApi = {
   /** Перевод не должен блокировать интерфейс надолго; при проблемах используем fallback. */
   TRANSLATION_TIMEOUT_MS: 20000,
 
+  /** Кэш ответов Google Translate (память + localStorage), чтобы не повторять запросы. */
+  _googleTranslateCache: PublicApi_loadGoogleCache(),
+  /** Когда gtx-эндпоинт заблокировал запросы (429 / «Sorry») — не долбить его это время. */
+  _googleBlockedUntil: 0,
+  /** Когда dict-эндпоинт (clients5) заблокировал запросы — не долбить его это время. */
+  _gdictBlockedUntil: 0,
+  /** Same-origin proxy /gtranslate доступен на текущем хосте (на проде его может не быть). */
+  _googleProxyAvailable: true,
+  /** Same-origin proxy /gdict доступен на текущем хосте. */
+  _gdictProxyAvailable: true,
+  /** Очередь запросов к Google: последовательно, с паузой между запросами. */
+  _googleQueueTail: Promise.resolve(),
+  _googleLastAt: 0,
+  GOOGLE_MIN_INTERVAL_MS: 350,
+
+  /** Последовательная очередь с минимальным интервалом — защита от 429. */
+  _googleEnqueue(task) {
+    const run = PublicApi._googleQueueTail.then(async () => {
+      const wait = PublicApi.GOOGLE_MIN_INTERVAL_MS - (Date.now() - PublicApi._googleLastAt);
+      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+      PublicApi._googleLastAt = Date.now();
+      return task();
+    });
+    // Не ломаем очередь ошибками отдельного запроса.
+    PublicApi._googleQueueTail = run.catch(() => {});
+    return run;
+  },
+
   /**
-   * Перевод через Google Translate (fallback, если бэкенд не работает)
+   * Кандидаты URL для одного query: same-origin proxy → прямой запрос →
+   * публичные CORS-релеи (последняя страховка для прода, где прокси хостом
+   * не настроен; сами тексты всё равно уходят в Google).
+   */
+  _googleCandidates(proxyPrefix, proxyAvailable, googleHost, query) {
+    const list = [];
+    if (proxyAvailable) list.push(`${proxyPrefix}/${query}`);
+    list.push(`https://${googleHost}/${query}`);
+    if (!proxyAvailable) {
+      const enc = encodeURIComponent(`https://${googleHost}/${query}`);
+      list.push(`https://api.allorigins.win/raw?url=${enc}`);
+    }
+    return list;
+  },
+
+  /** Один HTTP-запрос к Google Translate. Возвращает { blocked, data }. */
+  async _googleRequest(url) {
+    try {
+      const res = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+      if (res.status === 429 || res.status === 403) return { blocked: true, data: null };
+      if (!res.ok) return { blocked: false, data: null };
+      const data = await res.json();
+      if (Array.isArray(data) && Array.isArray(data[0])) return { blocked: false, data };
+      return { blocked: false, data: null };
+    } catch {
+      // CORS / сеть / HTML вместо JSON (например SPA-фолбэк вместо proxy) — пробуем другой адрес.
+      return { blocked: false, data: null };
+    }
+  },
+
+  /** Запрос с candidates (proxy → прямой → релеи). Возвращает распарсенный JSON или null. */
+  async _googleFetch(query) {
+    const candidates = PublicApi._googleCandidates(
+      "/gtranslate",
+      PublicApi._googleProxyAvailable,
+      "translate.googleapis.com",
+      query,
+    );
+    for (const url of candidates) {
+      const { blocked, data } = await PublicApi._googleRequest(url);
+      if (blocked) {
+        PublicApi._googleBlockedUntil = Date.now() + 60_000;
+        return { blocked: true, data: null };
+      }
+      if (data != null) return { blocked: false, data };
+      if (url.startsWith("/gtranslate")) PublicApi._googleProxyAvailable = false;
+    }
+    return { blocked: false, data: null };
+  },
+
+  /**
+   * Один HTTP-запрос к dict-эндпоинту Google (clients5.google.com, «переводчик
+   * в адресной строке Chrome»). Он НЕ подлежит блокировке основного gtx-эндпоинта
+   * и отвечает плоским массивом строк по числу q-параметров.
+   * Возвращает { blocked, translations } — translations: string[] | null.
+   */
+  async _gdictFetch(query) {
+    const candidates = PublicApi._googleCandidates(
+      "/gdict",
+      PublicApi._gdictProxyAvailable,
+      "clients5.google.com",
+      query,
+    );
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+        if (res.status === 429 || res.status === 403) {
+          PublicApi._gdictBlockedUntil = Date.now() + 60_000;
+          return { blocked: true, translations: null };
+        }
+        if (!res.ok) continue;
+        const data = await res.json();
+        // Ответ: ["перевод1","перевод2",...]
+        if (Array.isArray(data) && data.length && data.every((x) => typeof x === "string")) {
+          return { blocked: false, translations: data };
+        }
+      } catch {
+        // CORS / HTML вместо JSON — пробуем следующий адрес.
+      }
+      if (url.startsWith("/gdict")) PublicApi._gdictProxyAvailable = false;
+    }
+    return { blocked: false, translations: null };
+  },
+
+  /**
+   * Пакетный перевод через Google: несколько текстов одним запросом
+   * (повторяющийся параметр q). Сначала dict-эндпоинт (clients5) — он не
+   * блокируется; при его недоступности — классический gtx-эндпоинт.
+   * Возвращает массив переводов (null там, где перевод недоступен).
+   */
+  async translateWithGoogleBatch(texts, from, to) {
+    const results = new Array(texts.length).fill(null);
+    const todo = [];
+    texts.forEach((text, index) => {
+      const normalized = String(text ?? "").trim();
+      // Фрагменты без кириллицы (цифры, пунктуация, HTML-сущности) не переводим:
+      // они не переводятся и только создают лишние запросы → блокировка IP Google.
+      if (!/[А-Яа-яЁё]/.test(normalized)) return;
+      const cacheKey = `${from}->${to}::${normalized}`;
+      if (PublicApi._googleTranslateCache.has(cacheKey)) {
+        results[index] = PublicApi._googleTranslateCache.get(cacheKey);
+        return;
+      }
+      todo.push({ index, normalized });
+    });
+    if (todo.length === 0) return results;
+    const allBlocked = () =>
+      Date.now() < PublicApi._googleBlockedUntil && Date.now() < PublicApi._gdictBlockedUntil;
+    if (allBlocked()) return results;
+
+    // Группируем в чанки: и по количеству, и по длине URL (лимит ~2000 символов).
+    const chunks = [];
+    let chunk = [];
+    let chunkLen = 0;
+    for (const item of todo) {
+      const len = encodeURIComponent(item.normalized).length + 5;
+      if (chunk.length > 0 && (chunk.length >= 10 || chunkLen + len > 1500)) {
+        chunks.push(chunk);
+        chunk = [];
+        chunkLen = 0;
+      }
+      chunk.push(item);
+      chunkLen += len;
+    }
+    if (chunk.length) chunks.push(chunk);
+
+    for (const group of chunks) {
+      if (allBlocked()) break;
+      const q = group
+        .map((item) => `q=${encodeURIComponent(item.normalized)}`)
+        .join("&");
+
+      // 1) dict-эндпоинт: ["перевод1","перевод2",...] строго по числу q.
+      let remaining = group;
+      if (Date.now() >= PublicApi._gdictBlockedUntil) {
+        const dictQuery = `translate_a/t?client=dict-chrome-ex&sl=${from}&tl=${to}&${q}`;
+        const { blocked, translations } = await PublicApi._googleEnqueue(() =>
+          PublicApi._gdictFetch(dictQuery)
+        );
+        if (!blocked && Array.isArray(translations) && translations.length === group.length) {
+          group.forEach((item, i) => {
+            const translated = String(translations[i] ?? "").trim();
+            if (!translated) return;
+            results[item.index] = translated;
+            PublicApi._googleTranslateCache.set(`${from}->${to}::${item.normalized}`, translated);
+          });
+          continue;
+        }
+        remaining = group;
+      }
+
+      // 2) Классический gtx-эндпоинт для оставшихся.
+      if (Date.now() < PublicApi._googleBlockedUntil) continue;
+      const query = `translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&${remaining
+        .map((item) => `q=${encodeURIComponent(item.normalized)}`)
+        .join("&")}`;
+      const { blocked, data } = await PublicApi._googleEnqueue(() => PublicApi._googleFetch(query));
+      if (blocked || !data) continue;
+
+      // data[0] — по одному сегменту на каждый q: [["перевод","оригинал",...], ...]
+      const segments = data[0];
+      remaining.forEach((item, i) => {
+        const segment = segments[i];
+        if (!Array.isArray(segment) || typeof segment[0] !== "string") return;
+        // Google эхом возвращает оригинал в segment[1] — сверяем, чтобы не
+        // подставить не тот текст при нестандартном разбиении ответа.
+        const echoed = typeof segment[1] === "string" ? segment[1].trim() : null;
+        if (echoed != null && echoed !== item.normalized) return;
+        const translated = segment[0];
+        results[item.index] = translated;
+        PublicApi._googleTranslateCache.set(`${from}->${to}::${item.normalized}`, translated);
+      });
+    }
+
+    PublicApi_saveGoogleCache(PublicApi._googleTranslateCache);
+    return results;
+  },
+
+  /**
+   * Перевод через Google Translate (fallback, если бэкенд не переводит)
    */
   async translateWithGoogle(text, from, to) {
-    try {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      // Google возвращает массив вида [[["перевод","оригинал",...]],...]
-      if (Array.isArray(data) && Array.isArray(data[0])) {
-        return data[0].filter(segment => Array.isArray(segment)).map(segment => segment[0]).join('');
-      }
-      return null;
-    } catch {
-      return null;
-    }
+    const [translated] = await PublicApi.translateWithGoogleBatch([text], from, to);
+    return translated;
   },
 
   async translate(text, from, to) {
@@ -603,18 +836,21 @@ export const PublicApi = {
 
     const fallbackTranslations = async (initial = texts) => {
       const translated = [...initial];
-      let nextIndex = 0;
-      const worker = async () => {
-        while (nextIndex < texts.length) {
-          const index = nextIndex++;
-          if (translated[index] && translated[index] !== texts[index]) continue;
-          const fallback = await PublicApi.translateWithGoogle(texts[index], from, to);
-          if (fallback) translated[index] = fallback;
-        }
-      };
-      await Promise.all(
-        Array.from({ length: Math.min(4, texts.length) }, () => worker())
+      // Индексы, которые бэкенд не перевёл (пусто или вернул оригинал).
+      const missingIndexes = [];
+      texts.forEach((text, index) => {
+        if (!translated[index] || translated[index] === text) missingIndexes.push(index);
+      });
+      if (missingIndexes.length === 0) return translated;
+      // Пакетный запрос к Google: несколько текстов одним HTTP-запросом.
+      const fallbacks = await PublicApi.translateWithGoogleBatch(
+        missingIndexes.map((index) => texts[index]),
+        from,
+        to
       );
+      missingIndexes.forEach((index, i) => {
+        if (fallbacks[i]) translated[index] = fallbacks[i];
+      });
       return translated;
     };
 

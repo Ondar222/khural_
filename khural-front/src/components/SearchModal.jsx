@@ -17,20 +17,36 @@ export default function SearchModal({ open, onClose }) {
   const [newsTranslations, setNewsTranslations] = React.useState(() => new Map());
   const inputRef = React.useRef(null);
 
+  // Переводим только заголовки новостей, реально показанных в результатах поиска
+  // (не более 20). Раньше переводились все новости со всем содержимым — после
+  // импорта архива это вызывало лавину запросов и блокировку переводчика (429).
+  const searchQ = query.trim().toLowerCase();
+  const visibleMatchIds = React.useMemo(() => {
+    if (!open || !searchQ) return "";
+    return news
+      .filter((n) =>
+        [n.title, n.desc].filter(Boolean).some((s) => String(s).toLowerCase().includes(searchQ))
+      )
+      .slice(0, 20)
+      .map((n) => String(n.id))
+      .join(",");
+  }, [open, searchQ, news]);
+
   React.useEffect(() => {
-    if (lang !== "ty") {
-      setNewsTranslations(new Map());
+    if (lang !== "ty" || !open || !visibleMatchIds) {
+      if (lang !== "ty") setNewsTranslations(new Map());
       return;
     }
-    const items = (news || []).map((n) => ({
-      id: n.id,
-      title: n.title,
-      excerpt: n.excerpt,
-      contentHtml: n.contentHtml,
-      titleTy: n.titleTy,
-      excerptTy: n.excerptTy,
-      contentHtmlTy: n.contentHtmlTy,
-    }));
+    const needIds = new Set(visibleMatchIds.split(","));
+    const items = (news || [])
+      .filter((n) => needIds.has(String(n.id)))
+      .map((n) => ({
+        id: n.id,
+        title: n.title,
+        titleTy: n.titleTy,
+        excerpt: "",
+        contentHtml: "",
+      }));
     let alive = true;
     translateNewsList(items)
       .then((res) => {
@@ -43,7 +59,7 @@ export default function SearchModal({ open, onClose }) {
     return () => {
       alive = false;
     };
-  }, [lang, news, translateNewsList]);
+  }, [lang, open, visibleMatchIds, news, translateNewsList]);
 
 
   React.useEffect(() => {

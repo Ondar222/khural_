@@ -467,7 +467,7 @@ const dict = {
     adminDashboardRefreshStats: "Обновить цифры",
     adminDashboardRefreshDone: "Информация обновлена",
     adminDashboardPagesCountError: "Не удалось загрузить количество страниц",
-    adminDashboardStatsHint: "«—» — данные загружаются или счётчик недоступен; «0» — данные загружены, записей нет.",
+   
     adminDashboardConvocations: "Созывы",
     adminDashboardCommittees: "Комитеты",
     adminDashboardCommissions: "Комиссии",
@@ -824,7 +824,6 @@ const dict = {
     adminDashboardRefreshStats: "Тоодарны чаартыр",
     adminDashboardRefreshDone: "Медээлер чаартылдынган",
     adminDashboardPagesCountError: "Арыннарның тоозун алып болбас",
-    adminDashboardStatsHint: "«—» — медээлерни алып турар азы тоодар ажылдап турар; «0» — медээлер алынды, бижиктер чок.",
     adminDashboardConvocations: "Чыыштар",
     adminDashboardCommittees: "Комитеттер",
     adminDashboardCommissions: "Комиссиялар",

@@ -76,38 +76,11 @@ export default function NewsArchive() {
     return id || null;
   });
 
-  // Перевод новостей (API) для текущего языка — ...Ty поля могут быть пустыми, тогда переводим автоматически
+  // Перевод новостей (API) для текущего языка — ...Ty поля могут быть пустыми, тогда переводим автоматически.
+  // ВАЖНО: переводим только видимые новости (текущая страница / открытая + 6 в сайдбаре),
+  // а не весь массив. После импорта больших архивов перевод всех новостей вызывал лавину
+  // запросов к переводчику и блокировку (429 rate limit), из-за чего падал перевод всего сайта.
   const [newsTranslations, setNewsTranslations] = React.useState(() => new Map());
-
-  React.useEffect(() => {
-    if (lang !== "ty") {
-      setNewsTranslations(new Map());
-      return;
-    }
-    const items = (news || []).map((n) => ({
-      id: n.id,
-      title: n.title,
-      titleTy: n.titleTy,
-      excerpt: String(n.id) === String(selected) ? n.excerpt : "",
-      contentHtml: String(n.id) === String(selected) ? n.contentHtml : "",
-      excerptTy: String(n.id) === String(selected) ? n.excerptTy : "",
-      contentHtmlTy: String(n.id) === String(selected) ? n.contentHtmlTy : "",
-    }));
-    let alive = true;
-    translateNewsList(items)
-      .then((res) => {
-        if (!alive) return;
-        const map = new Map();
-        res.forEach((r) => map.set(String(r.id), r));
-        setNewsTranslations(map);
-      })
-      .catch(() => {
-        // Ошибки перевода не должны ломать список — показываем исходные тексты
-      });
-    return () => {
-      alive = false;
-    };
-  }, [lang, news, selected, translateNewsList]);
 
   React.useEffect(() => {
     const onNav = () => {
@@ -214,6 +187,49 @@ export default function NewsArchive() {
     () => filtered.slice((safePage - 1) * NEWS_PAGE_SIZE, safePage * NEWS_PAGE_SIZE),
     [filtered, safePage]
   );
+
+  // Переводим только видимые новости: открытая новость + 6 в сайдбаре (деталки)
+  // либо 12 карточек текущей страницы (список). Это константное число запросов
+  // независимо от объёма импортированного архива.
+  React.useEffect(() => {
+    if (lang !== "ty") {
+      setNewsTranslations(new Map());
+      return;
+    }
+    const all = news || [];
+    const needIds = new Set();
+    if (selected) {
+      needIds.add(String(selected));
+      all.filter((n) => String(n.id) !== String(selected)).slice(0, 6).forEach((n) => needIds.add(String(n.id)));
+    } else {
+      paginatedNews.forEach((n) => needIds.add(String(n.id)));
+    }
+    const items = all
+      .filter((n) => needIds.has(String(n.id)))
+      .map((n) => ({
+        id: n.id,
+        title: n.title,
+        titleTy: n.titleTy,
+        excerpt: String(n.id) === String(selected) ? n.excerpt : "",
+        contentHtml: String(n.id) === String(selected) ? n.contentHtml : "",
+        excerptTy: String(n.id) === String(selected) ? n.excerptTy : "",
+        contentHtmlTy: String(n.id) === String(selected) ? n.contentHtmlTy : "",
+      }));
+    let alive = true;
+    translateNewsList(items)
+      .then((res) => {
+        if (!alive) return;
+        const map = new Map();
+        res.forEach((r) => map.set(String(r.id), r));
+        setNewsTranslations(map);
+      })
+      .catch(() => {
+        // Ошибки перевода не должны ломать список — показываем исходные тексты
+      });
+    return () => {
+      alive = false;
+    };
+  }, [lang, news, selected, paginatedNews, translateNewsList]);
 
   // Auto scroll to top when page changes
   React.useEffect(() => {
