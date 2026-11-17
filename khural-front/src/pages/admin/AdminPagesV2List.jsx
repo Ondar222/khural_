@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Input, Space, Table, Popconfirm, Tag } from "antd";
+import { Button, Input, Space, Table, Popconfirm, Tag, Pagination } from "antd";
 import { AboutApi, apiFetch } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { FolderIcon, ClipboardIcon } from "../../components/icons/LinearIcons.jsx";
@@ -8,11 +8,8 @@ import {
   PAGES_OVERRIDES_EVENT_NAME,
   PAGES_OVERRIDES_STORAGE_KEY,
 } from "../../utils/pagesOverrides.js";
-import {
-  FIXED_CONTENT_PAGES,
-  STATIC_SECTIONS,
-  SYSTEM_ROUTE_DEFS,
-} from "../../utils/adminPagesCatalog.js";
+import { STATIC_SECTIONS, SYSTEM_ROUTE_DEFS } from "../../utils/adminPagesCatalog.js";
+import { COMMISSION_PAGE_SLUG_PREFIX } from "../../utils/commissionPages.js";
 
 /**
  * Номер страницы и размер страницы списка храним в sessionStorage, чтобы после
@@ -82,7 +79,6 @@ export default function AdminPagesV2List({
   canWrite,
   onReloadData,
   onCreate,
-  onCreateFixedPage,
   onEdit,
   onPreview,
   onMessage,
@@ -161,6 +157,9 @@ export default function AdminPagesV2List({
       for (const p of pages) {
         const slug = String(p?.slug || "");
         if (!slug) continue;
+        // Страницы комиссий (commission-data-*) управляются в разделе «Комиссии»,
+        // в общем списке страниц они только засоряют его техническими slug'ами.
+        if (slug.startsWith(COMMISSION_PAGE_SLUG_PREFIX)) continue;
         if (!bySlug.has(slug)) bySlug.set(slug, p);
       }
       setItems(Array.from(bySlug.values()));
@@ -202,25 +201,15 @@ export default function AdminPagesV2List({
       __isStatic: true,
     }));
 
-    // Фиксированные страницы: показываем только если такой slug ещё нет в API
-    const existingSlugs = new Set((Array.isArray(items) ? items : []).map((p) => String(p?.slug || "").replace(/^\/+|\/+$/g, "")));
-    const fixedContentRows = FIXED_CONTENT_PAGES.filter((p) => !existingSlugs.has(p.slug)).map((p) => ({
-      id: `fixed:${p.slug}`,
-      title: p.title,
-      slug: p.slug,
-      __isFixed: true,
-    }));
-
     const base = (Array.isArray(items) ? items : [])
       .concat(systemRows)
-      .concat(staticSectionRows)
-      .concat(fixedContentRows);
+      .concat(staticSectionRows);
 
     const byLocale =
       localeMode === "all"
         ? base
         : base.filter((p) => {
-            if (p?.__isSystem || p?.__isStatic || p?.__isFixed) {
+            if (p?.__isSystem || p?.__isStatic) {
               return true;
             }
             const c = p?.content;
@@ -232,9 +221,7 @@ export default function AdminPagesV2List({
     const list = !qq
       ? byLocale
       : byLocale.filter((p) => {
-          const title = String(
-            (p?.__isSystem || p?.__isStatic || p?.__isFixed ? p?.title : p?.title) || p?.name || ""
-          ).toLowerCase();
+          const title = String(p?.title || p?.name || "").toLowerCase();
           const slug = String(p.slug || "").toLowerCase();
           return title.includes(qq) || slug.includes(qq);
         });
@@ -291,6 +278,12 @@ export default function AdminPagesV2List({
       current.current > maxPage ? { ...current, current: maxPage } : current
     );
   }, [maxPage, loadStatus, busy, updatePagination]);
+
+  // Срез для мобильной карточной верстки (Table пагинирует себя сам)
+  const pagedFiltered = React.useMemo(() => {
+    const start = (pagination.current - 1) * pagination.pageSize;
+    return filtered.slice(start, start + pagination.pageSize);
+  }, [filtered, pagination.current, pagination.pageSize]);
 
   const deletePage = React.useCallback(
     async (id) => {
@@ -360,19 +353,10 @@ export default function AdminPagesV2List({
                 Раздел
               </Tag>
             )}
-            {row.__isFixed && (
-              <Tag color="orange" style={{ marginLeft: 8 }}>
-                Контент
-              </Tag>
-            )}
           </div>
           <div className="admin-pages-list__metarow">
             <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
-            {row?.__isFixed ? (
-              <Tag className="admin-pages-list__tag" color="orange">
-                Нет в API
-              </Tag>
-            ) : row?.__isSystem ? (
+            {row?.__isSystem ? (
               <Tag className="admin-pages-list__tag" color="gold">
                 ROUTE
               </Tag>
@@ -426,24 +410,7 @@ export default function AdminPagesV2List({
             Редактировать
           </Button>
           
-          {row?.__isFixed ? (
-            <>
-              <Button
-                size={isTablet ? "small" : "middle"}
-                type="primary"
-                onClick={() => onCreateFixedPage?.(row.slug, row.title)}
-                disabled={!canWrite}
-              >
-                Создать страницу
-              </Button>
-              <Button
-                size={isTablet ? "small" : "middle"}
-                onClick={() => onPreview?.(row.slug)}
-              >
-                Открыть на сайте
-              </Button>
-            </>
-          ) : row?.__isSystem ? (
+          {row?.__isSystem ? (
             <>
               <Button
                 size={isTablet ? "small" : "middle"}
@@ -577,8 +544,9 @@ export default function AdminPagesV2List({
         {filtered.length === 0 ? (
           <div className="admin-card admin-pages-list__empty">Нет данных</div>
         ) : (
-          <div className="admin-cards admin-pages-list__cards">
-            {filtered.map((row) => (
+          <React.Fragment>
+            <div className="admin-cards admin-pages-list__cards">
+              {pagedFiltered.map((row) => (
               <div
                 key={String(row.id || row.slug)}
                 className={[
@@ -596,11 +564,7 @@ export default function AdminPagesV2List({
                   </div>
                   <div className="admin-pages-list__metarow">
                     <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
-                    {row?.__isFixed ? (
-                      <Tag className="admin-pages-list__tag" color="orange">
-                        Нет в API
-                      </Tag>
-                    ) : row?.__isSystem ? (
+                    {row?.__isSystem ? (
                       <Tag className="admin-pages-list__tag" color="gold">
                         ROUTE
                       </Tag>
@@ -628,21 +592,7 @@ export default function AdminPagesV2List({
                     Редактировать
                   </Button>
                   
-                  {row?.__isFixed ? (
-                    <>
-                      <Button
-                        type="primary"
-                        onClick={() => onCreateFixedPage?.(row.slug, row.title)}
-                        disabled={!canWrite}
-                        block
-                      >
-                        Создать страницу
-                      </Button>
-                      <Button onClick={() => onPreview?.(row.slug)} block>
-                        Открыть на сайте
-                      </Button>
-                    </>
-                  ) : row?.__isSystem ? (
+                  {row?.__isSystem ? (
                     <>
                       <Button onClick={() => window.open(row.__href || row.slug || "/", "_blank")} block>
                         Открыть
@@ -673,12 +623,29 @@ export default function AdminPagesV2List({
                           Удалить
                         </Button>
                       </Popconfirm>
-                    </>
-                  )}
-                </div>
+                     </>
+                   )}
+                 </div>
+               </div>
+             ))}
+            </div>
+
+            {filtered.length > pagination.pageSize ? (
+              <div className="admin-card admin-pages-list__pagination">
+                <Pagination
+                  current={pagination.current}
+                  pageSize={pagination.pageSize}
+                  total={filtered.length}
+                  onChange={(page, pageSize) => {
+                    handlePaginationChange(page, pageSize);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  showSizeChanger={false}
+                  showTotal={(total) => `Всего: ${total}`}
+                />
               </div>
-            ))}
-          </div>
+            ) : null}
+          </React.Fragment>
         )}
       </div>
     );

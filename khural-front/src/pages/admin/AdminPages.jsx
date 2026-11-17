@@ -7,8 +7,21 @@ export default function AdminPages({ items, onCreate, onUpdate, onDelete, busy, 
   const [editOpen, setEditOpen] = React.useState(false);
   const [q, setQ] = React.useState("");
   const [editing, setEditing] = React.useState(null);
+  const [windowWidth, setWindowWidth] = React.useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200,
+  );
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+  const isTablet = windowWidth > 768 && windowWidth <= 1024;
 
   const filtered = React.useMemo(() => {
     const qq = q.trim().toLowerCase();
@@ -20,15 +33,45 @@ export default function AdminPages({ items, onCreate, onUpdate, onDelete, busy, 
     });
   }, [items, q]);
 
+  const localeLabel = (row) => {
+    const locale = row.locale || row.lang || "ru";
+    return locale === "tyv" ? "Тыва" : "Русский";
+  };
+
+  const openEdit = (row) => {
+    setEditing(row);
+    editForm.setFieldsValue({
+      title: row.title || row.name || "",
+      slug: row.slug || "",
+      content: row.content || row.body || "",
+      locale: row.locale || row.lang || "ru",
+    });
+    setEditOpen(true);
+  };
+
+  const exportPages = () => {
+    const dataStr = JSON.stringify(items || [], null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `pages-export-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    message.success("Страницы экспортированы");
+  };
+
   const columns = [
     {
       title: "Название",
       dataIndex: "title",
       render: (_, row) => (
-        <div style={{ display: "grid", gap: 4 }}>
-          <div style={{ fontWeight: 800 }}>{row.title || row.name || "—"}</div>
+        <div className="admin-pages-list__titlecell">
+          <div className="admin-pages-list__title">{row.title || row.name || "—"}</div>
           {row.content || row.body ? (
-            <div style={{ opacity: 0.7, fontSize: 12 }}>
+            <div className="admin-pages-list__excerpt">
               {String(row.content || row.body || "").slice(0, 100)}...
             </div>
           ) : null}
@@ -39,36 +82,21 @@ export default function AdminPages({ items, onCreate, onUpdate, onDelete, busy, 
       title: "Slug",
       dataIndex: "slug",
       width: 200,
-      render: (v) => v || "—",
+      render: (v) => <span className="admin-pages-list__slug">{v || "—"}</span>,
     },
     {
       title: "Язык",
       dataIndex: "locale",
-      width: 100,
-      render: (v, row) => {
-        const locale = v || row.lang || "ru";
-        return locale === "tyv" ? "Тыва" : "Русский";
-      },
+      width: 120,
+      render: (_, row) => localeLabel(row),
     },
     {
       title: "Действия",
       key: "actions",
       width: 220,
       render: (_, row) => (
-        <Space wrap>
-          <Button
-            onClick={() => {
-              setEditing(row);
-              editForm.setFieldsValue({
-                title: row.title || row.name || "",
-                slug: row.slug || "",
-                content: row.content || row.body || "",
-                locale: row.locale || row.lang || "ru",
-              });
-              setEditOpen(true);
-            }}
-            disabled={!canWrite}
-          >
+        <Space wrap className="admin-pages-list__actions">
+          <Button onClick={() => openEdit(row)} disabled={!canWrite}>
             Редактировать
           </Button>
           <Button danger onClick={() => onDelete(row.id)} disabled={!canWrite}>
@@ -130,38 +158,94 @@ export default function AdminPages({ items, onCreate, onUpdate, onDelete, busy, 
     }
   };
 
-  return (
-    <div className="admin-grid">
-      <div className="admin-card admin-toolbar">
+  const toolbar = (
+    <div className="admin-card admin-toolbar admin-pages-list__toolbar">
+      <div className="admin-pages-list__toolbar-left">
         <Input
           placeholder="Поиск по названию или slug..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"
+          allowClear
+          size={isMobile ? "large" : "middle"}
         />
-        <Space wrap>
-          <Button
-            onClick={() => {
-              const dataStr = JSON.stringify(items || [], null, 2);
-              const dataBlob = new Blob([dataStr], { type: "application/json" });
-              const url = URL.createObjectURL(dataBlob);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = `pages-export-${new Date().toISOString().split("T")[0]}.json`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-              message.success("Страницы экспортированы");
-            }}
-          >
-            Экспорт страниц
-          </Button>
-          <Button type="primary" onClick={() => setOpen(true)} disabled={!canWrite}>
-            + Добавить страницу
-          </Button>
-        </Space>
       </div>
+      <div className="admin-pages-list__toolbar-right">
+        <Button onClick={exportPages} size={isMobile ? "large" : "middle"} block={isMobile}>
+          Экспорт страниц
+        </Button>
+        <Button
+          type="primary"
+          onClick={() => setOpen(true)}
+          disabled={!canWrite}
+          size={isMobile ? "large" : "middle"}
+          block={isMobile}
+        >
+          + Добавить страницу
+        </Button>
+      </div>
+    </div>
+  );
+
+  const renderCardMeta = (row) => {
+    const parts = [];
+    if (row.slug) parts.push(row.slug);
+    parts.push(localeLabel(row));
+    return parts.join(" · ");
+  };
+
+  const emptyState = (
+    <div className="admin-pages-list__empty">
+      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8 }}>Нет страниц</div>
+      <div style={{ fontSize: 13, lineHeight: 1.5 }}>
+        Страницы загружаются из API. Если API недоступен, страницы не будут отображаться.
+        <br />
+        Для создания новой страницы нажмите кнопку "Добавить страницу".
+      </div>
+    </div>
+  );
+
+  // Мобильная версия: карточки вместо таблицы с горизонтальным скроллом
+  if (isMobile) {
+    return (
+      <div className="admin-grid admin-pages-list">
+        {toolbar}
+
+        {filtered && filtered.length > 0 ? (
+          <div className="admin-cards admin-pages-list__cards">
+            {filtered.map((row) => (
+              <div key={String(row.id || row.slug)} className="admin-card admin-pages-list__card">
+                <div className="admin-pages-list__title">{row.title || row.name || "—"}</div>
+                <div className="admin-pages-list__meta">{renderCardMeta(row)}</div>
+                {row.content || row.body ? (
+                  <div className="admin-pages-list__excerpt">
+                    {String(row.content || row.body || "").slice(0, 160)}
+                    {String(row.content || row.body || "").length > 160 ? "..." : ""}
+                  </div>
+                ) : null}
+                <div className="admin-pages-list__card-actions">
+                  <Button onClick={() => openEdit(row)} disabled={!canWrite} block>
+                    Редактировать
+                  </Button>
+                  <Button danger onClick={() => onDelete(row.id)} disabled={!canWrite} block>
+                    Удалить
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="admin-card">{emptyState}</div>
+        )}
+
+        {renderModals()}
+      </div>
+    );
+  }
+
+  return (
+    <div className="admin-grid admin-pages-list">
+      {toolbar}
 
       <div className="admin-card admin-table">
         {filtered && filtered.length > 0 ? (
@@ -169,108 +253,116 @@ export default function AdminPages({ items, onCreate, onUpdate, onDelete, busy, 
             rowKey={(r) => String(r.id || r.slug || Math.random())}
             columns={columns}
             dataSource={filtered}
-            pagination={{ pageSize: 10 }}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: !isTablet,
+              showQuickJumper: !isTablet,
+              showTotal: (total, range) => `${range[0]}–${range[1]} из ${total}`,
+              size: isTablet ? "small" : "default",
+            }}
+            scroll={isTablet ? { x: "max-content" } : undefined}
           />
         ) : (
-          <div style={{ padding: 40, textAlign: "center", opacity: 0.6 }}>
-            <div style={{ fontSize: 16, marginBottom: 8 }}>Нет страниц</div>
-            <div style={{ fontSize: 13 }}>
-              Страницы загружаются из API. Если API недоступен, страницы не будут отображаться.
-              <br />
-              Для создания новой страницы нажмите кнопку "Добавить страницу".
-            </div>
-          </div>
+          emptyState
         )}
       </div>
 
-      <Modal
-        title="Добавить страницу"
-        open={open}
-        onCancel={() => {
-          setOpen(false);
-          form.resetFields();
-        }}
-        onOk={async () => {
-          try {
-            await submitCreate();
-          } catch (e) {
-            // Ошибка уже обработана в submitCreate
-            console.error("Ошибка в onOk модального окна:", e);
-          }
-        }}
-        okText="Создать"
-        confirmLoading={busy}
-        okButtonProps={{ disabled: !canWrite || busy }}
-      >
-        <Form layout="vertical" form={form}>
-          <Form.Item
-            label="Название"
-            name="title"
-            rules={[{ required: true, message: "Укажите название" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Slug (URL-адрес)"
-            name="slug"
-            rules={[{ required: true, message: "Укажите slug" }]}
-          >
-            <Input placeholder="например: about-us" />
-          </Form.Item>
-          <Form.Item label="Язык" name="locale" initialValue="ru">
-            <Input placeholder="ru или tyv" />
-          </Form.Item>
-          <Form.Item
-            label="Содержимое"
-            name="content"
-            rules={[{ required: true, message: "Укажите содержимое" }]}
-          >
-            <Input.TextArea autoSize={{ minRows: 10, maxRows: 20 }} />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      <Modal
-        title="Редактировать страницу"
-        open={editOpen}
-        onCancel={() => {
-          setEditOpen(false);
-          setEditing(null);
-          editForm.resetFields();
-        }}
-        onOk={submitEdit}
-        okText="Сохранить"
-        confirmLoading={busy}
-        okButtonProps={{ disabled: !canWrite }}
-      >
-        <Form layout="vertical" form={editForm}>
-          <Form.Item
-            label="Название"
-            name="title"
-            rules={[{ required: true, message: "Укажите название" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Slug (URL-адрес)"
-            name="slug"
-            rules={[{ required: true, message: "Укажите slug" }]}
-          >
-            <Input placeholder="например: about-us" />
-          </Form.Item>
-          <Form.Item label="Язык" name="locale">
-            <Input placeholder="ru или tyv" />
-          </Form.Item>
-          <Form.Item
-            label="Содержимое"
-            name="content"
-            rules={[{ required: true, message: "Укажите содержимое" }]}
-          >
-            <Input.TextArea autoSize={{ minRows: 10, maxRows: 20 }} />
-          </Form.Item>
-        </Form>
-      </Modal>
+      {renderModals()}
     </div>
   );
+
+  function renderModals() {
+    return (
+      <React.Fragment>
+        <Modal
+          title="Добавить страницу"
+          open={open}
+          onCancel={() => {
+            setOpen(false);
+            form.resetFields();
+          }}
+          onOk={async () => {
+            try {
+              await submitCreate();
+            } catch (e) {
+              // Ошибка уже обработана в submitCreate
+              console.error("Ошибка в onOk модального окна:", e);
+            }
+          }}
+          okText="Создать"
+          confirmLoading={busy}
+          okButtonProps={{ disabled: !canWrite || busy }}
+        >
+          <Form layout="vertical" form={form}>
+            <Form.Item
+              label="Название"
+              name="title"
+              rules={[{ required: true, message: "Укажите название" }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              label="Slug (URL-адрес)"
+              name="slug"
+              rules={[{ required: true, message: "Укажите slug" }]}
+            >
+              <Input placeholder="например: about-us" />
+            </Form.Item>
+            <Form.Item label="Язык" name="locale" initialValue="ru">
+              <Input placeholder="ru или tyv" />
+            </Form.Item>
+            <Form.Item
+              label="Содержимое"
+              name="content"
+              rules={[{ required: true, message: "Укажите содержимое" }]}
+            >
+              <Input.TextArea autoSize={{ minRows: 10, maxRows: 20 }} />
+            </Form.Item>
+          </Form>
+        </Modal>
+
+        <Modal
+          title="Редактировать страницу"
+          open={editOpen}
+          onCancel={() => {
+            setEditOpen(false);
+            setEditing(null);
+            editForm.resetFields();
+          }}
+          onOk={submitEdit}
+          okText="Сохранить"
+          confirmLoading={busy}
+          okButtonProps={{ disabled: !canWrite }}
+        >
+          <Form layout="vertical" form={editForm}>
+            <Form.Item
+              label="Название"
+              name="title"
+              rules={[{ required: true, message: "Укажите название" }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              label="Slug (URL-адрес)"
+              name="slug"
+              rules={[{ required: true, message: "Укажите slug" }]}
+            >
+              <Input placeholder="например: about-us" />
+            </Form.Item>
+            <Form.Item label="Язык" name="locale">
+              <Input placeholder="ru или tyv" />
+            </Form.Item>
+            <Form.Item
+              label="Содержимое"
+              name="content"
+              rules={[{ required: true, message: "Укажите содержимое" }]}
+            >
+              <Input.TextArea autoSize={{ minRows: 10, maxRows: 20 }} />
+            </Form.Item>
+          </Form>
+        </Modal>
+      </React.Fragment>
+    );
+  }
 }
 

@@ -9600,6 +9600,14 @@ body.admin-mode[data-admin-theme="light"] .admin-pages-list__card--system {
   text-align: center;
   opacity: 0.7;
 }
+.admin-pages-list__pagination {
+  display: flex;
+  justify-content: center;
+  padding: 10px 14px 14px;
+}
+.admin-pages-list__pagination .ant-pagination {
+  margin: 0;
+}
 @media (max-width: 768px) {
   .admin-pages-list__toolbar {
     padding: 16px;
@@ -9697,6 +9705,9 @@ body.admin-mode[data-admin-theme="light"] .admin-pages-list__row--system > td {
 body.admin-mode .admin-news-list .ant-table {
   min-width: 0 !important;
 }
+body.admin-mode .admin-news-list .ant-table-content > table {
+  min-width: 0 !important;
+}
 body.admin-mode .admin-news-list .ant-table-thead > tr > th,
 body.admin-mode .admin-news-list .ant-table-tbody > tr > td {
   padding: 10px 12px !important;
@@ -9704,16 +9715,6 @@ body.admin-mode .admin-news-list .ant-table-tbody > tr > td {
 }
 body.admin-mode .admin-news-list .ant-btn-text {
   color: inherit !important;
-}
-@media (max-width: 959px) {
-  body.admin-mode .admin-news-list .ant-table {
-    min-width: 760px !important;
-  }
-}
-@media (max-width: 560px) {
-  body.admin-mode .admin-news-list .ant-table {
-    min-width: 680px !important;
-  }
 }
 
 /* Appeals list */
@@ -11584,7 +11585,6 @@ body.admin-mode[data-admin-theme="dark"] .ant-btn-dangerous.ant-btn-disabled {
 
 /* Admin table responsiveness */
 .admin-table {
-  overflow-x: auto;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -11597,11 +11597,14 @@ body.admin-mode[data-admin-theme="light"] .admin-table {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 body.admin-mode .admin-table .ant-table {
-  min-width: 880px;
   background: transparent;
 }
 body.admin-mode .admin-table .ant-table-container {
   background: transparent;
+  overflow-x: auto;
+}
+body.admin-mode .admin-table .ant-table-content > table {
+  min-width: 880px;
 }
 body.admin-mode .admin-table .ant-table-thead > tr > th {
   background: rgba(255, 215, 0, 0.08);
@@ -11670,6 +11673,9 @@ body.admin-mode .admin-table .ant-table-tbody > tr > td .admin-slider-cell {
 body.admin-mode .admin-slider-table .ant-table {
   min-width: 0 !important;
 }
+body.admin-mode .admin-slider-table .ant-table-content > table {
+  min-width: 0 !important;
+}
 body.admin-mode .admin-slider-table .ant-table-thead > tr > th,
 body.admin-mode .admin-slider-table .ant-table-tbody > tr > td {
   padding: 10px 12px !important;
@@ -11679,12 +11685,12 @@ body.admin-mode .admin-slider-table .ant-table-tbody > tr > td {
   color: inherit !important;
 }
 @media (max-width: 959px) {
-  body.admin-mode .admin-table .ant-table {
+  body.admin-mode .admin-table .ant-table-content > table {
     min-width: 760px;
   }
 }
 @media (max-width: 560px) {
-  body.admin-mode .admin-table .ant-table {
+  body.admin-mode .admin-table .ant-table-content > table {
     min-width: 680px;
   }
   .admin-input {

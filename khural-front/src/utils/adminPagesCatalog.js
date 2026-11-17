@@ -1,3 +1,5 @@
+import { COMMISSION_PAGE_SLUG_PREFIX } from "./commissionPages.js";
+
 // Real site routes. These are NOT CMS pages.
 // Editing is done via corresponding admin modules (news/deputies/documents/slider/etc).
 export const SYSTEM_ROUTE_DEFS = [
@@ -30,22 +32,9 @@ export const STATIC_SECTIONS = [
   { slug: "broadcast", title: "Трансляция" },
 ];
 
-export const FIXED_CONTENT_PAGES = [
-  { slug: "code-of-honor", title: "Кодекс чести мужчины Тувы" },
-  { slug: "mothers-commandments", title: "Свод заповедей матерей Тувы" },
-  { slug: "struct/council", title: "Представительство в Совете Федерации" },
-  { slug: "info/finansy", title: "Финансы" },
-  { slug: "info/iokrug", title: "Избирательные округа" },
-  { slug: "info/zakon-karta", title: "Законодательная карта сайта" },
-  { slug: "opendata", title: "Открытые данные" },
-  { slug: "info/upoln-po-prav", title: "Уполномоченный по правам человека в Республике Тыва" },
-  { slug: "info/upoln-po-reb", title: "Уполномоченный по правам ребенка в Республике Тыва" },
-  { slug: "info/personnel", title: "Кадровое обеспечение" },
-];
-
 export function countAdminPageRows(cmsPages) {
   const pages = Array.isArray(cmsPages) ? cmsPages : [];
-  const slugs = new Set(pages.map((page) => String(page?.slug || "").replace(/^\/+|\/+$/g, "")));
-  const fixedPagesNotInApi = FIXED_CONTENT_PAGES.filter((page) => !slugs.has(page.slug)).length;
-  return pages.length + SYSTEM_ROUTE_DEFS.length + STATIC_SECTIONS.length + fixedPagesNotInApi;
+  return pages.filter((page) => !String(page?.slug || "").startsWith(COMMISSION_PAGE_SLUG_PREFIX)).length
+    + SYSTEM_ROUTE_DEFS.length
+    + STATIC_SECTIONS.length;
 }
