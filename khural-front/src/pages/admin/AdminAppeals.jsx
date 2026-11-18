@@ -367,7 +367,7 @@ export default function AdminAppeals({ items, onUpdateStatus, busy, canWrite }) 
     <div className="admin-card admin-toolbar admin-appeals-list__toolbar">
       <div className="admin-appeals-list__toolbar-left">
         <Input
-          placeholder="Поиск по теме, тексту, номеру, email..."
+          placeholder="Поиск по теме, тексту, номеру, электронной почте..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"

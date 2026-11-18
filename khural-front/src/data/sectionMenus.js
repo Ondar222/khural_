@@ -31,6 +31,8 @@ export const ABOUT_SECTION_LINKS = [
   { label: "Приграничный субъект", href: "/info/prigranichny-subekt" },
   { label: "Законодательная карта сайта", href: "/info/zakon-karta" },
   { label: "Открытые данные", href: "/opendata" },
+  { label: "Кодекс чести мужчины Тувы", href: "/code-of-honor" },
+  { label: "Свод заповедей матерей Тувы", href: "/mothers-commandments" },
 ];
 
 /**
@@ -66,3 +68,29 @@ export const DEPUTY_CONVOCATION_LINKS = ["I", "II", "III", "IV", "V", "VI", "VII
 export const ABOUT_SECTION_HREFS = ABOUT_SECTION_LINKS.map((link) => link.href);
 export const STRUCTURE_SECTION_HREFS = STRUCTURE_SECTION_LINKS.map((link) => link.href);
 export const DEPUTY_CONVOCATION_HREFS = DEPUTY_CONVOCATION_LINKS.map((link) => link.href);
+
+/**
+ * Разделы верхнего меню сайта. Используются в админке как «Родитель» страницы:
+ * это страницы/разделы шапки, а не подпункты выпадающих меню.
+ * `aliases` нужны, чтобы уже существующие страницы (например, info/* или struct/*)
+ * корректно определяли свой родительский раздел.
+ */
+export const HEADER_PARENT_SECTIONS = [
+  { value: "about", label: "Общие сведения", slugPrefix: "about", aliases: ["about", "info"] },
+  { value: "structure", label: "Структура", slugPrefix: "struct", aliases: ["structure", "struct"] },
+  { value: "deputies", label: "Депутаты", slugPrefix: "deputies", aliases: ["deputies"] },
+  { value: "documents", label: "Документы", slugPrefix: "docs", aliases: ["documents", "docs"] },
+  { value: "news", label: "Новости", slugPrefix: "news", aliases: ["news"] },
+  { value: "appeals", label: "Обращения граждан", slugPrefix: "appeals", aliases: ["appeals"] },
+];
+
+/** Находит раздел шапки, которому принадлежит страница по её адресу. */
+export function getHeaderSectionForSlug(slug) {
+  const clean = String(slug || "").replace(/^\/+|\/+$/g, "");
+  if (!clean) return null;
+  return (
+    HEADER_PARENT_SECTIONS.find((section) =>
+      section.aliases.some((alias) => clean === alias || clean.startsWith(`${alias}/`))
+    ) || null
+  );
+}

@@ -1239,6 +1239,8 @@ export const AboutApi = {
       ...(dto?.order !== undefined ? { order: dto.order } : {}),
       ...(dto?.isPublished !== undefined ? { isPublished: dto.isPublished } : {}),
       ...(dto?.publishedAt !== undefined ? { publishedAt: dto.publishedAt } : {}),
+      ...(dto?.menuTitle !== undefined ? { menuTitle: dto.menuTitle } : {}),
+      ...(dto?.submenuTitle !== undefined ? { submenuTitle: dto.submenuTitle } : {}),
     };
 
     return apiFetch(`/pages/${encodeURIComponent(id)}`, { method: "PATCH", body, auth: true });

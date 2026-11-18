@@ -75,7 +75,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
       }
       
       if (!title && !description) {
-        message.warning("Заполните заголовок или описание (RU) для перевода");
+        message.warning("Заполните заголовок или описание (на русском языке) для перевода");
         return;
       }
       
@@ -297,7 +297,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
         <div className="admin-slider-editor__section-title">Данные слайда</div>
         <Form layout="vertical" form={form} initialValues={{ isActive: true, titleTy: "", descriptionTy: "" }}>
           <div className="admin-split">
-            <Form.Item label="Заголовок (RU)" name="title" rules={[{ required: true, message: "Укажите заголовок" }]}>
+            <Form.Item label="Заголовок (на русском языке)" name="title" rules={[{ required: true, message: "Укажите заголовок" }]}>
               <Input disabled={loading || saving} />
             </Form.Item>
             <Form.Item label="Дата события" name="date" rules={[{ required: true, message: "Укажите дату события" }]}>
@@ -306,7 +306,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
           </div>
 
           <Form.Item
-            label="Описание (RU)"
+            label="Описание (на русском языке)"
             name="description"
             tooltip="Используйте редактор для форматирования текста"
             getValueFromEvent={(value) => value}
@@ -321,7 +321,7 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
 
           <div style={{ marginTop: 24, paddingTop: 24, borderTop: "1px solid rgba(10, 31, 68, 0.08)" }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>Тувинский язык (TY)</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>Тувинский язык</div>
               <Button
                 type="default"
                 onClick={handleTranslateToTy}
@@ -331,11 +331,11 @@ export default function AdminSlideEditor({ mode, slideId, items, onCreate, onUpd
                 Получить автоматический перевод
               </Button>
             </div>
-            <Form.Item label="Заголовок (TY)" name="titleTy">
+            <Form.Item label="Заголовок (на тувинском языке)" name="titleTy">
               <Input placeholder="Заголовок на тувинском языке" disabled={loading || saving} />
             </Form.Item>
             <Form.Item
-              label="Описание (TY)"
+              label="Описание (на тувинском языке)"
               name="descriptionTy"
               tooltip="Описание слайда на тувинском языке"
               getValueFromEvent={(value) => value}

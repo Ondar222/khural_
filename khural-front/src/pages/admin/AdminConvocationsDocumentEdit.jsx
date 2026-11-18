@@ -147,7 +147,7 @@ export default function AdminConvocationsDocumentEdit({
             } catch (e) {
               console.warn("Failed to delete temp document:", e);
             }
-            throw new Error("Не удалось получить ID загруженного файла. Структура ответа: " + JSON.stringify(updatedDoc, null, 2));
+            throw new Error("Не удалось получить идентификатор загруженного файла. Структура ответа: " + JSON.stringify(updatedDoc, null, 2));
           }
           
           message.success("Файл загружен");

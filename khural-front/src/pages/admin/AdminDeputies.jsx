@@ -213,7 +213,7 @@ export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, bus
           </div>
 
           <div className="admin-split">
-            <Form.Item label="Email" name="email">
+            <Form.Item label="Электронная почта" name="email">
               <Input />
             </Form.Item>
             <Form.Item label="Телефон" name="phoneNumber">
@@ -319,7 +319,7 @@ export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, bus
           <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: "16px", marginTop: "16px" }}>
             <div style={{ marginBottom: "12px" }}>Контакты</div>
             <div className="admin-split">
-              <Form.Item label="Email" name="email">
+              <Form.Item label="Электронная почта" name="email">
                 <Input type="email" />
               </Form.Item>
               <Form.Item label="Телефон" name="phoneNumber">
@@ -376,7 +376,7 @@ export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, bus
                         name={[name, "document"]}
                         style={{ flex: 1, marginBottom: 0 }}
                       >
-                        <Input placeholder="Документ (ссылка/ID)" />
+                        <Input placeholder="Документ (ссылка/идентификатор)" />
                       </Form.Item>
                       <Button
                         type="text"
@@ -416,7 +416,7 @@ export default function AdminDeputies({ items, onCreate, onUpdate, onDelete, bus
                         name={[name, "document"]}
                         style={{ flex: 2, marginBottom: 0 }}
                       >
-                        <Input placeholder="Документ (ссылка/ID)" />
+                        <Input placeholder="Документ (ссылка/идентификатор)" />
                       </Form.Item>
                       <Button
                         type="text"

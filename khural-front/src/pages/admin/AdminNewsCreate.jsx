@@ -189,7 +189,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         const cats = await reloadCategories(true);
         found = findMedia(cats);
       } catch (error) {
-        antdMessage.error(`Не удалось создать категорию «${MEDIA_CATEGORY_NAME}»: ${error?.message || "API"}`);
+        antdMessage.error(`Не удалось создать категорию «${MEDIA_CATEGORY_NAME}»: ${error?.message || "ошибка API"}`);
       }
     }
     return found?.id ?? null;
@@ -554,7 +554,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
         {/* 1 ряд: Заголовки */}
         <div className="admin-news-editor__lang-grid">
           <div className="admin-card">
-            <div className="admin-news-editor__section-title">Заголовок (TY)</div>
+            <div className="admin-news-editor__section-title">Заголовок (на тувинском языке)</div>
             <Form.Item
               name="titleTy"
               rules={[{ required: false, message: "Укажите заголовок" }]}
@@ -565,7 +565,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
           </div>
 
           <div className="admin-card">
-            <div className="admin-news-editor__section-title">Заголовок (RU) *</div>
+            <div className="admin-news-editor__section-title">Заголовок (на русском языке) *</div>
             <Form.Item
               name="titleRu"
               rules={[{ required: true, message: "Укажите заголовок" }]}
@@ -581,7 +581,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
           <>
         <div className="admin-news-editor__lang-grid">
           <div className="admin-card">
-            <div className="admin-news-editor__section-title">Краткое описание (TY)</div>
+            <div className="admin-news-editor__section-title">Краткое описание (на тувинском языке)</div>
             <Form.Item
               name="shortDescriptionTy"
               tooltip="Краткое описание новости на тувинском языке"
@@ -597,7 +597,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
           </div>
 
           <div className="admin-card">
-            <div className="admin-news-editor__section-title">Краткое описание (RU)</div>
+            <div className="admin-news-editor__section-title">Краткое описание (на русском языке)</div>
             <Form.Item
               name="shortDescriptionRu"
               tooltip="Краткое описание новости на русском языке"
@@ -618,7 +618,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
           <div className="admin-card">
             <div className="admin-news-editor__lang-head">
               <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>
-                Контент (TY)
+                Контент (на тувинском языке)
               </div>
               <Button
                 type="default"
@@ -646,7 +646,7 @@ export default function AdminNewsCreate({ onCreate, busy, canWrite }) {
           <div className="admin-card">
             <div className="admin-news-editor__lang-head">
               <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>
-                Контент (RU) *
+                Контент (на русском языке) *
               </div>
               <Button
                 type="default"

@@ -302,11 +302,11 @@ export default function AdminPages({ items, onCreate, onUpdate, onDelete, busy, 
               <Input />
             </Form.Item>
             <Form.Item
-              label="Slug (URL-адрес)"
+              label="Адрес страницы (URL)"
               name="slug"
-              rules={[{ required: true, message: "Укажите slug" }]}
+              rules={[{ required: true, message: "Укажите адрес страницы" }]}
             >
-              <Input placeholder="например: about-us" />
+              <Input placeholder="например: adres-stranitsy" />
             </Form.Item>
             <Form.Item label="Язык" name="locale" initialValue="ru">
               <Input placeholder="ru или tyv" />
@@ -343,11 +343,11 @@ export default function AdminPages({ items, onCreate, onUpdate, onDelete, busy, 
               <Input />
             </Form.Item>
             <Form.Item
-              label="Slug (URL-адрес)"
+              label="Адрес страницы (URL)"
               name="slug"
-              rules={[{ required: true, message: "Укажите slug" }]}
+              rules={[{ required: true, message: "Укажите адрес страницы" }]}
             >
-              <Input placeholder="например: about-us" />
+              <Input placeholder="например: adres-stranitsy" />
             </Form.Item>
             <Form.Item label="Язык" name="locale">
               <Input placeholder="ru или tyv" />

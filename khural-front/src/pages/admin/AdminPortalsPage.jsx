@@ -314,7 +314,7 @@ export default function AdminPortalsPage() {
           Чтобы редактировать, добавлять и удалять записи, выполните вход.
         </div>
         <Input
-          placeholder="Email"
+          placeholder="Электронная почта"
           value={adminData.email}
           onChange={(e) => adminData.setEmail(e.target.value)}
         />
@@ -536,10 +536,10 @@ export default function AdminPortalsPage() {
             name="href"
             rules={[
               { required: true, message: "Введите ссылку" },
-              { type: "url", message: "Введите корректный URL" },
+              { type: "url", message: "Введите корректный адрес" },
             ]}
           >
-            <Input placeholder="https://example.com" />
+            <Input placeholder="Введите адрес сайта" />
           </Form.Item>
         </Form>
       </Modal>

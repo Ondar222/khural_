@@ -3,7 +3,7 @@ import { App, Button, Form, Input, Select, Space, Card, Switch } from "antd";
 import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import { AboutApi, apiFetch, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
-import { getPageOverrideById, upsertPageOverride } from "../../utils/pagesOverrides.js";
+import { getPageOverrideForPage, upsertPageOverride } from "../../utils/pagesOverrides.js";
 import { refreshPagesTree } from "../../utils/cmsPagesTree.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import ImageUploadField from "../../components/ImageUploadField.jsx";
@@ -11,6 +11,7 @@ import VideoUploadField from "../../components/VideoUploadField.jsx";
 import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js";
 import { useTranslation } from "../../hooks/useTranslation.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../../content/forMedia.js";
+import { HEADER_PARENT_SECTIONS, getHeaderSectionForSlug } from "../../data/sectionMenus.js";
 import BudgetDocumentsEditor from "./BudgetDocumentsEditor.jsx";
 
 function normalizeList(res) {
@@ -167,7 +168,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
   const [form] = Form.useForm();
   const [busy, setBusy] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
-  const [parents, setParents] = React.useState([]);
+  const originalPrefixRef = React.useRef("");
   const [documents, setDocuments] = React.useState([]);
   const [loadingDocs, setLoadingDocs] = React.useState(false);
   const [pageSlug, setPageSlug] = React.useState("");
@@ -181,18 +182,6 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       clearError();
     }
   }, [translationError, message, clearError]);
-
-  React.useEffect(() => {
-    let alive = true;
-    (async () => {
-      const all = normalizeList(await apiFetch("/pages", { method: "GET", auth: true }).catch(() => []));
-      const slugs = Array.from(new Set((all || []).map((p) => String(p.slug || "")).filter(Boolean))).sort();
-      if (alive) setParents(slugs);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   React.useEffect(() => {
     let alive = true;
@@ -223,7 +212,8 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         const slug = String(page.slug || "");
         setPageSlug(slug);
         const parts = slug.split("/").filter(Boolean);
-        const parentSlug = parts.slice(0, -1).join("/");
+        originalPrefixRef.current = parts.length > 1 ? parts[0] : "";
+        const headerSection = getHeaderSectionForSlug(slug);
         const leaf = parts.slice(-1)[0] || "";
 
         const contentArray = page.content && Array.isArray(page.content) ? page.content : [];
@@ -262,7 +252,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
               ? FOR_MEDIA_DEFAULTS
               : null;
 
-        const ov = getPageOverrideById(page?.id);
+        const ov = getPageOverrideForPage(page);
 
         form.setFieldsValue({
           titleRu: defaults ? defaults.titleRu : ruTitle,
@@ -272,7 +262,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           isPublished: Boolean(page?.isPublished),
           menuTitle: ov?.menuTitle || "",
           submenuTitle: ov?.submenuTitle || "",
-          parentSlug,
+          parentSection: headerSection?.value || "",
           slugLeaf: leaf,
           blocks: formBlocks,
         });
@@ -290,9 +280,16 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
     setBusy(true);
     try {
       const values = await form.validateFields();
-      const parentSlug = String(values.parentSlug || "").trim().replace(/^\/+|\/+$/g, "");
+      const sectionValue = String(values.parentSection || "");
+      const parentSection = HEADER_PARENT_SECTIONS.find((s) => s.value === sectionValue) || null;
       const leaf = String(values.slugLeaf || "").trim().replace(/^\/+|\/+$/g, "");
-      const fullSlug = parentSlug ? `${parentSlug}/${leaf}` : leaf;
+      // Сохраняем уже существующий префикс (например, info/*), если пользователь
+      // не менял родительский раздел — так не ломаются старые адреса страниц.
+      const prefix =
+        parentSection && parentSection.aliases.includes(originalPrefixRef.current)
+          ? originalPrefixRef.current
+          : parentSection?.slugPrefix || "";
+      const fullSlug = prefix ? `${prefix}/${leaf}` : leaf;
 
       // Блоки с новыми изображениями сохраняются отдельно (batch-загрузка),
       // а блоки, которые заменили/удалили, нужно убрать со страницы.
@@ -339,12 +336,19 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         return;
       }
 
+      const menuTitle = String(values.menuTitle || "").trim();
+      const submenuTitle = String(values.submenuTitle || "").trim();
+
       const saved = await AboutApi.updatePage(id, {
         title: titleRu || contentArray[0]?.title,
         slug: fullSlug,
+        // Родитель — раздел шапки, поэтому связь хранится в префиксе адреса.
+        parentId: null,
         isPublished: values.isPublished !== undefined ? Boolean(values.isPublished) : undefined,
         locale: "ru",
         content: contentArray,
+        menuTitle,
+        submenuTitle,
       });
 
       await applyBlockUploads({
@@ -360,8 +364,8 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       upsertPageOverride({
         id: saved?.id ?? id,
         slug: saved?.slug || fullSlug,
-        menuTitle: values.menuTitle || null,
-        submenuTitle: values.submenuTitle || null,
+        menuTitle: menuTitle || null,
+        submenuTitle: submenuTitle || null,
       });
       message.success("Страница сохранена");
 
@@ -371,6 +375,18 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       try {
         const updated = await getPageById(id);
         if (updated) {
+          const updatedSlug = String(updated.slug || fullSlug);
+          const updatedParts = updatedSlug.split("/").filter(Boolean);
+          originalPrefixRef.current = updatedParts.length > 1 ? updatedParts[0] : "";
+          const updatedSection = getHeaderSectionForSlug(updatedSlug);
+          const updatedOverride = getPageOverrideForPage(updated);
+          setPageSlug(updatedSlug);
+          form.setFieldsValue({
+            parentSection: updatedSection?.value || "",
+            slugLeaf: updatedParts.slice(-1)[0] || leaf,
+            menuTitle: updatedOverride?.menuTitle ?? menuTitle,
+            submenuTitle: updatedOverride?.submenuTitle ?? submenuTitle,
+          });
           const contentArrayReload = Array.isArray(updated.content) ? updated.content : [];
           const ruReload = contentArrayReload.find((c) => String(c?.locale || "").toLowerCase() === "ru") || contentArrayReload[0] || {};
           const tyvReload = contentArrayReload.find((c) => String(c?.locale || "").toLowerCase() === "tyv") || {};
@@ -520,22 +536,29 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           <Form.Item label="Название в подменю" name="submenuTitle">
             <Input disabled={loading} placeholder="Название в подменю (если отличается от названия в меню)" />
           </Form.Item>
-          <Form.Item label="Родитель (опционально)" name="parentSlug">
+          <Form.Item
+            label="Родитель (опционально)"
+            name="parentSection"
+            extra="Родитель — раздел верхнего меню сайта, а не подпункт выпадающего списка."
+          >
             <Select
               disabled={loading}
               allowClear
               showSearch
               placeholder="Без родителя"
-              options={parents.map((s) => ({ value: s, label: s }))}
+              options={HEADER_PARENT_SECTIONS.map((section) => ({
+                value: section.value,
+                label: section.label,
+              }))}
               filterOption={(input, option) =>
-                String(option?.value || "").toLowerCase().includes(String(input || "").toLowerCase())
+                String(option?.label || "").toLowerCase().includes(String(input || "").toLowerCase())
               }
             />
           </Form.Item>
           <Form.Item
-            label="Slug (последняя часть)"
+            label="Адрес страницы (последняя часть)"
             name="slugLeaf"
-            rules={[{ required: true, message: "Введите slug" }]}
+            rules={[{ required: true, message: "Введите адрес страницы" }]}
           >
             <Input disabled={loading} />
           </Form.Item>
@@ -555,11 +578,11 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
                   Получить автоматический перевод
                 </Button>
               </div>
-              <Form.Item label="Название (TY)" name="titleTy">
+              <Form.Item label="Название на тувинском языке" name="titleTy">
                 <Input disabled={loading} placeholder="Название страницы на тувинском" />
               </Form.Item>
               <Form.Item
-                label="Содержимое (TY)"
+                label="Содержимое на тувинском языке"
                 name="contentTy"
                 getValueFromEvent={(v) => v}
               >
@@ -586,14 +609,14 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
                 </Button>
               </div>
               <Form.Item
-                label="Название (RU) *"
+                label="Название на русском языке *"
                 name="titleRu"
                 rules={[{ required: true, message: "Введите название" }]}
               >
                 <Input disabled={loading} placeholder="Название страницы на русском" />
               </Form.Item>
               <Form.Item
-                label="Содержимое (RU) *"
+                label="Содержимое на русском языке *"
                 name="contentRu"
                 getValueFromEvent={(v) => v}
                 rules={[{ required: true, message: "Введите содержимое" }]}
@@ -736,8 +759,8 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
 
                         {blockType === "link" && (
                           <>
-                            <Form.Item name={[field.name, "content"]} label="URL ссылки" rules={[{ required: true }]}>
-                              <Input placeholder="https://example.com" />
+                            <Form.Item name={[field.name, "content"]} label="Адрес ссылки" rules={[{ required: true }]}>
+                              <Input placeholder="Введите адрес сайта" />
                             </Form.Item>
                             <Form.Item name={[field.name, "caption"]} label="Текст ссылки">
                               <Input placeholder="Текст ссылки" />
@@ -763,8 +786,8 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
                           <>
                             <Form.Item
                               name={[field.name, "content"]}
-                              label="URL видео"
-                              extra="Ссылка на YouTube/Rutube или загрузите файл ниже"
+                              label="Адрес видео"
+                              extra="Вставьте ссылку на YouTube или Rutube либо загрузите файл ниже"
                               rules={[
                                 {
                                   validator: (_rule, value) => {

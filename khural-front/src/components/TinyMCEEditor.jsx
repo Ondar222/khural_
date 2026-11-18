@@ -89,6 +89,8 @@ export default function TinyMCEEditor({ value, onChange, placeholder, height = 4
       disabled={disabled}
       init={{
         base_url: '/tinymce',
+        language: 'ru',
+        language_url: '/tinymce/langs/ru.js',
         height: height ?? 400,
         min_height: minHeight,
         menubar: false,

@@ -542,10 +542,10 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
           okButtonProps={{ disabled: !canWrite }}
         >
           <Form layout="vertical" form={editForm}>
-            <Form.Item label="Заголовок (RU)" name="titleRu" rules={[{ required: true, message: "Укажите заголовок" }]}>
+            <Form.Item label="Заголовок (на русском языке)" name="titleRu" rules={[{ required: true, message: "Укажите заголовок" }]}>
               <Input />
             </Form.Item>
-            <Form.Item label="Краткое описание (RU)" name="descRu" rules={[{ required: true, message: "Укажите описание" }]}>
+            <Form.Item label="Краткое описание (на русском языке)" name="descRu" rules={[{ required: true, message: "Укажите описание" }]}>
               <Input.TextArea autoSize={{ minRows: 5, maxRows: 10 }} />
             </Form.Item>
 
@@ -600,14 +600,14 @@ export default function AdminNews({ items, onUpdate, onDelete, busy, canWrite })
       >
         <Form layout="vertical" form={editForm}>
           <Form.Item
-            label="Заголовок (RU)"
+            label="Заголовок (на русском языке)"
             name="titleRu"
             rules={[{ required: true, message: "Укажите заголовок" }]}
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label="Краткое описание (RU)"
+            label="Краткое описание (на русском языке)"
             name="descRu"
             rules={[{ required: true, message: "Укажите описание" }]}
           >

@@ -14,7 +14,7 @@ export default function AdminSliderCreatePage() {
         <div style={{ opacity: 0.8, fontSize: 13, lineHeight: 1.45 }}>
           Чтобы редактировать, добавлять и удалять записи, выполните вход.
         </div>
-        <Input placeholder="Email" value={adminData.email} onChange={(e) => adminData.setEmail(e.target.value)} />
+        <Input placeholder="Электронная почта" value={adminData.email} onChange={(e) => adminData.setEmail(e.target.value)} />
         <Input.Password
           placeholder="Пароль"
           value={adminData.password}

@@ -368,7 +368,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
       );
     }
     if (apiCommittee?.id == null) {
-      throw new Error("API не вернул ID созданного комитета");
+      throw new Error("Сервер API не вернул ID созданного комитета");
     }
     return apiCommittee;
   }, [convocations, participationConvocationId]);
@@ -396,7 +396,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         apiCommittee = { ...apiCommittee, ...details };
       }
       if (!Array.isArray(apiCommittee.members)) {
-        throw new Error("API не вернул состав комитета; изменения не сохранены");
+        throw new Error("Сервер API не вернул состав комитета; изменения не сохранены");
       }
       const members = Array.isArray(apiCommittee.members) ? apiCommittee.members : [];
       const existingIndex = members.findIndex(
@@ -486,7 +486,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
         (item) => Number(item?.personId) === deputyIdNum || Number(item?.person?.id) === deputyIdNum
       );
       if (member?.id == null) {
-        throw new Error("API не вернул ID участия депутата в комитете");
+        throw new Error("Сервер API не вернул ID участия депутата в комитете");
       }
       await CommitteesApi.removeMember(String(apiCommittee.id), String(member.id));
 
@@ -1196,7 +1196,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
           <div className="admin-card">
             <div className="admin-deputy-editor__section-title">Контакты</div>
             <div className="admin-split">
-              <Form.Item label="Email" name="email">
+              <Form.Item label="Электронная почта" name="email">
                 <Input type="email" disabled={loading || saving} />
               </Form.Item>
               <Form.Item label="Телефон" name="phoneNumber">
@@ -1454,7 +1454,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
               );
             }
             if (newCommittee?.id == null) {
-              throw new Error("API не вернул ID созданного комитета");
+              throw new Error("Сервер API не вернул ID созданного комитета");
             }
             const currentCommittees = Array.isArray(form.getFieldValue("committeeIds"))
               ? form.getFieldValue("committeeIds")

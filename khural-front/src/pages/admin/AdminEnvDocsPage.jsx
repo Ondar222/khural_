@@ -16,7 +16,7 @@ export default function AdminEnvDocsPage() {
           Чтобы редактировать, добавлять и удалять записи, выполните вход.
         </div>
         <Input
-          placeholder="Email"
+          placeholder="Электронная почта"
           value={adminData.email}
           onChange={(e) => adminData.setEmail(e.target.value)}
         />
@@ -35,7 +35,7 @@ export default function AdminEnvDocsPage() {
   return (
     <AdminShell
       activeKey="env"
-      title="ENV документация"
+      title="Документация по переменным ENV"
       subtitle={`API: ${adminData.apiBase || "—"} • ${adminData.canWrite ? "доступ на запись" : "только просмотр"}`}
       user={adminData.user}
       themeMode={adminData.themeMode}

@@ -49,7 +49,7 @@ export default function AdminCommitteesEditor({
         await DocumentsApi.uploadFile(tempDoc.id, file);
         const updated = await DocumentsApi.getById(tempDoc.id);
         const fileId = updated?.pdfFile?.id;
-        if (!fileId) throw new Error("Не удалось получить ID файла");
+        if (!fileId) throw new Error("Не удалось получить идентификатор файла");
         form.setFieldValue(["plans", planIndex, "fileId"], fileId);
         message.success("Документ загружен");
       } catch (err) {

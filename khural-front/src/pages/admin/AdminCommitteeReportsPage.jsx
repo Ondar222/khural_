@@ -159,7 +159,7 @@ export default function AdminCommitteeReportsPage() {
         await DocumentsApi.uploadFile(tempDoc.id, modalFile);
         const updated = await DocumentsApi.getById(tempDoc.id);
         fileId = updated?.pdfFile?.id;
-        if (!fileId) throw new Error("Не удалось получить ID файла");
+        if (!fileId) throw new Error("Не удалось получить идентификатор файла");
         url = undefined;
         message.success("Файл загружен");
       } catch (e) {

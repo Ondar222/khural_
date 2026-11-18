@@ -14,7 +14,7 @@ export default function AdminEnvDocs() {
       setText(String(md || ""));
     } catch (e) {
       setText("");
-      message.error(e?.message || "Не удалось загрузить документацию ENV");
+      message.error(e?.message || "Не удалось загрузить документацию по переменным ENV");
     } finally {
       setLoading(false);
     }

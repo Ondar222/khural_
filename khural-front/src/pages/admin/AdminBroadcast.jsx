@@ -242,7 +242,7 @@ export default function AdminBroadcast() {
       }
       if (adminData.reload) adminData.reload();
     } catch (e) {
-      message.error(e?.message || "Ошибка синхронизации с VK");
+      message.error(e?.message || "Ошибка синхронизации с ВКонтакте");
     } finally {
       setSyncing(false);
     }
@@ -319,14 +319,14 @@ export default function AdminBroadcast() {
           {broadcastType === "vk" && (
             <>
               <Form.Item
-                label="Ключ трансляции VK"
+                label="Ключ трансляции ВКонтакте"
                 name="vkStreamKey"
                 help="Ключ трансляции из VK или ID видео (например: -123456789_123456789)"
               >
-                <Input placeholder="Ключ трансляции VK" />
+                <Input placeholder="Ключ трансляции ВКонтакте" />
               </Form.Item>
               <Form.Item
-                label="Ссылка на трансляцию VK"
+                label="Ссылка на трансляцию ВКонтакте"
                 name="vkStreamUrl"
                 help="Прямая ссылка на трансляцию в VK (например: https://vk.com/video-123456789_123456789)"
               >
@@ -339,14 +339,14 @@ export default function AdminBroadcast() {
           {broadcastType === "obs" && (
             <>
               <Form.Item
-                label="RTMP URL"
+                label="Адрес сервера RTMP"
                 name="obsRtmpUrl"
                 help="URL RTMP сервера (например: rtmp://example.com/live)"
               >
                 <Input placeholder="rtmp://example.com/live" />
               </Form.Item>
               <Form.Item
-                label="Ключ потока (Stream Key)"
+                label="Ключ потока"
                 name="obsStreamKey"
                 help="Ключ потока для OBS"
               >
@@ -412,11 +412,11 @@ export default function AdminBroadcast() {
           </Form.Item>
         </Form>
 
-      <Card title="Синхронизация с VK Video" style={{ marginTop: 24 }}>
+      <Card title="Синхронизация с видео ВКонтакте" style={{ marginTop: 24 }}>
         <Alert
           type="info"
           style={{ marginBottom: 16 }}
-          message="Автоматическое определение трансляций VK"
+          message="Автоматическое определение трансляций ВКонтакте"
           description="Кнопка синхронизирует список видео сообщества VK с сайтом. Если в VK идёт прямая трансляция (live_status: started), виджет автоматически покажет её во встроенном плеере VK Video."
         />
         <Space direction="vertical" style={{ width: "100%" }}>

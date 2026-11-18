@@ -18,6 +18,7 @@ import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import AutomaticPageTranslator from "./components/AutomaticPageTranslator.jsx";
 import CookieBanner from "./components/CookieBanner.jsx";
 import { App as AntApp, ConfigProvider, theme } from "antd";
+import ruRU from "antd/locale/ru_RU";
 
 // Ленивая загрузка тяжёлых страниц: раньше все ~90 страниц попадали
 // в один синхронный бандл, из-за чего Chrome мог «белить» на тяжёлых
@@ -182,6 +183,7 @@ export default function App() {
   return (
     <I18nProvider>
       <ConfigProvider
+        locale={ruRU}
         theme={{
           algorithm: theme.defaultAlgorithm,
           token: {

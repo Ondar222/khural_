@@ -144,8 +144,6 @@ const defaultLinksNews = [
   { label: "Медиа", href: "/news?section=media" },
   // Дополнительные ссылки новостей (фиксированные)
   { label: "Новости Председателя", href: "/news?category=новости председателя" },
-  { label: "Кодекс чести мужчины Тувы", href: "/code-of-honor" },
-  { label: "Свод заповедей матерей Тувы", href: "/mothers-commandments" },
   { label: "Для СМИ", href: "/for-media" },
   { label: "Трансляции", href: "/broadcast" },
 ];
@@ -157,8 +155,6 @@ const defaultLinksBroadcast = [
   { label: "Все новости", href: "/news?section=all" },
   { label: "Медиа", href: "/news?section=media" },
   { label: "Новости Председателя", href: "/news?category=новости председателя" },
-  { label: "Кодекс чести мужчины Тувы", href: "/code-of-honor" },
-  { label: "Свод заповедей матерей Тувы", href: "/mothers-commandments" },
   { label: "Для СМИ", href: "/for-media" },
   { label: "Трансляции", href: "/broadcast" },
 ];
@@ -354,8 +350,8 @@ export default function SideNav({
     const sectionMap = {
       "^/news$": "news",
       "^/news/.*": "news",
-      "^/code-of-honor$": "news",
-      "^/mothers-commandments$": "news",
+      "^/code-of-honor$": "about",
+      "^/mothers-commandments$": "about",
       "^/for-media$": "news",
       "^/deputies$": "deputies",
       "^/deputies/.*": "deputies",
@@ -431,8 +427,6 @@ export default function SideNav({
       const categoryParam = params.get("category");
 
       if (pathname === '/news/week') return "Главные события";
-      if (pathname === '/code-of-honor') return "Кодекс чести мужчины Тувы";
-      if (pathname === '/mothers-commandments') return "Свод заповедей матерей Тувы";
       if (sectionParam === 'actual') return "Актуальные новости";
       if (sectionParam === 'all') return "Все новости";
       if (sectionParam === 'media') return "Медиа";
@@ -564,6 +558,8 @@ export default function SideNav({
       if (pathname === '/youth-parliament') return "Молодежный Хурал";
       if (pathname === '/about/istoriya-parlamentarizma') return "История парламентаризма";
       if (pathname === '/about/polnomochiya') return "Полномочия Верховного Хурала";
+      if (pathname === '/code-of-honor') return "Кодекс чести мужчины Тувы";
+      if (pathname === '/mothers-commandments') return "Свод заповедей матерей Тувы";
       
       // Проверяем query параметры для страницы /about
       if (pathname === '/about' || pathname === '/about/') {

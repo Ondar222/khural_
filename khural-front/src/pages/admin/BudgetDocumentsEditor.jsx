@@ -219,7 +219,7 @@ export default function BudgetDocumentsEditor({ pageSlug, canWrite }) {
           <Form.Item
             label="Ссылка на файл"
             name="fileUrl"
-            rules={[{ required: true, message: "Загрузите файл или введите URL" }]}
+            rules={[{ required: true, message: "Загрузите файл или введите адрес" }]}
           >
             <Input
               placeholder="https://..."

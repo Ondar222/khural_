@@ -16,7 +16,7 @@ export default function AdminDeputiesPage() {
           Чтобы редактировать, добавлять и удалять записи, выполните вход.
         </div>
         <Input
-          placeholder="Email"
+          placeholder="Электронная почта"
           value={adminData.email}
           onChange={(e) => adminData.setEmail(e.target.value)}
         />

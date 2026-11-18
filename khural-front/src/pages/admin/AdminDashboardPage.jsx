@@ -57,7 +57,7 @@ export default function AdminDashboardPage() {
     } catch (error) {
       setAdminPagesCount(null);
       message.error(
-        `${t("adminDashboardPagesCountError")}: ${error?.message || "API"}`
+        `${t("adminDashboardPagesCountError")}: ${error?.message || "ошибка API"}`
       );
     } finally {
       setAdminPagesLoading(false);

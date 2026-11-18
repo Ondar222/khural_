@@ -174,10 +174,10 @@ export default function AdminProfilePage() {
       setSettingsSaving(true);
 
       await SettingsApi.setAppealsRecipientEmail(values.email);
-      message.success("Email для уведомлений сохранен");
+      message.success("Адрес электронной почты для уведомлений сохранён");
     } catch (error) {
       if (error?.errorFields) return;
-      message.error(error?.message || "Не удалось сохранить email");
+      message.error(error?.message || "Не удалось сохранить адрес электронной почты");
     } finally {
       setSettingsSaving(false);
     }
@@ -275,14 +275,14 @@ export default function AdminProfilePage() {
                   <Input placeholder="Телефон" />
                 </Form.Item>
                 <Form.Item
-                  label="Email"
+                  label="Электронная почта"
                   name="email"
                   rules={[
-                    { required: true, message: "Введите email" },
-                    { type: "email", message: "Введите корректный email" },
+                    { required: true, message: "Введите адрес электронной почты" },
+                    { type: "email", message: "Введите корректный адрес электронной почты" },
                   ]}
                 >
-                  <Input placeholder="Email" />
+                  <Input placeholder="Электронная почта" />
                 </Form.Item>
                 <Form.Item
                   label="Пароль"
@@ -426,22 +426,22 @@ export default function AdminProfilePage() {
               </Card>
 
               <Card 
-                title="Email для уведомлений о обращениях"
+                title="Электронная почта для уведомлений о обращениях"
                 bodyStyle={{ padding: 20 }}
               >
                 <Form layout="vertical" form={appealsEmailForm}>
                   <Form.Item
-                    label="Email"
+                    label="Электронная почта"
                     name="email"
                     rules={[
                       { required: false },
-                      { type: "email", message: "Введите корректный email" }
+                      { type: "email", message: "Введите корректный адрес электронной почты" }
                     ]}
-                    help="Email для получения уведомлений о новых обращениях"
+                    help="Электронная почта для получения уведомлений о новых обращениях"
                   >
                     <Input
                       type="email"
-                      placeholder="admin@example.org"
+                      placeholder="например: имя@пример.рф"
                       disabled={!adminData.canWrite || settingsSaving}
                     />
                   </Form.Item>

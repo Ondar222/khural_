@@ -57,6 +57,19 @@ export function getPageOverrideById(id) {
   return (o.byId || {})[String(id)] || null;
 }
 
+/** Находим сохранённые подписи по адресу страницы — на случай смены id при редактировании. */
+export function getPageOverrideBySlug(slug) {
+  const key = String(slug || "").trim().replace(/^\/+|\/+$/g, "");
+  if (!key) return null;
+  const byId = readPagesOverrides().byId || {};
+  return Object.values(byId).find((o) => String(o?.slug || "") === key) || null;
+}
+
+/** Универсальный поиск сохранённых подписей страницы. */
+export function getPageOverrideForPage(page) {
+  return getPageOverrideById(page?.id) || getPageOverrideBySlug(page?.slug) || null;
+}
+
 /** Пустая подпись или заглушка вроде «—» не считается названием пункта меню. */
 function normalizeMenuTitle(value) {
   const text = String(value ?? "").trim();
@@ -78,8 +91,7 @@ function normalizeTitleForCompare(value) {
  */
 export function pickMenuLabelInfo(page, locale, { prefer = "menu" } = {}) {
   // prefer: "menu" | "submenu"
-  const id = page?.id;
-  const override = id ? getPageOverrideById(id) : null;
+  const override = getPageOverrideForPage(page);
   const wantSub = prefer === "submenu";
   const fromOverride = wantSub ? override?.submenuTitle : override?.menuTitle;
   const overrideTitle = normalizeMenuTitle(fromOverride);

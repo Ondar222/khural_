@@ -10,6 +10,7 @@ import ImageUploadField from "../../components/ImageUploadField.jsx";
 import VideoUploadField from "../../components/VideoUploadField.jsx";
 import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js";
 import { useTranslation } from "../../hooks/useTranslation.js";
+import { HEADER_PARENT_SECTIONS, getHeaderSectionForSlug } from "../../data/sectionMenus.js";
 
 function slugify(input) {
   if (!input) return "";
@@ -49,7 +50,6 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [busy, setBusy] = React.useState(false);
-  const [parents, setParents] = React.useState([]);
   const [documents, setDocuments] = React.useState([]);
   const [loadingDocs, setLoadingDocs] = React.useState(false);
   const blocks = Form.useWatch("blocks", form) || [];
@@ -96,7 +96,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   }, []);
 
   React.useEffect(() => {
-    form.setFieldValue("parentSlug", prefillParent || "");
+    form.setFieldValue("parentSlug", getHeaderSectionForSlug(prefillParent)?.value || "");
     if (prefillTitle) {
       form.setFieldValue("title", prefillTitle);
     }
@@ -106,69 +106,6 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       form.setFieldValue("slugLeaf", slugify(prefillTitle));
     }
   }, [form, prefillParent, prefillSlug, prefillTitle]);
-
-  React.useEffect(() => {
-    let alive = true;
-    (async () => {
-      // Load parents for both locales to allow easy nesting
-      const [ru, tyv] = await Promise.all([
-        AboutApi.listPages({ locale: "ru" }).catch(() => []),
-        AboutApi.listPages({ locale: "tyv" }).catch(() => []),
-      ]);
-      const all = []
-        .concat(Array.isArray(ru) ? ru : Array.isArray(ru?.items) ? ru.items : [])
-        .concat(Array.isArray(tyv) ? tyv : Array.isArray(tyv?.items) ? tyv.items : []);
-
-      // Deduplicate by slug and create parent options
-      const slugMap = new Map();
-      all.forEach((p) => {
-        const slug = String(p.slug || "").replace(/^\/+|\/+$/g, "");
-        if (!slug || !p?.title) return;
-        // Keep the first occurrence (prefer RU title if available)
-        if (!slugMap.has(slug)) {
-          slugMap.set(slug, p);
-        }
-      });
-
-      // Static options for main site sections
-      const staticOptions = [
-        { value: "", label: "— Главная страница —", isGroup: true },
-        { value: "header", label: "Header (Главное меню)", isStatic: true },
-        { value: "footer", label: "Footer (Подвал сайта)", isStatic: true },
-        { value: "news", label: "Новости", isStatic: true },
-        { value: "deputies", label: "Депутаты", isStatic: true },
-        { value: "documents", label: "Документы", isStatic: true },
-        { value: "about", label: "О Хурале", isStatic: true },
-        { value: "committees", label: "Комитеты", isStatic: true },
-        { value: "commissions", label: "Комиссии", isStatic: true },
-        { value: "activity", label: "Деятельность", isStatic: true },
-        { value: "contacts", label: "Контакты", isStatic: true },
-        { value: "appeals", label: "Обращения", isStatic: true },
-        { value: "broadcast", label: "Трансляция", isStatic: true },
-      ];
-
-      // Dynamic options from existing pages
-      const dynamicOptions = Array.from(slugMap.values())
-        .map((p) => ({
-          value: String(p.slug).replace(/^\/+|\/+$/g, ""),
-          label: `${p.title} (${p.slug})`,
-          isStatic: false,
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label, "ru"));
-
-      // Combine static and dynamic options
-      const parentOptions = [
-        ...staticOptions,
-        { value: "divider", label: "─────────────────────", isDivider: true, disabled: true },
-        ...dynamicOptions,
-      ];
-
-      if (alive) setParents(parentOptions);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   const onTitleChange = React.useCallback(() => {
     const title = form.getFieldValue("title");
@@ -224,37 +161,15 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
     setBusy(true);
     try {
       const values = await form.validateFields();
-      let parentSlug = String(values.parentSlug || "").trim().replace(/^\/+|\/+$/g, "");
+      const sectionValue = String(values.parentSlug || "");
+      const parentSection = HEADER_PARENT_SECTIONS.find((s) => s.value === sectionValue) || null;
       const leaf = String(values.slugLeaf || "").trim().replace(/^\/+|\/+$/g, "");
+
+      // Родитель — раздел верхнего меню, поэтому адрес строится из его префикса.
+      const fullSlug = parentSection ? `${parentSection.slugPrefix}/${leaf}` : leaf;
       
-      // Map static section slugs to actual paths
-      const staticSectionMap = {
-        "header": "",  // Root level for header pages
-        "footer": "",  // Root level for footer pages
-        "news": "news",
-        "deputies": "deputies",
-        "documents": "documents",
-        "about": "about",
-        "committees": "committees",
-        "commissions": "commissions",
-        "activity": "activity",
-        "contacts": "contacts",
-        "appeals": "appeals",
-        "broadcast": "broadcast",
-      };
-      
-      if (Object.prototype.hasOwnProperty.call(staticSectionMap, parentSlug)) {
-        const mappedSlug = staticSectionMap[parentSlug];
-        // For static sections, use the mapped slug as parent
-        parentSlug = mappedSlug;
-      }
-      
-      // Build full slug: parent/leaf or just leaf
-      const fullSlug = parentSlug ? `${parentSlug}/${leaf}` : leaf;
-      
-      console.log('[AdminPagesV2Create] Creating page:', {
-        parentSlug: values.parentSlug,
-        mappedParentSlug: parentSlug,
+      console.log("[AdminPagesV2Create] Creating page:", {
+        parentSection: sectionValue,
         leaf,
         fullSlug,
         title: values.title,
@@ -301,7 +216,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
           reloadPage: () => AboutApi.getAdminPage(created.id),
         });
       } else if (uploadBlocks.length > 0) {
-        throw new Error("Сервер не вернул ID созданной страницы");
+        throw new Error("Сервер не вернул идентификатор созданной страницы");
       }
 
       // menu/submenu labels are stored as frontend overrides (backend strips unknown fields)
@@ -410,43 +325,30 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
           <Form.Item label="Название в подменю" name="submenuTitle">
             <Input placeholder="Название в подменю (если отличается от названия в меню)" />
           </Form.Item>
-          <Form.Item label="Родитель (опционально)" name="parentSlug">
+          <Form.Item
+            label="Родитель (опционально)"
+            name="parentSlug"
+            extra="Родитель — раздел верхнего меню сайта, а не подпункт выпадающего списка."
+          >
             <Select
               allowClear
               showSearch
-              placeholder="Выберите раздел для размещения страницы"
-              options={parents}
+              placeholder="Без родителя"
+              options={HEADER_PARENT_SECTIONS.map((section) => ({
+                value: section.value,
+                label: section.label,
+              }))}
               filterOption={(input, option) =>
                 String(option?.label || "").toLowerCase().includes(String(input || "").toLowerCase())
               }
-              optionRender={(option) => {
-                if (option.data.isDivider) {
-                  return <div style={{ borderTop: "1px solid #d9d9d9", margin: "4px 0" }} />;
-                }
-                if (option.data.isGroup) {
-                  return (
-                    <div style={{ fontWeight: 700, color: "#666", fontSize: 12 }}>
-                      {option.label}
-                    </div>
-                  );
-                }
-                return (
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{option.label.split(' (')[0]}</div>
-                    {option.data.isStatic ? null : (
-                      <div style={{ fontSize: 12, opacity: 0.7 }}>{option.data.value}</div>
-                    )}
-                  </div>
-                );
-              }}
             />
           </Form.Item>
           <Form.Item
-            label="Slug (последняя часть)"
+            label="Адрес страницы (последняя часть)"
             name="slugLeaf"
-            rules={[{ required: true, message: "Введите slug" }]}
+            rules={[{ required: true, message: "Введите адрес страницы" }]}
           >
-            <Input placeholder="information" />
+            <Input placeholder="adres-stranitsy" />
           </Form.Item>
           <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 10 }}>
             Итоговый URL: <code>{fullSlugPreview ? `/${fullSlugPreview}` : "..."}</code>
@@ -486,11 +388,11 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
                   Получить автоматический перевод
                 </Button>
               </div>
-              <Form.Item label="Название (TY)" name="titleTy">
+              <Form.Item label="Название (на тувинском языке)" name="titleTy">
                 <Input disabled={busy || !canWrite} placeholder="Название страницы на тувинском" />
               </Form.Item>
               <Form.Item
-                label="Содержимое (TY)"
+                label="Содержимое (на тувинском языке)"
                 name="contentTy"
                 getValueFromEvent={(value) => value}
               >
@@ -632,8 +534,8 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
                         {blockType === "link" && (
                           <>
-                            <Form.Item name={[field.name, "content"]} label="URL ссылки" rules={[{ required: true }]}>
-                              <Input placeholder="https://example.com" />
+                            <Form.Item name={[field.name, "content"]} label="Адрес ссылки" rules={[{ required: true }]}>
+                              <Input placeholder="Введите адрес сайта" />
                             </Form.Item>
                             <Form.Item name={[field.name, "caption"]} label="Текст ссылки">
                               <Input placeholder="Текст ссылки" />
@@ -659,8 +561,8 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
                           <>
                             <Form.Item
                               name={[field.name, "content"]}
-                              label="URL видео"
-                              extra="Ссылка на YouTube/Rutube или загрузите файл ниже"
+                              label="Адрес видео"
+                              extra="Вставьте ссылку на YouTube или Rutube либо загрузите файл ниже"
                               rules={[
                                 {
                                   validator: (_rule, value) => {

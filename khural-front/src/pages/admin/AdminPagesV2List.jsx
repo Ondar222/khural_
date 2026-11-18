@@ -4,12 +4,13 @@ import { AboutApi, apiFetch } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { FolderIcon, ClipboardIcon } from "../../components/icons/LinearIcons.jsx";
 import {
-  getPageOverrideById,
+  getPageOverrideForPage,
   PAGES_OVERRIDES_EVENT_NAME,
   PAGES_OVERRIDES_STORAGE_KEY,
 } from "../../utils/pagesOverrides.js";
 import { STATIC_SECTIONS, SYSTEM_ROUTE_DEFS } from "../../utils/adminPagesCatalog.js";
 import { COMMISSION_PAGE_SLUG_PREFIX } from "../../utils/commissionPages.js";
+import { getHeaderSectionForSlug } from "../../data/sectionMenus.js";
 
 /**
  * Номер страницы и размер страницы списка храним в sessionStorage, чтобы после
@@ -18,6 +19,32 @@ import { COMMISSION_PAGE_SLUG_PREFIX } from "../../utils/commissionPages.js";
  */
 const PAGINATION_STORAGE_KEY = "khural_admin_pages_pagination_v1";
 const DEFAULT_PAGINATION = { current: 1, pageSize: 10 };
+
+const LOCALE_LABELS = { ru: "РУ", ty: "ТЫВ", tyv: "ТЫВ" };
+
+function formatLocales(locales) {
+  if (!locales?.length) return "—";
+  return locales.map((locale) => LOCALE_LABELS[locale] || "ДРУГОЙ").join(" + ");
+}
+
+/** Раздел шапки, который нужно подставить при создании страницы из списка. */
+function getCreateParent(row) {
+  const firstSegment = String(row?.slug || "").split("/").filter(Boolean)[0] || "";
+  return getHeaderSectionForSlug(firstSegment)?.value || "";
+}
+
+/** Название страницы для админского списка: сначала сохранённая подпись меню, затем заголовки локалей. */
+function getDisplayName(page) {
+  const override = getPageOverrideForPage(page);
+  const custom =
+    (typeof override?.menuTitle === "string" && override.menuTitle.trim()) ||
+    (typeof override?.submenuTitle === "string" && override.submenuTitle.trim());
+  if (custom) return custom;
+  const content = Array.isArray(page?.content) ? page.content : [];
+  const ru = content.find((c) => String(c?.locale || "").toLowerCase() === "ru");
+  const ty = content.find((c) => String(c?.locale || "").toLowerCase().startsWith("ty"));
+  return String(ru?.title || page?.title || page?.name || ty?.title || "Страница без названия");
+}
 
 function readStoredPagination() {
   if (typeof window === "undefined") return DEFAULT_PAGINATION;
@@ -54,7 +81,7 @@ function normalizeList(res) {
     value = list;
   }
   if (Array.isArray(value)) return value;
-  throw new Error("API вернул список страниц в неизвестном формате");
+  throw new Error("Сервер API вернул список страниц в неизвестном формате");
 }
 
 async function listPages({ locale, authenticated }) {
@@ -221,7 +248,7 @@ export default function AdminPagesV2List({
     const list = !qq
       ? byLocale
       : byLocale.filter((p) => {
-          const title = String(p?.title || p?.name || "").toLowerCase();
+          const title = getDisplayName(p).toLowerCase();
           const slug = String(p.slug || "").toLowerCase();
           return title.includes(qq) || slug.includes(qq);
         });
@@ -247,17 +274,38 @@ export default function AdminPagesV2List({
       };
     });
 
-    return withHierarchy
-      .sort((a, b) => {
-        const as = Boolean(a?.__isSystem);
-        const bs = Boolean(b?.__isSystem);
-        if (as !== bs) return as ? 1 : -1; // CMS first, system routes last
-        // Sort by slug hierarchy (parents before children)
-        const aDepth = a.__depth || 0;
-        const bDepth = b.__depth || 0;
-        if (aDepth !== bDepth) return aDepth - bDepth;
-        return String(a.slug || "").localeCompare(String(b.slug || ""));
-      });
+    // Дерево: родитель сразу за ним идут его подстраницы, а не все страницы
+    // одного уровня единым блоком.
+    const bySlug = new Map(
+      withHierarchy
+        .map((p) => [String(p.slug || "").replace(/^\/+|\/+$/g, ""), p])
+        .filter(([slug]) => Boolean(slug))
+    );
+    const childrenByParent = new Map();
+    const roots = [];
+    for (const row of withHierarchy) {
+      const parent = row.__parentSlug && bySlug.has(row.__parentSlug) ? row.__parentSlug : "";
+      if (parent) {
+        if (!childrenByParent.has(parent)) childrenByParent.set(parent, []);
+        childrenByParent.get(parent).push(row);
+      } else {
+        roots.push(row);
+      }
+    }
+    const ordered = [];
+    const visited = new Set();
+    const walk = (rows) => {
+      for (const row of rows) {
+        const slug = String(row.slug || "").replace(/^\/+|\/+$/g, "");
+        if (visited.has(slug)) continue;
+        visited.add(slug);
+        ordered.push(row);
+        walk(childrenByParent.get(slug) || []);
+      }
+    };
+    walk(roots);
+    walk(withHierarchy); // страницы без родителя, циклы и «осиротевшие» записи
+    return ordered;
   }, [items, q, localeMode]);
 
   // При смене поиска/фильтра языка показываем первую страницу результата.
@@ -338,10 +386,14 @@ export default function AdminPagesV2List({
       render: (_, row) => (
         <div className="admin-pages-list__titlecell">
           <div className="admin-pages-list__titleline">
-            {row.__depth ? <span className="admin-pages-list__indent">{"— ".repeat(row.__depth)}</span> : null}
+            {row.__depth ? (
+              <span className="admin-pages-list__indent" style={{ display: "inline-block", width: row.__depth * 18 }}>
+                ↳
+              </span>
+            ) : null}
             <span className="admin-pages-list__title">
-              {row.__isStatic ? <FolderIcon size={14} style={{ marginRight: 4 }} /> : ""}
-              {row.title || row.name || "—"}
+              {row.__isStatic || row.__hasChildren ? <FolderIcon size={14} style={{ marginRight: 4 }} /> : ""}
+              {getDisplayName(row)}
             </span>
             {row.__hasChildren && (
               <Tag color="green" style={{ marginLeft: 8 }}>
@@ -355,10 +407,9 @@ export default function AdminPagesV2List({
             )}
           </div>
           <div className="admin-pages-list__metarow">
-            <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
             {row?.__isSystem ? (
               <Tag className="admin-pages-list__tag" color="gold">
-                ROUTE
+                МАРШРУТ
               </Tag>
             ) : (
               <Tag className="admin-pages-list__tag" color="blue">
@@ -367,12 +418,12 @@ export default function AdminPagesV2List({
                   const locales = Array.isArray(c)
                     ? Array.from(new Set(c.map((x) => String(x?.locale || "").toLowerCase()).filter(Boolean)))
                     : ["ru"];
-                  return locales.length ? locales.join(" + ").toUpperCase() : "—";
+                  return formatLocales(locales);
                 })()}
               </Tag>
             )}
             {!row?.__isSystem ? (() => {
-              const ov = getPageOverrideById(row?.id);
+              const ov = getPageOverrideForPage(row);
               const mt = typeof ov?.menuTitle === "string" ? ov.menuTitle.trim() : "";
               const st = typeof ov?.submenuTitle === "string" ? ov.submenuTitle.trim() : "";
               if (!mt && !st) return null;
@@ -380,12 +431,12 @@ export default function AdminPagesV2List({
                 <>
                   {mt ? (
                     <Tag className="admin-pages-list__tag" color="purple">
-                      MENU: {mt}
+                      МЕНЮ: {mt}
                     </Tag>
                   ) : null}
                   {st ? (
                     <Tag className="admin-pages-list__tag" color="magenta">
-                      SUB: {st}
+                      ПОДМЕНЮ: {st}
                     </Tag>
                   ) : null}
                 </>
@@ -430,7 +481,7 @@ export default function AdminPagesV2List({
               {/* Allow creating subpages for system routes */}
               <Button
                 size={isTablet ? "small" : "middle"}
-                onClick={() => onCreate?.(row.slug, row.title)}
+                onClick={() => onCreate?.(getCreateParent(row), getDisplayName(row))}
                 disabled={!canWrite || !row.slug}
               >
                 + Подстраница
@@ -441,7 +492,7 @@ export default function AdminPagesV2List({
               {/* Static sections can have subpages */}
               <Button
                 size={isTablet ? "small" : "middle"}
-                onClick={() => onCreate?.(row.slug, row.title)}
+                onClick={() => onCreate?.(getCreateParent(row), getDisplayName(row))}
                 disabled={!canWrite || !row.slug}
               >
                 + Подстраница
@@ -466,7 +517,7 @@ export default function AdminPagesV2List({
               </Button>
               <Button
                 size={isTablet ? "small" : "middle"}
-                onClick={() => onCreate?.(row.slug, row.title)}
+                onClick={() => onCreate?.(getCreateParent(row), getDisplayName(row))}
                 disabled={!canWrite || !row.slug}
               >
                 + Подстраница
@@ -494,7 +545,7 @@ export default function AdminPagesV2List({
     <div className="admin-card admin-toolbar admin-pages-list__toolbar">
       <div className="admin-pages-list__toolbar-left">
         <Input
-          placeholder="Поиск по названию или slug..."
+          placeholder="Поиск по названию или адресу страницы..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="admin-input"
@@ -505,7 +556,7 @@ export default function AdminPagesV2List({
      
         <Popconfirm
           title="Удалить пустые системные CMS-страницы?"
-          description="Удалит slug: home, news, deputies, documents, contacts, about, government, section."
+          description="Удалит пустые системные страницы (главная, новости, депутаты, документы, контакты, общие сведения, структура)."
           okText="Удалить"
           cancelText="Отмена"
           onConfirm={cleanupSystemCmsPages}
@@ -560,13 +611,13 @@ export default function AdminPagesV2List({
               >
                 <div className="admin-pages-list__card-head">
                   <div className="admin-pages-list__card-title">
-                    {row.title || row.name || "—"}
+                    {row.__depth ? <span style={{ color: "#888", marginRight: 6 }}>↳</span> : null}
+                    {getDisplayName(row)}
                   </div>
                   <div className="admin-pages-list__metarow">
-                    <Tag className="admin-pages-list__tag">{row.slug || "—"}</Tag>
                     {row?.__isSystem ? (
                       <Tag className="admin-pages-list__tag" color="gold">
-                        ROUTE
+                        МАРШРУТ
                       </Tag>
                     ) : (
                       <Tag className="admin-pages-list__tag" color="blue">
@@ -575,7 +626,7 @@ export default function AdminPagesV2List({
                           const locales = Array.isArray(c)
                             ? Array.from(new Set(c.map((x) => String(x?.locale || "").toLowerCase()).filter(Boolean)))
                             : ["ru"];
-                          return locales.length ? locales.join(" + ").toUpperCase() : "—";
+                          return formatLocales(locales);
                         })()}
                       </Tag>
                     )}

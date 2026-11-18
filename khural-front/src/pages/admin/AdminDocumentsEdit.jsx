@@ -228,7 +228,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
                   </Button>
                 </div>
                 <div className="admin-doc-editor__pdf-frame">
-                  <iframe src={pdfUrlRu} title="PDF Preview RU" />
+                  <iframe src={pdfUrlRu} title="Предпросмотр PDF — русская версия" />
                 </div>
               </div>
             )}
@@ -247,7 +247,7 @@ export default function AdminDocumentsEdit({ documentId, onUpdate, busy, canWrit
                   </Button>
                 </div>
                 <div className="admin-doc-editor__pdf-frame">
-                  <iframe src={pdfUrlTy} title="PDF Preview TY" />
+                  <iframe src={pdfUrlTy} title="Предпросмотр PDF — тувинская версия" />
                 </div>
               </div>
             )}

@@ -117,10 +117,10 @@ export default function AdminSettingsPage() {
       setSaving(true);
 
       await SettingsApi.setAppealsRecipientEmail(values.email);
-      message.success("Email для уведомлений сохранен");
+      message.success("Адрес электронной почты для уведомлений сохранён");
     } catch (error) {
       if (error?.errorFields) return;
-      message.error(error?.message || "Не удалось сохранить email");
+      message.error(error?.message || "Не удалось сохранить адрес электронной почты");
     } finally {
       setSaving(false);
     }
@@ -134,7 +134,7 @@ export default function AdminSettingsPage() {
           Чтобы редактировать, добавлять и удалять записи, выполните вход.
         </div>
         <Input
-          placeholder="Email"
+          placeholder="Электронная почта"
           value={adminData.email}
           onChange={(e) => adminData.setEmail(e.target.value)}
         />
@@ -222,20 +222,20 @@ export default function AdminSettingsPage() {
             </Form>
           </Card>
 
-          <Card title="Email для уведомлений о обращениях" className="admin-card">
+          <Card title="Электронная почта для уведомлений о обращениях" className="admin-card">
             <Form layout="vertical" form={appealsEmailForm}>
               <Form.Item
-                label="Email"
+                label="Электронная почта"
                 name="email"
                 rules={[
                   { required: false },
-                  { type: "email", message: "Введите корректный email" }
+                  { type: "email", message: "Введите корректный адрес электронной почты" }
                 ]}
-                help="Email для получения уведомлений о новых обращениях"
+                help="Электронная почта для получения уведомлений о новых обращениях"
               >
                 <Input
                   type="email"
-                  placeholder="admin@example.org"
+                  placeholder="например: имя@пример.рф"
                   disabled={!adminData.canWrite || saving}
                 />
               </Form.Item>

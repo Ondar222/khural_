@@ -216,7 +216,7 @@ const sheetTranslations = {
   "← Назад к правительству": "← Ажыл Дугайыже эглири",
   "← Назад к аппарату": "← Аппаратче эглири",
   
-  // Заголовки для SideNav (Новости)
+  // Заголовки для SideNav (Новости / Общие сведения)
   "Главные события": "Хедеениң кол таварылгалары",
   "Кодекс чести мужчины Тувы": "Тыва эр кижиниң ады-алдарының кодекси",
   "Свод заповедей матерей Тувы": "Тыва иелерниң ыдыктыг сагылгалары",
@@ -528,9 +528,9 @@ const dict = {
     adminEventTimePlaceholder: "10:00",
     adminEventPlacePlaceholder: "Зал заседаний",
     adminEventDescPlaceholder: "Описание события",
-    adminEventTitleTy: "Ат (TY)",
-    adminEventPlaceTy: "Чер (TY)",
-    adminEventDescTy: "Тайылбыр (TY)",
+    adminEventTitleTy: "Ат (на тувинском языке)",
+    adminEventPlaceTy: "Чер (на тувинском языке)",
+    adminEventDescTy: "Тайылбыр (на тувинском языке)",
     adminEventTitleTyPlaceholder: "Заголовок на тувинском языке",
     adminEventPlaceTyPlaceholder: "Место на тувинском языке",
     adminEventDescTyPlaceholder: "Описание на тувинском языке",
@@ -558,7 +558,7 @@ const dict = {
     adminPasswordPlaceholder: "Пароль",
     adminEventEditPageTitle: "Редактирование события",
     adminEventCreatePageTitle: "Новое событие",
-    adminEventBadId: "Неверный ID события",
+    adminEventBadId: "Неверный идентификатор события",
     // Автоматически добавленные пары из таблицы
     ...Object.fromEntries(Object.keys(sheetTranslations).map((k) => [k, k])),
   },
@@ -884,9 +884,9 @@ const dict = {
     adminEventTimePlaceholder: "10:00",
     adminEventPlacePlaceholder: "Хуралдаар залы",
     adminEventDescPlaceholder: "Херек-чүүл тайылбыры",
-    adminEventTitleTy: "Ат (TY)",
-    adminEventPlaceTy: "Чер (TY)",
-    adminEventDescTy: "Тайылбыр (TY)",
+    adminEventTitleTy: "Ат (на тувинском языке)",
+    adminEventPlaceTy: "Чер (на тувинском языке)",
+    adminEventDescTy: "Тайылбыр (на тувинском языке)",
     adminEventTitleTyPlaceholder: "Тыва дылда атты айтырыңар",
     adminEventPlaceTyPlaceholder: "Тыва дылда черни айтырыңар",
     adminEventDescTyPlaceholder: "Тыва дылда тайылбыр",

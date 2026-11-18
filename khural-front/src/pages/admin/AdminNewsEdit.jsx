@@ -435,7 +435,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
       
       // Проверяем, что ответ успешный
       if (!result) {
-        throw new Error("API вернул пустой ответ");
+        throw new Error("Сервер API вернул пустой ответ");
       }
 
       // Обложка (только новые файлы) - сжимаем перед загрузкой
@@ -690,7 +690,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               />
             </Form.Item>
             <Form.Item
-              label="Slug (URL-адрес)"
+              label="Адрес страницы (URL)"
               name="slug"
               tooltip="URL-совместимый адрес. Если не указан, будет сгенерирован автоматически"
             >
@@ -732,14 +732,14 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               </Button>
             </div>
             <Form.Item
-              label="Заголовок (TY)"
+              label="Заголовок (на тувинском языке)"
               name="titleTy"
               rules={[{ required: false, message: "Укажите заголовок" }]}
             >
               <Input placeholder="Заголовок на тувинском языке" />
             </Form.Item>
             <Form.Item
-              label="Краткое описание (TY)"
+              label="Краткое описание (на тувинском языке)"
               name="shortDescriptionTy"
               tooltip="Краткое описание новости на тувинском языке"
               getValueFromEvent={(value) => value}
@@ -750,7 +750,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               />
             </Form.Item>
             <Form.Item
-              label="Подробное описание (TY)"
+              label="Подробное описание (на тувинском языке)"
               name="contentTy"
               rules={[{ required: false, message: "Укажите контент" }]}
               getValueFromEvent={(value) => value}
@@ -777,7 +777,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
               </Button>
             </div>
             <Form.Item
-              label="Заголовок (RU) *"
+              label="Заголовок (на русском языке) *"
               name="titleRu"
               rules={[{ required: true, message: "Укажите заголовок" }]}
             >
@@ -785,7 +785,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
             </Form.Item>
 
             <Form.Item
-              label="Краткое описание (RU)"
+              label="Краткое описание (на русском языке)"
               name="shortDescriptionRu"
               tooltip="Краткое описание новости на русском языке"
               getValueFromEvent={(value) => value}
@@ -797,7 +797,7 @@ export default function AdminNewsEdit({ newsId, onUpdate, busy, canWrite }) {
             </Form.Item>
 
             <Form.Item
-              label="Подробное описание (RU) *"
+              label="Подробное описание (на русском языке) *"
               name="contentRu"
               rules={[{ required: true, message: "Укажите контент" }]}
               getValueFromEvent={(value) => value}

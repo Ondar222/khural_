@@ -47,7 +47,7 @@ export default function AdminDocuments({ items, onDelete, busy, canWrite }) {
   const renderFilesTag = React.useCallback((row) => {
     const hasRu = getDocumentFileUrl(row) || row?.pdfFile?.id;
     const hasTy = row?.metadata?.pdfFileTyId || row?.metadata?.pdfFileTyLink;
-    if (hasRu && hasTy) return <Tag color="green">RU + TY</Tag>;
+    if (hasRu && hasTy) return <Tag color="green">Русский + тувинский</Tag>;
     if (hasRu) return <Tag color="blue">RU</Tag>;
     if (hasTy) return <Tag color="orange">TY</Tag>;
     return "—";
