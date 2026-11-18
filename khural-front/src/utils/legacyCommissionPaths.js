@@ -1,4 +1,5 @@
 import { DEFAULT_COMMISSIONS_LIST } from "./commissionsData.js";
+import { sectionHref } from "./sectionLinks.js";
 
 const COMMISSION_PAGE_SLUG_PREFIX = "commission-data-";
 
@@ -30,7 +31,7 @@ export function resolveLegacyCommissionTarget(pathname) {
     const id = LEGACY_SECTION_TO_COMMISSION_ID[komissii[1]];
     return id
       ? `/commission?id=${encodeURIComponent(id)}`
-      : `/section?title=${encodeURIComponent("Комиссии")}`;
+      : sectionHref("Комиссии");
   }
 
   // CMS-страницы комиссий: /commission-data-<id> (в т.ч. /p/commission-data-<id>) —
@@ -39,7 +40,7 @@ export function resolveLegacyCommissionTarget(pathname) {
     const idx = clean.lastIndexOf(COMMISSION_PAGE_SLUG_PREFIX);
     const id = decodeURIComponent(clean.slice(idx + COMMISSION_PAGE_SLUG_PREFIX.length));
     if (KNOWN_COMMISSION_IDS.has(id)) return `/commission?id=${encodeURIComponent(id)}`;
-    return `/section?title=${encodeURIComponent("Комиссии")}`;
+    return sectionHref("Комиссии");
   }
 
   // /commission/<id> и /commissions/<id> — корректный адрес: /commission?id=<id>

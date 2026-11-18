@@ -9,6 +9,7 @@ import {
   getConv3DocsByCommittee,
 } from "../data/committeeReportsConv3.js";
 import { CONV4_COMMITTEES, getConv4DocsByCommittee } from "../data/committeeReportsConv4.js";
+import { sectionHref } from "../utils/sectionLinks.js";
 
 const CONVOCATION_REPORTS = {
   "Отчеты комитетов 3 созыва": {
@@ -130,7 +131,7 @@ function CommitteeView({ config, committeeIndex, onBackHref, onPreview }) {
     <div className="cr">
       <BackButton href={onBackHref}>Назад к списку комитетов</BackButton>
       <nav className="cr-breadcrumbs" aria-label="Навигация">
-        <a href="/section?title=Отчеты%20комитетов">Отчеты комитетов</a>
+        <a href={sectionHref("Отчеты комитетов")}>Отчеты комитетов</a>
         <span aria-hidden="true">/</span>
         <span>{convocationLabel}</span>
       </nav>
@@ -161,7 +162,7 @@ function CommitteeListView({ config, baseHref }) {
   const { committees, convocationLabel } = config;
   return (
     <div className="cr">
-      <BackButton href="/section?title=Отчеты%20комитетов">Назад</BackButton>
+      <BackButton href={sectionHref("Отчеты комитетов")}>Назад</BackButton>
       <h1 className="no-gold-underline cr-title">Отчеты комитетов {convocationLabel}</h1>
       <p className="cr-lead">Выберите комитет, чтобы посмотреть повестки заседаний и отчеты по годам.</p>
       <div className="cr-cards">
@@ -194,7 +195,7 @@ function ConvocationLanding() {
           <a
             key={item.sectionTitle}
             className="cr-card cr-card--convocation"
-            href={`/section?title=${encodeURIComponent(item.sectionTitle)}`}
+            href={sectionHref(item.sectionTitle)}
           >
             <span className="cr-card__icon" aria-hidden="true">
               <DocumentIcon size={22} />
@@ -228,7 +229,7 @@ export default function CommitteeReportsSection({ title, query }) {
   } else {
     const config = CONVOCATION_REPORTS[title];
     if (config) {
-      const baseHref = `/section?title=${encodeURIComponent(title)}`;
+      const baseHref = sectionHref(title);
       const rawIndex = parseInt(query?.get("committee") ?? "", 10);
       const hasCommittee =
         Number.isInteger(rawIndex) && rawIndex >= 0 && rawIndex < config.committees.length;

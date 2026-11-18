@@ -9,6 +9,7 @@ import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
 import { normalizePathBySlugAliases } from "../utils/slugAliases.js";
 import { DEFAULT_COMMISSIONS_LIST } from "../utils/commissionsData.js";
 import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS, DEPUTY_CONVOCATION_LINKS } from "../data/sectionMenus.js";
+import { sectionHref } from "../utils/sectionLinks.js";
 import {
   PERSONNEL_ROOT_PATH,
   PERSONNEL_TITLE,
@@ -88,22 +89,22 @@ const defaultLinks = [
   { label: "Депутаты", href: "/deputies?convocation=VIII" },
   { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
   { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
-  // { label: "Отчеты всех Созывов", href: "/section?title=" + encodeURIComponent("Отчеты всех Созывов") }, // Скрыто временно
-  { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
+  // { label: "Отчеты всех Созывов", href: sectionHref("Отчеты всех Созывов") }, // Скрыто временно
+  { label: "Отчеты комитетов", href: sectionHref("Отчеты комитетов") },
   {
     label: "Представительство в Совете Федерации",
     href: "/struct/council",
   },
-  { label: "Депутатские фракции", href: "/section?title=" + encodeURIComponent("Депутатские фракции") },
+  { label: "Депутатские фракции", href: sectionHref("Депутатские фракции") },
   { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
   { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
   {
     label: "Совет по взаимодействию с представительными органами муниципальных образований",
-    href:
-      "/section?title=" +
-      encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
+    href: sectionHref(
+      "Совет по взаимодействию с представительными органами муниципальных образований"
+    ),
   },
-  { label: "Структура Аппарата", href: "/section?title=" + encodeURIComponent("Структура Аппарата") },
+  { label: "Структура Аппарата", href: sectionHref("Структура Аппарата") },
   {
     label: "Молодежный Хурал",
     href: "/youth-parliament",
@@ -191,8 +192,8 @@ const defaultLinksActivity = [
 // Стандартные ссылки для разделов "Комитеты" и "Комиссии" (подразделы «Структуры»)
 const defaultLinksCommittees = [
   ...defaultLinksStructure,
-  { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
-  { label: "Повестки комитетов", href: "/section?title=" + encodeURIComponent("Повестки комитетов") },
+  { label: "Отчеты комитетов", href: sectionHref("Отчеты комитетов") },
+  { label: "Повестки комитетов", href: sectionHref("Повестки комитетов") },
 ];
 
 // Стандартные ссылки для раздела "Комиссии" (список комиссий из админки/структуры)
@@ -202,8 +203,8 @@ const defaultLinksCommissions = [
     label: String(c?.name || c?.id || ""),
     href: `/commission?id=${encodeURIComponent(String(c?.id || ""))}`,
   })),
-  { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
-  { label: "Повестки комитетов", href: "/section?title=" + encodeURIComponent("Повестки комитетов") },
+  { label: "Отчеты комитетов", href: sectionHref("Отчеты комитетов") },
+  { label: "Повестки комитетов", href: sectionHref("Повестки комитетов") },
 ];
 
 // Стандартные ссылки для раздела "Молодежный Хурал"
@@ -363,6 +364,7 @@ export default function SideNav({
       "^/about/polnomochiya$": "about",
       "^/about$": "about",
       "^/section$": "structure",
+      "^/section/": "structure",
       "^/struct/": "structure",
       "^/government": "structure",
       "^/apparatus": "structure",

@@ -10,6 +10,7 @@ import { PersonsApi } from "../api/client.js";
 import { useHashRoute } from "../Router.jsx";
 import { MailIcon, PhoneIcon, BuildingIcon, ClockIcon } from "../components/icons/LinearIcons.jsx";
 import { STRUCTURE_SECTION_LINKS } from "../data/sectionMenus.js";
+import { sectionHref } from "../utils/sectionLinks.js";
 
 function nonBlank(x) {
   return x != null && String(x).trim() !== "";
@@ -476,7 +477,7 @@ export default function Government() {
                     <div className="org__col" id="focus-committees">
                       <a
                         className="org__item org__item--blue"
-                        href={"/section?title=" + encodeURIComponent("Комитеты")}
+                        href={sectionHref("Комитеты")}
                       >
                         {t("Комитеты Верховного Хурала (парламента) Республики Тыва")}
                       </a>
@@ -493,23 +494,17 @@ export default function Government() {
                     <div className="org__col">
                       <a
                         className="org__item org__item--blue"
-                        href={
-                          "/section?title=" +
-                          encodeURIComponent(
-                            "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям"
-                          )
-                        }
+                        href={sectionHref(
+                          "Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям"
+                        )}
                       >
                         {t("Комитет Верховного Хурала (парламента) Республики Тыва по межрегиональным связям")}
                       </a>
                       <a
                         className="org__item org__item--blue"
-                        href={
-                          "/section?title=" +
-                          encodeURIComponent(
-                            "Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями"
-                          )
-                        }
+                        href={sectionHref(
+                          "Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями"
+                        )}
                       >
                         {t("Комитет Верховного Хурала (парламента) Республики Тыва по взаимодействию со средствами массовой информации и общественными организациями")}
                       </a>
@@ -525,7 +520,7 @@ export default function Government() {
                         <a
                           key={`wide-${i}`}
                           className="org__item org__item--blue"
-                          href={`/section?title=${encodeURIComponent(title)}`}
+                          href={sectionHref(title)}
                         >
                           {t(title)}
                         </a>

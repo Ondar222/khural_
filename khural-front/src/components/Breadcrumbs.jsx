@@ -3,6 +3,7 @@ import { useHashRoute } from "../Router.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { CommitteesApi } from "../api/client.js";
+import { sectionHref, resolveSectionTitle } from "../utils/sectionLinks.js";
 import Link from "./Link.jsx";
 import {
   PERSONNEL_ROOT_PATH,
@@ -182,13 +183,13 @@ export default function Breadcrumbs() {
         if (id && COMMISSION_IDS[id]) {
           crumbs.push({
             label: t("Комиссии"),
-            href: "/section?title=" + encodeURIComponent("Комиссии"),
+            href: sectionHref("Комиссии"),
           });
           crumbs.push({ label: COMMISSION_IDS[id] });
           return crumbs;
         }
       } catch {}
-      crumbs.push({ label: t("Комиссии"), href: "/section?title=" + encodeURIComponent("Комиссии") });
+      crumbs.push({ label: t("Комиссии"), href: sectionHref("Комиссии") });
       crumbs.push({ label: t("Комиссия") });
       return crumbs;
     }
@@ -204,6 +205,14 @@ export default function Breadcrumbs() {
           return crumbs;
         }
       } catch {}
+    }
+    // Понятные адреса разделов: /section/struktura-apparata
+    if (base.startsWith("/section/")) {
+      const slug = base.slice("/section/".length);
+      const sectionTitle = resolveSectionTitle(slug);
+      crumbs.push({ label: t("Структура"), href: "/section" });
+      crumbs.push({ label: sectionTitle || slug });
+      return crumbs;
     }
     // Handle /info routes (PageBySlug)
     if (base === "/info") {

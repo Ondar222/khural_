@@ -7,6 +7,7 @@ import PersonDetail from "../components/PersonDetail.jsx";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../utils/pages.js";
 import { getApparatusNavLinks } from "../utils/apparatusLinks.js";
+import { sectionHref } from "../utils/sectionLinks.js";
 import { APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
 import { normalizeBool } from "../utils/bool.js";
 import DocumentActions from "../components/DocumentActions.jsx";
@@ -135,7 +136,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
     const pageTitle = extractPageTitle(pageFromAdmin, locale, title);
     const shouldHideSidebar = title === "Повестки комитетов" || title === "Отчеты комитетов" || title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва";
     const backButtonHref = title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва"
-      ? "/section?title=Отчеты%20комитетов"
+      ? sectionHref("Отчеты комитетов")
       : "/committee";
     return (
       <section className="section section-page">
@@ -216,7 +217,7 @@ function SectionCmsDetail({ title, noGoldUnderline }) {
           <div style={title === "Повестки комитетов" || title === "Отчеты комитетов" || title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва" ? { gridColumn: '1 / -1' } : undefined}>
             {(title === "Повестки комитетов" || title === "Отчеты комитетов" || title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва") && (
               <div style={{ marginBottom: 16 }}>
-                <a href={title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва" ? "/section?title=Отчеты%20комитетов" : "/committee"} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
+                <a href={title === "Отчеты комитетов 3 созыва" || title === "Отчеты комитетов 4 созыва" ? sectionHref("Отчеты комитетов") : "/committee"} className="btn" style={{ padding: "8px 16px", fontSize: 14 }}>
                   ← Назад
                 </a>
               </div>
@@ -488,7 +489,7 @@ function ReportsAllConvocationsPage() {
                   const committeesList = Array.from(uniq.values());
                   const token = getConvocationNumber(c) || normalizeConvocationToken(c?.name || c?.number || c?.id || "");
                   const reportTitle = `Отчеты о деятельности комитетов ${token} созыва`;
-                  const href = `/section?title=${encodeURIComponent(reportTitle)}`;
+                  const href = sectionHref(reportTitle);
 
                   return (
                     <div
@@ -1682,7 +1683,7 @@ function ApparatusSectionDetail({ title, backHref, navLinks, deputies }) {
                   // Всегда делаем ссылку — если депутат найден, на /government, иначе на person detail
                   const linkHref = p.deputyId
                     ? `/government?type=dep&id=${encodeURIComponent(String(p.deputyId))}${backHref ? `&back=${encodeURIComponent(backHref)}` : ""}`
-                    : `/section?title=${encodeURIComponent(title)}&person=${i}`;
+                    : sectionHref(title, { person: i });
 
                   return (
                     <a
@@ -1827,9 +1828,9 @@ function deduplicateCommitteesByRichness(list) {
   return Array.from(byName.values());
 }
 
-export default function SectionPage() {
+export default function SectionPage({ title: titleProp } = {}) {
   const q = useQuery();
-  const titleParam = q.get("title");
+  const titleParam = titleProp || q.get("title");
   const { committees, commissions, factions: structureFactions, government, deputies, convocations } = useData();
   const { t } = useI18n();
   const focus = q.get("focus");
@@ -1880,7 +1881,7 @@ export default function SectionPage() {
         Number.isInteger(personIndex) && personIndex >= 0 && personIndex < people.length
           ? people[personIndex]
           : null;
-      const sectionBackHref = `/section?title=${encodeURIComponent(title)}`;
+      const sectionBackHref = sectionHref(title);
       if (person) {
         const item = {
           name: person.name,
@@ -1912,7 +1913,7 @@ export default function SectionPage() {
       return (
         <ApparatusSectionDetail
           title={title}
-          backHref={`/section?title=${encodeURIComponent("Структура Аппарата")}`}
+          backHref={sectionHref("Структура Аппарата")}
           navLinks={navLinks}
           deputies={deputies}
         />
@@ -2091,7 +2092,7 @@ export default function SectionPage() {
             <div className="page-grid">
               <div>
                 <a
-                  href={"/section?title=" + encodeURIComponent("Депутатские фракции")}
+                  href={sectionHref("Депутатские фракции")}
                   className="link-back"
                   style={{ display: "block", marginBottom: 12 }}
                 >
@@ -2178,7 +2179,7 @@ export default function SectionPage() {
                 )}
                 <a
                   className="tile link"
-                  href={"/section?title=" + encodeURIComponent(factionsPageTitle)}
+                  href={sectionHref(factionsPageTitle)}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -2340,7 +2341,7 @@ export default function SectionPage() {
       return null;
     }
 
-    const councilBackHref = `/section?title=${encodeURIComponent(COUNCIL_BASE_TITLE)}`;
+    const councilBackHref = sectionHref(COUNCIL_BASE_TITLE);
 
     if (title === "Постановление") {
       const R = COUNCIL_RESOLUTION;
@@ -2383,7 +2384,7 @@ export default function SectionPage() {
                   {COUNCIL_NAV.map((item) => (
                     <a
                       key={item.title}
-                      href={`/section?title=${encodeURIComponent(item.title)}`}
+                      href={sectionHref(item.title)}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -2675,7 +2676,7 @@ export default function SectionPage() {
     }
 
     if (title === "Структура Аппарата" || title === "Аппарат") {
-      const toSectionHref = (t) => `/section?title=${encodeURIComponent(String(t || "").trim())}`;
+      const toSectionHref = (t) => sectionHref(t);
       return (
         <section className="section section-page">
           <div className="container">
@@ -2894,7 +2895,7 @@ export default function SectionPage() {
                 <div className="org__col" id="focus-committees">
                   <a
                     className="org__item org__item--blue"
-                    href={"/section?title=" + encodeURIComponent("Комитеты")}
+                    href={sectionHref("Комитеты")}
                   >
                     Комитеты Верховного Хурала (парламента) Республики Тыва
                   </a>

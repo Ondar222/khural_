@@ -1,9 +1,8 @@
 import { PERSONNEL_ROOT_PATH } from "../content/personnel.js";
+import { sectionHref } from "../utils/sectionLinks.js";
 
 const MUNICIPAL_COUNCIL_TITLE =
   "Совет по взаимодействию с представительными органами муниципальных образований";
-
-const sectionHref = (title) => `/section?title=${encodeURIComponent(title)}`;
 
 /**
  * Состав раздела «О Верховном Хурале».

@@ -4,6 +4,7 @@ import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { DEFAULT_STRUCTURE_COMMITTEES } from "../utils/committeesOverrides.js";
 import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS } from "../data/sectionMenus.js";
+import { sectionHref } from "../utils/sectionLinks.js";
 import { useHashRoute } from "../Router.jsx";
 
 function getCommitteeTitle(c) {
@@ -299,7 +300,7 @@ export default function About() {
                   <div className="org__col" id="focus-committees">
                     <a
                       className="org__item org__item--blue"
-                      href={"/section?title=" + encodeURIComponent("Комитеты")}
+                      href={sectionHref("Комитеты")}
                     >
                       {t("Комитеты Верховного Хурала (парламента) Республики Тыва")}
                     </a>

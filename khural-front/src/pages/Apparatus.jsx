@@ -1,13 +1,12 @@
 import React from "react";
 import SideNav from "../components/SideNav.jsx";
 import { getApparatusNavLinks } from "../utils/apparatusLinks.js";
+import { sectionHref } from "../utils/sectionLinks.js";
 import { useI18n } from "../context/I18nContext.jsx";
 
 export default function Apparatus() {
   const { t } = useI18n();
-  const toSectionHref = React.useCallback((title) => {
-    return `/section?title=${encodeURIComponent(String(title || "").trim())}`;
-  }, []);
+  const toSectionHref = React.useCallback((title) => sectionHref(title), []);
 
   const navLinks = React.useMemo(() => getApparatusNavLinks(t), [t]);
 

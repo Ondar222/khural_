@@ -58,6 +58,7 @@ const AppealsMinyust = lazy(() => import("./pages/AppealsMinyust.jsx"));
 const MapPage = lazy(() => import("./pages/Map.jsx"));
 const Apparatus = lazy(() => import("./pages/Apparatus.jsx"));
 const SectionPage = lazy(() => import("./pages/Section.jsx"));
+const SectionBySlug = lazy(() => import("./pages/SectionBySlug.jsx"));
 const Commission = lazy(() => import("./pages/Commission.jsx"));
 const LegacyNotFound = lazy(() => import("./pages/LegacyCommissionRoutes.jsx"));
 const DocsPage = lazy(() => import("./pages/docs/DocsPage.jsx"));
@@ -303,7 +304,7 @@ export default function App() {
                             "/broadcast/:slug": PageBySlug,
                             "/government/:slug": PageBySlug,
                             "/apparatus/:slug": PageBySlug,
-                            "/section/:slug": PageBySlug,
+                            "/section/:slug": SectionBySlug,
                             "/government": Government,
                             "/authorities": Authorities,
                             "/wifi": Wifi,
