@@ -9,6 +9,7 @@ import { formatConvocationLabelWithYears } from "../utils/convocationLabels.js";
 import { PersonsApi } from "../api/client.js";
 import { useHashRoute } from "../Router.jsx";
 import { MailIcon, PhoneIcon, BuildingIcon, ClockIcon } from "../components/icons/LinearIcons.jsx";
+import { STRUCTURE_SECTION_LINKS } from "../data/sectionMenus.js";
 
 function nonBlank(x) {
   return x != null && String(x).trim() !== "";
@@ -783,25 +784,8 @@ export default function Government() {
             )}
           </div>
           <SideNav
-            links={[
-              { label: "Общие сведения", href: "/about" },
-              { label: "История парламентаризма в Республике Тыва", href: "/about/istoriya-parlamentarizma" },
-              { label: "Полномочия Верховного Хурала", href: "/about/polnomochiya" },
-              { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-              { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
-              { label: "Руководство", href: "/government" },
-              { label: "Молодежный Хурал", href: "/youth-parliament" },
-              {
-                label: "Совет по взаимодействию с представительными органами муниципальных образований",
-                href:
-                  "/section?title=" +
-                  encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
-              },
-              { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
-              { label: "Депутатские фракции", href: "/about?tab=structure&focus=factions" },
-              { label: "Представительство в Совете Федерации", href: "/struct/council" },
-              { label: "Аппарат Верховного Хурала", href: "/apparatus" },
-            ]}
+            title={t("Структура")}
+            links={STRUCTURE_SECTION_LINKS.map((link) => ({ label: t(link.label), href: link.href }))}
           />
         </div>
       </div>

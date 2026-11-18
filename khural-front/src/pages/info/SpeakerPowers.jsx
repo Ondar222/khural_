@@ -2,23 +2,11 @@ import React from "react";
 import { useI18n } from "../../context/I18nContext.jsx";
 import SideNav from "../../components/SideNav.jsx";
 import ScrollToTop from "../../components/ScrollToTop.jsx";
+import { ABOUT_SECTION_LINKS } from "../../data/sectionMenus.js";
 
 export default function SpeakerPowers() {
   const { t } = useI18n();
-  const links = [
-    { label: t("aboutHistory"), href: "/about/istoriya-parlamentarizma" },
-    { label: t("aboutPowersHural"), href: "/info/hural-powers" },
-    { label: t("aboutPowersSpeaker"), href: "/info/speaker-powers" },
-    { label: t("aboutStaff"), href: "/info/personnel" },
-    { label: t("aboutCorruption"), href: "/info/anti-corruption" },
-    { label: t("aboutContacts"), href: "/info/contacts" },
-    { label: t("aboutOmbudsman"), href: "/info/ombudsman" },
-    { label: t("aboutChildRights"), href: "/info/child-rights" },
-    { label: t("aboutDistricts"), href: "/about/districts" },
-    { label: t("aboutFinances"), href: "/about/finances" },
-    { label: t("aboutSymbols"), href: "/info/symbols" },
-    { label: t("aboutBorder"), href: "/info/border-subject" },
-  ];
+  const links = ABOUT_SECTION_LINKS.map(({ label, href }) => ({ label: t(label), href }));
   return (
     <section className="section">
       <div className="container">

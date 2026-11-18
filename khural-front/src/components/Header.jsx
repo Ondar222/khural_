@@ -6,7 +6,7 @@ import { useHashRoute } from "../Router.jsx";
 import Link from "./Link.jsx";
 import { RightOutlined } from "@ant-design/icons";
 import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
-import { PERSONNEL_ROOT_PATH } from "../content/personnel.js";
+import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS } from "../data/sectionMenus.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import { fetchPagesTree, getCachedPagesTree } from "../utils/cmsPagesTree.js";
 import {
@@ -17,10 +17,6 @@ import {
 } from "../utils/pagesOverrides.js";
 import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
 // removed unused UI icon libs
-
-const PARLIAMENT_LEADERSHIP_HREF = "/government";
-const MUNICIPAL_COUNCIL_HREF =
-  `/section?title=${encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований")}`;
 
 function getHrefPath(href) {
   const value = String(href || "");
@@ -371,44 +367,25 @@ export default function Header() {
               onMouseEnter={() => setOpenMenu("vh")}
               onMouseLeave={() => setOpenMenu(null)}
             >
-              <Link to="/about">{t("aboutVH")} ▾</Link>
+              <Link to="/about">{t("Общие сведения")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("vh")}>
-                <a href="/about">{t("aboutVH")}</a>
-                <a href="/about/istoriya-parlamentarizma">{t("История парламентаризма в Республике Тыва")}</a>
-                <a href="/about/polnomochiya">{t("Полномочия Верховного Хурала")}</a>
-                <a href="/section">{t("structure")}</a>
-                <a href="/committee">{t("committees")}</a>
-                <a href={PARLIAMENT_LEADERSHIP_HREF}>{t("Руководство парламента")}</a>
-                <a href="/youth-parliament">{t("Молодежный Хурал")}</a>
-                <a href={MUNICIPAL_COUNCIL_HREF}>
-                  {t("Совет по взаимодействию с представительными органами муниципальных образований")}
-                </a>
-                {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
-                <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
-                <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
-                  {t("factions")}
-                </a>
-                <a href="/struct/council">
-                  {t("senateRep")}
-                </a>
-                <a href="/apparatus">{t("apparatus")}</a>
-                {cmsDropdownLinks(["about", "committees", "commissions", "activity"], [
-                  "/about",
-                  "/about/istoriya-parlamentarizma",
-                  "/about/polnomochiya",
-                  "/section",
-                  "/committee",
-                  "/government",
-                  "/youth-parliament",
-                  "/struct/council",
-                  "/apparatus",
-                ]).map((link) => (
-                  <a
-                    key={`cms-about-${link.href}`}
-                    href={link.href}
-                    style={cmsDropdownLinkStyle(link.depth)}
-                  >
-                    {translateMenuLabel(link.label, link.needsTranslation)}
+                {ABOUT_SECTION_LINKS.map((link) => (
+                  <a key={`about-${link.href}`} href={link.href}>
+                    {t(link.label)}
+                  </a>
+                ))}
+              </div>
+            </div>
+            <div
+              className={`dropdown ${openMenu === "structure" ? "open" : ""}`}
+              onMouseEnter={() => setOpenMenu("structure")}
+              onMouseLeave={() => setOpenMenu(null)}
+            >
+              <Link to="/section">{t("structure")} ▾</Link>
+              <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("structure")}>
+                {STRUCTURE_SECTION_LINKS.map((link) => (
+                  <a key={`structure-${link.href}`} href={link.href}>
+                    {t(link.label)}
                   </a>
                 ))}
               </div>
@@ -421,57 +398,10 @@ export default function Header() {
               <Link to="/deputies">{t("deputies")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("deputies")}>
                 <a href="/deputies">{t("Действующие депутаты") || "Действующие депутаты"}</a>
-                <a href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5">{t("deputiesAll") || "Депутаты всех созывов"}</a>
                 <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты прекратившие полномочия") || "Депутаты прекратившие полномочия"}</a>
                 {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended"]).map((link) => (
                   <a
                     key={`cms-deputies-${link.href}`}
-                    href={link.href}
-                    style={cmsDropdownLinkStyle(link.depth)}
-                  >
-                    {translateMenuLabel(link.label, link.needsTranslation)}
-                  </a>
-                ))}
-              </div>
-            </div>
-            <div
-              className={`dropdown ${openMenu === "info" ? "open" : ""}`}
-              onMouseEnter={() => setOpenMenu("info")}
-              onMouseLeave={() => setOpenMenu(null)}
-            >
-              <Link to="/info">{t("Общие сведения") || "Общие сведения"} ▾</Link>
-              <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("info")}>
-                <a href="/info">{t("Общие сведения") || "Общие сведения"}</a>
-                <a href="/info/polnomochiya-spikera">{t("aboutPowersSpeaker")}</a>
-                <a href="/info/protivodeystvie-korrupcii">{t("aboutCorruption") || "Противодействие коррупции"}</a>
-                <a href="/info/contacts">{t("aboutContacts") || "Контактная информация"}</a>
-                <a href="/info/upoln-po-reb">{t("aboutChildRights")}</a>
-                <a href="/info/gosudarstvennye-simvoly">{t("aboutSymbols")}</a>
-                <a href="/info/prigranichny-subekt">{t("aboutBorder")}</a>
-                <hr />
-                <a href="/about/finances">{t("Финансы") || "Финансы"}</a>
-                <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
-                <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
-                <a href="/opendata">{t("Открытые данные") || "Открытые данные"}</a>
-                <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
-                <a href={PERSONNEL_ROOT_PATH}>{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
-                {cmsDropdownLinks(["info", "contacts"], [
-                  "/info",
-                  "/info/polnomochiya-spikera",
-                  "/info/protivodeystvie-korrupcii",
-                  "/info/contacts",
-                  "/info/upoln-po-reb",
-                  "/info/gosudarstvennye-simvoly",
-                  "/info/prigranichny-subekt",
-                  "/about/finances",
-                  "/info/iokrug",
-                  "/info/zakon-karta",
-                  "/opendata",
-                  "/info/upoln-po-prav",
-                  PERSONNEL_ROOT_PATH,
-                ]).map((link) => (
-                  <a
-                    key={`cms-info-${link.href}`}
                     href={link.href}
                     style={cmsDropdownLinkStyle(link.depth)}
                   >
@@ -722,48 +652,26 @@ export default function Header() {
         </div>
         <div className="sheet-grid container">
           <div className="sheet-col">
-            <h3>{t("aboutVH")}</h3>
-            <a href="/about">{t("aboutVH")}</a>
-            <a href="/about/istoriya-parlamentarizma">{t("История парламентаризма в Республике Тыва")}</a>
-            <a href="/about/polnomochiya">{t("Полномочия Верховного Хурала")}</a>
-            <a href="/section">{t("structure")}</a>
-            <a href="/committee">{t("committees")}</a>
-            <a href={PARLIAMENT_LEADERSHIP_HREF}>{t("Руководство парламента")}</a>
-            <a href="/youth-parliament">{t("Молодежный Хурал")}</a>
-            <a href={MUNICIPAL_COUNCIL_HREF}>
-              {t("Совет по взаимодействию с представительными органами муниципальных образований")}
-            </a>
-            {/* <a href="/convocations">{t("convocations") || "Созывы"}</a> */}
-            <a href={"/section?title=" + encodeURIComponent("Комиссии")}>{t("commissions")}</a>
-            <a href={"/section?title=" + encodeURIComponent("Депутатские фракции")}>
-              {t("factions")}
-            </a>
-            <a href="/struct/council">
-              {t("senateRep")}
-            </a>
-            <a href="/apparatus">{t("apparatus")}</a>
+            <h3>{t("Общие сведения")}</h3>
+            <a href="/about">{t("Общие сведения")}</a>
+            {ABOUT_SECTION_LINKS.map((link) => (
+              <a key={`sheet-about-${link.href}`} href={link.href}>
+                {t(link.label)}
+              </a>
+            ))}
           </div>
           <div className="sheet-col">
-            <h3>{t("Общие сведения") || "Общие сведения"}</h3>
-            <a href="/info">{t("Общие сведения") || "Общие сведения"}</a>
-            <a href="/info/polnomochiya-spikera">{t("aboutPowersSpeaker")}</a>
-            <a href="/info/protivodeystvie-korrupcii">{t("aboutCorruption") || "Противодействие коррупции"}</a>
-            <a href="/info/contacts">{t("aboutContacts") || "Контактная информация"}</a>
-            <a href="/info/upoln-po-reb">{t("aboutChildRights")}</a>
-            <a href="/info/gosudarstvennye-simvoly">{t("aboutSymbols")}</a>
-            <a href="/info/prigranichny-subekt">{t("aboutBorder")}</a>
-            <hr />
-            <a href="/about/finances">{t("Финансы") || "Финансы"}</a>
-            <a href="/info/iokrug">{t("Избирательные округа") || "Избирательные округа"}</a>
-            <a href="/info/zakon-karta">{t("Законодательная карта сайта") || "Законодательная карта сайта"}</a>
-            <a href="/opendata">{t("Открытые данные") || "Открытые данные"}</a>
-            <a href="/info/upoln-po-prav">{t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}</a>
-            <a href={PERSONNEL_ROOT_PATH}>{t("Кадровое обеспечение") || "Кадровое обеспечение"}</a>
+            <h3>{t("structure")}</h3>
+            <a href="/section">{t("structure")}</a>
+            {STRUCTURE_SECTION_LINKS.map((link) => (
+              <a key={`sheet-structure-${link.href}`} href={link.href}>
+                {t(link.label)}
+              </a>
+            ))}
           </div>
           <div className="sheet-col">
             <h3>{t("deputies")}</h3>
             <a href="/deputies">{t("deputies")}</a>
-            <a href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5">{t("deputiesAll")}</a>
             <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты прекратившие полномочия")}</a>
           </div>
           <div className="sheet-col">
@@ -943,13 +851,13 @@ export default function Header() {
               </Link>
               <button className="tile link" onClick={() => setMobileSection("vh")}>
                 <span className="mobile-menu-link-content">
-                  {t("aboutVH")}
+                  {t("Общие сведения")}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </button>
-              <button className="tile link" onClick={() => setMobileSection("info")}>
+              <button className="tile link" onClick={() => setMobileSection("structure")}>
                 <span className="mobile-menu-link-content">
-                  {t("Общие сведения") || "Общие сведения"}
+                  {t("structure")}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </button>
@@ -985,106 +893,49 @@ export default function Header() {
             <button className="btn" onClick={() => setMobileSection(null)}>
               {t("back")}
             </button>
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("aboutVH")}</div>
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("Общие сведения")}</div>
             <a className="tile link" href="/about" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                {t("aboutVH")}
+                {t("Общие сведения")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <a className="tile link" href="/about/istoriya-parlamentarizma" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("История парламентаризма в Республике Тыва")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/about/polnomochiya" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Полномочия Верховного Хурала")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
+            {ABOUT_SECTION_LINKS.map((link) => (
+              <a
+                key={`mobile-about-${link.href}`}
+                className="tile link"
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {t(link.label)}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
+          </>
+        )}
+        {mobileSection === "structure" && (
+          <>
+            <button className="btn" onClick={() => setMobileSection(null)}>
+              {t("back")}
+            </button>
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("structure")}</div>
             <a className="tile link" href="/section" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("structure")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <a className="tile link" href="/committee" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("committees")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href={PARLIAMENT_LEADERSHIP_HREF} onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Руководство парламента")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/youth-parliament" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Молодежный Хурал")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href={MUNICIPAL_COUNCIL_HREF} onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Совет по взаимодействию с представительными органами муниципальных образований")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a
-              className="tile link"
-              href={"/section?title=" + encodeURIComponent("Комиссии")}
-              onClick={() => setMobileOpen(false)}
-            >
-              <span className="mobile-menu-link-content">
-                {t("commissions")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a
-              className="tile link"
-              href={"/section?title=" + encodeURIComponent("Депутатские фракции")}
-              onClick={() => setMobileOpen(false)}
-            >
-              <span className="mobile-menu-link-content">
-                {t("factions")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/struct/council" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("senateRep")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/apparatus" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("apparatus")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            {cmsDropdownLinks(["about", "committees", "commissions", "activity"], [
-              "/about",
-              "/about/istoriya-parlamentarizma",
-              "/about/polnomochiya",
-              "/section",
-              "/committee",
-              "/government",
-              "/youth-parliament",
-              "/struct/council",
-              "/apparatus",
-            ]).map((link) => (
+            {STRUCTURE_SECTION_LINKS.map((link) => (
               <a
-                key={`cms-mobile-about-${link.href}`}
+                key={`mobile-structure-${link.href}`}
                 className="tile link"
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
               >
                 <span className="mobile-menu-link-content">
-                  {translateMenuLabel(link.label, link.needsTranslation)}
+                  {t(link.label)}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </a>
@@ -1105,16 +956,6 @@ export default function Header() {
             </a>
             <a
               className="tile link"
-              href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5"
-              onClick={() => setMobileOpen(false)}
-            >
-              <span className="mobile-menu-link-content">
-                {t("deputiesAll") || "Депутаты всех созывов"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a
-              className="tile link"
               href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5"
               onClick={() => setMobileOpen(false)}
             >
@@ -1126,120 +967,6 @@ export default function Header() {
             {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended"]).map((link) => (
               <a
                 key={`cms-mobile-deputies-${link.href}`}
-                className="tile link"
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-              >
-                <span className="mobile-menu-link-content">
-                  {translateMenuLabel(link.label, link.needsTranslation)}
-                  <RightOutlined aria-hidden="true" />
-                </span>
-              </a>
-            ))}
-          </>
-        )}
-        {mobileSection === "info" && (
-          <>
-            <button className="btn" onClick={() => setMobileSection(null)}>
-              {t("back")}
-            </button>
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("Общие сведения") || "Общие сведения"}</div>
-            <a className="tile link" href="/info" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Общие сведения") || "Общие сведения"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/polnomochiya-spikera" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("aboutPowersSpeaker")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/protivodeystvie-korrupcii" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("aboutCorruption") || "Противодействие коррупции"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/contacts" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("aboutContacts") || "Контактная информация"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/upoln-po-reb" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("aboutChildRights")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/gosudarstvennye-simvoly" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("aboutSymbols")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/prigranichny-subekt" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("aboutBorder")}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "8px 0" }} />
-            <a className="tile link" href="/about/finances" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Финансы") || "Финансы"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/iokrug" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Избирательные округа") || "Избирательные округа"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/zakon-karta" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Законодательная карта сайта") || "Законодательная карта сайта"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/opendata" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Открытые данные") || "Открытые данные"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href="/info/upoln-po-prav" onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Уполномоченный по правам человека") || "Уполномоченный по правам человека"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            <a className="tile link" href={PERSONNEL_ROOT_PATH} onClick={() => setMobileOpen(false)}>
-              <span className="mobile-menu-link-content">
-                {t("Кадровое обеспечение") || "Кадровое обеспечение"}
-                <RightOutlined aria-hidden="true" />
-              </span>
-            </a>
-            {cmsDropdownLinks(["info", "contacts"], [
-              "/info",
-              "/info/polnomochiya-spikera",
-              "/info/protivodeystvie-korrupcii",
-              "/info/contacts",
-              "/info/upoln-po-reb",
-              "/info/gosudarstvennye-simvoly",
-              "/info/prigranichny-subekt",
-              "/about/finances",
-              "/info/iokrug",
-              "/info/zakon-karta",
-              "/opendata",
-              "/info/upoln-po-prav",
-              PERSONNEL_ROOT_PATH,
-            ]).map((link) => (
-              <a
-                key={`cms-mobile-info-${link.href}`}
                 className="tile link"
                 href={link.href}
                 onClick={() => setMobileOpen(false)}

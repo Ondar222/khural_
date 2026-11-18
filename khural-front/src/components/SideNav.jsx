@@ -8,6 +8,7 @@ import { pickMenuLabelInfo, applyPagesOverridesToTree } from "../utils/pagesOver
 import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
 import { normalizePathBySlugAliases } from "../utils/slugAliases.js";
 import { DEFAULT_COMMISSIONS_LIST } from "../utils/commissionsData.js";
+import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS } from "../data/sectionMenus.js";
 import {
   PERSONNEL_ROOT_PATH,
   PERSONNEL_TITLE,
@@ -162,21 +163,8 @@ const defaultLinksBroadcast = [
   { label: "Трансляции", href: "/broadcast" },
 ];
 
-// Стандартные ссылки для раздела "Общие сведения"
-const defaultLinksCommon = [
-  { label: "Финансы", href: "/about/finances" },
-  { label: "Избирательные округа", href: "/info/iokrug" },
-  { label: "Законодательная карта", href: "/info/zakon-karta" },
-  { label: "Открытые данные", href: "/opendata" },
-  { label: "Уполномоченный по правам человека", href: "/info/upoln-po-prav" },
-  { label: "Уполномоченный по правам ребенка", href: "/info/upoln-po-reb" },
-  { label: "Полномочия Председателя", href: "/info/polnomochiya-spikera" },
-  { label: "Противодействие коррупции", href: "/info/protivodeystvie-korrupcii" },
-  { label: "Контактная информация", href: "/info/contacts" },
-  { label: "Государственные символы Республики Тыва", href: "/info/gosudarstvennye-simvoly" },
-  { label: "Приграничный субъект", href: "/info/prigranichny-subekt" },
-  PERSONNEL_NAV_LINKS,
-];
+// Стандартные ссылки для раздела "Общие сведения" (меню «О Верховном Хурале» на старом сайте)
+const defaultLinksCommon = ABOUT_SECTION_LINKS.map(({ label, href }) => ({ label, href }));
 
 // Стандартные ссылки для раздела "Депутаты" (без дублирования с "Общими сведениями")
 const defaultLinksDeputies = [
@@ -185,26 +173,13 @@ const defaultLinksDeputies = [
   { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
 ];
 
-// Стандартные ссылки для раздела "О Хурале" (без дублирования с "Общими сведениями")
+// Стандартные ссылки раздела «Общие сведения».
 // Экспортируется, чтобы страницы, где SideNav рендерится с явным links=...,
 // не разъезжались по составу с меню раздела.
-export const defaultLinksAbout = [
-  { label: "Общие сведения", href: "/about" },
-  { label: "История парламентаризма в Республике Тыва", href: "/about/istoriya-parlamentarizma" },
-  { label: "Полномочия Верховного Хурала", href: "/about/polnomochiya" },
-  { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-  { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
-  { label: "Руководство", href: "/government" },
-  { label: "Молодежный Хурал", href: "/youth-parliament" },
-  {
-    label: "Совет по взаимодействию с представительными органами муниципальных образований",
-    href: "/section?title=" + encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
-  },
-  { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
-  { label: "Депутатские фракции", href: "/section?title=" + encodeURIComponent("Депутатские фракции") },
-  { label: "Представительство в Совете Федерации", href: "/struct/council" },
-  { label: "Аппарат Верховного Хурала", href: "/apparatus" },
-];
+export const defaultLinksAbout = defaultLinksCommon;
+
+// Стандартные ссылки раздела «Структура» (меню «Структура» на старом сайте).
+export const defaultLinksStructure = STRUCTURE_SECTION_LINKS.map(({ label, href }) => ({ label, href }));
 
 // Стандартные ссылки для раздела "Деятельность"
 const defaultLinksActivity = [
@@ -216,25 +191,16 @@ const defaultLinksActivity = [
   { label: "Взаимодействие с НКО", href: "/activity?tab=ngo" },
 ];
 
-// Стандартные ссылки для раздела "Комитеты" и "Комиссии" (как в разделе "О Хурале")
+// Стандартные ссылки для разделов "Комитеты" и "Комиссии" (подразделы «Структуры»)
 const defaultLinksCommittees = [
-  { label: "Общие сведения", href: "/about" },
-  { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-  { label: "Руководство", href: "/government" },
-  { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
-  { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
+  ...defaultLinksStructure,
   { label: "Отчеты комитетов", href: "/section?title=" + encodeURIComponent("Отчеты комитетов") },
   { label: "Повестки комитетов", href: "/section?title=" + encodeURIComponent("Повестки комитетов") },
-  { label: "Представительство в Совете Федерации", href: "/struct/council" },
 ];
 
 // Стандартные ссылки для раздела "Комиссии" (список комиссий из админки/структуры)
 const defaultLinksCommissions = [
-  { label: "Общие сведения", href: "/about" },
-  { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
-  { label: "Руководство", href: "/government" },
-  { label: "Комитеты", href: "/about?tab=structure&focus=committees" },
-  { label: "Комиссии", href: "/about?tab=structure&focus=commissions" },
+  ...defaultLinksStructure,
   ...DEFAULT_COMMISSIONS_LIST.map((c) => ({
     label: String(c?.name || c?.id || ""),
     href: `/commission?id=${encodeURIComponent(String(c?.id || ""))}`,
@@ -390,8 +356,8 @@ export default function SideNav({
       "^/code-of-honor$": "news",
       "^/mothers-commandments$": "news",
       "^/for-media$": "news",
-      "^/deputies$": "deputies",
-      "^/deputies/.*": "deputies",
+      "^/deputies$": "structure",
+      "^/deputies/.*": "structure",
       "^/documents$": "documents",
       "^/docs/.*": "documents",
       "^/about/finances$": "common",
@@ -399,7 +365,10 @@ export default function SideNav({
       "^/about/istoriya-parlamentarizma$": "about",
       "^/about/polnomochiya$": "about",
       "^/about$": "about",
-      "^/section$": "about",
+      "^/section$": "structure",
+      "^/struct/": "structure",
+      "^/government": "structure",
+      "^/apparatus": "structure",
       "^/committee.*": "committees",
       "^/commission.*": "commissions",
       "^/activity": "activity",
@@ -426,8 +395,6 @@ export default function SideNav({
       "^/info": "common",
       "^/opendata": "common",
       "^/youth-parliament": "youth",
-      "^/struct/council": "about",
-      "^/government": "about",
     };
 
     for (const [pattern, sectionName] of Object.entries(sectionMap)) {
@@ -563,6 +530,20 @@ export default function SideNav({
       return "Депутаты";
     }
 
+    // Специфичные заголовки для раздела "Структура"
+    if (detectedSection === 'structure') {
+      const params = new URLSearchParams((route || "").split("?")[1] || "");
+      if (pathname === '/government') return "Руководство";
+      if (pathname.startsWith('/deputies')) {
+        if (pathname === '/deputies/ended') return "Депутаты (завершившие полномочия)";
+        if (params.get('convocation') === 'Все') return "Депутаты всех созывов";
+        return "Депутаты";
+      }
+      if (pathname === '/struct/council') return "Представительство в Совете Федерации";
+      if (pathname === '/apparatus') return "Аппарат";
+      return "Структура";
+    }
+
     // Специфичные заголовки для раздела "Комитеты/Комиссии"
     if (detectedSection === 'committees' || detectedSection === 'commissions') {
       if (pathname.includes('/commission')) return "Комиссии";
@@ -591,7 +572,7 @@ export default function SideNav({
         if (focus === 'overview') return "Структура парламента";
       }
       
-      return "О Хурале";
+      return "Общие сведения";
     }
 
     // Специфичные заголовки для раздела "Документы"
@@ -613,7 +594,8 @@ export default function SideNav({
       news: "Новости",
       deputies: "Депутаты",
       documents: "Документы",
-      about: "О Хурале",
+      about: "Общие сведения",
+      structure: "Структура",
       committees: "Комитеты",
       commissions: "Комиссии",
       activity: "Деятельность",
@@ -736,13 +718,12 @@ export default function SideNav({
     } else if (detectedSection === 'broadcast') {
       // Для раздела трансляции - фиксированное меню (не зависит от загруженных страниц)
       sectionDefaultLinks = defaultLinksBroadcast;
-    } else if (detectedSection === 'common') {
-      // Только для раздела "Общие сведения" показываем ссылки на финансы и т.д.
-      sectionDefaultLinks = defaultLinksCommon;
     } else if (detectedSection === 'deputies') {
       sectionDefaultLinks = defaultLinksDeputies;
-    } else if (detectedSection === 'about') {
+    } else if (detectedSection === 'about' || detectedSection === 'common') {
       sectionDefaultLinks = defaultLinksAbout;
+    } else if (detectedSection === 'structure') {
+      sectionDefaultLinks = defaultLinksStructure;
     } else if (detectedSection === 'activity') {
       sectionDefaultLinks = defaultLinksActivity;
     } else if (detectedSection === 'committees') {

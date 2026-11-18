@@ -101,8 +101,8 @@ export default function YouthParliament() {
               ))}
             </div>
           </div>
-          {/* Меню синхронизировано с разделом «О Хурале» (см. SideNav → defaultLinksAbout) */}
-          <SideNav section="about" loadPages={true} />
+          {/* Меню синхронизировано с разделом «Структура» (см. SideNav → defaultLinksStructure) */}
+          <SideNav section="structure" loadPages={true} />
         </div>
       </div>
     </section>

@@ -3,6 +3,8 @@ import SideNav from "../components/SideNav.jsx";
 import { useData } from "../context/DataContext.jsx";
 import { useI18n } from "../context/I18nContext.jsx";
 import { DEFAULT_STRUCTURE_COMMITTEES } from "../utils/committeesOverrides.js";
+import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS } from "../data/sectionMenus.js";
+import { useHashRoute } from "../Router.jsx";
 
 function getCommitteeTitle(c) {
   if (!c || typeof c !== "object") return "";
@@ -30,7 +32,20 @@ export default function About() {
   const { committees, commissions, government } = useData();
   // NOTE: government is used to link Chairman in the structure diagram.
   const { t } = useI18n();
+  const { route } = useHashRoute();
   const [activeTab, setActiveTab] = React.useState("general"); // general | structure
+
+  const aboutQuery = new URLSearchParams((route || "").split("?")[1] || "");
+  const isStructureTab = aboutQuery.get("tab") === "structure";
+  const structureFocus = aboutQuery.get("focus");
+  const sideNavLinks = isStructureTab ? STRUCTURE_SECTION_LINKS : ABOUT_SECTION_LINKS;
+  const sideNavTitle = isStructureTab
+    ? structureFocus === "committees"
+      ? t("Комитеты")
+      : structureFocus === "commissions"
+        ? t("Комиссии")
+        : t("Структура")
+    : t("Общие сведения");
   const isMountedRef = React.useRef(false);
 
   const scrollToBlock = React.useCallback((id) => {
@@ -374,25 +389,8 @@ export default function About() {
           </div>
           <SideNav
             className="sidenav--about"
-            links={[
-              { label: t("Общие сведения"), href: "/about" },
-              { label: t("История парламентаризма в Республике Тыва"), href: "/about/istoriya-parlamentarizma" },
-              { label: t("Полномочия Верховного Хурала"), href: "/about/polnomochiya" },
-              { label: t("Структура парламента"), href: "/about?tab=structure&focus=overview" },
-              { label: t("Комитеты"), href: "/about?tab=structure&focus=committees" },
-              { label: t("Руководство"), href: "/government" },
-              { label: t("Молодежный Хурал"), href: "/youth-parliament" },
-              {
-                label: t("Совет по взаимодействию с представительными органами муниципальных образований"),
-                href:
-                  "/section?title=" +
-                  encodeURIComponent("Совет по взаимодействию с представительными органами муниципальных образований"),
-              },
-              { label: t("Комиссии"), href: "/about?tab=structure&focus=commissions" },
-              { label: t("Депутатские фракции"), href: "/about?tab=structure&focus=factions" },
-              { label: t("Представительство в Совете Федерации"), href: "/struct/council" },
-              { label: t("Аппарат Верховного Хурала"), href: "/apparatus" },
-            ]}
+            title={sideNavTitle}
+            links={sideNavLinks.map((link) => ({ label: t(link.label), href: link.href }))}
             loadPages={true}
             autoSection={true}
           />
