@@ -6,7 +6,7 @@ import { useHashRoute } from "../Router.jsx";
 import Link from "./Link.jsx";
 import { RightOutlined } from "@ant-design/icons";
 import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
-import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS } from "../data/sectionMenus.js";
+import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS, DEPUTY_CONVOCATION_LINKS } from "../data/sectionMenus.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import { fetchPagesTree, getCachedPagesTree } from "../utils/cmsPagesTree.js";
 import {
@@ -398,8 +398,14 @@ export default function Header() {
               <Link to="/deputies">{t("deputies")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("deputies")}>
                 <a href="/deputies">{t("Действующие депутаты") || "Действующие депутаты"}</a>
+                <a href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты всех созывов")}</a>
+                {DEPUTY_CONVOCATION_LINKS.map((link) => (
+                  <a key={`deputy-convocation-${link.href}`} href={link.href}>
+                    {t(link.label)}
+                  </a>
+                ))}
                 <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты прекратившие полномочия") || "Депутаты прекратившие полномочия"}</a>
-                {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended"]).map((link) => (
+                {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended", ...DEPUTY_CONVOCATION_LINKS.map((l) => l.href)]).map((link) => (
                   <a
                     key={`cms-deputies-${link.href}`}
                     href={link.href}
@@ -672,6 +678,12 @@ export default function Header() {
           <div className="sheet-col">
             <h3>{t("deputies")}</h3>
             <a href="/deputies">{t("deputies")}</a>
+            <a href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты всех созывов")}</a>
+            {DEPUTY_CONVOCATION_LINKS.map((link) => (
+              <a key={`sheet-deputy-convocation-${link.href}`} href={link.href}>
+                {t(link.label)}
+              </a>
+            ))}
             <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты прекратившие полномочия")}</a>
           </div>
           <div className="sheet-col">
@@ -956,6 +968,29 @@ export default function Header() {
             </a>
             <a
               className="tile link"
+              href="/deputies?status=all&convocation=%D0%92%D1%81%D0%B5"
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="mobile-menu-link-content">
+                {t("Депутаты всех созывов")}
+                <RightOutlined aria-hidden="true" />
+              </span>
+            </a>
+            {DEPUTY_CONVOCATION_LINKS.map((link) => (
+              <a
+                key={`mobile-deputy-convocation-${link.href}`}
+                className="tile link"
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="mobile-menu-link-content">
+                  {t(link.label)}
+                  <RightOutlined aria-hidden="true" />
+                </span>
+              </a>
+            ))}
+            <a
+              className="tile link"
               href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5"
               onClick={() => setMobileOpen(false)}
             >
@@ -964,7 +999,7 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended"]).map((link) => (
+            {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended", ...DEPUTY_CONVOCATION_LINKS.map((l) => l.href)]).map((link) => (
               <a
                 key={`cms-mobile-deputies-${link.href}`}
                 className="tile link"

@@ -161,7 +161,7 @@ function mergeDeputiesWithOverrides(base, overrides) {
       if (rawIds.length > 0) {
         const canonical = (cid) => {
           const s = String(cid).trim().toUpperCase();
-          if (["I", "II", "III", "IV"].includes(s)) return s;
+          if (["I", "II", "III", "IV", "V", "VI", "VII", "VIII"].includes(s)) return s;
           return mapOldSiteConvocationIdToCanonical(cid);
         };
         const resolved = [...new Set(rawIds.map(canonical).filter(Boolean))];
@@ -755,9 +755,9 @@ function parsePersonInfoRow(row) {
   };
 }
 
-/** Выбирает «главный» созыв для депутата: IV > III > II > I (текущий приоритетнее). */
+/** Выбирает «главный» созыв для депутата: IV > III > II > I, затем остальные по убыванию. */
 function primaryConvocation(convocations) {
-  const order = ["IV", "III", "II", "I"];
+  const order = ["IV", "III", "II", "I", "VIII", "VII", "VI", "V"];
   for (const c of order) {
     if (convocations.includes(c)) return c;
   }
@@ -768,7 +768,7 @@ function primaryConvocation(convocations) {
 function buildConvocationByNormalizedName(mapping) {
   const map = new Map();
   if (!mapping || typeof mapping !== "object") return map;
-  const order = ["I", "II", "III", "IV"];
+  const order = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
   for (const conv of order) {
     const names = Array.isArray(mapping[conv]) ? mapping[conv] : [];
     for (const name of names) {
@@ -785,33 +785,27 @@ function buildConvocationByNormalizedName(mapping) {
   return map;
 }
 
-/** Подставляет созывы из канонического списка (deputy_convocation_mapping) по имени.
- * Не перезаписывает созыв, если он уже пришёл из API (сохранён в админке). */
+/** Добавляет созывы из канонического списка (deputy_convocation_mapping) по имени.
+ * Созыв из API (выбранный в админке) остаётся главным, но сопоставленные созывы не теряются. */
 function applyConvocationMapping(deputies, convocationByNormalizedName) {
-  if (!convocationByNormalizedName || !convocationByNormalizedName.size) {
-    return deputies.map((d) => {
-      const { _convocationFromApi, ...rest } = d;
-      return rest;
-    });
-  }
   return deputies.map((d) => {
-    if (d._convocationFromApi) {
-      const { _convocationFromApi, ...rest } = d;
-      return rest;
-    }
-    const key = normalizePersonName(d?.name ?? "");
-    const convocations = key ? convocationByNormalizedName.get(key) : null;
-    if (!convocations || !convocations.length) {
-      const { _convocationFromApi, ...rest } = d;
-      return rest;
-    }
-    const primary = primaryConvocation(convocations);
     const { _convocationFromApi, ...rest } = d;
+    if (!convocationByNormalizedName || !convocationByNormalizedName.size) return rest;
+    const key = normalizePersonName(d?.name ?? "");
+    const mapped = key ? convocationByNormalizedName.get(key) : null;
+    const existing = Array.isArray(d?.convocations)
+      ? d.convocations
+      : d?.convocation
+        ? [d.convocation]
+        : [];
+    const merged = [...new Set([...existing, ...(mapped || [])].filter(Boolean))];
+    if (!merged.length) return rest;
+    const primary = d?.convocation || primaryConvocation(merged);
     return {
       ...rest,
       convocation: primary,
       convocationNumber: primary,
-      convocations: [...convocations],
+      convocations: merged,
     };
   });
 }
@@ -985,7 +979,7 @@ function enrichDeputyWithPersonInfo(dep, info) {
       const list = canonList.length ? canonList : (primaryConv ? [normalizeConvocationToCanonical(normalizeConvocationText(primaryConv)) || primaryConv] : []);
       if (list.length) {
         out.convocations = list;
-        const primary = list.includes("IV") ? "IV" : list.includes("III") ? "III" : list.includes("II") ? "II" : list[0];
+        const primary = primaryConvocation(list);
         out.convocation = primary;
         out.convocationNumber = primary;
       } else if (primaryConv) {
@@ -1597,8 +1591,12 @@ export default function DataProvider({ children }) {
             : [];
           // Объединяем оба источника: convocationIds (числа) и convocations[].id
           const allApiConvIds = [...new Set([...apiConvocationIds, ...apiConvObjectIds])];
+          // Сначала проверенные ID из справочника, затем имя созыва из API — так работают
+          // и новые созывы, которых ещё нет в жёстко заданной карте ID.
           const resolvedFromApi = (allApiConvIds.length > 0)
-            ? [...new Set(allApiConvIds.map((cid) => mapOldSiteConvocationIdToCanonical(cid)).filter(Boolean))]
+            ? [...new Set(allApiConvIds
+                .map((cid) => mapOldSiteConvocationIdToCanonical(cid) || resolveConvocationFromId({ convocationId: cid }, convocationsList))
+                .filter(Boolean))]
             : [];
           const convocationFromApi = resolvedFromApi.length > 0 ? primaryConvocation(resolvedFromApi) : "";
           const hasConvocationFromApi = convocationFromApi !== "";

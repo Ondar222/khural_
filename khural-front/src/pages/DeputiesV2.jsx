@@ -295,6 +295,25 @@ function normalizeDedupName(s) {
     .toLowerCase();
 }
 
+/** Собирает все созывы депутата из любых источников (persons_info, статика, API) в канонические токены. */
+function collectConvocationTokens(...sources) {
+  const out = [];
+  for (const source of sources) {
+    if (source == null) continue;
+    const values = Array.isArray(source) ? source : [source];
+    for (const item of values) {
+      if (item == null) continue;
+      const raw =
+        typeof item === "object"
+          ? item.name ?? item.number ?? item.title ?? item.label ?? item.id
+          : item;
+      const token = normalizeConvocationToken(raw);
+      if (token && token !== "Все" && !out.includes(token)) out.push(token);
+    }
+  }
+  return out;
+}
+
 function mergeByIdPreferApi(baseDeputies, apiDeputies) {
   const base = Array.isArray(baseDeputies) ? baseDeputies : [];
   const api = Array.isArray(apiDeputies) ? apiDeputies : [];
@@ -320,11 +339,19 @@ function mergeByIdPreferApi(baseDeputies, apiDeputies) {
     if (apiD && !hasValue(apiD.photo) && hasValue(d.photo)) {
       merged.photo = d.photo;
     }
-    // Созыв только из persons_info (DataContext), API не используем — как на старом сайте
-    if (hasValue(d.convocation)) {
-      merged.convocation = d.convocation;
-      merged.convocationNumber = d.convocationNumber ?? d.convocation;
-      merged.convocations = Array.isArray(d.convocations) && d.convocations.length ? d.convocations : [d.convocation];
+    // Объединяем созывы из persons_info/статики и API: если депутат привязан к созыву
+    // в любом из источников, он должен отображаться в этом созыве.
+    const convocations = collectConvocationTokens(
+      d?.convocations,
+      d?.convocation,
+      d?.convocationNumber,
+      apiD?.convocations,
+      apiD?.convocation
+    );
+    if (convocations.length) {
+      merged.convocations = convocations;
+      merged.convocation = hasValue(d?.convocation) ? d.convocation : convocations[0];
+      merged.convocationNumber = merged.convocation;
     }
     // Не затирать контакты из DataContext/person info, если API не вернул телефон/почту
     if (apiD && d?.contacts) {

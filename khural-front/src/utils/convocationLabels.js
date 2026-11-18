@@ -64,7 +64,19 @@ export function getConvocationYears(token) {
 }
 
 /** Канонические созывы для фильтра (остальные варианты приводятся к ним). */
-export const CANONICAL_CONVOCATIONS = ["I", "II", "III", "IV"];
+export const CANONICAL_CONVOCATIONS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+
+/** Русские порядковые названия созывов → римский токен (из API приходят «Первый созыв» и т.п.). */
+const RUSSIAN_CONVOCATION_NAMES = {
+  перв: "I",
+  втор: "II",
+  трет: "III",
+  четверт: "IV",
+  пят: "V",
+  шест: "VI",
+  седьм: "VII",
+  восьм: "VIII",
+};
 
 /**
  * ID созывов на старом сайте khural.rtyva.ru (URL /struct/deputies_history/:id/).
@@ -98,6 +110,7 @@ export const BACKEND_CONVOCATION_IDS = {
   5: "II",
   4: "III",
   6: "IV",
+  13: "VII",
 };
 
 /** Все варианты convocationId → канонический токен (I, II, III, IV).
@@ -149,5 +162,9 @@ export function normalizeConvocationToCanonical(raw) {
   const upper = s.toUpperCase();
   if (CANONICAL_CONVOCATIONS.includes(upper)) return upper;
   if (/^[IVX]+$/i.test(s)) return upper;
+  const lower = s.toLowerCase();
+  for (const [prefix, token] of Object.entries(RUSSIAN_CONVOCATION_NAMES)) {
+    if (lower.startsWith(prefix)) return token;
+  }
   return s;
 }

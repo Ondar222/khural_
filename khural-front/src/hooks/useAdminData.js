@@ -600,7 +600,7 @@ export function useAdminData() {
     const personsList = fromGov.length ? [...basePersons, ...toPersonsFallback(fromGov)] : basePersons;
     // Обогащаем депутатов созывами из deputy_convocation_mapping.json (как на сайте I–IV)
     const mapping = convocationMappingRaw && typeof convocationMappingRaw === "object" ? convocationMappingRaw : {};
-    const convOrder = ["I", "II", "III", "IV"];
+    const convOrder = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
     const convByNormalizedName = new Map();
     for (const conv of convOrder) {
       const names = Array.isArray(mapping[conv]) ? mapping[conv] : [];

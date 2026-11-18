@@ -54,6 +54,15 @@ export const STRUCTURE_SECTION_LINKS = [
   { label: "Молодежный Хурал", href: "/youth-parliament" },
 ];
 
+/** Ссылки на депутатов по созывам — общие для Header (desktop/mega/mobile) и бокового меню. */
+export const DEPUTY_CONVOCATION_LINKS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"].map(
+  (convocation) => ({
+    label: `Депутаты ${convocation} созыва`,
+    href: `/deputies?convocation=${encodeURIComponent(convocation)}`,
+  })
+);
+
 /** Все статические href разделов — чтобы CMS-ссылки не дублировали их. */
 export const ABOUT_SECTION_HREFS = ABOUT_SECTION_LINKS.map((link) => link.href);
 export const STRUCTURE_SECTION_HREFS = STRUCTURE_SECTION_LINKS.map((link) => link.href);
+export const DEPUTY_CONVOCATION_HREFS = DEPUTY_CONVOCATION_LINKS.map((link) => link.href);

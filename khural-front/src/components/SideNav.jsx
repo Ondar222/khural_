@@ -8,7 +8,7 @@ import { pickMenuLabelInfo, applyPagesOverridesToTree } from "../utils/pagesOver
 import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
 import { normalizePathBySlugAliases } from "../utils/slugAliases.js";
 import { DEFAULT_COMMISSIONS_LIST } from "../utils/commissionsData.js";
-import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS } from "../data/sectionMenus.js";
+import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS, DEPUTY_CONVOCATION_LINKS } from "../data/sectionMenus.js";
 import {
   PERSONNEL_ROOT_PATH,
   PERSONNEL_TITLE,
@@ -170,10 +170,7 @@ const defaultLinksCommon = ABOUT_SECTION_LINKS.map(({ label, href }) => ({ label
 const defaultLinksDeputies = [
   { label: "Депутаты", href: "/deputies" },
   { label: "Депутаты всех созывов", href: "/deputies?status=all&convocation=%D0%92%D1%81%D0%B5" },
-  ...["I", "II", "III", "IV", "V", "VI", "VII", "VIII"].map((convocation) => ({
-    label: `Депутаты ${convocation} созыва`,
-    href: `/deputies?convocation=${encodeURIComponent(convocation)}`,
-  })),
+  ...DEPUTY_CONVOCATION_LINKS,
   { label: "Депутаты прекратившие полномочия", href: "/deputies/ended" },
 ];
 

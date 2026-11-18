@@ -739,7 +739,7 @@ export default function AdminDeputyEditor({ mode, deputyId, canWrite }) {
               const mapping = await fetch("/data/deputy_convocation_mapping.json")
                 .then((r) => (r.ok ? r.json() : {}))
                 .catch(() => ({}));
-              const order = ["I", "II", "III", "IV"];
+              const order = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
               const byName = new Map();
               for (const conv of order) {
                 const names = Array.isArray(mapping[conv]) ? mapping[conv] : [];
