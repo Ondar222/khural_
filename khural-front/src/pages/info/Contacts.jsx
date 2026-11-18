@@ -17,7 +17,7 @@ export default function InfoContacts() {
               <div className="prose">
                 <p>667000, Республика Тыва, г. Кызыл, ул. Ленина, 32</p>
                 <p><strong>Приемная</strong></p>
-                <p>тел/факс: 8 (39422) 2-16-32<br />
+                <p>тел: 8 (39422) 2-16-32<br />
                 e-mail: <a href="mailto:khural@inbox.ru">khural@inbox.ru</a></p>
                 <p>Время работы:<br />
                 понедельник - пятница: 8.30 - 17.30<br />
