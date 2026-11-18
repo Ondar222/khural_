@@ -45,7 +45,7 @@ export default function About() {
       : structureFocus === "commissions"
         ? t("Комиссии")
         : t("Структура")
-    : t("Общие сведения");
+    : t("О Верховном Хурале");
   const isMountedRef = React.useRef(false);
 
   const scrollToBlock = React.useCallback((id) => {
@@ -116,7 +116,7 @@ export default function About() {
       <div className="container">
         <div className="page-grid">
           <div>
-            <h3>{t("О Верховном Хурале Республики Тыва")}</h3>
+            <h3>{t("О Верховном Хурале (парламенте) Республики Тыва")}</h3>
 
             <div className="tabs" style={{ marginTop: 8 }}>
               <a

@@ -572,7 +572,7 @@ export default function SideNav({
         if (focus === 'overview') return "Структура парламента";
       }
       
-      return "Общие сведения";
+      return "О Верховном Хурале";
     }
 
     // Специфичные заголовки для раздела "Документы"
@@ -594,7 +594,7 @@ export default function SideNav({
       news: "Новости",
       deputies: "Депутаты",
       documents: "Документы",
-      about: "Общие сведения",
+      about: "О Верховном Хурале",
       structure: "Структура",
       committees: "Комитеты",
       commissions: "Комиссии",
