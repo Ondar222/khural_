@@ -17,7 +17,7 @@ import {
   buildFactionOptions,
   buildDistrictOptions,
 } from "../utils/deputyFilterOptions.js";
-import { formatConvocationLabelWithYears, normalizeConvocationToCanonical, CANONICAL_CONVOCATIONS, mapOldSiteConvocationIdToCanonical } from "../utils/convocationLabels.js";
+import { formatConvocationLabelWithYears, normalizeConvocationToCanonical, mapOldSiteConvocationIdToCanonical } from "../utils/convocationLabels.js";
 import { MailIcon, PhoneIcon } from "../components/icons/LinearIcons.jsx";
 
 function deputyMatchesFaction(deputy, factionName) {
@@ -631,23 +631,16 @@ export default function DeputiesV2() {
     return ["Все", ...merged];
   }, [apiDistricts, structureDistricts, deputies]);
 
-  // В фильтре только канонические созывы (I, II, III, IV); «11», «2014 год», «2020» не показываем — депутаты из них уже в II/III
-  const convocations = React.useMemo(() => {
-    const ordered = CONVOCATION_ORDER.filter((c) => c !== "Все" && CANONICAL_CONVOCATIONS.includes(c));
-    return ["Все", ...ordered];
-  }, []);
+  // В фильтре и боковом меню доступны все созывы (I–VIII), включая те, по которым пока нет данных.
+  const convocations = React.useMemo(() => ["Все", ...CONVOCATION_ORDER.filter((c) => c !== "Все")], []);
 
-  // Если выбранный созыв не встречается среди депутатов (данные ещё грузятся) — сброс в «Все», без переключения на IV/VIII
-  const deputiesLength = Array.isArray(deputies) ? deputies.length : 0;
-  const convocationsLength = Array.isArray(convocations) ? convocations.length : 0;
-
+  // Некорректное значение из URL возвращаем к «Все». Известные созывы (I–VIII) сохраняем даже когда
+  // по ним нет депутатов — иначе ссылки бокового меню молча сбрасывались бы на «Все созывы».
   React.useEffect(() => {
-    if (deputiesLength === 0) return;
-    if (convocation === "Все") return;
-    const hasAny = deputies.some((d) => getDeputyConvocations(d).includes(convocation));
-    if (hasAny) return;
-    setConvocation("Все");
-  }, [convocation, deputiesLength, convocationsLength, getDeputyConvocations, deputies]);
+    if (convocation !== "Все" && !CONVOCATION_ORDER.includes(convocation)) {
+      setConvocation("Все");
+    }
+  }, [convocation]);
 
   const factions = React.useMemo(() => {
     const toStr = (item) => {
@@ -738,6 +731,10 @@ export default function DeputiesV2() {
     };
 
     return [...list].sort((a, b) => {
+      // Сначала действующие, затем заранее завершившие полномочия.
+      const ea = isEndedDeputy(a) ? 1 : 0;
+      const eb = isEndedDeputy(b) ? 1 : 0;
+      if (ea !== eb) return ea - eb;
       // When showing all convocations, group implicitly by order (but without headers)
       if (convocation === "Все") {
         const ra = rankOf(getBestConv(a));
@@ -750,13 +747,23 @@ export default function DeputiesV2() {
       const nb = String(b?.name || b?.fullName || "").toLowerCase();
       return na.localeCompare(nb, "ru");
     });
-  }, [filtered, convocation, getDeputyConvocations]);
+  }, [filtered, convocation, getDeputyConvocations, isEndedDeputy]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredByConvocation.length / DEPUTIES_PAGE_SIZE);
+  // Действующие депутаты пагинируются, завершившие полномочия показываются отдельным блоком ниже —
+  // чтобы группа «заранее завершившие полномочия» была видна на любом фильтре и любой странице.
+  const activePool = React.useMemo(
+    () => filteredByConvocation.filter((d) => !isEndedDeputy(d)),
+    [filteredByConvocation, isEndedDeputy]
+  );
+  const endedPool = React.useMemo(
+    () => filteredByConvocation.filter((d) => isEndedDeputy(d)),
+    [filteredByConvocation, isEndedDeputy]
+  );
+  const paginatedSource = status === "ended" ? endedPool : activePool;
+  const totalPages = Math.ceil(paginatedSource.length / DEPUTIES_PAGE_SIZE);
   const paginatedDeputies = React.useMemo(
-    () => filteredByConvocation.slice((page - 1) * DEPUTIES_PAGE_SIZE, page * DEPUTIES_PAGE_SIZE),
-    [filteredByConvocation, page]
+    () => paginatedSource.slice((page - 1) * DEPUTIES_PAGE_SIZE, page * DEPUTIES_PAGE_SIZE),
+    [paginatedSource, page]
   );
 
   // Auto scroll to top when page changes
@@ -806,6 +813,81 @@ export default function DeputiesV2() {
     const q = sp.toString();
     const path = `/deputies${q ? `?${q}` : ""}`;
     window.history.replaceState({}, "", path);
+  };
+
+  // Действующие — текущая страница пагинации; завершившие полномочия — всегда полный список.
+  const activeDeputies = status === "ended" ? [] : paginatedDeputies;
+  const endedDeputies =
+    status === "active" ? [] : status === "ended" ? paginatedDeputies : endedPool;
+  const hasVisibleDeputies = activeDeputies.length > 0 || endedDeputies.length > 0;
+
+  const renderDeputyCard = (d) => {
+    const photoRaw =
+      typeof d.photo === "string"
+        ? d.photo
+        : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || d.previewPictureUrl || d.IE_PREVIEW_PICTURE || "";
+    const photo = normalizeFilesUrl(photoRaw);
+    return (
+      <div key={d.id} className="gov-card">
+        <div className="gov-card__top">
+          {photo ? (
+            <img
+              className="gov-card__avatar"
+              src={photo}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onError={(e) => {
+                // Если фото не загрузилось, заменяем на placeholder
+                const img = e.target;
+                const currentSrc = img.src || photo;
+
+                // Если это URL с khural.rtyva.ru и мы еще не пробовали прокси
+                if (/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(currentSrc) && !img.dataset.proxyTried) {
+                  img.dataset.proxyTried = "true";
+                  const proxyUrl = currentSrc.replace(/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i, "");
+                  img.src = proxyUrl;
+                } else {
+                  // Если прокси не помог, заменяем на placeholder
+                  img.style.display = "";
+                  img.removeAttribute("src");
+                  img.classList.remove("gov-card__avatar");
+                  img.classList.add("gov-card__avatar-placeholder");
+                }
+              }}
+            />
+          ) : (
+            <div className="gov-card__avatar" aria-hidden="true" />
+          )}
+        </div>
+        <div className="gov-card__body">
+          <div className="gov-card__name">{toDisplay(d.name)}</div>
+          <div className="gov-card__role">Депутат</div>
+          <ul className="gov-meta">
+            {d.contacts?.phone && (
+              <li>
+                <span><PhoneIcon size={15} /></span>
+                <span>{toDisplay(d.contacts.phone)}</span>
+              </li>
+            )}
+            {d.contacts?.email && (
+              <li>
+                <span><MailIcon size={15} /></span>
+                <span>{toDisplay(d.contacts.email)}</span>
+              </li>
+            )}
+          </ul>
+        </div>
+        <div className="gov-card__actions">
+          <a
+            className="gov-card__btn"
+            href={`/government?type=dep&id=${encodeURIComponent(d.id)}&back=${encodeURIComponent(deputiesListUrlWithFilters)}`}
+          >
+            Подробнее
+          </a>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -895,89 +977,30 @@ export default function DeputiesV2() {
               </div>
 
               <DataState
-                loading={apiBusy && filteredByConvocation.length === 0}
+                loading={apiBusy && !hasVisibleDeputies}
                 error={null}
-                empty={filteredByConvocation.length === 0}
+                empty={!hasVisibleDeputies}
                 emptyDescription="По выбранным фильтрам ничего не найдено"
               >
-                <div className="grid cols-3">
-                  {paginatedDeputies.map((d) => {
-                    const photoRaw =
-                      typeof d.photo === "string"
-                        ? d.photo
-                        : d.photo?.link || d.photo?.url || (d.image && (d.image.link || d.image.url)) || d.previewPictureUrl || d.IE_PREVIEW_PICTURE || "";
-                    const photo = normalizeFilesUrl(photoRaw);
-                    const ended = isEndedDeputy(d);
-                    const convs = getDeputyConvocations(d);
-                    return (
-                      <div key={d.id} className="gov-card">
-                        <div className="gov-card__top">
-                          {photo ? (
-                            <img
-                              className="gov-card__avatar"
-                              src={photo}
-                              alt=""
-                              loading="lazy"
-                              decoding="async"
-                              onError={(e) => {
-                                // Если фото не загрузилось, заменяем на placeholder
-                                const img = e.target;
-                                const currentSrc = img.src || photo;
-
-                                // Если это URL с khural.rtyva.ru и мы еще не пробовали прокси
-                                if (/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i.test(currentSrc) && !img.dataset.proxyTried) {
-                                  img.dataset.proxyTried = "true";
-                                  const proxyUrl = currentSrc.replace(/^https?:\/\/khural\.(?:yurta|rtyva)\.site/i, "");
-                                  img.src = proxyUrl;
-                                } else {
-                                  // Если прокси не помог, заменяем на placeholder
-                                  img.style.display = "";
-                                  img.removeAttribute("src");
-                                  img.classList.remove("gov-card__avatar");
-                                  img.classList.add("gov-card__avatar-placeholder");
-                                }
-                              }}
-                            />
-                          ) : (
-                            <div className="gov-card__avatar" aria-hidden="true" />
-                          )}
-                        </div>
-                        <div className="gov-card__body">
-                          <div className="gov-card__name">{toDisplay(d.name)}</div>
-                          <div className="gov-card__role">Депутат</div>
-                          <ul className="gov-meta">
-                            {d.contacts?.phone && (
-                              <li>
-                                <span><PhoneIcon size={15} /></span>
-                                <span>{toDisplay(d.contacts.phone)}</span>
-                              </li>
-                            )}
-                            {d.contacts?.email && (
-                              <li>
-                                <span><MailIcon size={15} /></span>
-                                <span>{toDisplay(d.contacts.email)}</span>
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                        <div className="gov-card__actions">
-                          <a
-                            className="gov-card__btn"
-                            href={`/government?type=dep&id=${encodeURIComponent(d.id)}&back=${encodeURIComponent(deputiesListUrlWithFilters)}`}
-                          >
-                            Подробнее
-                          </a>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                {activeDeputies.length > 0 && (
+                  <div className="grid cols-3">
+                    {activeDeputies.map(renderDeputyCard)}
+                  </div>
+                )}
+                {endedDeputies.length > 0 && (
+                  <>
+                    <h3 className="deputies-group-title">{t("депутаты заранее завершивших полномочия")}</h3>
+                    <div className="grid cols-3">
+                      {endedDeputies.map(renderDeputyCard)}
+                    </div>
+                  </>
+                )}
                 {totalPages > 1 && (
                   <div style={{ display: "flex", justifyContent: "center", marginTop: 32 }}>
                     <Pagination
                       current={page}
                       onChange={setPage}
-                      total={filteredByConvocation.length}
+                      total={paginatedSource.length}
                       pageSize={DEPUTIES_PAGE_SIZE}
                       showSizeChanger={false}
                       showTotal={(total) => `Всего: ${total}`}

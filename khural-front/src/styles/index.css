@@ -8119,6 +8119,15 @@ body:has(.auth-page) {
     transform: translateY(-1px);
   }
 }
+/* Подзаголовок группы депутатов, заранее завершивших полномочия */
+.deputies-group-title {
+  margin: 28px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text, #1f2937);
+}
 /* Pagination for deputies page */
 .deputies-page .ant-pagination {
   margin-top: 24px;

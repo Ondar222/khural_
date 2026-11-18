@@ -166,11 +166,15 @@ const defaultLinksBroadcast = [
 // Стандартные ссылки для раздела "Общие сведения" (меню «О Верховном Хурале» на старом сайте)
 const defaultLinksCommon = ABOUT_SECTION_LINKS.map(({ label, href }) => ({ label, href }));
 
-// Стандартные ссылки для раздела "Депутаты" (без дублирования с "Общими сведениями")
+// Стандартные ссылки раздела «Депутаты»: отдельный menu, а не пункты «Структуры».
 const defaultLinksDeputies = [
   { label: "Депутаты", href: "/deputies" },
-  { label: "Депутаты всех созывов", href: "/deputies?convocation=%D0%92%D1%81%D0%B5" },
-  { label: "Депутаты (завершившие полномочия)", href: "/deputies/ended" },
+  { label: "Депутаты всех созывов", href: "/deputies?status=all&convocation=%D0%92%D1%81%D0%B5" },
+  ...["I", "II", "III", "IV", "V", "VI", "VII", "VIII"].map((convocation) => ({
+    label: `Депутаты ${convocation} созыва`,
+    href: `/deputies?convocation=${encodeURIComponent(convocation)}`,
+  })),
+  { label: "Депутаты прекратившие полномочия", href: "/deputies/ended" },
 ];
 
 // Стандартные ссылки раздела «Общие сведения».
@@ -356,8 +360,8 @@ export default function SideNav({
       "^/code-of-honor$": "news",
       "^/mothers-commandments$": "news",
       "^/for-media$": "news",
-      "^/deputies$": "structure",
-      "^/deputies/.*": "structure",
+      "^/deputies$": "deputies",
+      "^/deputies/.*": "deputies",
       "^/documents$": "documents",
       "^/docs/.*": "documents",
       "^/about/finances$": "common",
