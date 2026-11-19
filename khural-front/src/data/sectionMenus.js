@@ -6,7 +6,7 @@ const MUNICIPAL_COUNCIL_TITLE =
 
 /**
  * Состав раздела «О Верховном Хурале».
- * Повторяет подразделы старого сайта из раздела «Общие сведения»
+ * Повторяет подразделы старого сайта из раздела «О Верховном Хурале»
  * (https://khural.rtyva.ru/info/), но ссылки ведут на страницы нового сайта.
  */
 export const ABOUT_SECTION_LINKS = [
@@ -75,7 +75,7 @@ export const DEPUTY_CONVOCATION_HREFS = DEPUTY_CONVOCATION_LINKS.map((link) => l
  * корректно определяли свой родительский раздел.
  */
 export const HEADER_PARENT_SECTIONS = [
-  { value: "about", label: "Общие сведения", slugPrefix: "about", aliases: ["about", "info"] },
+  { value: "about", label: "О Верховном Хурале", slugPrefix: "about", aliases: ["about", "info"] },
   { value: "structure", label: "Структура", slugPrefix: "struct", aliases: ["structure", "struct"] },
   { value: "deputies", label: "Депутаты", slugPrefix: "deputies", aliases: ["deputies"] },
   { value: "documents", label: "Документы", slugPrefix: "docs", aliases: ["documents", "docs"] },

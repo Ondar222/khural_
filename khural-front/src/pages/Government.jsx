@@ -447,7 +447,7 @@ export default function Government() {
                 <h3 id="focus-overview">{t("О Верховном Хурале Республики Тыва")}</h3>
                 <div className="tabs" style={{ marginBottom: 10 }}>
                   <a className="pill" href="/about">
-                    {t("Общие сведения")}
+                    {t("О Верховном Хурале")}
                   </a>
                   <span className="pill pill--solid" aria-current="page">
                     {t("Структура органов управления")}

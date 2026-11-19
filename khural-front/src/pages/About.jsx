@@ -131,7 +131,7 @@ export default function About() {
                   scrollToBlock("about-general");
                 }}
               >
-                {t("Общие сведения")}
+                {t("О Верховном Хурале")}
               </a>
               <a
                 className={`pill ${activeTab === "structure" ? "pill--solid" : ""}`}
@@ -149,7 +149,7 @@ export default function About() {
             </div>
 
             <div id="about-general" className="person-block">
-              <h3>{t("Общие сведения")}</h3>
+              <h3>{t("О Верховном Хурале")}</h3>
               <p>
                 8 сентября 2019 года состоялись очередные выборы в высший законодательный
                 (представительный) орган государственной власти Республики Тыва.

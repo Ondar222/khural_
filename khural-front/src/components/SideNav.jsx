@@ -83,7 +83,7 @@ function isRouteActive(currentPathname, currentSearch, currentHash, href) {
 
 // Мемоизируем дефолтные ссылки (они не меняются)
 const defaultLinks = [
-  { label: "Общие сведения", href: "/about" },
+  { label: "О Верховном Хурале", href: "/about" },
   { label: "Структура парламента", href: "/about?tab=structure&focus=overview" },
   { label: "Руководство", href: "/government" },
   { label: "Депутаты", href: "/deputies?convocation=VIII" },
@@ -160,7 +160,7 @@ const defaultLinksBroadcast = [
   { label: "Трансляции", href: "/broadcast" },
 ];
 
-// Стандартные ссылки для раздела "Общие сведения" (меню «О Верховном Хурале» на старом сайте)
+// Стандартные ссылки для раздела "О Верховном Хурале"
 const defaultLinksCommon = ABOUT_SECTION_LINKS.map(({ label, href }) => ({ label, href }));
 
 // Стандартные ссылки раздела «Депутаты»: отдельный menu, а не пункты «Структуры».
@@ -171,7 +171,7 @@ const defaultLinksDeputies = [
   { label: "Депутаты прекратившие полномочия", href: "/deputies/ended" },
 ];
 
-// Стандартные ссылки раздела «Общие сведения».
+// Стандартные ссылки раздела «О Верховном Хурале».
 // Экспортируется, чтобы страницы, где SideNav рендерится с явным links=...,
 // не разъезжались по составу с меню раздела.
 export const defaultLinksAbout = defaultLinksCommon;
@@ -453,7 +453,7 @@ export default function SideNav({
     }
     
     if (detectedSection === 'common') {
-      if (pathname === '/info') return "Общие сведения";
+      if (pathname === '/info') return "О Верховном Хурале";
       if (pathname === '/about/finances') return "Финансы";
       if (pathname.startsWith('/about/finances/')) return "Финансы";
       if (pathname === '/info/finansy') return "Финансы";
@@ -494,7 +494,7 @@ export default function SideNav({
         return getPersonnelPage(pathname.slice(1))?.title || PERSONNEL_TITLE;
       }
       if (pathname === '/info/polnomochiya') return "Полномочия";
-      return "Общие сведения";
+      return "О Верховном Хурале";
     }
 
     // Специфичные заголовки для раздела "Депутаты"
@@ -600,7 +600,7 @@ export default function SideNav({
       activity: "Деятельность",
       contacts: "Контакты",
       appeals: "Обращения",
-      common: "Общие сведения",
+      common: "О Верховном Хурале",
       youth: "Молодежный Хурал",
     };
 

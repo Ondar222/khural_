@@ -8,7 +8,7 @@ import { normalizeSlugAlias } from "../utils/slugAliases.js";
 
 // Статический список всех доступных страниц (используется когда API пуст или недоступен)
 const STATIC_PAGES = [
-  { slug: "info", title: "Общие сведения" },
+  { slug: "info", title: "О Верховном Хурале" },
   { slug: "info/finansy", title: "Финансы" },
   { slug: "info/finansy/rezultaty-proverok", title: "Результаты проверок" },
   { slug: "info/finansy/goszakupki", title: "Государственные закупки" },

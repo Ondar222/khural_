@@ -225,9 +225,9 @@ const FEDERATION_COUNCIL_HTML = `
 </div>
 `;
 
-/** Раздел «Общие сведения» (источник: khural.yurta.site). */
+/** Раздел «О Верховном Хурале» (источник: khural.yurta.site). */
 const INFO_INDEX_SLUG = "info";
-const INFO_INDEX_TITLE = "Общие сведения";
+const INFO_INDEX_TITLE = "О Верховном Хурале";
 const INFO_INDEX_HTML = `
 <div style="display:grid; gap:16px;">
   <div class="card" style="padding: 20px;">
@@ -2189,7 +2189,7 @@ export default function PageBySlug() {
     shouldUseInfoFallback ||
     slug === "about/finances";
 
-  // Определяем, является ли страница разделом "Общие сведения" (/info/*)
+  // Определяем, является ли страница разделом "О Верховном Хурале" (/info/*)
   const isInfoSection = isInfoIndex ||
     isInfoFinance || slug === "about/finances" ||
     isInfoGranisa || slug === "info/border-subject" || slug === "info/prigranichny-subekt" ||
@@ -2282,7 +2282,7 @@ export default function PageBySlug() {
 
   // Родительский раздел для CMS-страниц: /deputies/m -> /deputies.
   // Страницы создаются под выбранным родителем, поэтому «Назад» должна вести
-  // на него, а не на «Общие сведения» (/info).
+  // на него, а не на «О Верховном Хурале» (/info).
   const PARENT_SECTION_LABELS = {
     news: "← Назад к новостям",
     deputies: "← Назад к депутатам",

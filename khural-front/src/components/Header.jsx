@@ -367,7 +367,7 @@ export default function Header() {
               onMouseEnter={() => setOpenMenu("vh")}
               onMouseLeave={() => setOpenMenu(null)}
             >
-              <Link to="/about">{t("Общие сведения")} ▾</Link>
+              <Link to="/about">{t("О Верховном Хурале")} ▾</Link>
               <div className="dropdown__menu" onMouseEnter={() => setOpenMenu("vh")}>
                 {ABOUT_SECTION_LINKS.map((link) => (
                   <a key={`about-${link.href}`} href={link.href}>
@@ -658,8 +658,8 @@ export default function Header() {
         </div>
         <div className="sheet-grid container">
           <div className="sheet-col">
-            <h3>{t("Общие сведения")}</h3>
-            <a href="/about">{t("Общие сведения")}</a>
+            <h3>{t("О Верховном Хурале")}</h3>
+            <a href="/about">{t("О Верховном Хурале")}</a>
             {ABOUT_SECTION_LINKS.map((link) => (
               <a key={`sheet-about-${link.href}`} href={link.href}>
                 {t(link.label)}
@@ -863,7 +863,7 @@ export default function Header() {
               </Link>
               <button className="tile link" onClick={() => setMobileSection("vh")}>
                 <span className="mobile-menu-link-content">
-                  {t("Общие сведения")}
+                  {t("О Верховном Хурале")}
                   <RightOutlined aria-hidden="true" />
                 </span>
               </button>
@@ -905,10 +905,10 @@ export default function Header() {
             <button className="btn" onClick={() => setMobileSection(null)}>
               {t("back")}
             </button>
-            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("Общие сведения")}</div>
+            <div style={{ color: "#6b7280", margin: "8px 0" }}>{t("О Верховном Хурале")}</div>
             <a className="tile link" href="/about" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
-                {t("Общие сведения")}
+                {t("О Верховном Хурале")}
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
