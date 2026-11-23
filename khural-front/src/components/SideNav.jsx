@@ -6,6 +6,7 @@ import { getPreferredLocaleToken } from "../utils/pages.js";
 import { fetchPagesTree, getCachedPagesTree } from "../utils/cmsPagesTree.js";
 import { pickMenuLabelInfo, applyPagesOverridesToTree } from "../utils/pagesOverrides.js";
 import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
+import { useSiteChrome } from "../hooks/useSiteChrome.js";
 import { normalizePathBySlugAliases } from "../utils/slugAliases.js";
 import { DEFAULT_COMMISSIONS_LIST } from "../utils/commissionsData.js";
 import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS, DEPUTY_CONVOCATION_LINKS } from "../data/sectionMenus.js";
@@ -20,6 +21,17 @@ import {
 
 // Кэшируем URL для ссылок, чтобы не создавать их каждый раз
 const hrefCache = new Map();
+
+/** Пункты меню шапки из API → формат ссылок боковой панели. */
+function toSideNavLinks(items) {
+  return (Array.isArray(items) ? items : []).map((item) => ({
+    label: item.title || item.label || "",
+    href: item.url || (item.pageSlug ? `/p/${item.pageSlug}` : "/"),
+    ...(Array.isArray(item.children) && item.children.length
+      ? { children: toSideNavLinks(item.children) }
+      : {}),
+  }));
+}
 
 // Нормализует pathname + search для сравнения (одинаковый порядок и кодировка параметров)
 function normalizeRoute(pathname, search) {
@@ -142,7 +154,7 @@ const defaultLinksNews = [
   { label: "Главные события", href: "/news/week" },
   { label: "Актуальные новости", href: "/news?section=actual" },
   { label: "Все новости", href: "/news?section=all" },
-  { label: "Медиа", href: "/news?section=media" },
+  { label: "Фотографии", href: "/photo" },
   // Дополнительные ссылки новостей (фиксированные)
   { label: "Новости Председателя", href: "/news?category=новости председателя" },
   { label: "Для СМИ", href: "/for-media" },
@@ -154,7 +166,7 @@ const defaultLinksBroadcast = [
   { label: "Главные события", href: "/news/week" },
   { label: "Актуальные новости", href: "/news?section=actual" },
   { label: "Все новости", href: "/news?section=all" },
-  { label: "Медиа", href: "/news?section=media" },
+  { label: "Фотографии", href: "/photo" },
   { label: "Новости Председателя", href: "/news?category=новости председателя" },
   { label: "Для СМИ", href: "/for-media" },
   { label: "Трансляции", href: "/broadcast" },
@@ -326,6 +338,7 @@ export default function SideNav({
   const { t, lang } = useI18n();
   const { route } = useHashRoute();
   const locale = getPreferredLocaleToken(lang);
+  const { headerItems: backendMenuItems } = useSiteChrome();
   // Дерево страниц берём из общего кэша, чтобы при переходах между
   // страницами меню сразу рисовалось в полном составе и не «прыгало».
   const [pagesTree, setPagesTree] = React.useState(() => getCachedPagesTree());
@@ -431,7 +444,7 @@ export default function SideNav({
       if (pathname === '/news/week') return "Главные события";
       if (sectionParam === 'actual') return "Актуальные новости";
       if (sectionParam === 'all') return "Все новости";
-      if (sectionParam === 'media') return "Медиа";
+      if (sectionParam === 'media') return "Фотографии";
       if (categoryParam && String(categoryParam).toLowerCase().includes('новости председателя')) return "Новости Председателя";
       return "Новости";
     }
@@ -733,6 +746,16 @@ export default function SideNav({
       sectionDefaultLinks = defaultLinksYouth;
     }
 
+    // Меню шапки из админки автоматически отражается и в боковой панели.
+    // Локальные ссылки разделов остаются только как fallback, когда API недоступен.
+    const backendLinks = toSideNavLinks(backendMenuItems);
+    if (backendLinks.length) {
+      if (loadPages && pagesLinks.length > 0 && detectedSection !== 'news' && detectedSection !== 'broadcast') {
+        return [...backendLinks, ...pagesLinks];
+      }
+      return backendLinks;
+    }
+
     // Если загружаем страницы И это не раздел новостей/трансляций, добавляем их к стандартным ссылкам
     if (loadPages && pagesLinks.length > 0 && detectedSection !== 'news' && detectedSection !== 'broadcast') {
       return [...sectionDefaultLinks, ...pagesLinks];
@@ -740,7 +763,7 @@ export default function SideNav({
 
     // Иначе используем стандартные ссылки раздела (или пустой массив для разделов без специфичных ссылок)
     return sectionDefaultLinks;
-  }, [overrideLinks, loadPages, pagesLinks, detectedSection]);
+  }, [overrideLinks, loadPages, pagesLinks, detectedSection, backendMenuItems]);
 
   // Ссылки для подстраниц раздела «Кадровое обеспечение»
   const personnelLinks = React.useMemo(() => {

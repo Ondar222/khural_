@@ -28,6 +28,10 @@ export default function AdminDashboard({
   broadcastsCount,
   broadcastsLoading,
   portalsCount,
+  photoAlbumsCount,
+  photoAlbumsLoading,
+  menuItemsCount,
+  menuItemsLoading,
   onReload,
   onReloadSuccess,
 }) {
@@ -80,6 +84,10 @@ export default function AdminDashboard({
           value={adminPagesLoading ? "—" : adminPagesCount ?? "—"}
           href="/admin/pages"
         />
+        <StatCard label={t("adminMenuEditor") || "Меню"} value={menuItemsLoading ? "—" : menuItemsCount ?? "—"} href="/admin/menu" />
+        <StatCard label={t("adminHeaderEditor") || "Шапка"} value="1" href="/admin/header" />
+        <StatCard label={t("adminFooterEditor") || "Подвал"} value="1" href="/admin/footer" />
+        <StatCard label={t("adminPhotoAlbums") || "Фотоальбомы"} value={photoAlbumsLoading ? "—" : photoAlbumsCount ?? "—"} href="/admin/photos" />
         <StatCard label="Документы" value={statsReady ? stats.documents ?? 0 : "—"} href="/admin/documents" />
         <StatCard label={t("adminDashboardSlider")} value={statsReady ? stats.slides ?? 0 : "—"} href="/admin/slider" />
         <StatCard label={t("adminDashboardNews")} value={statsReady ? stats.news ?? 0 : "—"} href="/admin/news" />

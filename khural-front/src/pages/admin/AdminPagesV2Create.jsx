@@ -5,6 +5,7 @@ import { AboutApi, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { upsertPageOverride, PAGES_OVERRIDES_EVENT_NAME } from "../../utils/pagesOverrides.js";
 import { refreshPagesTree } from "../../utils/cmsPagesTree.js";
+import { PAGE_STATUS_OPTIONS } from "../../utils/pageStatus.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import ImageUploadField from "../../components/ImageUploadField.jsx";
 import VideoUploadField from "../../components/VideoUploadField.jsx";
@@ -198,10 +199,12 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
         });
       }
 
+      const status = values.status || (values.isPublished ? "published" : "draft");
       const created = await AboutApi.createPage({
         title: values.title,
         slug: fullSlug,
-        isPublished: values.isPublished !== undefined ? Boolean(values.isPublished) : true,
+        status,
+        isPublished: status === "published",
         locale: contentLocale,
         content: contentArray,
       });
@@ -310,13 +313,13 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
       <div className="admin-card admin-page-editor__card">
 
-        <Form layout="vertical" form={form} initialValues={{ locale: "ru", blocks: [], isPublished: true }}>
+        <Form layout="vertical" form={form} initialValues={{ locale: "ru", blocks: [], status: "published" }}>
           <Form.Item label="Название страницы" name="title" rules={[{ required: true, message: "Введите название" }]}>
             <Input onChange={onTitleChange} placeholder="Название страницы" />
           </Form.Item>
 
-          <Form.Item label="Опубликовать" name="isPublished" valuePropName="checked">
-            <Switch />
+          <Form.Item label="Статус страницы" name="status">
+            <Select options={PAGE_STATUS_OPTIONS} />
           </Form.Item>
 
           <Form.Item label="Название в меню" name="menuTitle">

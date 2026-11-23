@@ -2,17 +2,175 @@ import React from "react";
 import { useI18n } from "../context/I18nContext.jsx";
 import { openCookieSettings } from "../utils/cookieConsent.js";
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined, PrinterOutlined } from "@ant-design/icons";
+import { useSiteChrome } from "../hooks/useSiteChrome.js";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
+
+const DEFAULT_SOCIALS = [
+  {
+    id: "vk",
+    titleRu: "ВКонтакте",
+    titleTyv: "ВКонтакте",
+    url: "https://vk.com/public114457376",
+    isVisible: true,
+  },
+  {
+    id: "max",
+    titleRu: "Макс",
+    titleTyv: "Макс",
+    url: "https://max.ru/khuraltyva/AZ-yY-ezegk",
+    isVisible: true,
+  },
+];
+
+const DEFAULT_CONTACTS = [
+  {
+    id: "address",
+    labelRu: "Адрес:",
+    labelTyv: "АДРЕС:",
+    valueRu: "667000, г. Кызыл, ул. Ленина, д. 32",
+    valueTyv: "667000, Кызыл хоорай, Ленина кудумчузу, 32 дугаар бажың.",
+    icon: "address",
+    isVisible: true,
+  },
+  {
+    id: "phone",
+    labelRu: "Канцелярия:",
+    labelTyv: "КАНЦЕЛЯРИЯ:",
+    valueRu: "+7 (39422) 2-10-43",
+    valueTyv: "+7 (39422) 2-10-43",
+    href: "tel:+73942221043",
+    icon: "phone",
+    isVisible: true,
+  },
+  {
+    id: "receiption",
+    labelRu: "Приемная:",
+    labelTyv: "ПРИЕМНАЯ:",
+    valueRu: "+7 (39422) 2-16-32",
+    valueTyv: "+7 (39422) 2-16-32",
+    icon: "printer",
+    isVisible: true,
+  },
+  {
+    id: "email",
+    labelRu: "E-mail:",
+    labelTyv: "E-mail:",
+    valueRu: "khural@inbox.ru",
+    valueTyv: "khural@inbox.ru",
+    href: "mailto:khural@inbox.ru",
+    icon: "email",
+    isVisible: true,
+  },
+];
 
 export default function Footer() {
   const { lang, t } = useI18n();
+  const { footer, footerGroups, footerItems } = useSiteChrome();
   const phoneIconStyle = { transform: "scaleX(-1)" };
-  // Для тувинского языка - три строки
-  const tyBrandLines = lang === "ty"
+  const isTy = lang === "ty";
+
+  // Для тувинского языка - три строки (используются, если название не задано в настройках)
+  const tyBrandLines = isTy
     ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"]
     : null;
-  const brandLine1 = lang === "ru" ? "Верховный Хурал" : t("brandTop");
-  const brandLine2 = lang === "ru" ? "(парламент)" : t("brandParliament");
-  const brandLine3 = lang === "ru" ? "Республики Тыва" : t("brandBottom");
+  const brandLine1 = !isTy ? "Верховный Хурал" : t("brandTop");
+  const brandLine2 = !isTy ? "(парламент)" : t("brandParliament");
+  const brandLine3 = !isTy ? "Республики Тыва" : t("brandBottom");
+
+  const localized = (ru, tyv) => (isTy ? tyv || ru : ru || tyv);
+
+  const orgName = localized(footer?.organizationNameRu, footer?.organizationNameTyv);
+  const copyrightText = localized(footer?.copyrightTextRu, footer?.copyrightTextTyv);
+  const developerText = localized(footer?.developerTextRu, footer?.developerTextTyv);
+  const copyrightYear = footer?.copyrightYear || new Date().getFullYear();
+
+  const selectedGroupIds = Array.isArray(footer?.menuGroupIds) && footer.menuGroupIds.length
+    ? new Set(footer.menuGroupIds.map(String))
+    : null;
+  const groups = (footerGroups || []).filter(
+    (group) => !selectedGroupIds || selectedGroupIds.has(String(group.id)),
+  );
+
+  const itemsByGroup = React.useMemo(() => {
+    const map = new Map();
+    (footerItems || []).forEach((item) => {
+      const key = String(item.groupId ?? "ungrouped");
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(item);
+    });
+    return map;
+  }, [footerItems]);
+
+  const socials = Array.isArray(footer?.socials) && footer.socials.length
+    ? footer.socials.filter((item) => item.isVisible !== false)
+    : DEFAULT_SOCIALS;
+  const contacts = Array.isArray(footer?.contacts) && footer.contacts.length
+    ? footer.contacts.filter((item) => item.isVisible !== false)
+    : DEFAULT_CONTACTS;
+
+  const iconByType = {
+    address: EnvironmentOutlined,
+    phone: PhoneOutlined,
+    printer: PrinterOutlined,
+    email: MailOutlined,
+  };
+
+  const renderMenuColumn = (group, fallback) => (
+    <div className="footer-col" key={group?.id || fallback.title}>
+      <h4>{group ? group.title : t(fallback.titleKey || fallback.title)}</h4>
+      <nav>
+        {(group ? itemsByGroup.get(String(group.id)) || [] : fallback.links).map((link, index) => {
+          const href = link.href || link.url || "/";
+          if (href === "#cookie-settings") {
+            return (
+              <a
+                key={`${href}-${index}`}
+                href="#cookie-settings"
+                onClick={(event) => {
+                  event.preventDefault();
+                  openCookieSettings();
+                }}
+              >
+                {link.label || link.title || t("Настройки cookie")}
+              </a>
+            );
+          }
+          return (
+            <a key={`${href}-${index}`} href={href}>
+              {link.label || link.title}
+            </a>
+          );
+        })}
+      </nav>
+    </div>
+  );
+
+  const fallbackColumns = [
+    {
+      title: "region",
+      links: [
+        { href: "/government", label: t("government") },
+        { href: "/appeals", label: t("feedback") },
+        { href: "/sitemap", label: t("sitemap") },
+      ],
+    },
+    {
+      title: "news",
+      links: [
+        { href: "/news", label: t("hotNews") },
+        { href: "/news", label: t("allNews") },
+      ],
+    },
+    {
+      title: "docs",
+      links: [
+        { href: "/pd-policy", label: t("pdPolicy") },
+        { href: "#cookie-settings", label: t("Настройки cookie") },
+        { href: "/license", label: t("license") },
+      ],
+    },
+  ];
+
   return (
     <footer className="site-footer">
       <div className="container">
@@ -22,7 +180,7 @@ export default function Footer() {
             <div className="brand" style={{ color: "#fff", display: "flex", alignItems: "center", gap: 12 }}>
               <div className="logo" style={{ borderColor: "#fff", color: "#fff", flexShrink: 0 }}>
                 <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
+                  src={normalizeFilesUrl(footer?.logoUrl) || "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"}
                   alt=""
                   width={56}
                   height={56}
@@ -30,118 +188,88 @@ export default function Footer() {
                 />
               </div>
               <div style={{ minWidth: 0, overflowWrap: "break-word", display: "flex", flexDirection: "column", justifyContent: "center", lineHeight: 1.1 }}>
-                {tyBrandLines ? (
+                {orgName ? (
+                  <div style={{ fontSize: 15, lineHeight: 1.2, fontWeight: 800, color: "#fff" }}>{orgName}</div>
+                ) : tyBrandLines ? (
                   <>
-                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
-                      {tyBrandLines[0]}
-                    </div>
-                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
-                      {tyBrandLines[1]}
-                    </div>
-                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "#fff", opacity: 0.9 }}>
-                      {tyBrandLines[2]}
-                    </div>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>{tyBrandLines[0]}</div>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>{tyBrandLines[1]}</div>
+                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "#fff", opacity: 0.9 }}>{tyBrandLines[2]}</div>
                   </>
                 ) : (
                   <>
-                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 900, color: "#fff", opacity: 0.9 }}>
-                      {brandLine1}
-                    </div>
-                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "#fff", opacity: 0.9 }}>
-                      {brandLine2}
-                    </div>
-                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>
-                      {brandLine3}
-                    </div>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 900, color: "#fff", opacity: 0.9 }}>{brandLine1}</div>
+                    <div style={{ fontSize: 14, lineHeight: 1.1, color: "#fff", opacity: 0.9 }}>{brandLine2}</div>
+                    <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#fff" }}>{brandLine3}</div>
                   </>
                 )}
               </div>
             </div>
             <div className="footer-copyright">
-              <p>{t("© 2026 ВЕРХОВНЫЙ ХУРАЛ (ПАРЛАМЕНТ) РТ")}</p>
-              <p>{t("ВСЕ ПРАВА ЗАЩИЩЕНЫ.")}</p>
-              <p className="footer-dev">{t("Разработано Lana Soft")}</p>
+              {footer?.showCopyright !== false && (
+                <p>
+                  {copyrightText
+                    ? `${copyrightYear} ${copyrightText}`
+                    : `${copyrightYear} ${t("© 2026 ВЕРХОВНЫЙ ХУРАЛ (ПАРЛАМЕНТ) РТ")}`}
+                </p>
+              )}
+              {footer?.showCopyright !== false && !copyrightText && <p>{t("ВСЕ ПРАВА ЗАЩИЩЕНЫ.")}</p>}
+              {footer?.showDeveloper !== false && (
+                <p className="footer-dev">
+                  {footer?.developerUrl ? (
+                    <a href={footer.developerUrl} target="_blank" rel="noreferrer" style={{ color: "inherit" }}>
+                      {developerText || t("Разработано Lana Soft")}
+                    </a>
+                  ) : (
+                    developerText || t("Разработано Lana Soft")
+                  )}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Navigation Links */}
           <div className="footer-links">
-            <div className="footer-col">
-              <h4>{t("region")}</h4>
-              <nav>
-                <a href="/government">{t("government")}</a>
-                <a href="/appeals">{t("feedback")}</a>
-                <a href="/sitemap">{t("sitemap")}</a>
-              </nav>
-            </div>
-            <div className="footer-col">
-              <h4>{t("news")}</h4>
-              <nav>
-                <a href="/news">{t("hotNews")}</a>
-                <a href="/news">{t("allNews")}</a>
-              </nav>
-            </div>
-            <div className="footer-col">
-              <h4>{t("docs")}</h4>
-              <nav>
-                <a href="/pd-policy">{t("pdPolicy")}</a>
-                <a
-                  href="#cookie-settings"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    openCookieSettings();
-                  }}
-                >
-                  {t("Настройки cookie")}
-                </a>
-                <a href="/license">{t("license")}</a>
-              </nav>
-            </div>
-            <div className="footer-col">
-              <h4>{t("socials")}</h4>
-              <nav>
-                <a href="https://vk.com/public114457376" target="_blank" rel="noreferrer">
-                  {t("vk")}
-                </a>
-                <a href="https://max.ru/khuraltyva/AZ-yY-ezegk" target="_blank" rel="noreferrer">
-                  Макс
-                </a>
-              </nav>
-            </div>
+            {groups.length
+              ? groups.map((group) => renderMenuColumn(group))
+              : fallbackColumns.map((column) => renderMenuColumn(null, column))}
+            {footer?.showSocials !== false && (
+              <div className="footer-col">
+                <h4>{t("socials")}</h4>
+                <nav>
+                  {socials.map((social) => (
+                    <a key={social.id || social.url} href={social.url} target="_blank" rel="noreferrer">
+                      {localized(social.titleRu, social.titleTyv)}
+                    </a>
+                  ))}
+                </nav>
+              </div>
+            )}
           </div>
 
           {/* Contact Information */}
-          <div className="footer-contacts">
-            <h4>{t("Контакты")}</h4>
-            <div className="contact-item">
-              <EnvironmentOutlined className="contact-icon" aria-hidden="true" />
-              <div className="contact-text">
-                <strong>{lang === "ty" ? "АДРЕС:" : "Адрес:"}</strong>{" "}
-                <span>{lang === "ty" ? "667000, Кызыл хоорай, Ленина кудумчузу, 32 дугаар бажың." : "667000, г. Кызыл, ул. Ленина, д. 32"}</span>
-              </div>
+          {(footer?.showContacts !== false || !footer) && (
+            <div className="footer-contacts">
+              <h4>{t("Контакты")}</h4>
+              {contacts.map((contact, index) => {
+                const Icon = iconByType[contact.icon] || EnvironmentOutlined;
+                const value = localized(contact.valueRu, contact.valueTyv);
+                return (
+                  <div className="contact-item" key={contact.id || index}>
+                    <Icon
+                      className="contact-icon"
+                      style={contact.icon === "phone" ? phoneIconStyle : undefined}
+                      aria-hidden="true"
+                    />
+                    <div className="contact-text">
+                      <strong>{localized(contact.labelRu, contact.labelTyv)}</strong>{" "}
+                      {contact.href ? <a href={contact.href}>{value}</a> : <span>{value}</span>}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="contact-item">
-              <PhoneOutlined className="contact-icon" style={phoneIconStyle} aria-hidden="true" />
-              <div className="contact-text">
-                <strong>{lang === "ty" ? "КАНЦЕЛЯРИЯ:" : "Канцелярия:"}</strong>{" "}
-                <a href="tel:+73942297295">+7 (39422) 2-10-43</a>
-              </div>
-            </div>
-            <div className="contact-item">
-              <PrinterOutlined className="contact-icon" aria-hidden="true" />
-              <div className="contact-text">
-                <strong>{lang === "ty" ? "ПРИЕМНАЯ:" : "Приемная:"}</strong>{" "}
-                <span>+7 (39422) 2-16-32</span>
-              </div>
-            </div>
-            <div className="contact-item">
-              <MailOutlined className="contact-icon" aria-hidden="true" />
-              <div className="contact-text">
-                <strong>E-mail:</strong>{" "}
-                <a href="mailto:ods@tuva.ru">khural@inbox.ru  </a>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </footer>

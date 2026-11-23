@@ -5,6 +5,7 @@ import { AboutApi, apiFetch, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
 import { getPageOverrideForPage, upsertPageOverride } from "../../utils/pagesOverrides.js";
 import { refreshPagesTree } from "../../utils/cmsPagesTree.js";
+import { PAGE_STATUS_OPTIONS, pageStatusOf } from "../../utils/pageStatus.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
 import ImageUploadField from "../../components/ImageUploadField.jsx";
 import VideoUploadField from "../../components/VideoUploadField.jsx";
@@ -169,6 +170,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
   const [busy, setBusy] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const originalPrefixRef = React.useRef("");
+  const currentPageRef = React.useRef(null);
   const [documents, setDocuments] = React.useState([]);
   const [loadingDocs, setLoadingDocs] = React.useState(false);
   const [pageSlug, setPageSlug] = React.useState("");
@@ -209,6 +211,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         const page = await getPageById(id);
         if (!alive) return;
         if (!page) throw new Error("Страница не найдена");
+        currentPageRef.current = page;
         const slug = String(page.slug || "");
         setPageSlug(slug);
         const parts = slug.split("/").filter(Boolean);
@@ -259,7 +262,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           contentRu: defaults ? defaults.contentRu : ruBody,
           titleTy: defaults ? defaults.titleTy : tyTitle,
           contentTy: defaults ? defaults.contentTy : tyBody,
-          isPublished: Boolean(page?.isPublished),
+          status: pageStatusOf(page),
           menuTitle: ov?.menuTitle || "",
           submenuTitle: ov?.submenuTitle || "",
           parentSection: headerSection?.value || "",
@@ -344,7 +347,8 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         slug: fullSlug,
         // Родитель — раздел шапки, поэтому связь хранится в префиксе адреса.
         parentId: null,
-        isPublished: values.isPublished !== undefined ? Boolean(values.isPublished) : undefined,
+        status: values.status || pageStatusOf(currentPageRef.current),
+        isPublished: (values.status || pageStatusOf(currentPageRef.current)) === "published",
         locale: "ru",
         content: contentArray,
         menuTitle,
@@ -527,8 +531,11 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           form={form}
           initialValues={{ titleRu: "", contentRu: "", titleTy: "", contentTy: "", blocks: [] }}
         >
-          <Form.Item label="Опубликовать" name="isPublished" valuePropName="checked">
-            <Switch disabled={loading} />
+          <Form.Item label="Статус страницы" name="status">
+            <Select
+              disabled={loading}
+              options={PAGE_STATUS_OPTIONS}
+            />
           </Form.Item>
           <Form.Item label="Название в меню" name="menuTitle">
             <Input disabled={loading} placeholder="Название в меню (если отличается от названия страницы)" />

@@ -4,7 +4,7 @@ import AdminShell from "./AdminShell.jsx";
 import AdminDashboard from "./AdminDashboard.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { useBroadcastLinks } from "../../hooks/useBroadcastLinks.js";
-import { AboutApi } from "../../api/client.js";
+import { AboutApi, MenuApi, PhotoAlbumApi } from "../../api/client.js";
 import { countAdminPageRows } from "../../utils/adminPagesCatalog.js";
 import {
   readPortalsOverrides,
@@ -24,6 +24,10 @@ export default function AdminDashboardPage() {
   const [adminPagesCount, setAdminPagesCount] = React.useState(null);
   const [adminPagesLoading, setAdminPagesLoading] = React.useState(true);
   const [portalsCount, setPortalsCount] = React.useState(null);
+  const [photoAlbumsCount, setPhotoAlbumsCount] = React.useState(null);
+  const [photoAlbumsLoading, setPhotoAlbumsLoading] = React.useState(true);
+  const [menuItemsCount, setMenuItemsCount] = React.useState(null);
+  const [menuItemsLoading, setMenuItemsLoading] = React.useState(true);
 
   const reloadPortalsCount = React.useCallback(() => {
     try {
@@ -64,9 +68,36 @@ export default function AdminDashboardPage() {
     }
   }, [adminData.isAuthenticated, message, t]);
 
+  const reloadPhotoAlbumsCount = React.useCallback(async () => {
+    setPhotoAlbumsLoading(true);
+    try {
+      const albums = await PhotoAlbumApi.list({ publishedOnly: false });
+      setPhotoAlbumsCount(Array.isArray(albums) ? albums.length : 0);
+    } catch {
+      setPhotoAlbumsCount(null);
+    } finally {
+      setPhotoAlbumsLoading(false);
+    }
+  }, []);
+
+  const reloadMenuItemsCount = React.useCallback(async () => {
+    setMenuItemsLoading(true);
+    try {
+      const menu = await MenuApi.list({ includeHidden: true });
+      const items = Array.isArray(menu?.items) ? menu.items : Array.isArray(menu) ? menu : [];
+      setMenuItemsCount(items.length);
+    } catch {
+      setMenuItemsCount(null);
+    } finally {
+      setMenuItemsLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => {
     reloadAdminPagesCount();
-  }, [reloadAdminPagesCount]);
+    reloadPhotoAlbumsCount();
+    reloadMenuItemsCount();
+  }, [reloadAdminPagesCount, reloadPhotoAlbumsCount, reloadMenuItemsCount]);
 
   const loginCard = !adminData.isAuthenticated ? (
     <div className="admin-card" style={{ marginBottom: 16 }}>
@@ -107,13 +138,24 @@ export default function AdminDashboardPage() {
         stats={adminData.stats}
         statsReady={adminData.statsReady}
         onReload={async () => {
-          await Promise.all([adminData.reload(), reloadBroadcasts(), reloadAdminPagesCount(), Promise.resolve().then(reloadPortalsCount)]);
+          await Promise.all([
+            adminData.reload(),
+            reloadBroadcasts(),
+            reloadAdminPagesCount(),
+            reloadPhotoAlbumsCount(),
+            reloadMenuItemsCount(),
+            Promise.resolve().then(reloadPortalsCount),
+          ]);
         }}
         adminPagesCount={adminPagesCount}
         adminPagesLoading={adminPagesLoading}
         broadcastsCount={broadcasts.length}
         broadcastsLoading={broadcastsLoading}
         portalsCount={portalsCount}
+        photoAlbumsCount={photoAlbumsCount}
+        photoAlbumsLoading={photoAlbumsLoading}
+        menuItemsCount={menuItemsCount}
+        menuItemsLoading={menuItemsLoading}
         onReloadSuccess={() => message.success(t("adminDashboardRefreshDone"))}
       />
     </AdminShell>

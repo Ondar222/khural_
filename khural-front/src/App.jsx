@@ -27,6 +27,8 @@ const lazy = (fn) => React.lazy(fn);
 
 const Region = lazy(() => import("./pages/Region.jsx"));
 const NewsArchive = lazy(() => import("./pages/NewsArchive.jsx"));
+const PhotoAlbumsPage = lazy(() => import("./pages/PhotoAlbums.jsx").then((m) => ({ default: m.PhotoAlbumsPage })));
+const PhotoAlbumDetailPage = lazy(() => import("./pages/PhotoAlbums.jsx").then((m) => ({ default: m.PhotoAlbumDetailPage })));
 const Government = lazy(() => import("./pages/Government.jsx"));
 const Authorities = lazy(() => import("./pages/Authorities.jsx"));
 const Wifi = lazy(() => import("./pages/Wifi.jsx"));
@@ -127,6 +129,10 @@ const AdminCommissionsCreatePage = lazy(() => import("./pages/admin/AdminCommiss
 const AdminCommissionsEditPage = lazy(() => import("./pages/admin/AdminCommissionsEditPage.jsx"));
 const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage.jsx"));
 const AdminPortalsPage = lazy(() => import("./pages/admin/AdminPortalsPage.jsx"));
+const AdminMenuPage = lazy(() => import("./pages/admin/AdminMenuPage.jsx"));
+const AdminHeaderPage = lazy(() => import("./pages/admin/AdminHeaderPage.jsx"));
+const AdminFooterPage = lazy(() => import("./pages/admin/AdminFooterPage.jsx"));
+const AdminAlbumsPage = lazy(() => import("./pages/admin/AdminAlbumsPage.jsx"));
 
 /** Редирект на панель управления (страница «Обращения» временно скрыта). */
 function AdminRedirectToDashboard() {
@@ -215,6 +221,8 @@ export default function App() {
                             "/region": Region,
                             "/about": About,
                             "/news": NewsArchive,
+                            "/photo": PhotoAlbumsPage,
+                            "/photo/:slug": PhotoAlbumDetailPage,
                             "/news/week": NewsWeekHighlights,
                             "/news/slider/:id": NewsSliderDetail,
                             "/calendar": CalendarPage,
@@ -345,6 +353,10 @@ export default function App() {
                             "/admin/slider/edit/:id": AdminProtected(AdminSliderEditPage),
                             "/admin/appeals": AdminProtected(AdminRedirectToDashboard),
                             "/admin/settings": AdminProtected(AdminSettingsPage),
+                            "/admin/menu": AdminProtected(AdminMenuPage),
+                            "/admin/header": AdminProtected(AdminHeaderPage),
+                            "/admin/footer": AdminProtected(AdminFooterPage),
+                            "/admin/photos": AdminProtected(AdminAlbumsPage),
                             "/admin/env": AdminProtected(AdminEnvDocsPage),
                             "/admin/broadcast": AdminProtected(AdminBroadcastPage),
                             "/feedback": Feedback,

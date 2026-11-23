@@ -11,6 +11,7 @@ import {
 import { STATIC_SECTIONS, SYSTEM_ROUTE_DEFS } from "../../utils/adminPagesCatalog.js";
 import { COMMISSION_PAGE_SLUG_PREFIX } from "../../utils/commissionPages.js";
 import { getHeaderSectionForSlug } from "../../data/sectionMenus.js";
+import { pageStatusOf, pageStatusOption } from "../../utils/pageStatus.js";
 
 /**
  * Номер страницы и размер страницы списка храним в sessionStorage, чтобы после
@@ -422,6 +423,14 @@ export default function AdminPagesV2List({
                 })()}
               </Tag>
             )}
+            {!row?.__isSystem ? (() => {
+              const statusOption = pageStatusOption(pageStatusOf(row));
+              return (
+                <Tag className="admin-pages-list__tag" color={statusOption.color}>
+                  {statusOption.label}
+                </Tag>
+              );
+            })() : null}
             {!row?.__isSystem ? (() => {
               const ov = getPageOverrideForPage(row);
               const mt = typeof ov?.menuTitle === "string" ? ov.menuTitle.trim() : "";

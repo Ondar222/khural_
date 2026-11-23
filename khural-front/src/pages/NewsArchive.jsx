@@ -134,7 +134,7 @@ export default function NewsArchive() {
       { label: "Главные события", href: "/news/week" },
       { label: "Актуальные новости", href: "/news?section=actual" },
       { label: "Все новости", href: "/news?section=all" },
-      { label: "Медиа", href: "/news?section=media" },
+      { label: "Фотографии", href: "/photo" },
     ];
     const extra = NEWS_EXTRA_LINKS.map((item) => ({
       label: item.labelKey ? t(item.labelKey) : item.labelRu,
@@ -599,7 +599,7 @@ export default function NewsArchive() {
                   </div>
                 )}
               </DataState>
-              </DataState>
+            </DataState>
           </div>
           <SideNav links={newsMenuLinks} className="sidenav--card news-archive__sidenav" />
         </div>

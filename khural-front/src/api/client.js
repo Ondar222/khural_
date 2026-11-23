@@ -2145,3 +2145,133 @@ export const CommitteesApi = {
     });
   },
 };
+
+// --- Управление меню сайта (шапка/подвал) ---
+export const MenuApi = {
+  async list({ area, tree = true, lang, includeHidden = false } = {}) {
+    const params = new URLSearchParams();
+    if (area) params.set("area", area);
+    if (tree) params.set("tree", "true");
+    if (lang) params.set("lang", lang);
+    if (includeHidden) params.set("includeHidden", "true");
+    const qs = params.toString();
+    return apiFetch(`/menu${qs ? `?${qs}` : ""}`, { method: "GET", auth: includeHidden });
+  },
+  async get(id) {
+    return apiFetch(`/menu/${id}`, { method: "GET", auth: false });
+  },
+  async create(payload) {
+    return apiFetch("/menu", { method: "POST", body: payload, auth: true });
+  },
+  async update(id, payload) {
+    return apiFetch(`/menu/${id}`, { method: "PATCH", body: payload, auth: true });
+  },
+  async remove(id) {
+    return apiFetch(`/menu/${id}`, { method: "DELETE", auth: true });
+  },
+  async reorder(items) {
+    return apiFetch("/menu/reorder", { method: "POST", body: { items }, auth: true });
+  },
+  async listGroups(area) {
+    const qs = area ? `?area=${encodeURIComponent(area)}` : "";
+    return apiFetch(`/menu/groups${qs}`, { method: "GET", auth: false });
+  },
+  async createGroup(payload) {
+    return apiFetch("/menu/groups", { method: "POST", body: payload, auth: true });
+  },
+  async updateGroup(id, payload) {
+    return apiFetch(`/menu/groups/${id}`, { method: "PATCH", body: payload, auth: true });
+  },
+  async removeGroup(id) {
+    return apiFetch(`/menu/groups/${id}`, { method: "DELETE", auth: true });
+  },
+};
+
+// --- Настройки шапки и подвала ---
+export const SiteApi = {
+  async getAll() {
+    return apiFetch("/site", { method: "GET", auth: false });
+  },
+  async getHeader() {
+    return apiFetch("/site/header", { method: "GET", auth: false });
+  },
+  async getFooter() {
+    return apiFetch("/site/footer", { method: "GET", auth: false });
+  },
+  async updateHeader(payload) {
+    return apiFetch("/site/header", { method: "PATCH", body: payload, auth: true });
+  },
+  async updateFooter(payload) {
+    return apiFetch("/site/footer", { method: "PATCH", body: payload, auth: true });
+  },
+};
+
+// --- Загрузка файлов ---
+export const UploadApi = {
+  async upload(file) {
+    const body = new FormData();
+    body.append("file", file);
+    return apiFetchMultipart("/files/upload", { method: "POST", formData: body, auth: true });
+  },
+  async uploadMany(files) {
+    const body = new FormData();
+    files.forEach((file) => body.append("files", file));
+    return apiFetchMultipart("/files/upload-many", { method: "POST", formData: body, auth: true });
+  },
+};
+
+// --- Фотоальбомы ---
+export const PhotoAlbumApi = {
+  async list({ publishedOnly = true, withPhotos = false, lang } = {}) {
+    const params = new URLSearchParams();
+    params.set("publishedOnly", publishedOnly ? "true" : "false");
+    if (withPhotos) params.set("withPhotos", "true");
+    if (lang) params.set("lang", lang);
+    return apiFetch(`/photo-albums?${params}`, { method: "GET", auth: !publishedOnly });
+  },
+  async years() {
+    return apiFetch("/photo-albums/years", { method: "GET", auth: false });
+  },
+  async get(id) {
+    return apiFetch(`/photo-albums/${id}`, { method: "GET", auth: false });
+  },
+  async getBySlug(slug, lang) {
+    const qs = lang ? `?lang=${encodeURIComponent(lang)}` : "";
+    return apiFetch(`/photo-albums/slug/${encodeURIComponent(slug)}${qs}`, {
+      method: "GET",
+      auth: false,
+    });
+  },
+  async create(payload) {
+    return apiFetch("/photo-albums", { method: "POST", body: payload, auth: true });
+  },
+  async update(id, payload) {
+    return apiFetch(`/photo-albums/${id}`, { method: "PATCH", body: payload, auth: true });
+  },
+  async remove(id) {
+    return apiFetch(`/photo-albums/${id}`, { method: "DELETE", auth: true });
+  },
+  async uploadPhotos(id, files, captions = []) {
+    const body = new FormData();
+    files.forEach((file) => body.append("photos", file));
+    body.append("captions", JSON.stringify(captions));
+    return apiFetchMultipart(`/photo-albums/${id}/photos`, { method: "POST", formData: body, auth: true });
+  },
+  async updatePhoto(albumId, photoId, payload) {
+    return apiFetch(`/photo-albums/${albumId}/photos/${photoId}`, {
+      method: "PATCH",
+      body: payload,
+      auth: true,
+    });
+  },
+  async removePhoto(albumId, photoId) {
+    return apiFetch(`/photo-albums/${albumId}/photos/${photoId}`, { method: "DELETE", auth: true });
+  },
+  async setCover(albumId, fileId) {
+    return apiFetch(`/photo-albums/${albumId}/cover`, {
+      method: "POST",
+      body: { fileId },
+      auth: true,
+    });
+  },
+};
