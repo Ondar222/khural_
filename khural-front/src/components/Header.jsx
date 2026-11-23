@@ -16,8 +16,6 @@ import {
   PAGES_OVERRIDES_STORAGE_KEY,
 } from "../utils/pagesOverrides.js";
 import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
-import { useSiteChrome } from "../hooks/useSiteChrome.js";
-import { normalizeFilesUrl } from "../utils/filesUrl.js";
 // removed unused UI icon libs
 
 function getHrefPath(href) {
@@ -29,47 +27,6 @@ function getHrefPath(href) {
   }
 }
 
-function menuItemUrl(item) {
-  if (item?.url) return item.url;
-  return item?.pageSlug ? `/p/${item.pageSlug}` : "/";
-}
-
-function MenuAnchor({ item, children, ...rest }) {
-  const url = menuItemUrl(item);
-  if (/^https?:\/\//i.test(url) || url.startsWith("//")) {
-    return <a href={url} {...rest}>{children}</a>;
-  }
-  return <Link to={url} {...rest}>{children}</Link>;
-}
-
-/** Пункт меню шапки из админки (поддерживает вложенность). */
-function BackendNavItem({ item }) {
-  const [open, setOpen] = React.useState(false);
-  const children = Array.isArray(item?.children) ? item.children : [];
-  const label = item?.title || item?.label || "";
-  return (
-    <div
-      className={`dropdown ${open ? "open" : ""}`}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <MenuAnchor item={item}>
-        {label}
-        {children.length ? " ▾" : ""}
-      </MenuAnchor>
-      {children.length > 0 && (
-        <div className="dropdown__menu" onMouseEnter={() => setOpen(true)}>
-          {children.map((child, index) => (
-            <MenuAnchor item={child} key={child.id || `${item.id}-child-${index}`}>
-              {child.title || child.label}
-            </MenuAnchor>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function Header() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -77,7 +34,6 @@ export default function Header() {
   const [mobileSection, setMobileSection] = React.useState(null);
   const { isAuthenticated, user, logout } = useAuth();
   const { navigate } = useHashRoute();
-  const { header: siteHeader, headerItems: backendMenuItems } = useSiteChrome();
 
 
   React.useEffect(() => {
@@ -109,12 +65,6 @@ export default function Header() {
   const tyBrandLines = lang === "ty" 
     ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"] 
     : null;
-  const backendOrgName = lang === "ty"
-    ? siteHeader?.organizationNameTyv || siteHeader?.organizationNameRu
-    : siteHeader?.organizationNameRu || siteHeader?.organizationNameTyv;
-  const showLanguageSwitcher = siteHeader?.showLanguageSwitcher !== false;
-  const showAccessibility = siteHeader?.showAccessibility !== false;
-  const showBurger = siteHeader?.showBurger !== false;
 
   // Обработчик клика на иконку версии для слабовидящих
   const handleAccessibilityToggle = React.useCallback((e) => {
@@ -302,45 +252,7 @@ export default function Header() {
       <header className="site-header">
         <div className="container topbar">
           <span className="topbar-auth">
-            {Array.isArray(siteHeader?.topLinks) && siteHeader.topLinks.some((link) => link.isVisible !== false) ? (
-              <>
-                {siteHeader.topLinks
-                  .filter((link) => link.isVisible !== false)
-                  .map((link) => {
-                    const label = lang === "ty"
-                      ? link.titleTyv || link.titleRu
-                      : link.titleRu || link.titleTyv;
-                    const href = String(link.url || "");
-                    if (href.startsWith("/")) {
-                      return (
-                        <button
-                          key={link.id || href}
-                          className="link-like"
-                          onClick={() => navigate(href)}
-                        >
-                          {label}
-                        </button>
-                      );
-                    }
-                    return (
-                      <a
-                        key={link.id || href}
-                        className="link-like"
-                        href={href}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {label}
-                      </a>
-                    );
-                  })}
-                {isAuthenticated ? (
-                  <button className="link-like" onClick={logout}>
-                    {t("adminLogout")}
-                  </button>
-                ) : null}
-              </>
-            ) : isAuthenticated ? (
+            {isAuthenticated ? (
               <>
                 <span className="topbar-auth__name">
                   {user?.name || user?.email || t("login")}
@@ -400,7 +312,7 @@ export default function Header() {
                 style={{ textDecoration: "none" }}
               >
                 <img
-                  src={normalizeFilesUrl(siteHeader?.logoUrl) || "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"}
+                  src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
                   alt=""
                   width={56}
                   height={56}
@@ -408,9 +320,7 @@ export default function Header() {
               </a>
               {/* Mobile-only title: desktop uses .brand-text, but it is hidden on mobile via CSS */}
               <a href="/" className="brand-mobile-title" style={{ textDecoration: "none" }}>
-                {backendOrgName ? (
-                  <div className="brand-mobile-title__top">{backendOrgName}</div>
-                ) : tyBrandLines ? (
+                {tyBrandLines ? (
                   <>
                     <div className="brand-mobile-title__top">{tyBrandLines[0]}</div>
                     <div className="brand-mobile-title__mid">{tyBrandLines[1]}</div>
@@ -426,13 +336,7 @@ export default function Header() {
               </a>
               <div className="brand-text">
                 <a href="/" style={{ textDecoration: "none" }}>
-                  {siteHeader?.organizationNameRu || siteHeader?.organizationNameTyv ? (
-                    <div style={{ fontSize: 15, lineHeight: 1.25, fontWeight: 800, color: "var(--primary)" }}>
-                      {lang === "ty"
-                        ? siteHeader.organizationNameTyv || siteHeader.organizationNameRu
-                        : siteHeader.organizationNameRu || siteHeader.organizationNameTyv}
-                    </div>
-                  ) : tyBrandLines ? (
+                  {tyBrandLines ? (
                     <div className="brand-ty">
                       <div className="brand-ty__line brand-ty__line--1">{tyBrandLines[0]}</div>
                       <div className="brand-ty__line brand-ty__line--2">{tyBrandLines[1]}</div>
@@ -455,14 +359,9 @@ export default function Header() {
           </div>
 
           <nav className="main-nav">
-            {backendMenuItems.map((item) => (
-              <BackendNavItem item={item} key={`backend-menu-${item.id}`} />
-            ))}
-            {backendMenuItems.length === 0 && (
-              <>
-                <div>
-                  <Link to="/">{t("home")}</Link>
-                </div>
+            <div>
+              <Link to="/">{t("home")}</Link>
+            </div>
             <div
               className={`dropdown ${openMenu === "vh" ? "open" : ""}`}
               onMouseEnter={() => setOpenMenu("vh")}
@@ -560,7 +459,7 @@ export default function Header() {
                 <hr />
                 <a href="/news?section=actual">{lang === "ty" ? t("hotNews") : t("Актуальные новости") || "Актуальные новости"}</a>
                 <a href="/news?section=all">{lang === "ty" ? t("allNews") : t("Все новости") || "Все новости"}</a>
-                <a href="/photo">{t("media")}</a>
+                <a href="/news?section=media">{t("media")}</a>
                 <hr />
                 {NEWS_EXTRA_LINKS.map((item) => (
                   <a key={item.href} href={item.href}>
@@ -653,42 +552,34 @@ export default function Header() {
                 })}
               </div>
             </div>
-              </>
-            )}
           </nav>
 
           <div className="header-actions">
-            {showAccessibility && (
-              <img 
-                id="specialButton" 
-                onClick={handleAccessibilityToggle}
-                src="https://lidrekon.ru/images/special.png" 
-                alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-                title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-              />
-            )}
-            {showLanguageSwitcher && (
-              <button
-                className="icon-btn"
-                aria-label={t("changeLanguage")}
-                onClick={() => {
-                  const newLang = lang === "ru" ? "ty" : "ru";
-                  setLang(newLang);
-                  // Language switch doesn't require route mutation in history mode.
-                }}
-              >
-                {lang.toUpperCase()}
-              </button>
-            )}
-            {showBurger && (
-              <button className="icon-btn" aria-label={t("menu")} onClick={handleBurger}>
-                <span className="burger">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </span>
-              </button>
-            )}
+            <img 
+              id="specialButton" 
+              onClick={handleAccessibilityToggle}
+              src="https://lidrekon.ru/images/special.png" 
+              alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+              title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            />
+            <button
+              className="icon-btn"
+              aria-label={t("changeLanguage")}
+              onClick={() => {
+                const newLang = lang === "ru" ? "ty" : "ru";
+                setLang(newLang);
+                // Language switch doesn't require route mutation in history mode.
+              }}
+            >
+              {lang.toUpperCase()}
+            </button>
+            <button className="icon-btn" aria-label={t("menu")} onClick={handleBurger}>
+              <span className="burger">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            </button>
           </div>
         </div>
 
@@ -709,7 +600,7 @@ export default function Header() {
               style={{ textDecoration: "none" }}
             >
               <img
-                src={normalizeFilesUrl(siteHeader?.logoUrl) || "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"}
+                src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
                 alt=""
                 width={44}
                 height={44}
@@ -721,11 +612,7 @@ export default function Header() {
               onClick={() => setSheetOpen(false)}
               style={{ textDecoration: "none" }}
             >
-              {backendOrgName ? (
-                <div style={{ fontSize: 16, lineHeight: 1.2, fontWeight: 800, color: "#003366" }}>
-                  {backendOrgName}
-                </div>
-              ) : tyBrandLines ? (
+              {tyBrandLines ? (
                 <>
                   <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 800, color: "#003366" }}>
                     {tyBrandLines[0]}
@@ -746,50 +633,29 @@ export default function Header() {
               )}
             </a>
           </div>
-          {showAccessibility && (
-            <img 
-              id="specialButton" 
-              onClick={handleAccessibilityToggle}
-              style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
-              src="https://lidrekon.ru/images/special.png" 
-              alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-              title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-            />
-          )}
-          {showLanguageSwitcher && (
-            <button
-              className="icon-btn"
-              aria-label={t("changeLanguage")}
-              onClick={() => {
-                const newLang = lang === "ru" ? "ty" : "ru";
-                setLang(newLang);
-                // Language switch doesn't require route mutation in history mode.
-              }}
-            >
-              {lang.toUpperCase()}
-            </button>
-          )}
+          <img 
+            id="specialButton" 
+            onClick={handleAccessibilityToggle}
+            style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+            src="https://lidrekon.ru/images/special.png" 
+            alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+          />
+          <button
+            className="icon-btn"
+            aria-label={t("changeLanguage")}
+            onClick={() => {
+              const newLang = lang === "ru" ? "ty" : "ru";
+              setLang(newLang);
+              // Language switch doesn't require route mutation in history mode.
+            }}
+          >
+            {lang.toUpperCase()}
+          </button>
           <button className="icon-btn" onClick={() => setSheetOpen(false)} aria-label={t("close")}>
             ✕
           </button>
         </div>
-        {backendMenuItems.length > 0 ? (
-          <div className="sheet-grid container">
-            {backendMenuItems.map((item) => (
-              <div className="sheet-col" key={`sheet-menu-${item.id}`}>
-                <h3>{item.title || item.label}</h3>
-                <MenuAnchor item={item} onClick={() => setSheetOpen(false)}>
-                  {item.title || item.label}
-                </MenuAnchor>
-                {(item.children || []).map((child, index) => (
-                  <MenuAnchor item={child} key={child.id || index} onClick={() => setSheetOpen(false)}>
-                    {child.title || child.label}
-                  </MenuAnchor>
-                ))}
-              </div>
-            ))}
-          </div>
-        ) : (
         <div className="sheet-grid container">
           <div className="sheet-col">
             <h3>{t("О Верховном Хурале")}</h3>
@@ -825,7 +691,7 @@ export default function Header() {
             <a href="/news/week">{t("mainEventsOfWeek")}</a>
             <a href="/news?section=actual">{t("hotNews")}</a>
             <a href="/news?section=all">{t("allNews")}</a>
-            <a href="/photo">{t("media")}</a>
+            <a href="/news?section=media">{t("media")}</a>
             {NEWS_EXTRA_LINKS.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.labelKey ? t(item.labelKey) : t(item.labelRu) || item.labelRu}
@@ -850,7 +716,6 @@ export default function Header() {
             <a href="/map">{t("map")}</a>
           </div>
         </div>
-        )}
       </div>
       <div
         className={`drawer-backdrop ${mobileOpen ? "open" : ""}`}
@@ -875,7 +740,7 @@ export default function Header() {
             style={{ textDecoration: "none", flexShrink: 0 }}
           >
             <img
-              src={normalizeFilesUrl(siteHeader?.logoUrl) || "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"}
+              src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
               alt=""
               width={40}
               height={40}
@@ -886,9 +751,7 @@ export default function Header() {
               className="mobile-brand-text"
               style={{ display: "flex", flexDirection: "column", lineHeight: 1.2, justifyContent: "center", minWidth: 0 }}
             >
-              {backendOrgName ? (
-                <div style={{ fontSize: 11, fontWeight: 800, color: "#003366" }}>{backendOrgName}</div>
-              ) : tyBrandLines ? (
+              {tyBrandLines ? (
                 <>
                   <div style={{ fontSize: 10, fontWeight: 800, color: "#003366" }}>{tyBrandLines[0]}</div>
                   <div style={{ fontSize: 10, fontWeight: 800, color: "#003366" }}>{tyBrandLines[1]}</div>
@@ -903,16 +766,14 @@ export default function Header() {
               )}
             </div>
           </div>
-          {showAccessibility && (
-            <img 
-              id="specialButton" 
-              onClick={handleAccessibilityToggle}
-              style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
-              src="https://lidrekon.ru/images/special.png" 
-              alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-              title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-            />
-          )}
+          <img 
+            id="specialButton" 
+            onClick={handleAccessibilityToggle}
+            style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+            src="https://lidrekon.ru/images/special.png" 
+            alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+          />
           {/* auth quick actions removed */}
           <button
             className="icon-btn"
@@ -994,24 +855,6 @@ export default function Header() {
               )}
             </div>
             <div className="mobile-menu-links">
-              {backendMenuItems.length > 0 ? (
-                <>
-                  {backendMenuItems.map((item) => (
-                    <MenuAnchor
-                      item={item}
-                      key={`mobile-menu-${item.id}`}
-                      className="tile link"
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <span className="mobile-menu-link-content">
-                        {item.title || item.label}
-                        <RightOutlined aria-hidden="true" />
-                      </span>
-                    </MenuAnchor>
-                  ))}
-                </>
-              ) : (
-              <>
               <Link to="/" onClick={() => setMobileOpen(false)} className="tile link">
                 <span className="mobile-menu-link-content">
                   {t("home")}
@@ -1054,8 +897,6 @@ export default function Header() {
                   <RightOutlined aria-hidden="true" />
                 </span>
               </button>
-              </>
-              )}
             </div>
           </>
         )}
@@ -1369,7 +1210,7 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            <a className="tile link" href="/photo" onClick={() => setMobileOpen(false)}>
+            <a className="tile link" href="/news" onClick={() => setMobileOpen(false)}>
               <span className="mobile-menu-link-content">
                 {t("media")}
                 <RightOutlined aria-hidden="true" />
