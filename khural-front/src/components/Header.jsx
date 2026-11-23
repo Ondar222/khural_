@@ -302,101 +302,92 @@ export default function Header() {
       <header className="site-header">
         <div className="container topbar">
           <span className="topbar-auth">
-            {(() => {
-              const isAdmin = String(user?.role || "").toLowerCase() === "admin" || !!user?.admin;
-              const normalizeTopHref = (href) => {
-                const raw = String(href || "").trim();
-                if (raw === "/profile") return "/cabinet/account";
-                return raw;
-              };
-              const visibleTopLinks = (Array.isArray(siteHeader?.topLinks) ? siteHeader.topLinks : [])
-                .filter((link) => link?.isVisible !== false)
-                .map((link) => ({ ...link, url: normalizeTopHref(link.url) }))
-                .filter((link) => {
-                  const href = String(link.url || "");
-                  const id = String(link.id || "");
-                  if (id === "admin" || href === "/admin") return isAdmin;
-                  if (id === "account" || href === "/cabinet" || href === "/cabinet/account") return isAuthenticated;
-                  return true;
-                });
-
-              const hasConfiguredAuthLinks = visibleTopLinks.some((link) => {
-                const href = String(link.url || "");
-                const id = String(link.id || "");
-                return id === "admin" || id === "account" || href === "/admin" || href === "/cabinet/account" || href === "/cabinet";
-              });
-
-              const renderLink = (link) => {
-                const label = lang === "ty"
-                  ? link.titleTyv || link.titleRu
-                  : link.titleRu || link.titleTyv;
-                const href = String(link.url || "");
-                if (href.startsWith("/")) {
-                  return (
-                    <button
-                      key={link.id || href || label}
-                      className="link-like"
-                      onClick={() => navigate(href)}
-                    >
-                      {label}
-                    </button>
-                  );
-                }
-                return (
-                  <a
-                    key={link.id || href || label}
+            {Array.isArray(siteHeader?.topLinks) && siteHeader.topLinks.some((link) => link.isVisible !== false) ? (
+              <>
+                {siteHeader.topLinks
+                  .filter((link) => link.isVisible !== false)
+                  .map((link) => {
+                    const label = lang === "ty"
+                      ? link.titleTyv || link.titleRu
+                      : link.titleRu || link.titleTyv;
+                    const href = String(link.url || "");
+                    if (href.startsWith("/")) {
+                      return (
+                        <button
+                          key={link.id || href}
+                          className="link-like"
+                          onClick={() => navigate(href)}
+                        >
+                          {label}
+                        </button>
+                      );
+                    }
+                    return (
+                      <a
+                        key={link.id || href}
+                        className="link-like"
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {label}
+                      </a>
+                    );
+                  })}
+                {isAuthenticated ? (
+                  <button className="link-like" onClick={logout}>
+                    {t("adminLogout")}
+                  </button>
+                ) : null}
+              </>
+            ) : isAuthenticated ? (
+              <>
+                <span className="topbar-auth__name">
+                  {user?.name || user?.email || t("login")}
+                </span>
+                <button
+                  className="link-like"
+                  onClick={() => {
+                    navigate("/cabinet/account");
+                  }}
+                >
+                  {t("personalAccount")}
+                </button>
+                {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
+                  <button
                     className="link-like"
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
+                    onClick={() => {
+                      navigate("/admin");
+                    }}
                   >
-                    {label}
-                  </a>
-                );
-              };
-
-              if (isAuthenticated) {
-                return (
-                  <>
-                    <span className="topbar-auth__name">
-                      {user?.name || user?.email || t("login")}
-                    </span>
-                    {!hasConfiguredAuthLinks && (
-                      <button className="link-like" onClick={() => navigate("/cabinet/account")}>
-                        {t("personalAccount")}
-                      </button>
-                    )}
-                    {visibleTopLinks.map(renderLink)}
-                    {!hasConfiguredAuthLinks && isAdmin && (
-                      <button className="link-like" onClick={() => navigate("/admin")}>
-                        {t("adminNavDashboard")}
-                      </button>
-                    )}
-                    <button className="link-like" onClick={logout}>
-                      {t("adminLogout")}
-                    </button>
-                  </>
-                );
-              }
-
-              const guestExtraLinks = visibleTopLinks.filter((link) => {
-                const href = String(link.url || "");
-                const id = String(link.id || "");
-                return !(id === "admin" || id === "account" || href === "/admin" || href === "/cabinet" || href === "/cabinet/account");
-              });
-
-              return (
-                <>
-                  {guestExtraLinks.map(renderLink)}
-                  <button className="btn btn--primary link-like" onClick={() => navigate("/login")}>
-                    {t("login")}
+                    {t("adminNavDashboard")}
                   </button>
-                  <button className="btn link-like" onClick={() => navigate("/register")}>
-                    {t("register")}
-                  </button>
-                </>
-              );
-            })()}
+                ) : null}
+                <button
+                  className="link-like"
+                  onClick={() => {
+                    logout();
+                  }}
+                >
+                  {t("adminLogout")}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="btn btn--primary link-like"
+                  onClick={() => navigate("/login")}
+                >
+                  {t("login")}
+                </button>
+                <button
+                  className="btn link-like"
+                  onClick={() => navigate("/register")}
+                >
+                  {t("register")}
+                </button>
+              </>
+            )}
           </span>
         </div>
         <div className="container row">
@@ -941,123 +932,66 @@ export default function Header() {
         {!mobileSection && (
           <>
             <div className="mobile-auth">
-              {(() => {
-                const isAdmin = String(user?.role || "").toLowerCase() === "admin" || !!user?.admin;
-                const normalizeTopHref = (href) => {
-                  const raw = String(href || "").trim();
-                  return raw === "/profile" ? "/cabinet/account" : raw;
-                };
-                const visibleTopLinks = (Array.isArray(siteHeader?.topLinks) ? siteHeader.topLinks : [])
-                  .filter((link) => link?.isVisible !== false)
-                  .map((link) => ({ ...link, url: normalizeTopHref(link.url) }))
-                  .filter((link) => {
-                    const href = String(link.url || "");
-                    const id = String(link.id || "");
-                    if (id === "admin" || href === "/admin") return isAdmin;
-                    if (id === "account" || href === "/cabinet" || href === "/cabinet/account") return isAuthenticated;
-                    return true;
-                  });
-                const hasConfiguredAuthLinks = visibleTopLinks.some((link) => {
-                  const href = String(link.url || "");
-                  const id = String(link.id || "");
-                  return id === "admin" || id === "account" || href === "/admin" || href === "/cabinet/account" || href === "/cabinet";
-                });
-
-                if (isAuthenticated) {
-                  return (
-                    <div className="mobile-auth__panel">
-                      <div className="mobile-auth__name">{user?.name || user?.email}</div>
-                      {!hasConfiguredAuthLinks && (
-                        <button
-                          className="btn mobile-auth__btn mobile-auth__btn--primary"
-                          onClick={() => { navigate("/cabinet/account"); setMobileOpen(false); }}
-                          style={{ width: "80%" }}
-                        >
-                          {t("personalAccount")}
-                        </button>
-                      )}
-                      {visibleTopLinks.map((link) => {
-                        const label = lang === "ty" ? link.titleTyv || link.titleRu : link.titleRu || link.titleTyv;
-                        const href = String(link.url || "");
-                        const isInternal = href.startsWith("/");
-                        const isAdminLink = String(link.id || "") === "admin" || href === "/admin";
-                        return (
-                          <button
-                            key={link.id || href || label}
-                            className={`btn mobile-auth__btn ${isAdminLink ? "mobile-auth__btn--outline" : "mobile-auth__btn--primary"}`}
-                            onClick={() => {
-                              if (isInternal) navigate(href);
-                              else window.open(href, "_blank", "noopener,noreferrer");
-                              setMobileOpen(false);
-                            }}
-                            style={{ width: "80%" }}
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
-                      {!hasConfiguredAuthLinks && isAdmin && (
-                        <button
-                          className="btn mobile-auth__btn mobile-auth__btn--outline"
-                          onClick={() => { navigate("/admin"); setMobileOpen(false); }}
-                          style={{ width: "80%" }}
-                        >
-                          {t("adminNavDashboard")}
-                        </button>
-                      )}
-                      <button
-                        className="btn mobile-auth__btn mobile-auth__btn--outline"
-                        onClick={() => { logout(); setMobileOpen(false); }}
-                        style={{ width: "80%" }}
-                      >
-                        {t("adminLogout")}
-                      </button>
-                    </div>
-                  );
-                }
-
-                const guestExtraLinks = visibleTopLinks.filter((link) => {
-                  const href = String(link.url || "");
-                  const id = String(link.id || "");
-                  return !(id === "admin" || id === "account" || href === "/admin" || href === "/cabinet" || href === "/cabinet/account");
-                });
-                return (
-                  <div className="mobile-auth__panel">
-                    {guestExtraLinks.map((link) => {
-                      const label = lang === "ty" ? link.titleTyv || link.titleRu : link.titleRu || link.titleTyv;
-                      const href = String(link.url || "");
-                      return (
-                        <button
-                          key={link.id || href || label}
-                          className="btn mobile-auth__btn mobile-auth__btn--outline"
-                          onClick={() => {
-                            if (href.startsWith("/")) navigate(href);
-                            else window.open(href, "_blank", "noopener,noreferrer");
-                            setMobileOpen(false);
-                          }}
-                          style={{ width: "80%" }}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                    <button
-                      className="btn mobile-auth__btn mobile-auth__btn--primary"
-                      onClick={() => { navigate("/login"); setMobileOpen(false); }}
-                      style={{ width: "80%" }}
-                    >
-                      {t("login")}
-                    </button>
+              {isAuthenticated ? (
+                <div className="mobile-auth__panel">
+                  <div className="mobile-auth__name">{user?.name || user?.email}</div>
+                  <button
+                    className="btn mobile-auth__btn mobile-auth__btn--primary"
+                    onClick={() => {
+                      navigate("/cabinet/account");
+                      setMobileOpen(false);
+                    }}
+                    style={{ width: "80%" }}
+                  >
+                    {t("personalAccount")}
+                  </button>
+                  {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
                     <button
                       className="btn mobile-auth__btn mobile-auth__btn--outline"
-                      onClick={() => { navigate("/register"); setMobileOpen(false); }}
+                      onClick={() => {
+                        navigate("/admin");
+                        setMobileOpen(false);
+                      }}
                       style={{ width: "80%" }}
                     >
-                      {t("register")}
+                      {t("adminNavDashboard")}
                     </button>
-                  </div>
-                );
-              })()}
+                  ) : null}
+                  <button
+                    className="btn mobile-auth__btn mobile-auth__btn--outline"
+                    onClick={() => {
+                      logout();
+                      setMobileOpen(false);
+                    }}
+                    style={{ width: "80%" }}
+                  >
+                    {t("adminLogout")}
+                  </button>
+                </div>
+              ) : (
+                <div className="mobile-auth__panel">
+                  <button
+                    className="btn mobile-auth__btn mobile-auth__btn--primary"
+                    onClick={() => {
+                      navigate("/login");
+                      setMobileOpen(false);
+                    }}
+                    style={{ width: "80%" }}
+                  >
+                    {t("login")}
+                  </button>
+                  <button
+                    className="btn mobile-auth__btn mobile-auth__btn--outline"
+                    onClick={() => {
+                      navigate("/register");
+                      setMobileOpen(false);
+                    }}
+                    style={{ width: "80%" }}
+                  >
+                    {t("register")}
+                  </button>
+                </div>
+              )}
             </div>
             <div className="mobile-menu-links">
               {backendMenuItems.length > 0 ? (
