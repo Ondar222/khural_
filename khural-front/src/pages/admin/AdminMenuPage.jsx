@@ -327,6 +327,7 @@ export default function AdminMenuPage() {
           <Button size="small" icon={<ArrowRightOutlined />} title="Сделать подссылкой" onClick={() => changeLevel(item, "in")} />
           <Button size="small" icon={<ArrowLeftOutlined />} title="Сделать главной ссылкой" onClick={() => changeLevel(item, "out")} />
           <Switch size="small" checked={item.isVisible !== false} onChange={() => toggleVisible(item)} title="Показывать на сайте" />
+          <Button size="small" icon={<PlusOutlined />} title="Добавить подссылку" onClick={() => openCreate(item.id, item.groupId ?? null)} />
           <Button size="small" icon={<EditOutlined />} title="Редактировать" onClick={() => openEdit(item)} />
           <Popconfirm title="Удалить пункт меню?" onConfirm={() => removeItem(item.id)}>
             <Button size="small" danger icon={<DeleteOutlined />} title="Удалить" />
@@ -467,7 +468,7 @@ export default function AdminMenuPage() {
       />
 
       <Modal
-        title={editing ? "Редактировать пункт меню" : "Новый пункт меню"}
+        title={editing ? "Редактировать пункт меню" : form.getFieldValue("parentId") ? "Новая подссылка" : "Новая главная ссылка"}
         open={modalOpen}
         onOk={saveItem}
         onCancel={() => setModalOpen(false)}
@@ -476,11 +477,17 @@ export default function AdminMenuPage() {
         destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="titleRu" label="Название (русский)" rules={[{ required: true }]}>
-            <Input />
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginBottom: 12 }}
+            message={form.getFieldValue("parentId") ? "Подссылка отображается внутри выбранной главной ссылки" : "Главная ссылка отображается в верхнем меню шапки"}
+          />
+          <Form.Item name="titleRu" label="Название (русский)" rules={[{ required: true, message: "Укажите название" }]}>
+            <Input placeholder="Например: Новости" />
           </Form.Item>
           <Form.Item name="titleTyv" label="Название (тувинский)">
-            <Input />
+            <Input placeholder="Например: Медээлер" />
           </Form.Item>
           <Form.Item name="pageId" label="Страница сайта">
             <Select
@@ -497,8 +504,8 @@ export default function AdminMenuPage() {
           <Form.Item name="url" label="Внешняя ссылка / путь">
             <Input placeholder="/news или https://example.ru" />
           </Form.Item>
-          <Form.Item name="parentId" label="Родительский пункт">
-            <Select allowClear showSearch optionFilterProp="label" options={parentOptions} />
+          <Form.Item name="parentId" label="Родительский пункт (оставьте пустым для главной ссылки)">
+            <Select allowClear showSearch optionFilterProp="label" options={parentOptions} placeholder="Нет — главная ссылка" />
           </Form.Item>
           {area === "footer" && (
             <Form.Item name="groupId" label="Колонка подвала">
