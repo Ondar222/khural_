@@ -68,6 +68,7 @@ export default function AdminMenuPage() {
   const [modalOpen, setModalOpen] = React.useState(false);
   const [groupModalOpen, setGroupModalOpen] = React.useState(false);
   const [groupFilter, setGroupFilter] = React.useState(null);
+  const [modalParentId, setModalParentId] = React.useState(null);
 
   const load = React.useCallback(async () => {
     if (!adminData.isAuthenticated) return;
@@ -99,6 +100,7 @@ export default function AdminMenuPage() {
 
   const openCreate = (parentId = null, groupId = null) => {
     setEditing(null);
+    setModalParentId(parentId);
     form.resetFields();
     form.setFieldsValue({
       area,
@@ -116,6 +118,7 @@ export default function AdminMenuPage() {
 
   const openEdit = (item) => {
     setEditing(item);
+    setModalParentId(item.parentId ?? null);
     form.setFieldsValue({
       area: item.area,
       parentId: item.parentId ?? null,
@@ -468,20 +471,20 @@ export default function AdminMenuPage() {
       />
 
       <Modal
-        title={editing ? "Редактировать пункт меню" : form.getFieldValue("parentId") ? "Новая подссылка" : "Новая главная ссылка"}
+        title={editing ? "Редактировать пункт меню" : modalParentId ? "Новая подссылка" : "Новая главная ссылка"}
         open={modalOpen}
         onOk={saveItem}
         onCancel={() => setModalOpen(false)}
         okText="Сохранить"
         cancelText="Отмена"
-        destroyOnClose
+        destroyOnHidden
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical" preserve={false} onValuesChange={(_, values) => setModalParentId(values.parentId ?? null)}>
           <Alert
             type="info"
             showIcon
             style={{ marginBottom: 12 }}
-            message={form.getFieldValue("parentId") ? "Подссылка отображается внутри выбранной главной ссылки" : "Главная ссылка отображается в верхнем меню шапки"}
+            message={modalParentId ? "Подссылка отображается внутри выбранной главной ссылки" : "Главная ссылка отображается в верхнем меню шапки"}
           />
           <Form.Item name="titleRu" label="Название (русский)" rules={[{ required: true, message: "Укажите название" }]}>
             <Input placeholder="Например: Новости" />
@@ -531,7 +534,7 @@ export default function AdminMenuPage() {
         onCancel={() => setGroupModalOpen(false)}
         okText="Сохранить"
         cancelText="Отмена"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={groupForm} layout="vertical" preserve={false}>
           <Form.Item name="titleRu" label="Заголовок (русский)" rules={[{ required: true }]}>
