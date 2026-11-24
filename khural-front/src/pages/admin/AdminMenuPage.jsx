@@ -286,13 +286,13 @@ export default function AdminMenuPage() {
         const isRoot = !item.parentId;
         const hasChildren = Array.isArray(item.children) && item.children.length > 0;
         return (
-          <div style={{ paddingLeft: item.depth * 28, display: "flex", alignItems: "flex-start", gap: 8 }}>
-            <span style={{ color: "#94a3b8", width: 16, flexShrink: 0, paddingTop: 2 }}>
+          <div className="admin-menu-item" style={{ paddingLeft: item.depth * 24 }}>
+            <span className="admin-menu-item__marker">
               {item.depth > 0 ? "↳" : hasChildren ? "▾" : "•"}
             </span>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                <span style={{ fontWeight: isRoot ? 700 : 500, fontSize: isRoot ? 14 : 13 }}>
+            <div className="admin-menu-item__body">
+              <div className="admin-menu-item__title-row">
+                <span className={`admin-menu-item__title ${isRoot ? "is-root" : ""}`}>
                   {item.titleRu}
                 </span>
                 <Tag color={isRoot ? "geekblue" : "default"} style={{ marginInlineEnd: 0 }}>
@@ -301,7 +301,7 @@ export default function AdminMenuPage() {
                 {item.isVisible === false && <Tag color="warning">скрыт</Tag>}
               </div>
               {item.titleTyv && item.titleTyv !== item.titleRu && (
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{item.titleTyv}</div>
+                <div className="admin-menu-item__meta">{item.titleTyv}</div>
               )}
             </div>
           </div>
@@ -311,20 +311,22 @@ export default function AdminMenuPage() {
     {
       title: "Ссылка",
       dataIndex: "url",
-      width: 280,
-      render: (_, item) => (
-        <span style={{ fontSize: 12, color: "#475569", wordBreak: "break-all" }}>
-          {item.pageSlug ? `/p/${item.pageSlug}` : item.url || "—"}
-        </span>
-      ),
+      width: 220,
+      ellipsis: true,
+      responsive: ["sm"],
+      render: (_, item) => {
+        const href = item.pageSlug ? `/p/${item.pageSlug}` : item.url || "—";
+        return <span className="admin-menu-item__url" title={href}>{href}</span>;
+      },
     },
-    { title: "Порядок", dataIndex: "order", width: 90, align: "center" },
+    { title: "Порядок", dataIndex: "order", width: 72, align: "center", responsive: ["lg"] },
     {
       title: "Действия",
       key: "actions",
-      width: 300,
+      width: 196,
+      fixed: "right",
       render: (_, item) => (
-        <Space size={2} wrap>
+        <Space size={2} wrap={false} className="admin-menu-actions">
           <Button size="small" icon={<ArrowUpOutlined />} title="Выше" onClick={() => move(item, "up")} />
           <Button size="small" icon={<ArrowDownOutlined />} title="Ниже" onClick={() => move(item, "down")} />
           <Button size="small" icon={<ArrowRightOutlined />} title="Сделать подссылкой" onClick={() => changeLevel(item, "in")} />
@@ -352,22 +354,26 @@ export default function AdminMenuPage() {
         message="Как работает меню"
         description="Меню из шапки автоматически отображается и в боковой панели. Все изменения в меню шапки автоматически обновляются и в боковом меню."
       />
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12, alignItems: "center" }}>
+      <div className="admin-menu-toolbar">
         <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate()}>
           Добавить пункт
         </Button>
         <Button onClick={load}>Обновить</Button>
-        <Tag color="geekblue">Главных ссылок: {rootCount}</Tag>
-        <Tag>Подссылок: {childCount}</Tag>
-        <Tag color="blue">Всего: {items.length}</Tag>
+        <div className="admin-menu-stats">
+          <Tag color="geekblue">Главных: {rootCount}</Tag>
+          <Tag>Подссылок: {childCount}</Tag>
+          <Tag color="blue">Всего: {items.length}</Tag>
+        </div>
       </div>
       <Table
+        className="admin-menu-table"
         rowKey="id"
         size="small"
         loading={loading}
         dataSource={flat}
         columns={columns}
         pagination={false}
+        scroll={{ x: 980 }}
         locale={{ emptyText: "Пункты меню ещё не добавлены" }}
       />
     </>
@@ -375,7 +381,7 @@ export default function AdminMenuPage() {
 
   const footerTab = (
     <>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginBottom: 12 }}>
+      <div className="admin-menu-toolbar">
         <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate(null, groupFilter)}>
           Добавить пункт
         </Button>
@@ -385,26 +391,29 @@ export default function AdminMenuPage() {
         <Select
           allowClear
           placeholder="Все колонки"
-          style={{ width: 260 }}
+          style={{ width: 220, minWidth: 180 }}
           value={groupFilter}
           onChange={setGroupFilter}
           options={groups.map((group) => ({ value: group.id, label: group.titleRu }))}
         />
-        <Tag color="geekblue">Главных ссылок: {rootCount}</Tag>
-        <Tag>Подссылок: {childCount}</Tag>
-        <Tag color="blue">Всего: {items.length}</Tag>
+        <div className="admin-menu-stats">
+          <Tag color="geekblue">Главных: {rootCount}</Tag>
+          <Tag>Подссылок: {childCount}</Tag>
+          <Tag color="blue">Всего: {items.length}</Tag>
+        </div>
       </div>
       <Table
+        className="admin-menu-table admin-menu-group-table"
         rowKey="id"
         size="small"
         loading={loading}
         dataSource={groups}
         pagination={false}
-        style={{ marginBottom: 20 }}
+        scroll={{ x: 700 }}
         columns={[
           { title: "Колонка", dataIndex: "titleRu" },
-          { title: "Тувинский", dataIndex: "titleTyv" },
-          { title: "Порядок", dataIndex: "order", width: 90 },
+          { title: "Тувинский", dataIndex: "titleTyv", responsive: ["sm"] },
+          { title: "Порядок", dataIndex: "order", width: 90, responsive: ["md"] },
           {
             title: "Видимость",
             dataIndex: "isVisible",
@@ -424,9 +433,10 @@ export default function AdminMenuPage() {
           {
             title: "Действия",
             key: "actions",
-            width: 150,
+            width: 110,
+            fixed: "right",
             render: (_, group) => (
-              <Space>
+              <Space size={4} wrap={false} className="admin-menu-actions">
                 <Button size="small" icon={<EditOutlined />} onClick={() => openGroup(group)} />
                 <Popconfirm title="Удалить колонку?" onConfirm={() => removeGroup(group.id)}>
                   <Button size="small" danger icon={<DeleteOutlined />} />
@@ -438,12 +448,14 @@ export default function AdminMenuPage() {
         locale={{ emptyText: "Колонки подвала ещё не созданы" }}
       />
       <Table
+        className="admin-menu-table"
         rowKey="id"
         size="small"
         loading={loading}
         dataSource={flat}
         columns={columns}
         pagination={false}
+        scroll={{ x: 980 }}
         locale={{ emptyText: "Пункты меню подвала ещё не добавлены" }}
       />
     </>
@@ -458,6 +470,7 @@ export default function AdminMenuPage() {
       onToggleTheme={adminData.toggleTheme}
       onLogout={adminData.handleLogout}
     >
+      <div className="admin-menu-page">
       <Tabs
         activeKey={area}
         onChange={(key) => {
@@ -551,6 +564,7 @@ export default function AdminMenuPage() {
           </Form.Item>
         </Form>
       </Modal>
+      </div>
     </AdminShell>
   );
 }
