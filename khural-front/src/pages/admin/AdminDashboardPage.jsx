@@ -83,9 +83,13 @@ export default function AdminDashboardPage() {
   const reloadMenuItemsCount = React.useCallback(async () => {
     setMenuItemsLoading(true);
     try {
-      const menu = await MenuApi.list({ includeHidden: true });
-      const items = Array.isArray(menu?.items) ? menu.items : Array.isArray(menu) ? menu : [];
-      setMenuItemsCount(items.length);
+      const [headerMenu, footerMenu] = await Promise.all([
+        MenuApi.list({ area: "header", includeHidden: true, tree: false }),
+        MenuApi.list({ area: "footer", includeHidden: true, tree: false }),
+      ]);
+      const headerItems = Array.isArray(headerMenu?.items) ? headerMenu.items : Array.isArray(headerMenu) ? headerMenu : [];
+      const footerItems = Array.isArray(footerMenu?.items) ? footerMenu.items : Array.isArray(footerMenu) ? footerMenu : [];
+      setMenuItemsCount(headerItems.length + footerItems.length);
     } catch {
       setMenuItemsCount(null);
     } finally {

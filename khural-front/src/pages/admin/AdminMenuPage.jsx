@@ -277,38 +277,55 @@ export default function AdminMenuPage() {
 
   const columns = [
     {
-      title: "Название",
+      title: "Пункт меню",
       dataIndex: "titleRu",
-      render: (_, item) => (
-        <Space style={{ paddingLeft: item.depth * 20 }}>
-          <span style={{ fontWeight: 600 }}>{item.titleRu}</span>
-          {item.titleTyv && item.titleTyv !== item.titleRu && (
-            <Tag color="blue">{item.titleTyv}</Tag>
-          )}
-          {item.isVisible === false && <Tag color="default">скрыт</Tag>}
-        </Space>
-      ),
+      render: (_, item) => {
+        const isRoot = !item.parentId;
+        const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+        return (
+          <div style={{ paddingLeft: item.depth * 28, display: "flex", alignItems: "flex-start", gap: 8 }}>
+            <span style={{ color: "#94a3b8", width: 16, flexShrink: 0, paddingTop: 2 }}>
+              {item.depth > 0 ? "↳" : hasChildren ? "▾" : "•"}
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <span style={{ fontWeight: isRoot ? 700 : 500, fontSize: isRoot ? 14 : 13 }}>
+                  {item.titleRu}
+                </span>
+                <Tag color={isRoot ? "geekblue" : "default"} style={{ marginInlineEnd: 0 }}>
+                  {isRoot ? "Главная ссылка" : "Подссылка"}
+                </Tag>
+                {item.isVisible === false && <Tag color="warning">скрыт</Tag>}
+              </div>
+              {item.titleTyv && item.titleTyv !== item.titleRu && (
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{item.titleTyv}</div>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
       title: "Ссылка",
       dataIndex: "url",
+      width: 280,
       render: (_, item) => (
-        <span style={{ fontSize: 12, opacity: 0.8 }}>
+        <span style={{ fontSize: 12, color: "#475569", wordBreak: "break-all" }}>
           {item.pageSlug ? `/p/${item.pageSlug}` : item.url || "—"}
         </span>
       ),
     },
-    { title: "Порядок", dataIndex: "order", width: 90 },
+    { title: "Порядок", dataIndex: "order", width: 90, align: "center" },
     {
       title: "Действия",
       key: "actions",
-      width: 280,
+      width: 300,
       render: (_, item) => (
         <Space size={2} wrap>
           <Button size="small" icon={<ArrowUpOutlined />} title="Выше" onClick={() => move(item, "up")} />
           <Button size="small" icon={<ArrowDownOutlined />} title="Ниже" onClick={() => move(item, "down")} />
-          <Button size="small" icon={<ArrowRightOutlined />} title="Вложить" onClick={() => changeLevel(item, "in")} />
-          <Button size="small" icon={<ArrowLeftOutlined />} title="Поднять на уровень" onClick={() => changeLevel(item, "out")} />
+          <Button size="small" icon={<ArrowRightOutlined />} title="Сделать подссылкой" onClick={() => changeLevel(item, "in")} />
+          <Button size="small" icon={<ArrowLeftOutlined />} title="Сделать главной ссылкой" onClick={() => changeLevel(item, "out")} />
           <Switch size="small" checked={item.isVisible !== false} onChange={() => toggleVisible(item)} title="Показывать на сайте" />
           <Button size="small" icon={<EditOutlined />} title="Редактировать" onClick={() => openEdit(item)} />
           <Popconfirm title="Удалить пункт меню?" onConfirm={() => removeItem(item.id)}>
@@ -319,6 +336,9 @@ export default function AdminMenuPage() {
     },
   ];
 
+  const rootCount = items.filter((item) => !item.parentId).length;
+  const childCount = items.filter((item) => item.parentId).length;
+
   const headerTab = (
     <>
       <Alert
@@ -328,12 +348,15 @@ export default function AdminMenuPage() {
         message="Как работает меню"
         description="Меню из шапки автоматически отображается и в боковой панели. Все изменения в меню шапки автоматически обновляются и в боковом меню."
       />
-      <Space style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12, alignItems: "center" }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreate()}>
           Добавить пункт
         </Button>
         <Button onClick={load}>Обновить</Button>
-      </Space>
+        <Tag color="geekblue">Главных ссылок: {rootCount}</Tag>
+        <Tag>Подссылок: {childCount}</Tag>
+        <Tag color="blue">Всего: {items.length}</Tag>
+      </div>
       <Table
         rowKey="id"
         size="small"
@@ -363,6 +386,9 @@ export default function AdminMenuPage() {
           onChange={setGroupFilter}
           options={groups.map((group) => ({ value: group.id, label: group.titleRu }))}
         />
+        <Tag color="geekblue">Главных ссылок: {rootCount}</Tag>
+        <Tag>Подссылок: {childCount}</Tag>
+        <Tag color="blue">Всего: {items.length}</Tag>
       </div>
       <Table
         rowKey="id"
