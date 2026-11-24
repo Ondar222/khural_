@@ -16,6 +16,7 @@ import {
   PAGES_OVERRIDES_STORAGE_KEY,
 } from "../utils/pagesOverrides.js";
 import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
+import { useSiteChrome } from "../hooks/useSiteChrome.js";
 // removed unused UI icon libs
 
 function getHrefPath(href) {
@@ -34,6 +35,7 @@ export default function Header() {
   const [mobileSection, setMobileSection] = React.useState(null);
   const { isAuthenticated, user, logout } = useAuth();
   const { navigate } = useHashRoute();
+  const { headerItems: backendMenuItems } = useSiteChrome();
 
 
   React.useEffect(() => {
@@ -213,6 +215,53 @@ export default function Header() {
     return level > 0 ? { paddingLeft: 10 + level * 12 } : undefined;
   }, []);
 
+  // Пункты меню из админки: используем те же классы/стили, что и текущая
+  // захардкоженная шапка. Если в API нет данных — остаётся старая вёрстка.
+  const backendMenuLabel = (item) =>
+    item?.title || item?.titleRu || item?.titleTyv || "";
+  const backendMenuHref = (item) =>
+    item?.url || (item?.pageSlug ? `/p/${item.pageSlug}` : "/");
+
+  const renderBackendDropdownLinks = React.useCallback((items, level = 0) => {
+    return (Array.isArray(items) ? items : []).flatMap((item) => [
+      <a
+        key={item.id || `${level}-${backendMenuHref(item)}`}
+        href={backendMenuHref(item)}
+        style={cmsDropdownLinkStyle(level)}
+      >
+        {backendMenuLabel(item)}
+      </a>,
+      ...renderBackendDropdownLinks(item.children, level + 1),
+    ]);
+  }, [cmsDropdownLinkStyle]);
+
+  const renderBackendNavItems = React.useCallback((items) => {
+    return (Array.isArray(items) ? items : []).map((item) => {
+      const children = Array.isArray(item.children) ? item.children : [];
+      if (!children.length) {
+        return (
+          <div key={item.id || backendMenuHref(item)}>
+            <Link to={backendMenuHref(item)}>{backendMenuLabel(item)}</Link>
+          </div>
+        );
+      }
+      const key = `backend-${item.id || backendMenuHref(item)}`;
+      return (
+        <div
+          key={key}
+          className={`dropdown ${openMenu === key ? "open" : ""}`}
+          onMouseEnter={() => setOpenMenu(key)}
+          onMouseLeave={() => setOpenMenu(null)}
+        >
+          <Link to={backendMenuHref(item)}>{backendMenuLabel(item)} ▾</Link>
+          <div className="dropdown__menu" onMouseEnter={() => setOpenMenu(key)}>
+            {renderBackendDropdownLinks(children)}
+          </div>
+        </div>
+      );
+    });
+  }, [openMenu, renderBackendDropdownLinks]);
+
   React.useEffect(() => {
     let alive = true;
     const loadPagesTree = async (force = false) => {
@@ -359,6 +408,10 @@ export default function Header() {
           </div>
 
           <nav className="main-nav">
+            {backendMenuItems.length ? (
+              renderBackendNavItems(backendMenuItems)
+            ) : (
+              <>
             <div>
               <Link to="/">{t("home")}</Link>
             </div>
@@ -552,6 +605,8 @@ export default function Header() {
                 })}
               </div>
             </div>
+              </>
+            )}
           </nav>
 
           <div className="header-actions">
