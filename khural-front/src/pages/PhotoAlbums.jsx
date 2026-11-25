@@ -44,7 +44,10 @@ export function PhotoAlbumsPage() {
           setError(albumsResult.reason?.message || "Не удалось загрузить альбомы");
         }
         if (yearsResult.status === "fulfilled" && Array.isArray(yearsResult.value)) {
-          setYears(yearsResult.value);
+          setYears(yearsResult.value.filter((item) => {
+            const y = Number(item);
+            return Number.isFinite(y) && y >= 2024 && y <= 2026;
+          }));
         }
         setLoading(false);
       },
@@ -54,10 +57,13 @@ export function PhotoAlbumsPage() {
     };
   }, [lang]);
 
-  const visible = React.useMemo(
-    () => (year ? albums.filter((album) => String(album.eventDate || "").startsWith(year)) : albums),
-    [albums, year],
-  );
+  const visible = React.useMemo(() => {
+    const inRange = albums.filter((album) => {
+      const y = Number(String(album.eventDate || "").slice(0, 4));
+      return Number.isFinite(y) && y >= 2024 && y <= 2026;
+    });
+    return year ? inRange.filter((album) => String(album.eventDate || "").startsWith(year)) : inRange;
+  }, [albums, year]);
 
   return (
     <main className="photo-page container">

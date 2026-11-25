@@ -342,13 +342,14 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       const menuTitle = String(values.menuTitle || "").trim();
       const submenuTitle = String(values.submenuTitle || "").trim();
 
+      const nextStatus = values.status || pageStatusOf(currentPageRef.current);
       const saved = await AboutApi.updatePage(id, {
         title: titleRu || contentArray[0]?.title,
         slug: fullSlug,
         // Родитель — раздел шапки, поэтому связь хранится в префиксе адреса.
         parentId: null,
-        status: values.status || pageStatusOf(currentPageRef.current),
-        isPublished: (values.status || pageStatusOf(currentPageRef.current)) === "published",
+        status: nextStatus,
+        isPublished: nextStatus === "published",
         locale: "ru",
         content: contentArray,
         menuTitle,

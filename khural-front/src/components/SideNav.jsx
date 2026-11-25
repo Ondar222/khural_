@@ -364,6 +364,8 @@ export default function SideNav({
     const sectionMap = {
       "^/news$": "news",
       "^/news/.*": "news",
+      "^/photo$": "news",
+      "^/photo/.*": "news",
       "^/code-of-honor$": "about",
       "^/mothers-commandments$": "about",
       "^/for-media$": "news",
@@ -441,6 +443,7 @@ export default function SideNav({
       const sectionParam = params.get("section");
       const categoryParam = params.get("category");
 
+      if (pathname === '/photo' || pathname.startsWith('/photo/')) return "Фотографии";
       if (pathname === '/news/week') return "Главные события";
       if (sectionParam === 'actual') return "Актуальные новости";
       if (sectionParam === 'all') return "Все новости";

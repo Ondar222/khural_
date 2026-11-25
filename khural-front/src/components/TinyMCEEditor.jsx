@@ -1,13 +1,14 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
+import { UploadApi } from '../api/client.js';
 
 // Плагины и тулбар только из self-hosted пакета (без Cloud/Premium),
 // чтобы редактор работал на любых устройствах и доменах без зависимости от Tiny CDN.
 const SELF_HOSTED_PLUGINS = [
-  'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists',
+  'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists',
   'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
 ];
-const SELF_HOSTED_TOOLBAR = 'undo redo | blocks | bold italic underline strikethrough | link media table | numlist bullist indent outdent | emoticons charmap | removeformat';
+const SELF_HOSTED_TOOLBAR = 'undo redo | blocks | bold italic underline strikethrough | link image media table | numlist bullist indent outdent | emoticons charmap | removeformat';
 
 const FALLBACK_TIMEOUT_MS = 12000;
 
@@ -78,6 +79,16 @@ export default function TinyMCEEditor({ value, onChange, placeholder, height = 4
     );
   }
 
+  const imagesUploadHandler = useCallback(async (blobInfo) => {
+    const file = blobInfo.blob();
+    const name = blobInfo.filename?.() || file?.name || 'image';
+    const uploadFile = file instanceof File ? file : new File([file], name, { type: file?.type || 'image/png' });
+    const uploaded = await UploadApi.upload(uploadFile);
+    const id = uploaded?.id || uploaded?.file?.id;
+    if (!id) throw new Error('Не удалось загрузить изображение');
+    return `/api/files/${encodeURIComponent(id)}`;
+  }, []);
+
   return (
     <Editor
       tinymceScriptSrc="/tinymce/tinymce.min.js"
@@ -97,9 +108,13 @@ export default function TinyMCEEditor({ value, onChange, placeholder, height = 4
         plugins: SELF_HOSTED_PLUGINS,
         toolbar: SELF_HOSTED_TOOLBAR,
         placeholder: placeholder || '',
-        content_style: 'body { font-family: Helvetica, Arial, sans-serif; font-size: 14px }',
+        content_style: 'body { font-family: Helvetica, Arial, sans-serif; font-size: 14px } img { max-width: 100%; height: auto; } table { border-collapse: collapse; width: 100%; } table td, table th { border: 1px solid #d9d9d9; padding: 6px; }',
         branding: false,
         promotion: false,
+        automatic_uploads: true,
+        images_upload_handler: imagesUploadHandler,
+        file_picker_types: 'image',
+        paste_data_images: true,
       }}
     />
   );

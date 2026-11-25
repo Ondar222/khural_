@@ -1199,6 +1199,7 @@ export const AboutApi = {
       ...(content ? { content } : {}),
       ...(dto?.parentId !== undefined ? { parentId: dto.parentId } : {}),
       ...(dto?.order !== undefined ? { order: dto.order } : {}),
+      ...(dto?.status !== undefined ? { status: dto.status } : {}),
       ...(dto?.isPublished !== undefined ? { isPublished: dto.isPublished } : {}),
       ...(dto?.publishedAt !== undefined ? { publishedAt: dto.publishedAt } : {}),
     };
@@ -1237,6 +1238,7 @@ export const AboutApi = {
       ...(content ? { content } : {}),
       ...(dto?.parentId !== undefined ? { parentId: dto.parentId } : {}),
       ...(dto?.order !== undefined ? { order: dto.order } : {}),
+      ...(dto?.status !== undefined ? { status: dto.status } : {}),
       ...(dto?.isPublished !== undefined ? { isPublished: dto.isPublished } : {}),
       ...(dto?.publishedAt !== undefined ? { publishedAt: dto.publishedAt } : {}),
       ...(dto?.menuTitle !== undefined ? { menuTitle: dto.menuTitle } : {}),

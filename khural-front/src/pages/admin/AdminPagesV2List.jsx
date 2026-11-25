@@ -353,6 +353,29 @@ export default function AdminPagesV2List({
     [canWrite, load, onMessage, onReloadData, reloadData]
   );
 
+  const setPageStatus = React.useCallback(
+    async (row, status) => {
+      if (!canWrite || !row?.id) return;
+      setBusy(true);
+      try {
+        await AboutApi.updatePage(row.id, {
+          status,
+          isPublished: status === "published",
+        });
+        const label = pageStatusOption(status)?.label || status;
+        onMessage?.("success", `Статус изменён: ${label}`);
+        reloadData();
+        await load();
+        await onReloadData?.();
+      } catch (e) {
+        onMessage?.("error", e?.message || "Не удалось изменить статус страницы");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [canWrite, load, onMessage, onReloadData, reloadData]
+  );
+
   const cleanupSystemCmsPages = React.useCallback(async () => {
     if (!canWrite) return;
     setBusy(true);
@@ -406,6 +429,9 @@ export default function AdminPagesV2List({
                 Раздел
               </Tag>
             )}
+            {row.slug ? (
+              <Tag style={{ marginLeft: 8 }}>/ {row.slug}</Tag>
+            ) : null}
           </div>
           <div className="admin-pages-list__metarow">
             {row?.__isSystem ? (
@@ -524,6 +550,27 @@ export default function AdminPagesV2List({
               <Button size={isTablet ? "small" : "middle"} onClick={() => onPreview?.(row.slug)} disabled={!row.slug}>
                 Открыть
               </Button>
+              {pageStatusOf(row) === "published" ? (
+                <Popconfirm
+                  title="Снять страницу с публикации?"
+                  okText="Снять"
+                  cancelText="Отмена"
+                  onConfirm={() => setPageStatus(row, "unpublished")}
+                  disabled={!canWrite || !row?.id}
+                >
+                  <Button size={isTablet ? "small" : "middle"} disabled={!canWrite || !row?.id}>
+                    Снять с публикации
+                  </Button>
+                </Popconfirm>
+              ) : (
+                <Button
+                  size={isTablet ? "small" : "middle"}
+                  onClick={() => setPageStatus(row, "published")}
+                  disabled={!canWrite || !row?.id}
+                >
+                  Опубликовать
+                </Button>
+              )}
               <Button
                 size={isTablet ? "small" : "middle"}
                 onClick={() => onCreate?.(getCreateParent(row), getDisplayName(row))}

@@ -1984,13 +1984,9 @@ export default function PageBySlug() {
       "about/finances",
     ].includes(slug);
     
-    // Для статических страниц не делаем запрос к API
-    if (isStaticPage) {
-      setPage(null);
-      setLoading(false);
-      return;
-    }
-    
+    // Пытаемся загрузить страницу из БД. Для статических страниц это позволяет
+    // редактировать контент через админку; если в БД ничего нет — показываем
+    // встроенный fallback-контент.
     const locale = getPreferredLocaleToken(lang);
     let alive = true;
     (async () => {
@@ -2002,7 +1998,7 @@ export default function PageBySlug() {
         setPage(res || null);
       } catch (e) {
         if (!alive) return;
-        setError(e);
+        if (!isStaticPage) setError(e);
         setPage(null);
       } finally {
         if (alive) setLoading(false);
@@ -2098,7 +2094,7 @@ export default function PageBySlug() {
   // «Назад» должен вести к корню раздела, а не к «Общим сведениям» (/info).
   const isInfoPersonnelSub = String(slug || "").startsWith(INFO_PERSONNEL_SLUG + "/");
 
-  const hasPageFromCms = !!page;
+  const hasPageFromCms = !!page && String(extractPageHtml(page, locale) || "").trim().length > 0;
   const shouldUseInfoFallback =
     !hasPageFromCms &&
     (isCodeOfHonor ||
@@ -2749,7 +2745,7 @@ export default function PageBySlug() {
                             : slug
           : slug;
 
-  const canEdit = adminData?.canWrite && isStaticPage;
+  const canEdit = adminData?.canWrite && (isStaticPage || !!page?.id);
 
   return (
     <section className="section">
@@ -2767,7 +2763,7 @@ export default function PageBySlug() {
             <DataState
               loading={loading}
               error={error}
-              empty={!isStaticPage && !loading && !page}
+              empty={!isStaticPage && !loading && !page && !error}
               emptyDescription="Страница не найдена"
             >
               <div
