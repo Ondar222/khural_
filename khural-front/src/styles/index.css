@@ -283,6 +283,20 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.brand-text {
+  display: block;
+  min-width: 0;
+}
+.brand-text a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+  color: inherit;
+}
+.brand-text a div {
+  line-height: 1.1;
+}
 .brand .logo {
   width: 56px;
   height: 56px;
@@ -356,7 +370,11 @@ a {
 }
 .main-nav a {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding-bottom: 6px;
+  white-space: nowrap;
 }
 .main-nav a::after {
   content: "";
