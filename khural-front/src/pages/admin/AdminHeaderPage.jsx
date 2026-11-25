@@ -112,6 +112,9 @@ export default function AdminHeaderPage() {
       await save({
         organizationNameRu: values.organizationNameRu || "",
         organizationNameTyv: values.organizationNameTyv || "",
+        showLanguageSwitcher: normalizeBool(values.showLanguageSwitcher, true),
+        showAccessibility: normalizeBool(values.showAccessibility, true),
+        showBurger: normalizeBool(values.showBurger, true),
       });
     } catch (error) {
       if (error?.errorFields) return;
@@ -140,7 +143,7 @@ export default function AdminHeaderPage() {
       titleRu: link?.titleRu || "",
       titleTyv: link?.titleTyv || "",
       url: link?.url || "",
-      isVisible: link?.isVisible !== false,
+      isVisible: normalizeBool(link?.isVisible ?? link?.visible, true),
     });
     setLinkModalOpen(true);
   };
@@ -154,7 +157,7 @@ export default function AdminHeaderPage() {
         titleRu: String(values.titleRu || "").trim(),
         titleTyv: String(values.titleTyv || values.titleRu || "").trim(),
         url: String(values.url || "").trim(),
-        isVisible: values.isVisible !== false,
+        isVisible: normalizeBool(values.isVisible, true),
       };
       if (editingLink) {
         const index = links.findIndex((item) => item.id === editingLink.id);
@@ -290,6 +293,16 @@ export default function AdminHeaderPage() {
           </Form.Item>
           <Form.Item name="organizationNameTyv" label="Название организации (тувинский)">
             <Input placeholder={SITE_DEFAULT_NAME_TYV} />
+          </Form.Item>
+
+          <Form.Item name="showLanguageSwitcher" label="Переключатель языка" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+          <Form.Item name="showAccessibility" label="Версия для слабовидящих" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+          <Form.Item name="showBurger" label="Кнопка меню" valuePropName="checked">
+            <Switch />
           </Form.Item>
 
           <Space>
