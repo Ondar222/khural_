@@ -24,6 +24,7 @@ import AdminShell from "./AdminShell.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { SiteApi, UploadApi } from "../../api/client.js";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
+import { normalizeBool } from "../../utils/bool.js";
 import { notifySiteUpdated } from "../../utils/siteUpdates.js";
 
 const SITE_DEFAULT_LOGO = "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg";
@@ -57,11 +58,15 @@ export default function AdminHeaderPage() {
 
   const normalizeTopLinks = (links) =>
     (Array.isArray(links) ? links : []).map((link, idx) => ({
-      id: String(link?.id || link?._id || `link-${idx + 1}`),
+      id: String(link?.id || link?._id || link?.key || `link-${idx + 1}`),
       titleRu: String(link?.titleRu ?? link?.title ?? link?.labelRu ?? link?.label ?? link?.name ?? ""),
-      titleTyv: String(link?.titleTyv ?? link?.titleTy ?? ""),
+      titleTyv: String(link?.titleTyv ?? link?.titleTy ?? link?.labelTyv ?? link?.labelTy ?? ""),
       url: String(link?.url ?? link?.href ?? link?.path ?? link?.link ?? ""),
-      isVisible: link?.isVisible !== false && link?.visible !== false && link?.hidden !== true,
+      isVisible:
+        link?.hidden !== true &&
+        link?.hidden !== "true" &&
+        link?.hidden !== 1 &&
+        normalizeBool(link?.isVisible ?? link?.visible, true),
     }));
 
   const load = React.useCallback(async () => {
