@@ -17,7 +17,25 @@ import {
 } from "../utils/pagesOverrides.js";
 import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
 import { useSiteChrome } from "../hooks/useSiteChrome.js";
+import { normalizeFilesUrl } from "../utils/filesUrl.js";
 // removed unused UI icon libs
+
+const SITE_DEFAULT_LOGO = "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg";
+
+/** Флаги из /api/site/header могут прийти булевыми, строками или числами. */
+function flagEnabled(value, fallback = true) {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (value === false || value === 0 || value === "0") return false;
+  if (typeof value === "string") {
+    return !["false", "no", "off", "hidden"].includes(value.trim().toLowerCase());
+  }
+  return Boolean(value);
+}
+
+function isTopLinkVisible(link) {
+  const hidden = link?.hidden === true || link?.hidden === "true" || link?.hidden === 1;
+  return !hidden && flagEnabled(link?.isVisible ?? link?.visible, true);
+}
 
 function getHrefPath(href) {
   const value = String(href || "");
@@ -35,7 +53,7 @@ export default function Header() {
   const [mobileSection, setMobileSection] = React.useState(null);
   const { isAuthenticated, user, logout } = useAuth();
   const { navigate } = useHashRoute();
-  const { headerItems: backendMenuItems } = useSiteChrome();
+  const { header: siteHeader, headerItems: backendMenuItems } = useSiteChrome();
 
 
   React.useEffect(() => {
@@ -60,12 +78,43 @@ export default function Header() {
   useA11y();
  const { lang, setLang, t } = useI18n();
   const localeToken = getPreferredLocaleToken(lang);
-  const brandLine1 = lang === "ru" ? "Верховный Хурал" : t("brandTop");
-  const brandLine2 = lang === "ru" ? "(парламент)" : t("brandParliament");
-  const brandLine3 = lang === "ru" ? "Республики Тыва" : t("brandBottom");
+
+  // Настройки шапки из /api/site/header (редактируются в /admin/header).
+  const headerSettings = siteHeader || {};
+  const headerLogo = normalizeFilesUrl(headerSettings.logoUrl) || SITE_DEFAULT_LOGO;
+  const customName = lang === "ru"
+    ? headerSettings.organizationNameRu || ""
+    : headerSettings.organizationNameTyv || "";
+  const showLanguageSwitcher = flagEnabled(headerSettings.showLanguageSwitcher, true);
+  const showAccessibility = flagEnabled(headerSettings.showAccessibility, true);
+  const showBurger = flagEnabled(headerSettings.showBurger, true);
+
+  const configuredTopLinks = Array.isArray(headerSettings.topLinks) ? headerSettings.topLinks : [];
+  const topLinks = React.useMemo(
+    () => configuredTopLinks
+      .filter(isTopLinkVisible)
+      .map((link, idx) => ({
+        id: String(link?.id || link?._id || link?.key || `top-${idx + 1}`),
+        titleRu: String(link?.titleRu ?? link?.title ?? link?.labelRu ?? link?.label ?? ""),
+        titleTyv: String(link?.titleTyv ?? link?.titleTy ?? link?.labelTyv ?? ""),
+        url: String(link?.url ?? link?.href ?? link?.path ?? link?.link ?? ""),
+      }))
+      .filter((link) => link.url),
+    [headerSettings.topLinks],
+  );
+  const configuredLinkPaths = configuredTopLinks
+    .map((link) => getHrefPath(link?.url ?? link?.href ?? link?.path ?? link?.link));
+  const hasAdminTopLink = configuredLinkPaths.includes("/admin");
+  const hasAccountTopLink = configuredLinkPaths.some(
+    (path) => path === "/cabinet/account" || path.startsWith("/cabinet/account/"),
+  );
+
+  const brandLine1 = customName || (lang === "ru" ? "Верховный Хурал" : t("brandTop"));
+  const brandLine2 = customName ? "" : (lang === "ru" ? "(парламент)" : t("brandParliament"));
+  const brandLine3 = customName ? "" : (lang === "ru" ? "Республики Тыва" : t("brandBottom"));
   // Для тувинского языка - три строки
-  const tyBrandLines = lang === "ty" 
-    ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"] 
+  const tyBrandLines = !customName && lang === "ty"
+    ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"]
     : null;
 
   // Обработчик клика на иконку версии для слабовидящих
@@ -300,21 +349,40 @@ export default function Header() {
     <>
       <header className="site-header">
         <div className="container topbar">
+          {topLinks.length > 0 && (
+            <span
+              className="topbar-sitelinks"
+              style={{ display: "inline-flex", gap: 12, flexWrap: "wrap", marginRight: 16 }}
+            >
+              {topLinks.map((link) => {
+                const label = lang === "ru"
+                  ? link.titleRu || link.titleTyv || link.url
+                  : link.titleTyv || link.titleRu || link.url;
+                return (
+                  <a key={link.id} className="link-like" href={link.url}>
+                    {label}
+                  </a>
+                );
+              })}
+            </span>
+          )}
           <span className="topbar-auth">
             {isAuthenticated ? (
               <>
                 <span className="topbar-auth__name">
                   {user?.name || user?.email || t("login")}
                 </span>
-                <button
-                  className="link-like"
-                  onClick={() => {
-                    navigate("/cabinet/account");
-                  }}
-                >
-                  {t("personalAccount")}
-                </button>
-                {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
+                {!hasAccountTopLink && (
+                  <button
+                    className="link-like"
+                    onClick={() => {
+                      navigate("/cabinet/account");
+                    }}
+                  >
+                    {t("personalAccount")}
+                  </button>
+                )}
+                {(String(user?.role || "").toLowerCase() === "admin" || user?.admin) && !hasAdminTopLink ? (
                   <button
                     className="link-like"
                     onClick={() => {
@@ -361,7 +429,7 @@ export default function Header() {
                 style={{ textDecoration: "none" }}
               >
                 <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
+                  src={headerLogo}
                   alt=""
                   width={56}
                   height={56}
@@ -610,31 +678,37 @@ export default function Header() {
           </nav>
 
           <div className="header-actions">
-            <img 
-              id="specialButton" 
-              onClick={handleAccessibilityToggle}
-              src="https://lidrekon.ru/images/special.png" 
-              alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-              title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-            />
-            <button
-              className="icon-btn"
-              aria-label={t("changeLanguage")}
-              onClick={() => {
-                const newLang = lang === "ru" ? "ty" : "ru";
-                setLang(newLang);
-                // Language switch doesn't require route mutation in history mode.
-              }}
-            >
-              {lang.toUpperCase()}
-            </button>
-            <button className="icon-btn" aria-label={t("menu")} onClick={handleBurger}>
-              <span className="burger">
-                <span></span>
-                <span></span>
-                <span></span>
-              </span>
-            </button>
+            {showAccessibility && (
+              <img 
+                id="specialButton" 
+                onClick={handleAccessibilityToggle}
+                src="https://lidrekon.ru/images/special.png" 
+                alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+                title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+              />
+            )}
+            {showLanguageSwitcher && (
+              <button
+                className="icon-btn"
+                aria-label={t("changeLanguage")}
+                onClick={() => {
+                  const newLang = lang === "ru" ? "ty" : "ru";
+                  setLang(newLang);
+                  // Language switch doesn't require route mutation in history mode.
+                }}
+              >
+                {lang.toUpperCase()}
+              </button>
+            )}
+            {showBurger && (
+              <button className="icon-btn" aria-label={t("menu")} onClick={handleBurger}>
+                <span className="burger">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -655,7 +729,7 @@ export default function Header() {
               style={{ textDecoration: "none" }}
             >
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
+                src={headerLogo}
                 alt=""
                 width={44}
                 height={44}
@@ -688,25 +762,29 @@ export default function Header() {
               )}
             </a>
           </div>
-          <img 
-            id="specialButton" 
-            onClick={handleAccessibilityToggle}
-            style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
-            src="https://lidrekon.ru/images/special.png" 
-            alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-            title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-          />
-          <button
-            className="icon-btn"
-            aria-label={t("changeLanguage")}
-            onClick={() => {
-              const newLang = lang === "ru" ? "ty" : "ru";
-              setLang(newLang);
-              // Language switch doesn't require route mutation in history mode.
-            }}
-          >
-            {lang.toUpperCase()}
-          </button>
+          {showAccessibility && (
+            <img 
+              id="specialButton" 
+              onClick={handleAccessibilityToggle}
+              style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+              src="https://lidrekon.ru/images/special.png" 
+              alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+              title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            />
+          )}
+          {showLanguageSwitcher && (
+            <button
+              className="icon-btn"
+              aria-label={t("changeLanguage")}
+              onClick={() => {
+                const newLang = lang === "ru" ? "ty" : "ru";
+                setLang(newLang);
+                // Language switch doesn't require route mutation in history mode.
+              }}
+            >
+              {lang.toUpperCase()}
+            </button>
+          )}
           <button className="icon-btn" onClick={() => setSheetOpen(false)} aria-label={t("close")}>
             ✕
           </button>
@@ -795,7 +873,7 @@ export default function Header() {
             style={{ textDecoration: "none", flexShrink: 0 }}
           >
             <img
-              src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg"
+              src={headerLogo}
               alt=""
               width={40}
               height={40}
@@ -821,26 +899,30 @@ export default function Header() {
               )}
             </div>
           </div>
-          <img 
-            id="specialButton" 
-            onClick={handleAccessibilityToggle}
-            style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
-            src="https://lidrekon.ru/images/special.png" 
-            alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-            title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
-          />
+          {showAccessibility && (
+            <img 
+              id="specialButton" 
+              onClick={handleAccessibilityToggle}
+              style={{ cursor: 'pointer', maxWidth: '40px', height: 'auto' }} 
+              src="https://lidrekon.ru/images/special.png" 
+              alt="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+              title="ВЕРСИЯ ДЛЯ СЛАБОВИДЯЩИХ" 
+            />
+          )}
           {/* auth quick actions removed */}
-          <button
-            className="icon-btn"
-            aria-label="Сменить язык"
-            onClick={() => {
-              const newLang = lang === "ru" ? "ty" : "ru";
-              setLang(newLang);
-              // Language switch doesn't require route mutation in history mode.
-            }}
-          >
-            {lang.toUpperCase()}
-          </button>
+          {showLanguageSwitcher && (
+            <button
+              className="icon-btn"
+              aria-label="Сменить язык"
+              onClick={() => {
+                const newLang = lang === "ru" ? "ty" : "ru";
+                setLang(newLang);
+                // Language switch doesn't require route mutation in history mode.
+              }}
+            >
+              {lang.toUpperCase()}
+            </button>
+          )}
           <button className="icon-btn" onClick={() => setMobileOpen(false)} aria-label={t("close")}>
             ✕
           </button>
