@@ -607,9 +607,13 @@ a {
     flex-shrink: 1;
   }
   .brand-text a {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
   }
-  .brand-text a div {
+  .brand-text a > div {
+    display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
