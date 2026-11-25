@@ -4,7 +4,6 @@ import {
   App,
   Button,
   Card,
-  Checkbox,
   Divider,
   Form,
   Input,
@@ -23,6 +22,7 @@ import AdminShell from "./AdminShell.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { MenuApi, SiteApi, UploadApi } from "../../api/client.js";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
+import { notifySiteUpdated } from "../../utils/siteUpdates.js";
 
 const DEFAULT_FOOTER = {
   logoUrl: "",
@@ -41,6 +41,14 @@ const DEFAULT_FOOTER = {
   showSocials: true,
   contacts: [],
   showContacts: true,
+};
+
+const LINK_RULE = {
+  validator: (_, value) => {
+    const link = String(value || "").trim();
+    if (!link || /^(https?:\/\/|tel:|mailto:|\/)/i.test(link)) return Promise.resolve();
+    return Promise.reject(new Error("Укажите https://..., tel:, mailto: или путь, начинающийся с /"));
+  },
 };
 
 export default function AdminFooterPage() {
@@ -78,7 +86,7 @@ export default function AdminFooterPage() {
     load();
   }, [load]);
 
-  const notifySite = () => window.dispatchEvent(new CustomEvent("khural:site-updated"));
+  const notifySite = () => notifySiteUpdated("site");
 
   const save = async (patch) => {
     try {
@@ -212,7 +220,7 @@ export default function AdminFooterPage() {
               <Input />
             </Form.Item>
           </div>
-          <Form.Item name="developerUrl" label="Ссылка разработчика">
+          <Form.Item name="developerUrl" label="Ссылка разработчика" rules={[LINK_RULE]}>
             <Input placeholder="https://..." />
           </Form.Item>
         </Card>
@@ -233,7 +241,7 @@ export default function AdminFooterPage() {
         </Card>
 
         <Card title="Социальные сети" style={{ marginBottom: 16 }}>
-          <Form.Item name="showSocials" label="Показывать socials" valuePropName="checked">
+          <Form.Item name="showSocials" label="Показывать блок социальных сетей" valuePropName="checked">
             <Switch />
           </Form.Item>
           <Form.List name="socials">
@@ -272,12 +280,24 @@ export default function AdminFooterPage() {
                         {...field}
                         name={[field.name, "url"]}
                         label="Ссылка"
+                        rules={[LINK_RULE]}
                         style={{ flex: 2, minWidth: 220 }}
                       >
                         <Input placeholder="https://..." />
                       </Form.Item>
-                      <Form.Item {...field} name={[field.name, "icon"]} label="Иконка" style={{ width: 140 }}>
-                        <Input placeholder="vk" />
+                      <Form.Item {...field} name={[field.name, "icon"]} label="Иконка" style={{ width: 180 }}>
+                        <Select
+                          allowClear
+                          placeholder="Выберите"
+                          options={[
+                            { value: "vk", label: "ВКонтакте" },
+                            { value: "max", label: "MAX" },
+                            { value: "telegram", label: "Telegram" },
+                            { value: "ok", label: "Одноклассники" },
+                            { value: "youtube", label: "YouTube" },
+                            { value: "rutube", label: "RuTube" },
+                          ]}
+                        />
                       </Form.Item>
                       <Form.Item
                         {...field}
@@ -293,7 +313,7 @@ export default function AdminFooterPage() {
                     </div>
                   </div>
                 ))}
-                <Button icon={<PlusOutlined />} onClick={() => add({ isVisible: true })}>
+                <Button icon={<PlusOutlined />} onClick={() => add({ id: `social-${Date.now()}`, isVisible: true, icon: "vk" })}>
                   Добавить социальную сеть
                 </Button>
               </>
@@ -359,9 +379,22 @@ export default function AdminFooterPage() {
                         {...field}
                         name={[field.name, "href"]}
                         label="Ссылка (tel:, mailto: — необязательно)"
-                        style={{ flex: 2, minWidth: 220 }}
+                        rules={[LINK_RULE]}
+                        style={{ flex: 1, minWidth: 220 }}
                       >
                         <Input placeholder="tel:+73942221043" />
+                      </Form.Item>
+                      <Form.Item {...field} name={[field.name, "icon"]} label="Иконка" style={{ width: 180 }}>
+                        <Select
+                          allowClear
+                          placeholder="Авто"
+                          options={[
+                            { value: "address", label: "Адрес" },
+                            { value: "phone", label: "Телефон" },
+                            { value: "printer", label: "Факс/приёмная" },
+                            { value: "email", label: "Email" },
+                          ]}
+                        />
                       </Form.Item>
                       <Form.Item
                         {...field}
@@ -377,7 +410,7 @@ export default function AdminFooterPage() {
                     </div>
                   </div>
                 ))}
-                <Button icon={<PlusOutlined />} onClick={() => add({ isVisible: true })}>
+                <Button icon={<PlusOutlined />} onClick={() => add({ id: `contact-${Date.now()}`, isVisible: true, icon: "phone" })}>
                   Добавить контакт
                 </Button>
               </>

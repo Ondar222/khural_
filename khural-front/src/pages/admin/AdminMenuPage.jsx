@@ -27,6 +27,7 @@ import {
 import AdminShell from "./AdminShell.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { AboutApi, MenuApi } from "../../api/client.js";
+import { notifySiteUpdated } from "../../utils/siteUpdates.js";
 
 /** Строит дерево из плоского списка пунктов меню. */
 function buildTree(items) {
@@ -94,9 +95,7 @@ export default function AdminMenuPage() {
     load();
   }, [load]);
 
-  const notifySite = () => {
-    window.dispatchEvent(new CustomEvent("khural:menu-updated"));
-  };
+  const notifySite = () => notifySiteUpdated("menu");
 
   const openCreate = (parentId = null, groupId = null) => {
     setEditing(null);

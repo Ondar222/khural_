@@ -24,6 +24,7 @@ import AdminShell from "./AdminShell.jsx";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { SiteApi, UploadApi } from "../../api/client.js";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
+import { notifySiteUpdated } from "../../utils/siteUpdates.js";
 
 const DEFAULT_HEADER = {
   logoUrl: "",
@@ -68,7 +69,7 @@ export default function AdminHeaderPage() {
     load();
   }, [load]);
 
-  const notifySite = () => window.dispatchEvent(new CustomEvent("khural:site-updated"));
+  const notifySite = () => notifySiteUpdated("site");
 
   const save = async (patch) => {
     try {

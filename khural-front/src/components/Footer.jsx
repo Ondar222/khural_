@@ -84,7 +84,8 @@ export default function Footer() {
   const developerText = localized(footer?.developerTextRu, footer?.developerTextTyv);
   const copyrightYear = footer?.copyrightYear || new Date().getFullYear();
 
-  const selectedGroupIds = Array.isArray(footer?.menuGroupIds) && footer.menuGroupIds.length
+  const hasMenuGroupSelection = Array.isArray(footer?.menuGroupIds);
+  const selectedGroupIds = hasMenuGroupSelection
     ? new Set(footer.menuGroupIds.map(String))
     : null;
   const groups = (footerGroups || []).filter(
@@ -93,20 +94,37 @@ export default function Footer() {
 
   const itemsByGroup = React.useMemo(() => {
     const map = new Map();
-    (footerItems || []).forEach((item) => {
-      const key = String(item.groupId ?? "ungrouped");
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(item);
-    });
+    const walk = (items, inheritedGroupId) => {
+      (items || []).forEach((item) => {
+        if (!item || item.isVisible === false) return;
+        const groupId = item.groupId ?? inheritedGroupId;
+        const key = String(groupId ?? "ungrouped");
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(item);
+        if (Array.isArray(item.children)) walk(item.children, groupId);
+      });
+    };
+    walk(footerItems, null);
     return map;
   }, [footerItems]);
 
-  const socials = Array.isArray(footer?.socials) && footer.socials.length
+  // Пустой массив из API — осознанный выбор сотрудника (все соцсети/контакты
+  // удалены). Захардкоженные списки используем только если данных нет вообще.
+  const socials = Array.isArray(footer?.socials)
     ? footer.socials.filter((item) => item.isVisible !== false)
     : DEFAULT_SOCIALS;
-  const contacts = Array.isArray(footer?.contacts) && footer.contacts.length
+  const contacts = Array.isArray(footer?.contacts)
     ? footer.contacts.filter((item) => item.isVisible !== false)
     : DEFAULT_CONTACTS;
+
+  const socialIconLabels = {
+    vk: "VK",
+    max: "M",
+    telegram: "TG",
+    ok: "OK",
+    youtube: "YT",
+    rutube: "RT",
+  };
 
   const iconByType = {
     address: EnvironmentOutlined,
@@ -210,7 +228,7 @@ export default function Footer() {
                 <p>
                   {copyrightText
                     ? `${copyrightYear} ${copyrightText}`
-                    : `${copyrightYear} ${t("© 2026 ВЕРХОВНЫЙ ХУРАЛ (ПАРЛАМЕНТ) РТ")}`}
+                    : `${copyrightYear} © ${t("© 2026 ВЕРХОВНЫЙ ХУРАЛ (ПАРЛАМЕНТ) РТ").replace(/^©\s*\d{4}\s*/, "")}`}
                 </p>
               )}
               {footer?.showCopyright !== false && !copyrightText && <p>{t("ВСЕ ПРАВА ЗАЩИЩЕНЫ.")}</p>}
@@ -232,14 +250,42 @@ export default function Footer() {
           <div className="footer-links">
             {groups.length
               ? groups.map((group) => renderMenuColumn(group))
-              : fallbackColumns.map((column) => renderMenuColumn(null, column))}
-            {footer?.showSocials !== false && (
+              : hasMenuGroupSelection
+                ? null
+                : fallbackColumns.map((column) => renderMenuColumn(null, column))}
+            {footer?.showSocials !== false && socials.length > 0 && (
               <div className="footer-col">
                 <h4>{t("socials")}</h4>
                 <nav>
                   {socials.map((social) => (
-                    <a key={social.id || social.url} href={social.url} target="_blank" rel="noreferrer">
-                      {localized(social.titleRu, social.titleTyv)}
+                    <a
+                      key={social.id || social.url}
+                      href={social.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      {socialIconLabels[social.icon] ? (
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: 26,
+                            height: 22,
+                            padding: "0 4px",
+                            borderRadius: 4,
+                            background: "rgba(255,255,255,0.12)",
+                            fontSize: 11,
+                            fontWeight: 800,
+                            letterSpacing: 0.3,
+                          }}
+                        >
+                          {socialIconLabels[social.icon]}
+                        </span>
+                      ) : null}
+                      <span>{localized(social.titleRu, social.titleTyv)}</span>
                     </a>
                   ))}
                 </nav>
@@ -248,7 +294,7 @@ export default function Footer() {
           </div>
 
           {/* Contact Information */}
-          {(footer?.showContacts !== false || !footer) && (
+          {(footer?.showContacts !== false || !footer) && contacts.length > 0 && (
             <div className="footer-contacts">
               <h4>{t("Контакты")}</h4>
               {contacts.map((contact, index) => {

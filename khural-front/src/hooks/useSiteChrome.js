@@ -1,6 +1,7 @@
 import React from "react";
 import { MenuApi, SiteApi } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
+import { subscribeSiteUpdates } from "../utils/siteUpdates.js";
 
 /**
  * Общие данные «шапки/подвала/меню» для публичной части сайта.
@@ -13,8 +14,6 @@ const cache = {
   footerMenu: null,
   loadedAt: 0,
 };
-
-const EVENTS = ["khural:site-updated", "khural:menu-updated"];
 
 /**
  * Header/Footer/SideNav монтируют хук одновременно — без разделяемого Promise
@@ -61,9 +60,7 @@ export function useSiteChrome() {
 
   React.useEffect(() => {
     load();
-    const onUpdate = () => load();
-    EVENTS.forEach((event) => window.addEventListener(event, onUpdate));
-    return () => EVENTS.forEach((event) => window.removeEventListener(event, onUpdate));
+    return subscribeSiteUpdates(() => load());
   }, [load]);
 
   const header = state.site?.header;
