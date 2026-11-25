@@ -13228,11 +13228,13 @@ body:has(.auth-page) {
 .photo-years button {
   border: 1px solid #d9d9d9;
   background: #fff;
+  color: #1f2937;
   border-radius: 20px;
   padding: 6px 16px;
   cursor: pointer;
   font: inherit;
   font-size: 14px;
+  line-height: 1.2;
 }
 .photo-years button.is-active {
   background: var(--primary, #b51f2c);

@@ -26,6 +26,10 @@ import { SiteApi, UploadApi } from "../../api/client.js";
 import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { notifySiteUpdated } from "../../utils/siteUpdates.js";
 
+const SITE_DEFAULT_LOGO = "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg";
+const SITE_DEFAULT_NAME_RU = "Верховный Хурал (парламент) Республики Тыва";
+const SITE_DEFAULT_NAME_TYV = "Тыва Республиканың Дээди Хуралы (парламентизи)";
+
 const DEFAULT_HEADER = {
   logoUrl: "",
   organizationNameRu: "",
@@ -49,6 +53,7 @@ export default function AdminHeaderPage() {
   const [uploading, setUploading] = React.useState(false);
 
   const logoUrl = header.logoUrl || "";
+  const effectiveLogo = logoUrl || SITE_DEFAULT_LOGO;
 
   const load = React.useCallback(async () => {
     if (!adminData.isAuthenticated) return;
@@ -237,29 +242,30 @@ export default function AdminHeaderPage() {
                 background: "#fafafa",
               }}
             >
-              {logoUrl ? (
-                <img src={normalizeFilesUrl(logoUrl)} alt="Логотип" style={{ maxWidth: "100%", maxHeight: "100%" }} />
-              ) : (
-                <span style={{ fontSize: 12, opacity: 0.6 }}>Нет логотипа</span>
-              )}
+              <img src={normalizeFilesUrl(effectiveLogo)} alt="Логотип" style={{ maxWidth: "100%", maxHeight: "100%" }} />
             </div>
             <Upload accept="image/*" showUploadList={false} customRequest={uploadLogo}>
               <Button icon={<UploadOutlined />} loading={uploading}>
                 {logoUrl ? "Заменить логотип" : "Загрузить логотип"}
               </Button>
             </Upload>
+            {!logoUrl && (
+              <Button onClick={() => save({ logoUrl: SITE_DEFAULT_LOGO, organizationNameRu: header.organizationNameRu || SITE_DEFAULT_NAME_RU, organizationNameTyv: header.organizationNameTyv || SITE_DEFAULT_NAME_TYV })}>
+                Использовать логотип сайта
+              </Button>
+            )}
             {logoUrl && (
-              <Button type="link" danger onClick={() => save({ logoUrl: null })}>
-                Удалить
+              <Button type="link" danger onClick={() => save({ logoUrl: "" })}>
+                Сбросить к логотипу сайта
               </Button>
             )}
           </div>
 
           <Form.Item name="organizationNameRu" label="Название организации (русский)">
-            <Input />
+            <Input placeholder={SITE_DEFAULT_NAME_RU} />
           </Form.Item>
           <Form.Item name="organizationNameTyv" label="Название организации (тувинский)">
-            <Input />
+            <Input placeholder={SITE_DEFAULT_NAME_TYV} />
           </Form.Item>
 
           <Space>
