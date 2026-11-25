@@ -55,12 +55,21 @@ export default function AdminHeaderPage() {
   const logoUrl = header.logoUrl || "";
   const effectiveLogo = logoUrl || SITE_DEFAULT_LOGO;
 
+  const normalizeTopLinks = (links) =>
+    (Array.isArray(links) ? links : []).map((link, idx) => ({
+      id: String(link?.id || link?._id || `link-${idx + 1}`),
+      titleRu: String(link?.titleRu ?? link?.title ?? link?.labelRu ?? link?.label ?? link?.name ?? ""),
+      titleTyv: String(link?.titleTyv ?? link?.titleTy ?? ""),
+      url: String(link?.url ?? link?.href ?? link?.path ?? link?.link ?? ""),
+      isVisible: link?.isVisible !== false && link?.visible !== false && link?.hidden !== true,
+    }));
+
   const load = React.useCallback(async () => {
     if (!adminData.isAuthenticated) return;
     setLoading(true);
     try {
       const data = await SiteApi.getHeader();
-      const next = { ...DEFAULT_HEADER, ...(data || {}) };
+      const next = { ...DEFAULT_HEADER, ...(data || {}), topLinks: normalizeTopLinks(data?.topLinks) };
       setHeader(next);
       form.setFieldsValue(next);
     } catch (error) {
@@ -80,7 +89,7 @@ export default function AdminHeaderPage() {
     try {
       setSaving(true);
       const updated = await SiteApi.updateHeader(patch);
-      const next = { ...DEFAULT_HEADER, ...(updated || {}) };
+      const next = { ...DEFAULT_HEADER, ...(updated || {}), topLinks: normalizeTopLinks(updated?.topLinks ?? patch?.topLinks ?? header.topLinks) };
       setHeader(next);
       form.setFieldsValue(next);
       message.success("Настройки шапки сохранены");
@@ -134,12 +143,12 @@ export default function AdminHeaderPage() {
   const saveLink = async () => {
     try {
       const values = await linkForm.validateFields();
-      const links = Array.isArray(header.topLinks) ? [...header.topLinks] : [];
+      const links = normalizeTopLinks(header.topLinks);
       const record = {
         id: editingLink?.id || `link-${Date.now()}`,
-        titleRu: values.titleRu,
-        titleTyv: values.titleTyv || values.titleRu,
-        url: values.url,
+        titleRu: String(values.titleRu || "").trim(),
+        titleTyv: String(values.titleTyv || values.titleRu || "").trim(),
+        url: String(values.url || "").trim(),
         isVisible: values.isVisible !== false,
       };
       if (editingLink) {
@@ -157,14 +166,14 @@ export default function AdminHeaderPage() {
   };
 
   const patchLink = async (id, patch) => {
-    const links = (header.topLinks || []).map((item) =>
+    const links = normalizeTopLinks(header.topLinks).map((item) =>
       item.id === id ? { ...item, ...patch } : item,
     );
     await save({ topLinks: links });
   };
 
   const removeLink = async (id) => {
-    const links = (header.topLinks || []).filter((item) => item.id !== id);
+    const links = normalizeTopLinks(header.topLinks).filter((item) => item.id !== id);
     await save({ topLinks: links });
   };
 
@@ -173,16 +182,26 @@ export default function AdminHeaderPage() {
       title: "Название",
       dataIndex: "titleRu",
       render: (_, link) => (
-        <Space wrap>
-          <span style={{ fontWeight: 600 }}>{link.titleRu}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+          <span style={{ fontWeight: 600, color: "#1f2937", whiteSpace: "normal", wordBreak: "break-word" }}>
+            {link.titleRu || "—"}
+          </span>
           {link.titleTyv && link.titleTyv !== link.titleRu && (
-            <Tag color="blue">{link.titleTyv}</Tag>
+            <span style={{ fontSize: 12, color: "#64748b", whiteSpace: "normal", wordBreak: "break-word" }}>
+              {link.titleTyv}
+            </span>
           )}
-          {link.isVisible === false && <Tag>скрыта</Tag>}
-        </Space>
+          {link.isVisible === false && <Tag style={{ width: "fit-content" }}>скрыта</Tag>}
+        </div>
       ),
     },
-    { title: "Ссылка", dataIndex: "url" },
+    {
+      title: "Ссылка",
+      dataIndex: "url",
+      render: (url) => (
+        <span style={{ color: "#334155", whiteSpace: "normal", wordBreak: "break-all" }}>{url || "—"}</span>
+      ),
+    },
     {
       title: "Видимость",
       key: "visible",
@@ -280,18 +299,27 @@ export default function AdminHeaderPage() {
       <Card
         title="Верхние ссылки"
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => openLink(null)}>
-            Добавить ссылку
-          </Button>
+          <Space wrap>
+            <Button onClick={() => save({ topLinks: [
+              { id: "admin", titleRu: "Перейти в админку", titleTyv: "Админче", url: "/admin", isVisible: true },
+              { id: "account", titleRu: "Личный кабинет", titleTyv: "Шенчге кабинет", url: "/cabinet/account", isVisible: true },
+            ] })}>
+              Восстановить по умолчанию
+            </Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => openLink(null)}>
+              Добавить ссылку
+            </Button>
+          </Space>
         }
         loading={loading}
       >
         <Table
-          rowKey="id"
+          rowKey={(row, idx) => row.id || `top-link-${idx}`}
           size="small"
           dataSource={header.topLinks || []}
           columns={columns}
           pagination={false}
+          scroll={{ x: 720 }}
           locale={{ emptyText: "Верхние ссылки ещё не добавлены" }}
         />
       </Card>
