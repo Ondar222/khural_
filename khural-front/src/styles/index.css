@@ -6194,12 +6194,16 @@ html[data-lang="tyv"] .topbar > a {
   color: var(--link);
 }
 .topbar > span {
-  margin-left: auto;
   display: flex;
   gap: 12px;
   align-items: center;
 }
+.topbar-sitelinks {
+  margin-left: 0;
+  margin-right: auto;
+}
 .topbar-auth {
+  margin-left: auto;
   flex-direction: row;
   justify-content: flex-end;
   text-align: right;
