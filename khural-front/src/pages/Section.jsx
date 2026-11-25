@@ -1,6 +1,6 @@
 import React from "react";
 import { useData } from "../context/DataContext.jsx";
-import { AboutApi, ConvocationsApi, CommitteesApi, apiFetch } from "../api/client.js";
+import { AboutApi, ConvocationsApi, CommitteesApi, ApparatusApi, apiFetch } from "../api/client.js";
 import { useI18n } from "../context/I18nContext.jsx";
 import SideNav from "../components/SideNav.jsx";
 import PersonDetail from "../components/PersonDetail.jsx";
@@ -9,6 +9,7 @@ import { extractPageHtml, extractPageTitle, getPreferredLocaleToken } from "../u
 import { getApparatusNavLinks } from "../utils/apparatusLinks.js";
 import { sectionHref } from "../utils/sectionLinks.js";
 import { APPARATUS_SECTIONS } from "../utils/apparatusContent.js";
+import Apparatus from "./Apparatus.jsx";
 import { normalizeBool } from "../utils/bool.js";
 import DocumentActions from "../components/DocumentActions.jsx";
 import PdfPreviewModal from "../components/PdfPreviewModal.jsx";
@@ -1626,18 +1627,130 @@ function resolveDeputyPhoto(d) {
   return normalizeFilesUrl(sources[0]);
 }
 
+function apparatusNameKey(name) {
+  return String(name || "").toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ").trim();
+}
+
+function apparatusTitleKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/аппарата\s+вх\s+рт/gi, " ")
+    .replace(/аппарата\s+верховного\s+хурала.*$/gi, " ")
+    .replace(/[«»"()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function apparatusTitlesMatch(a, b) {
+  const ka = apparatusTitleKey(a);
+  const kb = apparatusTitleKey(b);
+  if (!ka || !kb) return false;
+  return ka === kb || ka.includes(kb) || kb.includes(ka);
+}
+
 function ApparatusSectionDetail({ title, backHref, navLinks, deputies }) {
-  const data = APPARATUS_SECTIONS?.[title];
-  if (!data) return null;
+  const staticData = APPARATUS_SECTIONS?.[title];
+  const [apparatusStructure, setApparatusStructure] = React.useState({ leadership: [], departments: [] });
+  const [apparatusLoaded, setApparatusLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    ApparatusApi.getStructure()
+      .then((res) => {
+        if (!alive) return;
+        setApparatusStructure({
+          leadership: Array.isArray(res?.leadership) ? res.leadership : [],
+          departments: Array.isArray(res?.departments) ? res.departments : [],
+        });
+      })
+      .catch(() => { if (alive) setApparatusStructure({ leadership: [], departments: [] }); })
+      .finally(() => { if (alive) setApparatusLoaded(true); });
+    return () => { alive = false; };
+  }, []);
+
+  const apparatusEmployees = React.useMemo(() => {
+    const leadership = Array.isArray(apparatusStructure?.leadership) ? apparatusStructure.leadership : [];
+    const departments = Array.isArray(apparatusStructure?.departments) ? apparatusStructure.departments : [];
+    const depEmployees = departments.flatMap((d) => (Array.isArray(d?.employees) ? d.employees : []));
+    return [...leadership, ...depEmployees];
+  }, [apparatusStructure]);
+
+  const apparatusPhotoByName = React.useMemo(() => {
+    const map = new Map();
+    for (const e of apparatusEmployees) {
+      const key = apparatusNameKey(e?.fullName);
+      const src = normalizeFilesUrl(e?.image?.link || e?.image?.url || e?.photo || "");
+      if (key && src && !map.has(key)) map.set(key, src);
+    }
+    return map;
+  }, [apparatusEmployees]);
+
+  const apiMatch = React.useMemo(() => {
+    const leadership = Array.isArray(apparatusStructure?.leadership) ? apparatusStructure.leadership : [];
+    const departments = Array.isArray(apparatusStructure?.departments) ? apparatusStructure.departments : [];
+    const dep = departments.find((d) => apparatusTitlesMatch(d?.name, title));
+    if (dep) {
+      return {
+        title: dep.name,
+        description: dep.description || "",
+        people: (Array.isArray(dep.employees) ? dep.employees : []).map((e) => ({
+          name: e.fullName,
+          role: e.position || "",
+          phone: e.phone || "",
+          email: e.email || "",
+          photo: normalizeFilesUrl(e?.image?.link || e?.image?.url || ""),
+        })),
+      };
+    }
+    const leaders = leadership.filter((e) => apparatusTitlesMatch(e?.position, title) || apparatusTitlesMatch(e?.fullName, title));
+    if (leaders.length) {
+      return {
+        title,
+        description: "",
+        people: leaders.map((e) => ({
+          name: e.fullName,
+          role: e.position || "",
+          phone: e.phone || "",
+          email: e.email || "",
+          photo: normalizeFilesUrl(e?.image?.link || e?.image?.url || ""),
+        })),
+      };
+    }
+    return null;
+  }, [apparatusStructure, title]);
+
+  const data = staticData || apiMatch;
+  if (!data) {
+    if (!apparatusLoaded) {
+      return (
+        <section className="section section-page"><div className="container"><div className="card" style={{ padding: 24 }}>Загрузка...</div></div></section>
+      );
+    }
+    return (
+      <section className="section section-page">
+        <div className="container">
+          <div className="page-grid">
+            <div className="page-grid__main">
+              {backHref ? <div className="section-page__topbar"><a className="btn btn-back" href={backHref}>← Назад</a></div> : null}
+              <h1 className="no-gold-underline section-page__title">{title}</h1>
+              <div className="card" style={{ padding: 18, marginTop: 14 }}>Информация о подразделении будет добавлена.</div>
+            </div>
+            <SideNav title="Разделы" links={navLinks} />
+          </div>
+        </div>
+      </section>
+    );
+  }
   const people = Array.isArray(data.people) ? data.people : [];
 
-  // Сопоставляем каждого человека из APPARATUS_SECTIONS с данными депутатов
   const mergedPeople = React.useMemo(() => {
     return people.map((p) => {
       const deputy = findDeputyByName(deputies, p.name);
+      const apiPhoto = apparatusPhotoByName.get(apparatusNameKey(p.name)) || "";
+      const basePhoto = normalizeFilesUrl(p.photo || "") || apiPhoto;
       if (deputy) {
-        // Депутат найден: подтягиваем фото, контакты, но сохраняем role из APPARATUS_SECTIONS
-        const photoSrc = resolveDeputyPhoto(deputy);
+        const photoSrc = resolveDeputyPhoto(deputy) || basePhoto;
         return {
           ...p,
           photo: photoSrc || p.photo,
@@ -1650,14 +1763,14 @@ function ApparatusSectionDetail({ title, backHref, navLinks, deputies }) {
           foundFromDeputies: true,
         };
       }
-      // Депутат не найден — подтягиваем фото из p.photo (если есть)
       return {
         ...p,
+        photo: basePhoto || p.photo,
         deputyId: null,
         foundFromDeputies: false,
       };
     });
-  }, [people, deputies]);
+  }, [people, deputies, apparatusPhotoByName]);
 
   return (
     <section className="section section-page">
@@ -1872,13 +1985,18 @@ export default function SectionPage({ title: titleProp } = {}) {
       // ignore invalid URI encoding
     }
 
-    // Prefilled (old) apparatus pages: show people/info or person detail.
-    if (APPARATUS_SECTIONS?.[title]) {
+    // Apparatus pages: from static seeded content or from /api/apparatus.
+    const isLikelyApparatusSection =
+      Boolean(APPARATUS_SECTIONS?.[title]) ||
+      /аппарат|руководител[ья]\s+аппарата|помощник\s+(председателя|заместителя)|организационн|государственно-правов|управление\s+делами|информационно-аналит|управление\s+финансов|отдел\s+технического|отдел\s+кадров/i.test(
+        String(title || "")
+      );
+    if (isLikelyApparatusSection) {
+      const staticData = APPARATUS_SECTIONS?.[title];
       const personIndex = parseInt(q.get("person") ?? "", 10);
-      const data = APPARATUS_SECTIONS[title];
-      const people = Array.isArray(data.people) ? data.people : [];
+      const people = Array.isArray(staticData?.people) ? staticData.people : [];
       const person =
-        Number.isInteger(personIndex) && personIndex >= 0 && personIndex < people.length
+        staticData && Number.isInteger(personIndex) && personIndex >= 0 && personIndex < people.length
           ? people[personIndex]
           : null;
       const sectionBackHref = sectionHref(title);
@@ -2676,136 +2794,7 @@ export default function SectionPage({ title: titleProp } = {}) {
     }
 
     if (title === "Структура Аппарата" || title === "Аппарат") {
-      const toSectionHref = (t) => sectionHref(t);
-      return (
-        <section className="section section-page">
-          <div className="container">
-            <div className="page-grid">
-              <div className="page-grid__main">
-                <h1 className="no-gold-underline">Структура Аппарата</h1>
-                <div className="office-chart card">
-                  <div className="office-chart__scroll" aria-label="Структура аппарата">
-                    <div className="office-chart__grid" role="img" aria-label="Организационная структура аппарата">
-                      <div className="office-chart__top">
-                        <a
-                          className="office-chart__node office-chart__node--top office-chart__node--link"
-                          href={toSectionHref("Руководитель Аппарата")}
-                        >
-                          <div className="office-chart__node-title">
-                            Руководитель Аппарата Верховного Хурала (парламента) Республики Тыва
-                          </div>
-                        </a>
-                      </div>
-
-                      <div className="office-chart__wires" aria-hidden="true">
-                        <span className="office-chart__wire office-chart__wire--stem" />
-                        <span className="office-chart__wire office-chart__wire--h" />
-                        <span className="office-chart__wire office-chart__wire--v-left" />
-                        <span className="office-chart__wire office-chart__wire--v-center" />
-                        <span className="office-chart__wire office-chart__wire--v-right" />
-                      </div>
-
-                      <div className="office-chart__col office-chart__col--left">
-                        <a
-                          className="office-chart__node office-chart__node--link"
-                          href={toSectionHref("Заместитель Руководителя Аппарата")}
-                        >
-                          <div className="office-chart__node-title">
-                            Заместитель руководителя Аппарата Верховного Хурала – начальник организационного
-                            управления Аппарата ВХ РТ
-                          </div>
-                        </a>
-                        <div className="office-chart__stack office-chart__stack--down">
-                          <a
-                            className="office-chart__node office-chart__node--link"
-                            href={toSectionHref("Организационное управление")}
-                          >
-                            <div className="office-chart__node-title">Организационное управление Аппарата ВХ РТ</div>
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="office-chart__col office-chart__col--center">
-                        <div className="office-chart__stack">
-                          <a
-                            className="office-chart__node office-chart__node--link"
-                            href={toSectionHref("Государственно-правовое управление")}
-                          >
-                            <div className="office-chart__node-title">Государственно-правовое управление Аппарата ВХ РТ</div>
-                          </a>
-                          <a className="office-chart__node office-chart__node--link" href={toSectionHref("Управление делами")}>
-                            <div className="office-chart__node-title">Управление делами Аппарата ВХ РТ</div>
-                          </a>
-                          <a
-                            className="office-chart__node office-chart__node--link"
-                            href={toSectionHref("Информационно-аналитическое управление")}
-                          >
-                            <div className="office-chart__node-title">Информационно-аналитическое управление</div>
-                          </a>
-                          <a
-                            className="office-chart__node office-chart__node--link"
-                            href={toSectionHref("Управление финансов, бухгалтерского учета и отчетности")}
-                          >
-                            <div className="office-chart__node-title">
-                              Управление финансов, бухгалтерского учета и отчетности Аппарата ВХ РТ
-                            </div>
-                          </a>
-                          <a
-                            className="office-chart__node office-chart__node--link"
-                            href={toSectionHref("Отдел технического и программного обеспечения")}
-                          >
-                            <div className="office-chart__node-title">
-                              Отдел технического и программного обеспечения Аппарата ВХ РТ
-                            </div>
-                          </a>
-                          <a
-                            className="office-chart__node office-chart__node--link"
-                            href={toSectionHref("Отдел кадров и государственной службы")}
-                          >
-                            <div className="office-chart__node-title">
-                              Отдел кадров и государственной службы Аппарата ВХ РТ
-                            </div>
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="office-chart__col office-chart__col--right">
-                        <div className="office-chart__stack">
-                          <a
-                            className="office-chart__node office-chart__node--link"
-                            href={toSectionHref("Первый помощник Председателя")}
-                          >
-                            <div className="office-chart__node-title">
-                              Первый помощник Председателя Верховного Хурала (парламента) Республики Тыва
-                            </div>
-                          </a>
-                          <a
-                            className="office-chart__node office-chart__node--link"
-                            href={toSectionHref("Помощник Председателя")}
-                          >
-                            <div className="office-chart__node-title">
-                              Помощник Председателя Верховного Хурала (парламента) Республики Тыва
-                            </div>
-                          </a>
-                          <a
-                            className="office-chart__node office-chart__node--link"
-                            href={toSectionHref("Помощник заместителя Председателя")}
-                          >
-                            <div className="office-chart__node-title">
-                              Помощник заместителя Председателя Верховного Хурала (парламента) Республики Тыва
-                            </div>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <SideNav title="Разделы" links={navLinks} />
-            </div>
-          </div>
-        </section>
-      );
+      return <Apparatus />;
     }
 
     if (title === "Руководство парламента" || title === "Руководство Верховного Хурала (парламента) Республики Тыва") {

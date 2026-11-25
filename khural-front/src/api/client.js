@@ -2220,6 +2220,60 @@ export const UploadApi = {
   },
 };
 
+// --- Аппарат ---
+export const ApparatusApi = {
+  async getStructure() {
+    return apiFetch("/apparatus", { method: "GET", auth: false });
+  },
+  async listDepartments({ all = false } = {}) {
+    const qs = all ? "?all=true" : "";
+    return apiFetch(`/apparatus/departments${qs}`, { method: "GET", auth: all });
+  },
+  async getDepartment(id) {
+    return apiFetch(`/apparatus/departments/${id}`, { method: "GET", auth: false });
+  },
+  async createDepartment(payload) {
+    return apiFetch("/apparatus/departments", { method: "POST", body: payload, auth: true });
+  },
+  async updateDepartment(id, payload) {
+    return apiFetch(`/apparatus/departments/${id}`, { method: "PATCH", body: payload, auth: true });
+  },
+  async removeDepartment(id) {
+    return apiFetch(`/apparatus/departments/${id}`, { method: "DELETE", auth: true });
+  },
+  async reorderDepartments(ids) {
+    return apiFetch("/apparatus/departments/reorder", { method: "POST", body: { ids }, auth: true });
+  },
+  async listEmployees({ departmentId, role, all = false } = {}) {
+    const params = new URLSearchParams();
+    if (departmentId) params.set("departmentId", String(departmentId));
+    if (role) params.set("role", role);
+    if (all) params.set("all", "true");
+    const qs = params.toString();
+    return apiFetch(`/apparatus/employees${qs ? `?${qs}` : ""}`, { method: "GET", auth: all });
+  },
+  async getEmployee(id) {
+    return apiFetch(`/apparatus/employees/${id}`, { method: "GET", auth: false });
+  },
+  async createEmployee(payload) {
+    return apiFetch("/apparatus/employees", { method: "POST", body: payload, auth: true });
+  },
+  async updateEmployee(id, payload) {
+    return apiFetch(`/apparatus/employees/${id}`, { method: "PATCH", body: payload, auth: true });
+  },
+  async removeEmployee(id) {
+    return apiFetch(`/apparatus/employees/${id}`, { method: "DELETE", auth: true });
+  },
+  async reorderEmployees(ids) {
+    return apiFetch("/apparatus/employees/reorder", { method: "POST", body: { ids }, auth: true });
+  },
+  async uploadEmployeeImage(id, file) {
+    const body = new FormData();
+    body.append("image", file);
+    return apiFetchMultipart(`/apparatus/employees/${id}/media`, { method: "POST", formData: body, auth: true });
+  },
+};
+
 // --- Фотоальбомы ---
 export const PhotoAlbumApi = {
   async list({ publishedOnly = true, withPhotos = false, lang } = {}) {

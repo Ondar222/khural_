@@ -77,9 +77,12 @@ export default function Deputies() {
     const hasAny = deputies.some((d) => d?.convocation === convocation);
     if (!hasAny) {
       setConvocation("Все");
-      updateFiltersUrl({ convocation: "Все" });
+      const sp = new URLSearchParams(window.location.search || "");
+      sp.delete("convocation");
+      const qs = sp.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
     }
-  }, [convocation, deputies, updateFiltersUrl]);
+  }, [convocation, deputies]);
 
   const districts = React.useMemo(() => {
     const toStr = (item) => {
@@ -144,11 +147,18 @@ export default function Deputies() {
   }, [deputies, convocation, faction, district, committeeMatcher]);
 
   // Paginated deputies
+  const totalPages = Math.max(1, Math.ceil(filtered.length / DEPUTIES_PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+
+  React.useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   const paginatedDeputies = React.useMemo(() => {
-    const start = (currentPage - 1) * DEPUTIES_PAGE_SIZE;
+    const start = (safePage - 1) * DEPUTIES_PAGE_SIZE;
     const end = start + DEPUTIES_PAGE_SIZE;
     return filtered.slice(start, end);
-  }, [filtered, currentPage]);
+  }, [filtered, safePage]);
 
   // Reset to page 1 when filters change
   React.useEffect(() => {
@@ -174,13 +184,20 @@ export default function Deputies() {
     }
   };
 
-  // Get initial page from URL
+  // Sync page with URL (supports browser back/forward and direct links)
   React.useEffect(() => {
-    const pageParam = new URLSearchParams(window.location.search || "").get("page");
-    const p = parseInt(pageParam, 10);
-    if (Number.isFinite(p) && p >= 1) {
-      setCurrentPage(p);
-    }
+    const applyPageFromUrl = () => {
+      const pageParam = new URLSearchParams(window.location.search || "").get("page");
+      const p = parseInt(pageParam, 10);
+      setCurrentPage(Number.isFinite(p) && p >= 1 ? p : 1);
+    };
+    applyPageFromUrl();
+    window.addEventListener("popstate", applyPageFromUrl);
+    window.addEventListener("app:navigate", applyPageFromUrl);
+    return () => {
+      window.removeEventListener("popstate", applyPageFromUrl);
+      window.removeEventListener("app:navigate", applyPageFromUrl);
+    };
   }, []);
 
   // Обновить URL при смене фильтров, чтобы при popstate/navigate не перезаписывать выбор
@@ -506,7 +523,7 @@ export default function Deputies() {
                 {filtered.length > 0 && (
                   <div className="deputies-page__pagination" style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
                     <Pagination
-                      current={currentPage}
+                      current={safePage}
                       total={filtered.length}
                       pageSize={DEPUTIES_PAGE_SIZE}
                       showSizeChanger={false}

@@ -746,10 +746,13 @@ export default function SideNav({
       sectionDefaultLinks = defaultLinksYouth;
     }
 
-    // Меню шапки из админки автоматически отражается и в боковой панели.
-    // Локальные ссылки разделов остаются только как fallback, когда API недоступен.
+    // Разделы с собственным курируемым боковым меню — не подменяем их меню шапки.
+    const hasSectionMenu = sectionDefaultLinks.length > 0;
+
+    // Меню шапки из админки автоматически отражается в боковой панели
+    // для разделов без собственного курируемого меню.
     const backendLinks = toSideNavLinks(backendMenuItems);
-    if (backendLinks.length) {
+    if (backendLinks.length && !hasSectionMenu) {
       if (loadPages && pagesLinks.length > 0 && detectedSection !== 'news' && detectedSection !== 'broadcast') {
         return [...backendLinks, ...pagesLinks];
       }
@@ -761,7 +764,6 @@ export default function SideNav({
       return [...sectionDefaultLinks, ...pagesLinks];
     }
 
-    // Иначе используем стандартные ссылки раздела (или пустой массив для разделов без специфичных ссылок)
     return sectionDefaultLinks;
   }, [overrideLinks, loadPages, pagesLinks, detectedSection, backendMenuItems]);
 
