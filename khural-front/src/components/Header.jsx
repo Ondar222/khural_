@@ -112,6 +112,7 @@ export default function Header() {
   const brandLine1 = customName || (lang === "ru" ? "Верховный Хурал" : t("brandTop"));
   const brandLine2 = customName ? "" : (lang === "ru" ? "(парламент)" : t("brandParliament"));
   const brandLine3 = customName ? "" : (lang === "ru" ? "Республики Тыва" : t("brandBottom"));
+  const defaultRuBrand = !customName && lang === "ru";
   // Для тувинского языка - три строки
   const tyBrandLines = !customName && lang === "ty"
     ? ["Тыва Республиканын", "Дээди Хуралы", "(ПАРЛАМЕНТИЗИ)"]
@@ -459,6 +460,18 @@ export default function Header() {
                       <div className="brand-ty__line brand-ty__line--2">{tyBrandLines[1]}</div>
                       <div className="brand-ty__line brand-ty__line--3">{tyBrandLines[2]}</div>
                     </div>
+                  ) : defaultRuBrand ? (
+                    <>
+                      <div style={{ fontSize: 16, lineHeight: 1.15, fontWeight: 900, color: "var(--primary)" }}>
+                        {brandLine1}
+                      </div>
+                      <div style={{ fontSize: 14, lineHeight: 1.15, fontWeight: 700, color: "var(--muted)" }}>
+                        {brandLine2}
+                      </div>
+                      <div style={{ fontSize: 16, lineHeight: 1.15, fontWeight: 900, color: "var(--primary)" }}>
+                        {brandLine3}
+                      </div>
+                    </>
                   ) : (
                     <>
                       <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 900, color: "var(--muted)" }}>
