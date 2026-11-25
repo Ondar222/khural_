@@ -58,6 +58,27 @@ function isTopLinkVisible(link) {
   return !hidden && flagEnabled(link?.isVisible ?? link?.visible, true);
 }
 
+function isAdminUser(user) {
+  if (!user) return false;
+  if (user.admin || user.isAdmin || user.admin_access || user.role?.admin_access) return true;
+  const raw = user.role ?? user.role_id ?? user.roleId ?? user.role?.name ?? "";
+  const role = String(typeof raw === "object" ? raw?.name || raw?.id || raw?.role || "" : raw)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+  return ["admin", "administrator", "админ", "администратор", "superadmin", "суперадмин", "root"].includes(role);
+}
+
+function isAdminPath(href) {
+  const path = getHrefPath(href);
+  return path === "/admin" || path.startsWith("/admin/");
+}
+
+function isAccountPath(href) {
+  const path = getHrefPath(href);
+  return path === "/cabinet/account" || path.startsWith("/cabinet/account/");
+}
+
 function getHrefPath(href) {
   const value = String(href || "");
   try {
@@ -114,9 +135,18 @@ export default function Header() {
   const showBurger = flagEnabled(headerSettings.showBurger, true);
 
   const configuredTopLinks = Array.isArray(headerSettings.topLinks) ? headerSettings.topLinks : [];
+  const canSeeAdminLink = isAdminUser(user);
   const topLinks = React.useMemo(
     () => configuredTopLinks
       .filter(isTopLinkVisible)
+      .filter((link) => {
+        const href = link?.url ?? link?.href ?? link?.path ?? link?.link;
+        // «Перейти в админку» — только для администраторов и суперадминистраторов
+        if (isAdminPath(href) && !canSeeAdminLink) return false;
+        // «Личный кабинет» — только после входа (любая роль)
+        if (isAccountPath(href) && !isAuthenticated) return false;
+        return true;
+      })
       .map((link, idx) => ({
         id: String(link?.id || link?._id || link?.key || `top-${idx + 1}`),
         titleRu: String(link?.titleRu ?? link?.title ?? link?.labelRu ?? link?.label ?? ""),
@@ -124,10 +154,9 @@ export default function Header() {
         url: String(link?.url ?? link?.href ?? link?.path ?? link?.link ?? ""),
       }))
       .filter((link) => link.url),
-    [headerSettings.topLinks],
+    [headerSettings.topLinks, canSeeAdminLink, isAuthenticated],
   );
-  const configuredLinkPaths = configuredTopLinks
-    .map((link) => getHrefPath(link?.url ?? link?.href ?? link?.path ?? link?.link));
+  const configuredLinkPaths = topLinks.map((link) => getHrefPath(link.url));
   const hasAdminTopLink = configuredLinkPaths.includes("/admin");
   const hasAccountTopLink = configuredLinkPaths.some(
     (path) => path === "/cabinet/account" || path.startsWith("/cabinet/account/"),
@@ -407,7 +436,7 @@ export default function Header() {
                     {t("personalAccount")}
                   </button>
                 )}
-                {(String(user?.role || "").toLowerCase() === "admin" || user?.admin) && !hasAdminTopLink ? (
+                {canSeeAdminLink && !hasAdminTopLink ? (
                   <button
                     className="link-like"
                     onClick={() => {
@@ -974,7 +1003,7 @@ export default function Header() {
                   >
                     {t("personalAccount")}
                   </button>
-                  {String(user?.role || "").toLowerCase() === "admin" || user?.admin ? (
+                  {canSeeAdminLink ? (
                     <button
                       className="btn mobile-auth__btn mobile-auth__btn--outline"
                       onClick={() => {
