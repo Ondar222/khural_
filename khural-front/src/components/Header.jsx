@@ -461,7 +461,7 @@ export default function Header() {
                       <div className="brand-ty__line brand-ty__line--3">{tyBrandLines[2]}</div>
                     </div>
                   ) : defaultRuBrand ? (
-                    <>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                       <div style={{ fontSize: 16, lineHeight: 1.15, fontWeight: 900, color: "var(--primary)" }}>
                         {brandLine1}
                       </div>
@@ -471,7 +471,7 @@ export default function Header() {
                       <div style={{ fontSize: 16, lineHeight: 1.15, fontWeight: 900, color: "var(--primary)" }}>
                         {brandLine3}
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <>
                       <div style={{ fontSize: 16, lineHeight: 1.1, fontWeight: 900, color: "var(--muted)" }}>
