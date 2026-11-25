@@ -22,6 +22,27 @@ import { normalizeFilesUrl } from "../utils/filesUrl.js";
 
 const SITE_DEFAULT_LOGO = "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg";
 
+function normalizeName(value) {
+  return String(value || "")
+    .replace(/[\u00a0\u202f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function isDefaultSiteName(value, lang) {
+  const name = normalizeName(value);
+  if (!name) return false;
+  if (lang === "ru") {
+    return name.includes("верховный хурал")
+      && name.includes("парламент")
+      && name.includes("тыва");
+  }
+  return name.includes("тыва")
+    && name.includes("хурал")
+    && name.includes("парламент");
+}
+
 /** Флаги из /api/site/header могут прийти булевыми, строками или числами. */
 function flagEnabled(value, fallback = true) {
   if (value === undefined || value === null || value === "") return fallback;
@@ -82,9 +103,12 @@ export default function Header() {
   // Настройки шапки из /api/site/header (редактируются в /admin/header).
   const headerSettings = siteHeader || {};
   const headerLogo = normalizeFilesUrl(headerSettings.logoUrl) || SITE_DEFAULT_LOGO;
-  const customName = lang === "ru"
+  const rawCustomName = lang === "ru"
     ? headerSettings.organizationNameRu || ""
     : headerSettings.organizationNameTyv || "";
+  // Если в админке задано стандартное название одной строкой, всё равно
+  // показываем фирменные три строки заголовка.
+  const customName = isDefaultSiteName(rawCustomName, lang) ? "" : rawCustomName;
   const showLanguageSwitcher = flagEnabled(headerSettings.showLanguageSwitcher, true);
   const showAccessibility = flagEnabled(headerSettings.showAccessibility, true);
   const showBurger = flagEnabled(headerSettings.showBurger, true);
@@ -350,24 +374,24 @@ export default function Header() {
     <>
       <header className="site-header">
         <div className="container topbar">
-          {topLinks.length > 0 && (
-            <span
-              className="topbar-sitelinks"
-              style={{ display: "inline-flex", gap: 12, flexWrap: "wrap", marginRight: 16 }}
-            >
-              {topLinks.map((link) => {
-                const label = lang === "ru"
-                  ? link.titleRu || link.titleTyv || link.url
-                  : link.titleTyv || link.titleRu || link.url;
-                return (
-                  <a key={link.id} className="link-like" href={link.url}>
-                    {label}
-                  </a>
-                );
-              })}
-            </span>
-          )}
           <span className="topbar-auth">
+            {topLinks.length > 0 && (
+              <span
+                className="topbar-sitelinks"
+                style={{ display: "inline-flex", gap: 12, flexWrap: "wrap" }}
+              >
+                {topLinks.map((link) => {
+                  const label = lang === "ru"
+                    ? link.titleRu || link.titleTyv || link.url
+                    : link.titleTyv || link.titleRu || link.url;
+                  return (
+                    <a key={link.id} className="link-like" href={link.url}>
+                      {label}
+                    </a>
+                  );
+                })}
+              </span>
+            )}
             {isAuthenticated ? (
               <>
                 <span className="topbar-auth__name">
