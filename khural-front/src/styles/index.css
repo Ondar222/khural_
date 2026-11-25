@@ -283,23 +283,6 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.brand-text {
-  display: block;
-  min-width: 0;
-}
-.brand-text a {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  text-decoration: none;
-  color: inherit;
-}
-.brand-text a > div {
-  display: block;
-  line-height: 1.1;
-  white-space: nowrap;
-}
 .brand .logo {
   width: 56px;
   height: 56px;
@@ -373,11 +356,7 @@ a {
 }
 .main-nav a {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
   padding-bottom: 6px;
-  white-space: nowrap;
 }
 .main-nav a::after {
   content: "";
@@ -6188,15 +6167,14 @@ a.btn.btn--primary:focus-visible {
   display: none;
   height: 36px;
   align-items: center;
-  justify-content: flex-end;
-  gap: 16px;
+  justify-content: space-between;
   font-size: 13px;
   color: #4b5563;
 }
 
 /* TU (TYV) locale: avoid "stretched" gaps between links in topbar */
 html[data-lang="tyv"] .topbar {
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 16px;
 }
 html[data-lang="tyv"] .topbar > a {
@@ -6221,34 +6199,17 @@ html[data-lang="tyv"] .topbar > a {
   gap: 12px;
   align-items: center;
 }
-.topbar-sitelinks,
 .topbar-auth {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  min-width: 0;
-}
-.topbar-sitelinks {
-  margin-left: auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-.topbar-auth {
-  flex: 0 0 auto;
-  margin-left: auto;
   flex-direction: row;
   justify-content: flex-end;
   text-align: right;
   flex-wrap: nowrap;
+  min-width: 0;
   margin-bottom: 20px;
   margin-top: 10px;
   /* Кнопки «Вход» и «Регистрация» чуть ниже верхнего края шапки */
   position: relative;
   top: 6px;
-}
-/* Keep auth block stable when top links are hidden/shown */
-.topbar-sitelinks + .topbar-auth {
-  margin-left: 0;
 }
 .topbar-auth__name {
   font-weight: 800;
