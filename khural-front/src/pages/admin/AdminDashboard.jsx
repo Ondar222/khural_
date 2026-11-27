@@ -54,13 +54,14 @@ export default function AdminDashboard({
   return (
     <div className="admin-grid admin-dashboard">
       {onReload && (
-        <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
-          {lastUpdated && (
-            <span style={{ fontSize: 13, color: "#6b7280" }}>
-              {t("adminDashboardUpdated")}: {lastUpdated.toLocaleTimeString(lang === "ty" ? "tyv-RU" : "ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-            </span>
-          )}
+        <div className="admin-dashboard__refresh-bar">
+          <span className="admin-dashboard__updated" aria-live="polite">
+            {lastUpdated
+              ? `${t("adminDashboardUpdated")}: ${lastUpdated.toLocaleTimeString(lang === "ty" ? "tyv-RU" : "ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+              : "\u00a0"}
+          </span>
           <Button
+            className="admin-dashboard__refresh-btn"
             type="default"
             icon={<ReloadOutlined />}
             onClick={handleRefresh}

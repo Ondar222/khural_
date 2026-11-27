@@ -466,7 +466,7 @@ const dict = {
     adminNavDashboard: "Панель управления",
     adminApiLabel: "API",
     adminDashboardUpdated: "Обновлено",
-    adminDashboardRefreshStats: "Обновить цифры",
+    adminDashboardRefreshStats: "Обновить",
     adminDashboardRefreshDone: "Информация обновлена",
     adminDashboardPagesCountError: "Не удалось загрузить количество страниц",
    
@@ -832,7 +832,7 @@ const dict = {
     adminNavDashboard: "Башкарылга шөлү",
     adminApiLabel: "API",
     adminDashboardUpdated: "Чаартылган",
-    adminDashboardRefreshStats: "Тоодарны чаартыр",
+    adminDashboardRefreshStats: "Чаартыр",
     adminDashboardRefreshDone: "Медээлер чаартылдынган",
     adminDashboardPagesCountError: "Арыннарның тоозун алып болбас",
     adminDashboardConvocations: "Чыыштар",

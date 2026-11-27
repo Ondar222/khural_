@@ -9215,6 +9215,35 @@ body.admin-mode[data-admin-theme="light"] .admin-committee-reports__guest-notice
 }
 
 /* Dashboard layout refinements */
+/* Refresh row: reserve space for the timestamp and fix the button width so
+   clicking "Обновить" never shifts the button around. */
+.admin-dashboard__refresh-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  margin-bottom: 8px;
+}
+.admin-dashboard__updated {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-dashboard__refresh-btn {
+  flex: 0 0 auto;
+  min-width: 128px;
+}
+@media (max-width: 520px) {
+  .admin-dashboard__refresh-bar { flex-wrap: wrap; }
+  .admin-dashboard__updated { flex-basis: 100%; }
+}
+
 .admin-dashboard .admin-cards {
   gap: 14px;
 }
