@@ -394,7 +394,10 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
             />
           </Form.Item>
 
-          <div className="admin-news-editor__lang-grid" style={{ marginTop: 16 }}>
+          <div
+            className="admin-news-editor__lang-grid admin-news-editor__lang-grid--single"
+            style={{ marginTop: 16 }}
+          >
             <div className="admin-card">
               <div className="admin-news-editor__lang-head">
                 <div className="admin-news-editor__section-title" style={{ marginBottom: 0 }}>

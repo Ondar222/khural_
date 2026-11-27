@@ -10226,6 +10226,10 @@ body.admin-mode[data-admin-theme="light"] .admin-news-editor__hero {
     grid-template-columns: 1fr;
   }
 }
+/* На странице создания тувинский блок один — он должен занимать всю ширину. */
+.admin-news-editor__lang-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
 .admin-news-editor__lang-head {
   display: flex;
   align-items: center;
@@ -10463,12 +10467,8 @@ body.admin-mode[data-admin-theme="light"] .admin-page-editor__hero {
   }
 }
 .admin-page-editor__card {
-  max-width: 980px;
-}
-@media (max-width: 959px) {
-  .admin-page-editor__card {
-    max-width: 100%;
-  }
+  width: 100%;
+  max-width: none;
 }
 
 /* Slider editor (admin) */
