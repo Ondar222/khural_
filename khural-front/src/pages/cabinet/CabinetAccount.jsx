@@ -1,12 +1,14 @@
 import React from "react";
-import { Card, Descriptions, Form, Input, Button, Slider, Select, App, Switch } from "antd";
+import { Card, Descriptions, Form, Button, Slider, Select, App, Switch } from "antd";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { useA11y } from "../../context/A11yContext.jsx";
+import { A11Y_DEFAULT_SETTINGS, normalizeSettings, useA11y } from "../../context/A11yContext.jsx";
 import CabinetShell from "./CabinetShell.jsx";
 import { AccessibilityApi } from "../../api/client.js";
 
 function roleLabel(role) {
-  const r = String(role || "").trim().toLowerCase();
+  const r = String(role || "")
+    .trim()
+    .toLowerCase();
   if (!r) return "—";
   return (
     {
@@ -21,87 +23,88 @@ function roleLabel(role) {
 
 export default function CabinetAccount() {
   const { user } = useAuth();
-  const { mode, fontScale, disableAnimations, setFontScale, setMode, setDisableAnimations } = useA11y();
+  const { fontSize, colorScheme, contrast, disableAnimations, setAccessibility } = useA11y();
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
-  const [settings, setSettings] = React.useState(null);
+  const [settings, setSettings] = React.useState(() => ({ ...A11Y_DEFAULT_SETTINGS }));
 
-  // Загружаем настройки доступности
+  // Form.useWatch re-renders the label when the slider moves; getFieldValue() does not.
+  const watchedFontSize = Form.useWatch("fontSize", form);
+  const currentFontSize = Number(watchedFontSize) || settings.fontSize || fontSize;
+
   React.useEffect(() => {
     const loadSettings = async () => {
       if (!user) return;
-      
       setLoading(true);
       try {
-        // Генерируем sessionId из текущей сессии или используем пустую строку
-        const sessionId = sessionStorage.getItem("sessionId") || "";
-        const data = await AccessibilityApi.getSettings(sessionId);
-        setSettings(data);
-        
-        // Заполняем форму
-        if (data) {
-          form.setFieldsValue({
-            fontSize: data.fontSize || Math.round(16 * fontScale),
-            colorScheme: data.colorScheme || (mode === "yb" ? "yb" : "default"),
-            contrast: data.contrast || (mode === "bw" ? "high" : "normal"),
-            disableAnimations: data.disableAnimations || false,
-          });
-        }
-      } catch (error) {
-        console.error("Failed to load accessibility settings:", error);
-        form.setFieldsValue({
-          fontSize: Math.round(16 * fontScale),
-          colorScheme: mode === "yb" ? "yb" : "default",
-          contrast: mode === "bw" ? "high" : "normal",
+        const response = await AccessibilityApi.getSettings();
+        const data = response?.settings || response?.data || response;
+        const next = normalizeSettings(data, {
+          fontSize,
+          colorScheme,
+          contrast,
           disableAnimations,
         });
+        setSettings(next);
+        form.setFieldsValue(next);
+        setAccessibility(next);
+      } catch (error) {
+        console.error("Failed to load accessibility settings:", error);
+        const fallback = normalizeSettings({
+          fontSize,
+          colorScheme,
+          contrast,
+          disableAnimations,
+        });
+        form.setFieldsValue(fallback);
       } finally {
         setLoading(false);
       }
     };
 
     loadSettings();
-  }, [user, form, mode, fontScale]);
+    // Context values are intentionally used as the initial fallback only:
+    // re-running on every change would overwrite values typed into the form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, form, setAccessibility]);
 
-  const handleSave = async () => {
+  const persist = async (payload, successMessage) => {
+    setSaving(true);
     try {
-      const values = await form.validateFields();
-      setSaving(true);
-
-      const payload = {
-        fontSize: Number(values.fontSize) || 16,
-        colorScheme: values.colorScheme || "default",
-        contrast: values.contrast || "normal",
-        disableAnimations: Boolean(values.disableAnimations),
-      };
-
-      await AccessibilityApi.saveSettings(payload);
-      message.success("Настройки доступности сохранены");
-
-      const newFontScale = Math.max(0.75, Math.min(1.5, payload.fontSize / 16));
-      setFontScale(newFontScale);
-      setMode(
-        payload.contrast === "high" ? "bw" : payload.colorScheme === "yb" ? "yb" : "normal"
-      );
-      setDisableAnimations(payload.disableAnimations);
-
-      const updated = await AccessibilityApi.getSettings(sessionStorage.getItem("sessionId") || "").catch(() => payload);
-      setSettings(updated);
-      window.dispatchEvent(new CustomEvent("accessibility-settings-updated", { detail: updated?.settings || updated?.data || updated || payload }));
+      const saved = await AccessibilityApi.saveSettings(payload);
+      setAccessibility(payload);
+      setSettings(normalizeSettings(saved || payload, payload));
+      const data = saved?.settings || saved?.data || saved || payload;
+      window.dispatchEvent(new CustomEvent("accessibility-settings-updated", { detail: data }));
+      message.success(successMessage);
     } catch (error) {
-      if (error?.errorFields) return;
       message.error(error?.message || "Не удалось сохранить настройки");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleFontSizeChange = (value) => {
-    form.setFieldsValue({ fontSize: value });
-    const newScale = Math.max(0.75, Math.min(1.5, value / 16));
-    setFontScale(newScale);
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      const payload = normalizeSettings({
+        fontSize: values.fontSize,
+        colorScheme: values.colorScheme,
+        contrast: values.contrast,
+        disableAnimations: values.disableAnimations,
+      });
+      await persist(payload, "Настройки доступности сохранены");
+    } catch (error) {
+      if (error?.errorFields) return;
+      message.error(error?.message || "Не удалось сохранить настройки");
+    }
+  };
+
+  const handleReset = () => {
+    form.setFieldsValue(A11Y_DEFAULT_SETTINGS);
+    persist(A11Y_DEFAULT_SETTINGS, "Настройки сброшены");
   };
 
   return (
@@ -119,12 +122,17 @@ export default function CabinetAccount() {
       </Card>
 
       <Card title="Настройки доступности" loading={loading}>
-        <Form form={form} layout="vertical" name="accessibilitySettings">
+        <Form
+          form={form}
+          layout="vertical"
+          name="accessibilitySettings"
+          initialValues={A11Y_DEFAULT_SETTINGS}
+        >
           <Form.Item
             label="Размер шрифта"
             name="fontSize"
             rules={[{ required: true, message: "Выберите размер шрифта" }]}
-            help={`Текущий размер: ${form.getFieldValue('fontSize') || Math.round(16 * fontScale)}px`}
+            help={`Текущий размер: ${currentFontSize}px`}
           >
             <Slider
               min={12}
@@ -136,67 +144,42 @@ export default function CabinetAccount() {
                 20: "20px",
                 24: "24px",
               }}
-              onChange={handleFontSizeChange}
               disabled={saving}
             />
           </Form.Item>
 
-          <Form.Item
-            label="Цветовая схема"
-            name="colorScheme"
-            rules={[{ required: true }]}
-          >
+          <Form.Item label="Цветовая схема" name="colorScheme" rules={[{ required: true }]}>
             <Select disabled={saving}>
               <Select.Option value="default">По умолчанию</Select.Option>
-              <Select.Option value="yb">Желто-синяя</Select.Option>
+              <Select.Option value="yb">Жёлто-синяя</Select.Option>
+              <Select.Option value="dark">Тёмная</Select.Option>
+              <Select.Option value="blue">Синяя</Select.Option>
+              <Select.Option value="brown">Коричневая</Select.Option>
             </Select>
           </Form.Item>
 
-          <Form.Item
-            label="Контрастность"
-            name="contrast"
-            rules={[{ required: true }]}
-          >
+          <Form.Item label="Контрастность" name="contrast" rules={[{ required: true }]}>
             <Select disabled={saving}>
               <Select.Option value="normal">Обычная</Select.Option>
               <Select.Option value="high">Высокая</Select.Option>
             </Select>
           </Form.Item>
 
-          <Form.Item
-            label="Отключить анимации"
-            name="disableAnimations"
-            valuePropName="checked"
-          >
+          <Form.Item label="Отключить анимации" name="disableAnimations" valuePropName="checked">
             <Switch disabled={saving} />
           </Form.Item>
 
           <Form.Item className="cabinet-account__actions">
             <div className="cabinet-account__actions-btns">
-              <Button type="primary" onClick={handleSave} loading={saving} className="cabinet-account__btn">
+              <Button
+                type="primary"
+                onClick={handleSave}
+                loading={saving}
+                className="cabinet-account__btn"
+              >
                 Сохранить настройки
               </Button>
-              <Button onClick={async () => {
-                const resetPayload = {
-                  fontSize: 16,
-                  colorScheme: "default",
-                  contrast: "normal",
-                  disableAnimations: false,
-                };
-                form.setFieldsValue(resetPayload);
-                setFontScale(1);
-                setMode("normal");
-                setDisableAnimations(false);
-                try {
-                  await AccessibilityApi.saveSettings(resetPayload);
-                  message.success("Настройки сброшены");
-                  const updated = await AccessibilityApi.getSettings(sessionStorage.getItem("sessionId") || "").catch(() => resetPayload);
-                  setSettings(updated);
-                  window.dispatchEvent(new CustomEvent("accessibility-settings-updated", { detail: updated?.settings || updated?.data || updated || resetPayload }));
-                } catch (error) {
-                  message.error("Не удалось сбросить настройки");
-                }
-              }} className="cabinet-account__btn">
+              <Button onClick={handleReset} loading={saving} className="cabinet-account__btn">
                 Сбросить
               </Button>
             </div>
@@ -206,4 +189,3 @@ export default function CabinetAccount() {
     </CabinetShell>
   );
 }
-

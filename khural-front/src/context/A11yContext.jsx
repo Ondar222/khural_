@@ -2,69 +2,141 @@ import React from "react";
 import { AccessibilityApi } from "../api/client.js";
 import { useAuth } from "./AuthContext.jsx";
 
-const A11yContext = React.createContext({
-  mode: "normal",
-  fontScale: 1,
+export const A11Y_FONT_SIZE_MIN = 12;
+export const A11Y_FONT_SIZE_MAX = 24;
+export const A11Y_DEFAULT_SETTINGS = {
+  fontSize: 16,
+  colorScheme: "default",
+  contrast: "normal",
   disableAnimations: false,
+};
+
+const COLOR_SCHEMES = ["default", "yb", "dark", "blue", "brown"];
+const CONTRAST_MODES = ["normal", "high"];
+
+function normalizeFontSize(value, fallback = A11Y_DEFAULT_SETTINGS.fontSize) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return fallback;
+  return Math.min(A11Y_FONT_SIZE_MAX, Math.max(A11Y_FONT_SIZE_MIN, Math.round(number)));
+}
+
+function normalizeColorScheme(value, fallback = A11Y_DEFAULT_SETTINGS.colorScheme) {
+  const scheme = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  return COLOR_SCHEMES.includes(scheme) ? scheme : fallback;
+}
+
+function normalizeContrast(value, fallback = A11Y_DEFAULT_SETTINGS.contrast) {
+  const contrast = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  return CONTRAST_MODES.includes(contrast) ? contrast : fallback;
+}
+
+function normalizeBoolean(value, fallback = false) {
+  if (typeof value === "boolean") return value;
+  if (value === 1 || value === "1") return true;
+  if (value === 0 || value === "0") return false;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "yes", "on"].includes(normalized)) return true;
+    if (["false", "no", "off", ""].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
+export function normalizeSettings(data, fallback = A11Y_DEFAULT_SETTINGS) {
+  if (!data || typeof data !== "object") return { ...fallback };
+  return {
+    fontSize: normalizeFontSize(data.fontSize, fallback.fontSize),
+    colorScheme: normalizeColorScheme(data.colorScheme, fallback.colorScheme),
+    contrast: normalizeContrast(data.contrast, fallback.contrast),
+    disableAnimations: normalizeBoolean(data.disableAnimations, fallback.disableAnimations),
+  };
+}
+
+function apply(settings) {
+  const body = document.body;
+  body.classList.remove(
+    "hc-bw",
+    "hc-yb",
+    "a11y-dark",
+    "a11y-blue",
+    "a11y-brown",
+    "a11y-high-contrast",
+    "a11y-no-motion"
+  );
+
+  if (settings.colorScheme === "yb") {
+    body.classList.add("hc-yb");
+  } else if (["dark", "blue", "brown"].includes(settings.colorScheme)) {
+    body.classList.add(`a11y-${settings.colorScheme}`);
+  }
+  if (settings.contrast === "high") {
+    body.classList.add("hc-bw", "a11y-high-contrast");
+  }
+  if (settings.disableAnimations) {
+    body.classList.add("a11y-no-motion");
+  }
+
+  // --font-scale остаётся для старых правил, но основной размер теперь
+  // выставляется в px: 19px в настройках должен быть именно 19px на странице.
+  body.style.setProperty("--font-scale", String(settings.fontSize / 15));
+  body.style.fontSize = `${settings.fontSize}px`;
+}
+
+function toMode(settings) {
+  if (settings.contrast === "high") return "bw";
+  if (settings.colorScheme === "yb") return "yb";
+  return "normal";
+}
+
+const A11yContext = React.createContext({
+  ...A11Y_DEFAULT_SETTINGS,
+  fontScale: 1,
+  mode: "normal",
   cycleMode: () => {},
   setFontScale: () => {},
   setMode: () => {},
   setDisableAnimations: () => {},
+  setAccessibility: () => {},
 });
+
 export function useA11y() {
   return React.useContext(A11yContext);
 }
 
-function apply(mode, fontScale, disableAnimations) {
-  const b = document.body;
-  b.classList.remove("hc-bw", "hc-yb", "a11y-no-motion");
-  if (mode === "bw") b.classList.add("hc-bw");
-  if (mode === "yb") b.classList.add("hc-yb");
-  if (disableAnimations) b.classList.add("a11y-no-motion");
-  b.style.setProperty("--font-scale", String(fontScale));
-}
-
-function applyDataToState(data, setMode, setFontScale, setDisableAnimations) {
-  if (!data || typeof data !== "object") return;
-  const contrast = String(data.contrast || "").toLowerCase();
-  const colorScheme = String(data.colorScheme || "").toLowerCase();
-  const nextMode =
-    contrast === "high" || colorScheme === "high"
-      ? "bw"
-      : colorScheme === "yb"
-        ? "yb"
-        : "normal";
-  if (nextMode === "bw" || nextMode === "yb" || nextMode === "normal") {
-    setMode(nextMode);
-  }
-  const fs = Number(data.fontSize || 16);
-  if (!Number.isNaN(fs) && fs > 0) {
-    setFontScale(Math.max(0.75, Math.min(1.5, fs / 16)));
-  }
-  if (data.disableAnimations !== undefined) {
-    setDisableAnimations(Boolean(data.disableAnimations));
-  }
-}
-
 export default function A11yProvider({ children }) {
   const { isAuthenticated } = useAuth();
-  const [mode, setMode] = React.useState("normal"); // normal | bw | yb
-  const [fontScale, setFontScale] = React.useState(1);
-  const [disableAnimations, setDisableAnimations] = React.useState(false);
+  const [settings, setSettings] = React.useState(() => ({
+    ...A11Y_DEFAULT_SETTINGS,
+  }));
+  const [hydrated, setHydrated] = React.useState(false);
 
   React.useEffect(() => {
-    apply(mode, fontScale, disableAnimations);
-  }, [mode, fontScale, disableAnimations]);
+    apply(settings);
+  }, [settings]);
+
+  const setAccessibility = React.useCallback((patch) => {
+    setSettings((previous) => normalizeSettings(patch, previous));
+  }, []);
 
   const loadSettingsFromApi = React.useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      setHydrated(true);
+      return;
+    }
     try {
-      const s = await AccessibilityApi.getSettings().catch(() => null);
-      const data = s?.settings || s?.data || s;
-      if (!data) return;
-      applyDataToState(data, setMode, setFontScale, setDisableAnimations);
+      const response = await AccessibilityApi.getSettings().catch(() => null);
+      const data = response?.settings || response?.data || response;
+      if (data && typeof data === "object") {
+        setSettings((previous) => normalizeSettings(data, previous));
+      }
     } catch {
-      // ignore
+      // Ignore network errors: local defaults remain active.
+    } finally {
+      setHydrated(true);
     }
   }, [isAuthenticated]);
 
@@ -73,11 +145,11 @@ export default function A11yProvider({ children }) {
   }, [loadSettingsFromApi]);
 
   React.useEffect(() => {
-    const handleUpdate = (e) => {
-      const detail = e?.detail;
-      if (detail != null && typeof detail === "object") {
-        const data = detail?.settings || detail?.data || detail;
-        applyDataToState(data, setMode, setFontScale, setDisableAnimations);
+    const handleUpdate = (event) => {
+      const detail = event?.detail;
+      const data = detail?.settings || detail?.data || detail;
+      if (data && typeof data === "object") {
+        setSettings((previous) => normalizeSettings(data, previous));
       } else {
         loadSettingsFromApi();
       }
@@ -87,34 +159,71 @@ export default function A11yProvider({ children }) {
   }, [loadSettingsFromApi]);
 
   React.useEffect(() => {
-    if (!isAuthenticated) return;
-    const id = setTimeout(() => {
-      const payload = {
-        fontSize: Math.round(16 * fontScale),
-        colorScheme: mode === "yb" ? "yb" : "default",
-        contrast: mode === "bw" ? "high" : "normal",
-        disableAnimations,
-      };
-      AccessibilityApi.saveSettings(payload).catch(() => null);
+    if (!isAuthenticated || !hydrated) return undefined;
+    const timeout = setTimeout(() => {
+      AccessibilityApi.saveSettings({
+        fontSize: settings.fontSize,
+        colorScheme: settings.colorScheme,
+        contrast: settings.contrast,
+        disableAnimations: settings.disableAnimations,
+      }).catch(() => null);
     }, 500);
-    return () => clearTimeout(id);
-  }, [isAuthenticated, mode, fontScale, disableAnimations]);
+    return () => clearTimeout(timeout);
+  }, [isAuthenticated, hydrated, settings]);
+
+  // Обратная совместимость со старыми потребителями контекста.
+  const setFontScale = React.useCallback(
+    (scale) => {
+      const number = Number(scale);
+      if (!Number.isFinite(number)) return;
+      setAccessibility({ fontSize: Math.round(16 * number) });
+    },
+    [setAccessibility]
+  );
+
+  const setMode = React.useCallback(
+    (mode) => {
+      const value = String(mode || "").toLowerCase();
+      if (value === "bw") {
+        setAccessibility({ contrast: "high", colorScheme: "default" });
+      } else if (value === "yb") {
+        setAccessibility({ contrast: "normal", colorScheme: "yb" });
+      } else {
+        setAccessibility({ contrast: "normal", colorScheme: "default" });
+      }
+    },
+    [setAccessibility]
+  );
+
+  const setDisableAnimations = React.useCallback(
+    (value) => {
+      setAccessibility({ disableAnimations: value });
+    },
+    [setAccessibility]
+  );
 
   const cycleMode = React.useCallback(() => {
-    setMode((m) => (m === "normal" ? "bw" : m === "bw" ? "yb" : "normal"));
+    setSettings((previous) => {
+      const mode = toMode(previous);
+      if (mode === "normal") return { ...previous, contrast: "high", colorScheme: "default" };
+      if (mode === "bw") return { ...previous, contrast: "normal", colorScheme: "yb" };
+      return { ...previous, contrast: "normal", colorScheme: "default" };
+    });
   }, []);
 
   const value = React.useMemo(
     () => ({
-      mode,
-      fontScale,
-      disableAnimations,
+      ...settings,
+      fontScale: settings.fontSize / 16,
+      mode: toMode(settings),
       cycleMode,
       setFontScale,
       setMode,
       setDisableAnimations,
+      setAccessibility,
     }),
-    [mode, fontScale, disableAnimations, cycleMode]
+    [settings, cycleMode, setFontScale, setMode, setDisableAnimations, setAccessibility]
   );
+
   return <A11yContext.Provider value={value}>{children}</A11yContext.Provider>;
 }

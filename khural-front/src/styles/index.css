@@ -6435,6 +6435,15 @@ body.hc-yb {
   --link: #ffd700;
 }
 
+/* Жёлто-синяя схема + высокая контрастность: цвета схемы должны
+   сохраняться, даже когда одновременно включён hc-bw. */
+body.hc-yb.hc-bw {
+  --bg: #000000;
+  --text: #ffd700;
+  --primary: #ffd700;
+  --link: #ffd700;
+}
+
 /* High-contrast button fixes (users often call this “dark mode”) */
 body.hc-yb .btn,
 body.hc-yb .gov-card__btn,
