@@ -5,15 +5,17 @@ import { A11Y_DEFAULT_SETTINGS, normalizeSettings } from "../utils/a11ySettings.
 
 function apply(settings) {
   const body = document.body;
-  body.classList.remove(
+  const root = document.documentElement;
+  const classes = [
     "hc-bw",
     "hc-yb",
     "a11y-dark",
     "a11y-blue",
     "a11y-brown",
     "a11y-high-contrast",
-    "a11y-no-motion"
-  );
+    "a11y-no-motion",
+  ];
+  [root, body].forEach((el) => el && el.classList.remove(...classes));
 
   if (settings.colorScheme === "yb") {
     body.classList.add("hc-yb");
@@ -24,13 +26,24 @@ function apply(settings) {
     body.classList.add("hc-bw", "a11y-high-contrast");
   }
   if (settings.disableAnimations) {
-    body.classList.add("a11y-no-motion");
+    // Класс ставим и на html: иначе плавная прокрутка html и анимации
+    // компонентов продолжают работать, хотя на body класс уже есть.
+    [root, body].forEach((el) => el && el.classList.add("a11y-no-motion"));
   }
 
-  // --font-scale остаётся для старых правил, но основной размер теперь
-  // выставляется в px: 19px в настройках должен быть именно 19px на странице.
-  body.style.setProperty("--font-scale", String(settings.fontSize / 15));
-  body.style.fontSize = `${settings.fontSize}px`;
+  // Масштабируем весь документ, как браузерный zoom. Так настройка размера
+  // шрифта влияет и на обычный сайт, и на кабинет, и на админку — включая
+  // элементы, у которых размер задан явно в px (Antd, карточки, таблицы).
+  const scale = settings.fontSize / A11Y_DEFAULT_SETTINGS.fontSize;
+  const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+  [root, body].forEach((el) => {
+    el?.style.setProperty("--font-scale", String(safeScale));
+    el?.style.setProperty("--a11y-zoom", String(safeScale));
+    el?.style.setProperty("--a11y-zoom-inverse", String(Number((1 / safeScale).toFixed(4))));
+  });
+  root.dataset.a11yFontSize = String(settings.fontSize);
+  body.style.fontSize = `${A11Y_DEFAULT_SETTINGS.fontSize}px`;
+  root.style.zoom = safeScale === 1 ? "" : String(safeScale);
 }
 
 function toMode(settings) {
