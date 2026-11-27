@@ -8841,6 +8841,16 @@ body.admin-mode[data-admin-theme="light"] .admin-pillbtn:hover {
   background: rgba(255, 255, 255, 0.95);
   border-color: rgba(15, 23, 42, 0.24);
 }
+/* Кнопка возврата в дашборд с любой страницы админки */
+.admin-pillbtn--back {
+  padding: 0 14px;
+}
+body.admin-mode[data-admin-theme="light"] .admin-pillbtn--back {
+  background: rgba(0, 51, 102, 0.08);
+  border-color: rgba(0, 51, 102, 0.25);
+  color: #003366;
+}
+
 /* Кнопка "На сайт" - более заметная */
 .admin-pillbtn--site {
   background: rgba(255, 255, 255, 0.15);

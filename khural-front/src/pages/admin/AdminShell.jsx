@@ -61,6 +61,8 @@ export default function AdminShell({
     return s ? s[0].toUpperCase() : "A";
   }, [user]);
 
+  const isDashboard = activeKey === "dashboard";
+
   return (
     <div className="admin-shell">
       <div
@@ -144,6 +146,16 @@ export default function AdminShell({
             >
               {lang === "ru" ? "ТЫ" : "РУ"}
             </button>
+            {!isDashboard && (
+              <a
+                href="/admin"
+                className="admin-pillbtn admin-pillbtn--back"
+                style={{ textDecoration: "none" }}
+                title={t("adminBackToDashboard")}
+              >
+                ← {t("adminBackToDashboard")}
+              </a>
+            )}
             <a
               href="/"
               className="admin-pillbtn admin-pillbtn--site"

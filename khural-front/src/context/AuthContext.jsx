@@ -70,6 +70,17 @@ function normalizeUser(u) {
   };
 }
 
+const STORED_USER_KEY = "auth_user";
+
+function getStoredUser() {
+  try {
+    const raw = sessionStorage.getItem(STORED_USER_KEY);
+    return raw ? normalizeUser(JSON.parse(raw)) : null;
+  } catch {
+    return null;
+  }
+}
+
 function isInAdminArea() {
   try {
     if (typeof window === "undefined") return false;
@@ -103,8 +114,21 @@ function friendlyAuthError(e, fallback) {
 export default function AuthProvider({ children }) {
   const [token, setToken] = React.useState(() => getAuthToken());
   const [refreshToken, setRefresh] = React.useState(() => getRefreshToken());
-  const [user, setUser] = React.useState(null);
+  // Профиль восстанавливается синхронно вместе с токеном: при F5 на странице
+  // админки роль должна быть известна до проверки RequireAdmin.
+  const [user, setUser] = React.useState(() => (getAuthToken() ? getStoredUser() : null));
+  // Пока профиль не загружен, не делаем выводов по роли пользователя.
+  const [authLoading, setAuthLoading] = React.useState(() => Boolean(getAuthToken()));
   const isAuthenticated = Boolean(token);
+
+  React.useEffect(() => {
+    try {
+      if (user) sessionStorage.setItem(STORED_USER_KEY, JSON.stringify(user));
+      else sessionStorage.removeItem(STORED_USER_KEY);
+    } catch {
+      // sessionStorage может быть недоступен — просто не сохраняем профиль.
+    }
+  }, [user]);
 
   // Отслеживание активности пользователя для keep-alive
   React.useEffect(() => {
@@ -142,6 +166,7 @@ export default function AuthProvider({ children }) {
     setAuthToken(newToken);
     setRefresh(newRefresh);
     setRefreshToken(newRefresh);
+    setAuthLoading(false);
     if (maybeUser) setUser(normalizeUser(maybeUser));
     return true;
   }, []);
@@ -155,6 +180,7 @@ export default function AuthProvider({ children }) {
       setAuthToken(fakeToken);
       setRefresh("");
       setRefreshToken("");
+      setAuthLoading(false);
       setUser(
         normalizeUser({
           id: "dev",
@@ -177,6 +203,7 @@ export default function AuthProvider({ children }) {
     setAuthToken(newToken);
     setRefresh(newRefresh);
     setRefreshToken(newRefresh);
+    setAuthLoading(false);
   }, []);
 
   // Listen for token expiration events from apiFetch
@@ -187,6 +214,7 @@ export default function AuthProvider({ children }) {
       setRefresh("");
       setRefreshToken("");
       setUser(null);
+      setAuthLoading(false);
     };
     
     if (typeof window !== "undefined") {
@@ -201,16 +229,34 @@ export default function AuthProvider({ children }) {
   React.useEffect(() => {
     if (!token) {
       setUser(null);
+      setAuthLoading(false);
       return;
     }
-    // For locally generated dummy tokens, skip calling backend.
+    // For locally generated dummy tokens, skip calling backend. The profile is
+    // restored from sessionStorage (or recreated for the dev fallback), so the
+    // admin role is known immediately after a reload.
     if (token === "dev-fake-token" || String(token).startsWith("session-")) {
+      setUser((current) => {
+        if (current) return current;
+        if (token === "dev-fake-token" && import.meta.env.DEV) {
+          return normalizeUser({
+            id: "dev",
+            email: "dev@example.org",
+            firstName: "Dev",
+            lastName: "Admin",
+            role: "admin",
+          });
+        }
+        return null;
+      });
+      setAuthLoading(false);
       return;
     }
+    let cancelled = false;
     (async () => {
       try {
         const me = await AuthApi.me();
-        setUser(normalizeUser(me));
+        if (!cancelled) setUser(normalizeUser(me));
       } catch (e) {
         // Only hard-reset on auth errors; keep session for transient network errors.
         if (e?.status === 401 || e?.status === 403) {
@@ -220,8 +266,13 @@ export default function AuthProvider({ children }) {
           setRefreshToken("");
           setUser(null);
         }
+      } finally {
+        if (!cancelled) setAuthLoading(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   // Keep-alive механизм: обновляем токен каждые 10 минут при активности пользователя
@@ -338,11 +389,12 @@ export default function AuthProvider({ children }) {
   const logout = React.useCallback(() => {
     saveAuth({});
     setUser(null);
+    setAuthLoading(false);
   }, [saveAuth]);
 
   const value = React.useMemo(
-    () => ({ user, token, refreshToken, isAuthenticated, register, login, logout }),
-    [user, token, refreshToken, isAuthenticated, register, login, logout]
+    () => ({ user, token, refreshToken, isAuthenticated, authLoading, register, login, logout }),
+    [user, token, refreshToken, isAuthenticated, authLoading, register, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
