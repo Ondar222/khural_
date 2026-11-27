@@ -12,6 +12,11 @@ import { STATIC_SECTIONS, SYSTEM_ROUTE_DEFS } from "../../utils/adminPagesCatalo
 import { COMMISSION_PAGE_SLUG_PREFIX } from "../../utils/commissionPages.js";
 import { getHeaderSectionForSlug } from "../../data/sectionMenus.js";
 import { pageStatusOf, pageStatusOption } from "../../utils/pageStatus.js";
+import { refreshPagesTree } from "../../utils/cmsPagesTree.js";
+import {
+  removePageHeaderMenu,
+  syncPageHeaderMenu,
+} from "../../utils/headerParentMenu.js";
 
 /**
  * Номер страницы и размер страницы списка храним в sessionStorage, чтобы после
@@ -45,6 +50,15 @@ function getDisplayName(page) {
   const ru = content.find((c) => String(c?.locale || "").toLowerCase() === "ru");
   const ty = content.find((c) => String(c?.locale || "").toLowerCase().startsWith("ty"));
   return String(ru?.title || page?.title || page?.name || ty?.title || "Страница без названия");
+}
+
+function getMenuTitles(page) {
+  const content = Array.isArray(page?.content) ? page.content : [];
+  const ty = content.find((c) => String(c?.locale || "").toLowerCase().startsWith("ty"));
+  return {
+    titleRu: getDisplayName(page),
+    titleTy: String(ty?.title || "").trim(),
+  };
 }
 
 function readStoredPagination() {
@@ -105,6 +119,7 @@ async function listPages({ locale, authenticated }) {
 
 export default function AdminPagesV2List({
   canWrite,
+  isAuthenticated,
   onReloadData,
   onCreate,
   onEdit,
@@ -178,7 +193,7 @@ export default function AdminPagesV2List({
     try {
       const { pages, responseEmpty } = await listPages({
         locale: localeMode === "all" ? undefined : localeMode,
-        authenticated: canWrite,
+        authenticated: isAuthenticated,
       });
 
       const bySlug = new Map();
@@ -200,7 +215,7 @@ export default function AdminPagesV2List({
     } finally {
       setBusy(false);
     }
-  }, [canWrite, localeMode, onMessage]);
+  }, [isAuthenticated, localeMode, onMessage]);
 
   React.useEffect(() => {
     // Загружаем страницы при монтировании и при изменении режима языка
@@ -329,17 +344,25 @@ export default function AdminPagesV2List({
   }, [maxPage, loadStatus, busy, updatePagination]);
 
   // Срез для мобильной карточной верстки (Table пагинирует себя сам)
+  const { current: pageNumber, pageSize } = pagination;
   const pagedFiltered = React.useMemo(() => {
-    const start = (pagination.current - 1) * pagination.pageSize;
-    return filtered.slice(start, start + pagination.pageSize);
-  }, [filtered, pagination.current, pagination.pageSize]);
+    const start = (pageNumber - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, pageNumber, pageSize]);
 
   const deletePage = React.useCallback(
-    async (id) => {
+    async (target) => {
       if (!canWrite) return;
+      const page =
+        target && typeof target === "object"
+          ? target
+          : (Array.isArray(items) ? items : []).find((p) => String(p?.id) === String(target));
+      const id = page?.id ?? target;
       setBusy(true);
       try {
         await AboutApi.deletePage(id);
+        await removePageHeaderMenu({ page: page || { id }, slug: page?.slug });
+        await refreshPagesTree();
         onMessage?.("success", "Страница удалена");
         reloadData();
         await load();
@@ -350,7 +373,7 @@ export default function AdminPagesV2List({
         setBusy(false);
       }
     },
-    [canWrite, load, onMessage, onReloadData, reloadData]
+    [canWrite, items, load, onMessage, onReloadData, reloadData]
   );
 
   const setPageStatus = React.useCallback(
@@ -358,10 +381,21 @@ export default function AdminPagesV2List({
       if (!canWrite || !row?.id) return;
       setBusy(true);
       try {
-        await AboutApi.updatePage(row.id, {
+        const saved = await AboutApi.updatePage(row.id, {
           status,
           isPublished: status === "published",
         });
+        const updated = { ...row, ...(saved || {}), status, isPublished: status === "published" };
+        const { titleRu, titleTy } = getMenuTitles(updated);
+        await syncPageHeaderMenu({
+          page: updated,
+          slug: updated.slug,
+          sectionValue: getHeaderSectionForSlug(updated.slug)?.value || "",
+          titleRu,
+          titleTy,
+          isPublished: status === "published",
+        });
+        await refreshPagesTree();
         const label = pageStatusOption(status)?.label || status;
         onMessage?.("success", `Статус изменён: ${label}`);
         reloadData();
@@ -390,8 +424,10 @@ export default function AdminPagesV2List({
       }
       for (const p of toDelete) {
         await AboutApi.deletePage(p.id);
+        await removePageHeaderMenu({ page: p, slug: p.slug });
         await new Promise((r) => setTimeout(r, 250));
       }
+      await refreshPagesTree();
       onMessage?.("success", `Удалено: ${toDelete.length}`);
       reloadData();
       await load();
@@ -487,14 +523,15 @@ export default function AdminPagesV2List({
       width: isTablet ? 380 : 460,
       render: (_, row) => (
         <Space wrap className="admin-pages-list__actions">
-          {/* Кнопка "Редактировать" - для всех страниц, где есть id */}
-          <Button 
-            size={isTablet ? "small" : "middle"} 
-            onClick={() => onEdit?.(row.id)} 
-            disabled={!canWrite || !row.id}
-          >
-            Редактировать
-          </Button>
+          {!row?.__isSystem && !row?.__isStatic ? (
+            <Button
+              size={isTablet ? "small" : "middle"}
+              onClick={() => onEdit?.(row.id)}
+              disabled={!canWrite || !row.id}
+            >
+              Редактировать
+            </Button>
+          ) : null}
           
           {row?.__isSystem ? (
             <>
@@ -583,7 +620,7 @@ export default function AdminPagesV2List({
                 description="Это действие нельзя отменить."
                 okText="Удалить"
                 cancelText="Отмена"
-                onConfirm={() => deletePage(row.id)}
+                onConfirm={() => deletePage(row)}
                 disabled={!canWrite || !row.id}
               >
                 <Button size={isTablet ? "small" : "middle"} danger disabled={!canWrite || !row.id}>
@@ -686,18 +723,30 @@ export default function AdminPagesV2List({
                         })()}
                       </Tag>
                     )}
+                    {!row?.__isSystem && !row?.__isStatic ? (() => {
+                      const statusOption = pageStatusOption(pageStatusOf(row));
+                      return (
+                        <Tag className="admin-pages-list__tag" color={statusOption.color}>
+                          {statusOption.label}
+                        </Tag>
+                      );
+                    })() : null}
+                    {row?.__isStatic ? (
+                      <Tag className="admin-pages-list__tag" color="cyan">Раздел</Tag>
+                    ) : null}
                   </div>
                 </div>
 
                 <div className="admin-pages-list__card-actions">
-                  {/* Кнопка "Редактировать" - для всех страниц, где есть id */}
-                  <Button 
-                    onClick={() => onEdit?.(row.id)} 
-                    disabled={!canWrite || !row.id} 
-                    block
-                  >
-                    Редактировать
-                  </Button>
+                  {!row?.__isSystem && !row?.__isStatic ? (
+                    <Button
+                      onClick={() => onEdit?.(row.id)}
+                      disabled={!canWrite || !row.id}
+                      block
+                    >
+                      Редактировать
+                    </Button>
+                  ) : null}
                   
                   {row?.__isSystem ? (
                     <>
@@ -710,12 +759,54 @@ export default function AdminPagesV2List({
                         </Button>
                       ))}
                     </>
+                  ) : row?.__isStatic ? (
+                    <>
+                      <Button onClick={() => onPreview?.(row.slug)} disabled={!row.slug} block>
+                        Открыть
+                      </Button>
+                      <Button onClick={() => setQ(row.slug)} block>
+                        Подстраницы
+                      </Button>
+                      <Button
+                        onClick={() => onCreate?.(getCreateParent(row), getDisplayName(row))}
+                        disabled={!canWrite || !row.slug}
+                        block
+                      >
+                        + Подстраница
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button onClick={() => onPreview?.(row.slug)} disabled={!row.slug} block>
                         Открыть
                       </Button>
-                      <Button onClick={() => onCreate?.(row.slug)} disabled={!canWrite || !row.slug} block>
+                      {pageStatusOf(row) === "published" ? (
+                        <Popconfirm
+                          title="Снять страницу с публикации?"
+                          okText="Снять"
+                          cancelText="Отмена"
+                          onConfirm={() => setPageStatus(row, "unpublished")}
+                          disabled={!canWrite || !row?.id}
+                        >
+                          <Button disabled={!canWrite || !row?.id} block>
+                            Снять с публикации
+                          </Button>
+                        </Popconfirm>
+                      ) : (
+                        <Button
+                          type="primary"
+                          onClick={() => setPageStatus(row, "published")}
+                          disabled={!canWrite || !row?.id}
+                          block
+                        >
+                          Опубликовать
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => onCreate?.(getCreateParent(row), getDisplayName(row))}
+                        disabled={!canWrite || !row.slug}
+                        block
+                      >
                         + Подстраница
                       </Button>
                       <Popconfirm
@@ -723,15 +814,15 @@ export default function AdminPagesV2List({
                         description="Это действие нельзя отменить."
                         okText="Удалить"
                         cancelText="Отмена"
-                        onConfirm={() => deletePage(row.id)}
-                        disabled={!canWrite}
+                        onConfirm={() => deletePage(row)}
+                        disabled={!canWrite || !row?.id}
                       >
-                        <Button danger disabled={!canWrite} block>
+                        <Button danger disabled={!canWrite || !row?.id} block>
                           Удалить
                         </Button>
                       </Popconfirm>
-                     </>
-                   )}
+                    </>
+                  )}
                  </div>
                </div>
              ))}
@@ -782,7 +873,7 @@ export default function AdminPagesV2List({
           </div>
         ) : null}
         <Table
-          rowKey={(r) => String(r.id || r.slug || Math.random())}
+          rowKey={(r) => String(r.id || r.slug || r.__href || "row")}
           rowClassName={(r) =>
             r?.__isSystem
               ? ["admin-pages-list__row--system"]

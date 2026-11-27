@@ -1,9 +1,13 @@
 import React from "react";
-import { App, Button, Form, Input, Select, Space, Card, Switch } from "antd";
+import { App, Button, Form, Input, Select, Space, Card } from "antd";
 import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import { AboutApi, apiFetch, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
-import { getPageOverrideForPage, upsertPageOverride } from "../../utils/pagesOverrides.js";
+import {
+  getPageOverrideForPage,
+  pickMenuLabelInfo,
+  upsertPageOverride,
+} from "../../utils/pagesOverrides.js";
 import { refreshPagesTree } from "../../utils/cmsPagesTree.js";
 import { PAGE_STATUS_OPTIONS, pageStatusOf } from "../../utils/pageStatus.js";
 import TinyMCEEditor from "../../components/TinyMCEEditor.jsx";
@@ -13,6 +17,10 @@ import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js
 import { useTranslation } from "../../hooks/useTranslation.js";
 import { FOR_MEDIA_HTML, FOR_MEDIA_SLUG, FOR_MEDIA_TITLE } from "../../content/forMedia.js";
 import { HEADER_PARENT_SECTIONS, getHeaderSectionForSlug } from "../../data/sectionMenus.js";
+import {
+  resolveHeaderParentId,
+  syncPageHeaderMenu,
+} from "../../utils/headerParentMenu.js";
 import BudgetDocumentsEditor from "./BudgetDocumentsEditor.jsx";
 
 function normalizeList(res) {
@@ -172,9 +180,9 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
   const originalPrefixRef = React.useRef("");
   const currentPageRef = React.useRef(null);
   const [documents, setDocuments] = React.useState([]);
+  const [allPages, setAllPages] = React.useState([]);
   const [loadingDocs, setLoadingDocs] = React.useState(false);
   const [pageSlug, setPageSlug] = React.useState("");
-  const blocks = Form.useWatch("blocks", form) || [];
   const initialBlockIdsRef = React.useRef([]);
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
 
@@ -184,6 +192,20 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       clearError();
     }
   }, [translationError, message, clearError]);
+
+  React.useEffect(() => {
+    let alive = true;
+    AboutApi.listAdminPages()
+      .then((pages) => {
+        if (alive) setAllPages(Array.isArray(pages) ? pages : []);
+      })
+      .catch(() => {
+        if (alive) setAllPages([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   React.useEffect(() => {
     let alive = true;
@@ -215,9 +237,14 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         const slug = String(page.slug || "");
         setPageSlug(slug);
         const parts = slug.split("/").filter(Boolean);
-        originalPrefixRef.current = parts.length > 1 ? parts[0] : "";
         const headerSection = getHeaderSectionForSlug(slug);
-        const leaf = parts.slice(-1)[0] || "";
+        // Префикс может быть info/* или struct/*; остаток сохраняем целиком,
+        // чтобы не терять вложенные страницы при сохранении.
+        originalPrefixRef.current =
+          headerSection && parts.length > 1 && headerSection.aliases.includes(parts[0].toLowerCase())
+            ? parts[0]
+            : "";
+        const leaf = originalPrefixRef.current ? parts.slice(1).join("/") : slug;
 
         const contentArray = page.content && Array.isArray(page.content) ? page.content : [];
         const ruContent = contentArray.find((c) => String(c?.locale || "").toLowerCase() === "ru") || contentArray[0] || {};
@@ -256,6 +283,10 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
               : null;
 
         const ov = getPageOverrideForPage(page);
+        // Даже если явной подписи не сохраняли, поля должны показывать то,
+        // что реально выводится в меню/подменю (заголовок страницы).
+        const effectiveMenuLabel = pickMenuLabelInfo(page, "ru", { prefer: "menu" }).label;
+        const effectiveSubmenuLabel = pickMenuLabelInfo(page, "ru", { prefer: "submenu" }).label;
 
         form.setFieldsValue({
           titleRu: defaults ? defaults.titleRu : ruTitle,
@@ -263,8 +294,8 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
           titleTy: defaults ? defaults.titleTy : tyTitle,
           contentTy: defaults ? defaults.contentTy : tyBody,
           status: pageStatusOf(page),
-          menuTitle: ov?.menuTitle || "",
-          submenuTitle: ov?.submenuTitle || "",
+          menuTitle: ov?.menuTitle || effectiveMenuLabel || ruTitle,
+          submenuTitle: ov?.submenuTitle || effectiveSubmenuLabel || effectiveMenuLabel || ruTitle,
           parentSection: headerSection?.value || "",
           slugLeaf: leaf,
           blocks: formBlocks,
@@ -289,10 +320,12 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       // Сохраняем уже существующий префикс (например, info/*), если пользователь
       // не менял родительский раздел — так не ломаются старые адреса страниц.
       const prefix =
-        parentSection && parentSection.aliases.includes(originalPrefixRef.current)
+        parentSection &&
+        parentSection.aliases.includes(String(originalPrefixRef.current).toLowerCase())
           ? originalPrefixRef.current
           : parentSection?.slugPrefix || "";
       const fullSlug = prefix ? `${prefix}/${leaf}` : leaf;
+      const parentId = parentSection ? resolveHeaderParentId(sectionValue, allPages) : null;
 
       // Блоки с новыми изображениями сохраняются отдельно (batch-загрузка),
       // а блоки, которые заменили/удалили, нужно убрать со страницы.
@@ -346,8 +379,9 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       const saved = await AboutApi.updatePage(id, {
         title: titleRu || contentArray[0]?.title,
         slug: fullSlug,
-        // Родитель — раздел шапки, поэтому связь хранится в префиксе адреса.
-        parentId: null,
+        // Родитель пересчитывается по выбранному разделу шапки: если раздел
+        // снят или у него нет CMS-страницы, явный null убирает старую связь.
+        parentId: parentId ?? null,
         status: nextStatus,
         isPublished: nextStatus === "published",
         locale: "ru",
@@ -372,6 +406,24 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         menuTitle: menuTitle || null,
         submenuTitle: submenuTitle || null,
       });
+
+      await syncPageHeaderMenu({
+        page: {
+          ...(currentPageRef.current || {}),
+          ...(saved || {}),
+          // Старый адрес помогает найти и перенести уже существующий пункт
+          // меню, если страницу прикрепили к другому родителю.
+          previousSlug: currentPageRef.current?.slug,
+          id: saved?.id ?? id,
+          status: nextStatus,
+          isPublished: nextStatus === "published",
+        },
+        slug: saved?.slug || fullSlug,
+        sectionValue,
+        titleRu: submenuTitle || menuTitle || titleRu,
+        titleTy: titleTy || submenuTitle || menuTitle || titleRu,
+        isPublished: nextStatus === "published",
+      });
       message.success("Страница сохранена");
 
       // Перечитываем страницу после сохранения: у новых блоков появляются id,
@@ -382,13 +434,20 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         if (updated) {
           const updatedSlug = String(updated.slug || fullSlug);
           const updatedParts = updatedSlug.split("/").filter(Boolean);
-          originalPrefixRef.current = updatedParts.length > 1 ? updatedParts[0] : "";
           const updatedSection = getHeaderSectionForSlug(updatedSlug);
+          originalPrefixRef.current =
+            updatedSection &&
+            updatedParts.length > 1 &&
+            updatedSection.aliases.includes(updatedParts[0].toLowerCase())
+              ? updatedParts[0]
+              : "";
           const updatedOverride = getPageOverrideForPage(updated);
           setPageSlug(updatedSlug);
           form.setFieldsValue({
             parentSection: updatedSection?.value || "",
-            slugLeaf: updatedParts.slice(-1)[0] || leaf,
+            slugLeaf: originalPrefixRef.current
+              ? updatedParts.slice(1).join("/")
+              : updatedSlug,
             menuTitle: updatedOverride?.menuTitle ?? menuTitle,
             submenuTitle: updatedOverride?.submenuTitle ?? submenuTitle,
           });
@@ -420,14 +479,15 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
 
       reload();
       await refreshPagesTree();
-      await onDone?.();
+      // Остаёмся в редакторе: выше уже перечитали страницу и обновили id блоков.
+      await onDone?.({ stay: true });
     } catch (error) {
       console.error("Failed to save page:", error);
       message.error(error?.message || "Не удалось сохранить страницу");
     } finally {
       setBusy(false);
     }
-  }, [canWrite, form, id, onDone, reload, message]);
+  }, [allPages, canWrite, form, id, onDone, reload, message]);
 
   const handleTranslate = React.useCallback(
     async (fromLang, toLang) => {
@@ -463,6 +523,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
         message.success("Перевод выполнен");
       } catch (e) {
         console.error("Translation error:", e);
+        message.error("Ошибка при переводе текста");
       }
     },
     [form, translate, message]
@@ -482,17 +543,6 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
       },
     ]);
   }, [form]);
-
-  const removeBlock = React.useCallback(
-    (index) => {
-      const currentBlocks = form.getFieldValue("blocks") || [];
-      form.setFieldValue(
-        "blocks",
-        currentBlocks.filter((_, i) => i !== index)
-      );
-    },
-    [form]
-  );
 
   const moveBlock = React.useCallback(
     (index, direction) => {
@@ -545,9 +595,9 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
             <Input disabled={loading} placeholder="Название в подменю (если отличается от названия в меню)" />
           </Form.Item>
           <Form.Item
-            label="Родитель (опционально)"
+            label="Родитель (раздел шапки)"
             name="parentSection"
-            extra="Родитель — раздел верхнего меню сайта, а не подпункт выпадающего списка."
+            extra="Выберите раздел шапки: опубликованная страница попадёт в его подменю. Раздел — не подпункт выпадающего списка."
           >
             <Select
               disabled={loading}
@@ -640,7 +690,7 @@ export default function AdminPagesV2Edit({ id, canWrite, onDone }) {
 
           <Form.Item label="Блоки контента (русский)" style={{ marginTop: 16 }}>
             <Form.List name="blocks">
-              {(fields, { add, remove }) => (
+              {(fields, { remove }) => (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   {fields.map((field, index) => {
                     const blockType = form.getFieldValue(["blocks", field.name, "type"]) || "text";

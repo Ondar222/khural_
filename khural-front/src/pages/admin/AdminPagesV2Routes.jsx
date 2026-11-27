@@ -12,15 +12,18 @@ export default function AdminPagesV2Routes() {
   const { reloadPages } = adminData;
   const { message } = App.useApp();
   const { navigate } = useHashRoute();
-  const refreshAfterSave = React.useCallback(async () => {
-    try {
-      await reloadPages();
-    } catch (error) {
-      message.error(`Страница сохранена, но счётчик не обновлён: ${error?.message || "ошибка API"}`);
-    } finally {
-      navigate("/admin/pages");
-    }
-  }, [message, navigate, reloadPages]);
+  const refreshAfterSave = React.useCallback(
+    async ({ stay = false } = {}) => {
+      try {
+        await reloadPages();
+      } catch (error) {
+        message.error(`Страница сохранена, но список не обновлён: ${error?.message || "ошибка API"}`);
+      } finally {
+        if (!stay) navigate("/admin/pages");
+      }
+    },
+    [message, navigate, reloadPages]
+  );
 
   const handlePageMessage = React.useCallback(
     (type, text) => {
@@ -81,6 +84,7 @@ export default function AdminPagesV2Routes() {
     return (
       <AdminPagesV2List
         canWrite={adminData.canWrite}
+        isAuthenticated={adminData.isAuthenticated}
         onReloadData={reloadPages}
         onCreate={(parentSlug, parentTitle) =>
           navigate(

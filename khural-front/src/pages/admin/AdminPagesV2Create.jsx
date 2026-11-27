@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Form, Input, Select, Space, Card, Switch, App } from "antd";
+import { Button, Form, Input, Select, Space, Card, App } from "antd";
 import { PlusOutlined, DeleteOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 import { AboutApi, DocumentsApi } from "../../api/client.js";
 import { useData } from "../../context/DataContext.jsx";
@@ -12,6 +12,10 @@ import VideoUploadField from "../../components/VideoUploadField.jsx";
 import { applyBlockUploads, collectBlockUploads } from "../../utils/cmsImages.js";
 import { useTranslation } from "../../hooks/useTranslation.js";
 import { HEADER_PARENT_SECTIONS, getHeaderSectionForSlug } from "../../data/sectionMenus.js";
+import {
+  resolveHeaderParentId,
+  syncPageHeaderMenu,
+} from "../../utils/headerParentMenu.js";
 
 function slugify(input) {
   if (!input) return "";
@@ -52,8 +56,8 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   const [form] = Form.useForm();
   const [busy, setBusy] = React.useState(false);
   const [documents, setDocuments] = React.useState([]);
+  const [allPages, setAllPages] = React.useState([]);
   const [loadingDocs, setLoadingDocs] = React.useState(false);
-  const blocks = Form.useWatch("blocks", form) || [];
   const { translate, loading: translating, error: translationError, clearError } = useTranslation();
 
   React.useEffect(() => {
@@ -65,17 +69,17 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
   const prefillParent = React.useMemo(() => {
     const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
-    return sp.get("parent") ? decodeURIComponent(sp.get("parent")) : "";
+    return sp.get("parent") || "";
   }, []);
 
   const prefillSlug = React.useMemo(() => {
     const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
-    return sp.get("slug") ? decodeURIComponent(sp.get("slug")) : "";
+    return sp.get("slug") || "";
   }, []);
 
   const prefillTitle = React.useMemo(() => {
     const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search || "" : "");
-    return sp.get("title") ? decodeURIComponent(sp.get("title")) : "";
+    return sp.get("title") || "";
   }, []);
 
   React.useEffect(() => {
@@ -97,9 +101,25 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   }, []);
 
   React.useEffect(() => {
+    let alive = true;
+    AboutApi.listAdminPages()
+      .then((pages) => {
+        if (alive) setAllPages(Array.isArray(pages) ? pages : []);
+      })
+      .catch(() => {
+        if (alive) setAllPages([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
     form.setFieldValue("parentSlug", getHeaderSectionForSlug(prefillParent)?.value || "");
     if (prefillTitle) {
       form.setFieldValue("title", prefillTitle);
+      form.setFieldValue("menuTitle", prefillTitle);
+      form.setFieldValue("submenuTitle", prefillTitle);
     }
     if (prefillSlug) {
       form.setFieldValue("slugLeaf", prefillSlug);
@@ -110,6 +130,11 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
   const onTitleChange = React.useCallback(() => {
     const title = form.getFieldValue("title");
+    // Подписи меню не должны оставаться пустыми: по умолчанию берём название.
+    if (title) {
+      if (!form.getFieldValue("menuTitle")) form.setFieldValue("menuTitle", title);
+      if (!form.getFieldValue("submenuTitle")) form.setFieldValue("submenuTitle", title);
+    }
     const currentLeaf = form.getFieldValue("slugLeaf");
     if (currentLeaf) return;
     form.setFieldValue("slugLeaf", slugify(title));
@@ -168,13 +193,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
       // Родитель — раздел верхнего меню, поэтому адрес строится из его префикса.
       const fullSlug = parentSection ? `${parentSection.slugPrefix}/${leaf}` : leaf;
-      
-      console.log("[AdminPagesV2Create] Creating page:", {
-        parentSection: sectionValue,
-        leaf,
-        fullSlug,
-        title: values.title,
-      });
+      const parentId = parentSection ? resolveHeaderParentId(sectionValue, allPages) : null;
 
       // Формируем блоки контента. Блоки с новыми файлами (изображения)
       // загружаем отдельно через batch-эндпоинт после создания страницы.
@@ -203,6 +222,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       const created = await AboutApi.createPage({
         title: values.title,
         slug: fullSlug,
+        parentId: parentId ?? null,
         status,
         isPublished: status === "published",
         locale: contentLocale,
@@ -229,6 +249,14 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
         menuTitle: values.menuTitle || null,
         submenuTitle: values.submenuTitle || null,
       });
+      await syncPageHeaderMenu({
+        page: created,
+        slug: created?.slug || fullSlug,
+        sectionValue,
+        titleRu: values.submenuTitle || values.menuTitle || values.title,
+        titleTy: titleTy || values.submenuTitle || values.menuTitle || values.title,
+        isPublished: status === "published",
+      });
       message.success("Страница создана");
       reload();
 
@@ -243,7 +271,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
     } finally {
       setBusy(false);
     }
-  }, [canWrite, form, onDone, reload, message]);
+  }, [allPages, canWrite, form, onDone, reload, message]);
 
   const addBlock = React.useCallback(() => {
     const currentBlocks = form.getFieldValue("blocks") || [];
@@ -259,17 +287,6 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
       },
     ]);
   }, [form]);
-
-  const removeBlock = React.useCallback(
-    (index) => {
-      const currentBlocks = form.getFieldValue("blocks") || [];
-      form.setFieldValue(
-        "blocks",
-        currentBlocks.filter((_, i) => i !== index)
-      );
-    },
-    [form]
-  );
 
   const moveBlock = React.useCallback(
     (index, direction) => {
@@ -288,7 +305,8 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
   const parentSlug = Form.useWatch("parentSlug", form);
   const slugLeaf = Form.useWatch("slugLeaf", form);
   const fullSlugPreview = React.useMemo(() => {
-    const p = String(parentSlug || "").trim().replace(/^\/+|\/+$/g, "");
+    const section = HEADER_PARENT_SECTIONS.find((s) => s.value === parentSlug);
+    const p = section?.slugPrefix || "";
     const l = String(slugLeaf || "").trim().replace(/^\/+|\/+$/g, "");
     return p ? `${p}/${l}` : l;
   }, [parentSlug, slugLeaf]);
@@ -329,9 +347,9 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
             <Input placeholder="Название в подменю (если отличается от названия в меню)" />
           </Form.Item>
           <Form.Item
-            label="Родитель (опционально)"
+            label="Родитель (раздел шапки)"
             name="parentSlug"
-            extra="Родитель — раздел верхнего меню сайта, а не подпункт выпадающего списка."
+            extra="Выберите раздел шапки: опубликованная страница попадёт в его подменю. Раздел — не подпункт выпадающего списка."
           >
             <Select
               allowClear
@@ -410,7 +428,7 @@ export default function AdminPagesV2Create({ canWrite, onDone }) {
 
           <Form.Item label="Блоки контента">
             <Form.List name="blocks">
-              {(fields, { add, remove }) => (
+              {(fields, { remove }) => (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   {fields.map((field, index) => {
                     const blockType = form.getFieldValue(["blocks", field.name, "type"]) || "text";

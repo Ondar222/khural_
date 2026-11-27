@@ -6,7 +6,14 @@ import { useHashRoute } from "../Router.jsx";
 import Link from "./Link.jsx";
 import { RightOutlined } from "@ant-design/icons";
 import { NEWS_EXTRA_LINKS } from "../utils/newsMenuLinks.js";
-import { ABOUT_SECTION_LINKS, STRUCTURE_SECTION_LINKS, DEPUTY_CONVOCATION_LINKS } from "../data/sectionMenus.js";
+import {
+  ABOUT_SECTION_LINKS,
+  STRUCTURE_SECTION_LINKS,
+  DEPUTY_CONVOCATION_LINKS,
+  ABOUT_SECTION_HREFS,
+  STRUCTURE_SECTION_HREFS,
+  HEADER_PARENT_SECTIONS,
+} from "../data/sectionMenus.js";
 import { getPreferredLocaleToken } from "../utils/pages.js";
 import { fetchPagesTree, getCachedPagesTree } from "../utils/cmsPagesTree.js";
 import {
@@ -17,10 +24,74 @@ import {
 } from "../utils/pagesOverrides.js";
 import { useMenuTranslation } from "../hooks/useMenuTranslation.js";
 import { useSiteChrome } from "../hooks/useSiteChrome.js";
+import {
+  getMenuItemHref,
+  getSectionAliases,
+  isSectionRootItem,
+  normalizeMenuPath,
+} from "../utils/headerParentMenu.js";
 import { normalizeFilesUrl } from "../utils/filesUrl.js";
 // removed unused UI icon libs
 
 const SITE_DEFAULT_LOGO = "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg";
+
+/**
+ * Статические подпункты разделов шапки. Когда меню берётся из /api/menu,
+ * захардкоженная вёрстка подменю не используется — поэтому эти ссылки должны
+ * добавляться прямо в дерево пунктов, иначе выпадающий список «Структура»
+ * (Руководство, Депутаты, Комитеты, ...) пропадает.
+ */
+const HEADER_SECTION_ROOT_HREFS = {
+  about: "/about",
+  structure: "/section",
+  deputies: "/deputies",
+  documents: "/docs/laws",
+  news: "/news",
+  appeals: "/appeals",
+};
+
+const HEADER_STATIC_SECTION_LINKS = {
+  about: ABOUT_SECTION_LINKS,
+  structure: STRUCTURE_SECTION_LINKS,
+  deputies: [
+    { label: "Действующие депутаты", href: "/deputies" },
+    { label: "Депутаты всех созывов", href: "/deputies?status=all&convocation=%D0%92%D1%81%D0%B5" },
+    ...DEPUTY_CONVOCATION_LINKS,
+    { label: "Депутаты прекратившие полномочия", href: "/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5" },
+  ],
+  documents: [
+    { label: "docsLaws", href: "/docs/laws" },
+    { label: "legislation", href: `/news?category=${encodeURIComponent("Законодательство")}` },
+    { label: "docsResolutions", href: "/docs/resolutions" },
+    { label: "docsInitiatives", href: "/docs/initiatives" },
+    { label: "docsConstitution", href: "/docs/constitution" },
+  ],
+  news: [
+    { label: "mainEventsOfWeek", href: "/news/week" },
+    { label: "Актуальные новости", href: "/news?section=actual" },
+    { label: "Все новости", href: "/news?section=all" },
+    { label: "media", href: "/news?section=media" },
+    ...NEWS_EXTRA_LINKS.map((item) => ({
+      label: item.labelKey || item.labelRu,
+      href: item.href,
+    })),
+  ],
+  appeals: [
+    { label: "Обращения граждан", href: "/appeals" },
+    { label: "Письменное обращение", href: "/appeals/letter" },
+    { label: "Электронная приемная", href: "/appeals/online" },
+    { label: "Порядок рассмотрения обращений", href: "/appeals/review" },
+    { label: "Порядок обжалования", href: "/appeals/complaints" },
+    { label: "Обзор обращений граждан", href: "/appeals/overview" },
+    {
+      label: "Ответы на обращения, затрагивающие интересы неопределенного круга лиц",
+      href: "/appeals/public-interests",
+    },
+    { label: "Правовое регулирование", href: "/appeals/legal" },
+    { label: "График приема граждан", href: "/appeals/schedule" },
+    { label: "Минюст России", href: "/appeals/minyust" },
+  ],
+};
 
 function normalizeName(value) {
   return String(value || "")
@@ -134,7 +205,10 @@ export default function Header() {
   const showAccessibility = flagEnabled(headerSettings.showAccessibility, true);
   const showBurger = flagEnabled(headerSettings.showBurger, true);
 
-  const configuredTopLinks = Array.isArray(headerSettings.topLinks) ? headerSettings.topLinks : [];
+  const configuredTopLinks = React.useMemo(
+    () => (Array.isArray(headerSettings.topLinks) ? headerSettings.topLinks : []),
+    [headerSettings.topLinks]
+  );
   const canSeeAdminLink = isAdminUser(user);
   const topLinks = React.useMemo(
     () => configuredTopLinks
@@ -157,7 +231,7 @@ export default function Header() {
         };
       })
       .filter((link) => link.url),
-    [headerSettings.topLinks, canSeeAdminLink, isAuthenticated],
+    [configuredTopLinks, canSeeAdminLink, isAuthenticated],
   );
   const configuredLinkPaths = topLinks.map((link) => getHrefPath(link.url));
   const hasAdminTopLink = configuredLinkPaths.includes("/admin");
@@ -327,12 +401,129 @@ export default function Header() {
     return level > 0 ? { paddingLeft: 10 + level * 12 } : undefined;
   }, []);
 
+  const renderCmsDropdownLink = React.useCallback(
+    (link, keyPrefix) => (
+      <a
+        key={`${keyPrefix}-${link.href}`}
+        href={link.href}
+        style={cmsDropdownLinkStyle(link.depth)}
+      >
+        {translateMenuLabel(link.label, link.needsTranslation)}
+      </a>
+    ),
+    [cmsDropdownLinkStyle, translateMenuLabel]
+  );
+
+  const renderCmsMobileLink = React.useCallback(
+    (link, keyPrefix) => (
+      <a
+        key={`${keyPrefix}-${link.href}`}
+        className="tile link"
+        href={link.href}
+        onClick={() => setMobileOpen(false)}
+      >
+        <span className="mobile-menu-link-content">
+          {translateMenuLabel(link.label, link.needsTranslation)}
+          <RightOutlined aria-hidden="true" />
+        </span>
+      </a>
+    ),
+    [translateMenuLabel]
+  );
+
   // Пункты меню из админки: используем те же классы/стили, что и текущая
   // захардкоженная шапка. Если в API нет данных — остаётся старая вёрстка.
-  const backendMenuLabel = (item) =>
-    item?.title || item?.titleRu || item?.titleTyv || "";
+  const backendMenuLabel = React.useCallback(
+    (item) => {
+      if (lang === "ty" || lang === "tyv") {
+        return item?.titleTyv || item?.titleTy || item?.title || item?.titleRu || "";
+      }
+      return item?.title || item?.titleRu || item?.titleTyv || "";
+    },
+    [lang]
+  );
   const backendMenuHref = (item) =>
     item?.url || (item?.pageSlug ? `/p/${item.pageSlug}` : "/");
+
+  // Если меню приходит с бэкенда, раньше CMS-страницы из /admin/pages вообще
+  // не попадали в шапку. Добавляем их прямо в дерево меню, чтобы опубликованные
+  // страницы с выбранным родителем отображались в нужном подменю.
+  const mergedBackendNavItems = React.useMemo(() => {
+    const source = Array.isArray(backendMenuItems) ? backendMenuItems : [];
+    if (!source.length) return source;
+
+    const cloned = source.map((item) => ({
+      ...item,
+      children: Array.isArray(item.children)
+        ? item.children.map((child) => ({ ...child }))
+        : [],
+    }));
+
+    const usedPaths = new Set();
+    const collectPaths = (nodes) => {
+      for (const node of Array.isArray(nodes) ? nodes : []) {
+        const href = normalizeMenuPath(getMenuItemHref(node));
+        if (href) usedPaths.add(href);
+        collectPaths(node?.children);
+      }
+    };
+    collectPaths(cloned);
+
+    for (const section of HEADER_PARENT_SECTIONS) {
+      const sectionCmsLinks = cmsDropdownLinks(section.aliases, []);
+      let target = cloned.find((item) => isSectionRootItem(item, section.value));
+
+      // Если раздел есть в CMS-страницах, но его нет в /api/menu, создаём
+      // виртуальный корень: иначе published-подстраница снова «пропадёт».
+      if (!target && sectionCmsLinks.length) {
+        const rootHref = HEADER_SECTION_ROOT_HREFS[section.value] || `/${section.aliases[0]}`;
+        target = {
+          id: `virtual-root-${section.value}`,
+          title: t(section.label),
+          titleRu: section.label,
+          titleTyv: t(section.label),
+          url: rootHref,
+          isVisible: true,
+          __virtual: true,
+          children: [],
+        };
+        cloned.push(target);
+      }
+      if (!target) continue;
+      const targetPaths = new Set();
+      collectPaths(target.children);
+
+      const addLink = (link, keyPrefix, options = {}) => {
+        const href = normalizeMenuPath(link.href);
+        if (!href || usedPaths.has(href) || targetPaths.has(href)) return;
+        const label = options.static
+          ? t(link.label)
+          : translateMenuLabel(link.label, link.needsTranslation);
+        target.children.push({
+          id: `${keyPrefix}-${href}`,
+          title: label,
+          titleRu: options.static ? String(link.label) : link.needsTranslation ? link.label : label,
+          titleTyv: label,
+          url: link.href,
+          isVisible: true,
+          __cms: !options.static,
+          children: [],
+        });
+        usedPaths.add(href);
+        targetPaths.add(href);
+      };
+
+      // Сначала идут обычные ссылки раздела (например, «Структура»),
+      // затем — страницы, созданные в /admin/pages с этим родителем.
+      for (const link of HEADER_STATIC_SECTION_LINKS[section.value] || []) {
+        addLink(link, `static-${section.value}`, { static: true });
+      }
+      for (const link of sectionCmsLinks) {
+        addLink(link, "cms-page");
+      }
+    }
+    return cloned;
+  }, [backendMenuItems, cmsDropdownLinks, translateMenuLabel, t]);
 
   const renderBackendDropdownLinks = React.useCallback((items, level = 0) => {
     return (Array.isArray(items) ? items : []).flatMap((item) => [
@@ -345,7 +536,7 @@ export default function Header() {
       </a>,
       ...renderBackendDropdownLinks(item.children, level + 1),
     ]);
-  }, [cmsDropdownLinkStyle]);
+  }, [backendMenuLabel, cmsDropdownLinkStyle]);
 
   const renderBackendNavItems = React.useCallback((items) => {
     return (Array.isArray(items) ? items : []).map((item) => {
@@ -372,7 +563,7 @@ export default function Header() {
         </div>
       );
     });
-  }, [openMenu, renderBackendDropdownLinks]);
+  }, [openMenu, renderBackendDropdownLinks, backendMenuLabel]);
 
   React.useEffect(() => {
     let alive = true;
@@ -546,7 +737,7 @@ export default function Header() {
 
           <nav className="main-nav">
             {backendMenuItems.length ? (
-              renderBackendNavItems(backendMenuItems)
+              renderBackendNavItems(mergedBackendNavItems)
             ) : (
               <>
             <div>
@@ -564,6 +755,10 @@ export default function Header() {
                     {t(link.label)}
                   </a>
                 ))}
+                {cmsDropdownLinks(getSectionAliases("about"), [
+                  "/about",
+                  ...ABOUT_SECTION_HREFS,
+                ]).map((link) => renderCmsDropdownLink(link, "cms-about"))}
               </div>
             </div>
             <div
@@ -578,6 +773,10 @@ export default function Header() {
                     {t(link.label)}
                   </a>
                 ))}
+                {cmsDropdownLinks(getSectionAliases("structure"), [
+                  "/section",
+                  ...STRUCTURE_SECTION_HREFS,
+                ]).map((link) => renderCmsDropdownLink(link, "cms-structure"))}
               </div>
             </div>
             <div
@@ -595,7 +794,7 @@ export default function Header() {
                   </a>
                 ))}
                 <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты прекратившие полномочия") || "Депутаты прекратившие полномочия"}</a>
-                {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended", ...DEPUTY_CONVOCATION_LINKS.map((l) => l.href)]).map((link) => (
+                {cmsDropdownLinks(getSectionAliases("deputies"), ["/deputies", "/deputies/ended", ...DEPUTY_CONVOCATION_LINKS.map((l) => l.href)]).map((link) => (
                   <a
                     key={`cms-deputies-${link.href}`}
                     href={link.href}
@@ -622,7 +821,7 @@ export default function Header() {
                 <a href="/docs/resolutions">{t("docsResolutions")}</a>
                 <a href="/docs/initiatives">{t("docsInitiatives")}</a>
                 <a href="/docs/constitution">{t("docsConstitution")}</a>
-                {cmsDropdownLinks(["documents", "docs"], [
+                {cmsDropdownLinks(getSectionAliases("documents"), [
                   "/docs/laws",
                   "/docs/resolutions",
                   "/docs/initiatives",
@@ -656,7 +855,7 @@ export default function Header() {
                     {item.labelKey ? t(item.labelKey) : t(item.labelRu) || item.labelRu}
                   </a>
                 ))}
-                {cmsDropdownLinks(["news", "broadcast"], ["/news", "/news/week", "/broadcast"]).map((link) => (
+                {cmsDropdownLinks([...getSectionAliases("news"), "broadcast"], ["/news", "/news/week", "/broadcast"]).map((link) => (
                   <a
                     key={`cms-news-${link.href}`}
                     href={link.href}
@@ -684,7 +883,7 @@ export default function Header() {
                 <a href="/appeals/legal">{t("Правовое регулирование") || "Правовое регулирование"}</a>
                 <a href="/appeals/schedule">{t("График приема граждан") || "График приема граждан"}</a>
                 <a href="/appeals/minyust">{t("Минюст России") || "Минюст России"}</a>
-                {cmsDropdownLinks(["appeals"], [
+                {cmsDropdownLinks(getSectionAliases("appeals"), [
                   "/appeals",
                   "/appeals/letter",
                   "/appeals/online",
@@ -867,6 +1066,10 @@ export default function Header() {
                 {t(link.label)}
               </a>
             ))}
+            {cmsDropdownLinks(getSectionAliases("about"), [
+              "/about",
+              ...ABOUT_SECTION_HREFS,
+            ]).map((link) => renderCmsDropdownLink(link, "sheet-cms-about"))}
           </div>
           <div className="sheet-col">
             <h3>{t("structure")}</h3>
@@ -876,6 +1079,10 @@ export default function Header() {
                 {t(link.label)}
               </a>
             ))}
+            {cmsDropdownLinks(getSectionAliases("structure"), [
+              "/section",
+              ...STRUCTURE_SECTION_HREFS,
+            ]).map((link) => renderCmsDropdownLink(link, "sheet-cms-structure"))}
           </div>
           <div className="sheet-col">
             <h3>{t("deputies")}</h3>
@@ -887,6 +1094,11 @@ export default function Header() {
               </a>
             ))}
             <a href="/deputies?status=ended&convocation=%D0%92%D1%81%D0%B5">{t("Депутаты прекратившие полномочия")}</a>
+            {cmsDropdownLinks(getSectionAliases("deputies"), [
+              "/deputies",
+              "/deputies/ended",
+              ...DEPUTY_CONVOCATION_LINKS.map((l) => l.href),
+            ]).map((link) => renderCmsDropdownLink(link, "sheet-cms-deputies"))}
           </div>
           <div className="sheet-col">
             <h3>{t("news")}</h3>
@@ -899,6 +1111,11 @@ export default function Header() {
                 {item.labelKey ? t(item.labelKey) : t(item.labelRu) || item.labelRu}
               </a>
             ))}
+            {cmsDropdownLinks([...getSectionAliases("news"), "broadcast"], [
+              "/news",
+              "/news/week",
+              "/broadcast",
+            ]).map((link) => renderCmsDropdownLink(link, "sheet-cms-news"))}
           </div>
           <div className="sheet-col">
             <h3>{t("documents")}</h3>
@@ -909,6 +1126,12 @@ export default function Header() {
             <a href="/docs/resolutions">{t("docsResolutions")}</a>
             <a href="/docs/initiatives">{t("docsInitiatives")}</a>
             <a href="/docs/constitution">{t("docsConstitution")}</a>
+            {cmsDropdownLinks(getSectionAliases("documents"), [
+              "/docs/laws",
+              "/docs/resolutions",
+              "/docs/initiatives",
+              "/docs/constitution",
+            ]).map((link) => renderCmsDropdownLink(link, "sheet-cms-docs"))}
           </div>
           <div className="sheet-col">
             <h3>{t("appeals")}</h3>
@@ -916,6 +1139,12 @@ export default function Header() {
             <a href="/contacts">{t("contacts")}</a>
             <a href="/wifi">{t("wifiMap")}</a>
             <a href="/map">{t("map")}</a>
+            {cmsDropdownLinks(getSectionAliases("appeals"), [
+              "/appeals",
+              "/contacts",
+              "/wifi",
+              "/map",
+            ]).map((link) => renderCmsDropdownLink(link, "sheet-cms-appeals"))}
           </div>
         </div>
       </div>
@@ -1133,6 +1362,10 @@ export default function Header() {
                 </span>
               </a>
             ))}
+            {cmsDropdownLinks(getSectionAliases("about"), [
+              "/about",
+              ...ABOUT_SECTION_HREFS,
+            ]).map((link) => renderCmsMobileLink(link, "mobile-cms-about"))}
           </>
         )}
         {mobileSection === "structure" && (
@@ -1160,6 +1393,10 @@ export default function Header() {
                 </span>
               </a>
             ))}
+            {cmsDropdownLinks(getSectionAliases("structure"), [
+              "/section",
+              ...STRUCTURE_SECTION_HREFS,
+            ]).map((link) => renderCmsMobileLink(link, "mobile-cms-structure"))}
           </>
         )}
         {mobileSection === "deputies" && (
@@ -1207,7 +1444,7 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            {cmsDropdownLinks(["deputies"], ["/deputies", "/deputies/ended", ...DEPUTY_CONVOCATION_LINKS.map((l) => l.href)]).map((link) => (
+            {cmsDropdownLinks(getSectionAliases("deputies"), ["/deputies", "/deputies/ended", ...DEPUTY_CONVOCATION_LINKS.map((l) => l.href)]).map((link) => (
               <a
                 key={`cms-mobile-deputies-${link.href}`}
                 className="tile link"
@@ -1374,7 +1611,7 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            {cmsDropdownLinks(["documents", "docs"], [
+            {cmsDropdownLinks(getSectionAliases("documents"), [
               "/docs/laws",
               "/docs/resolutions",
               "/docs/initiatives",
@@ -1437,7 +1674,7 @@ export default function Header() {
                 </span>
               </a>
             ))}
-            {cmsDropdownLinks(["news", "broadcast"], ["/news", "/news/week", "/broadcast"]).map((link) => (
+            {cmsDropdownLinks([...getSectionAliases("news"), "broadcast"], ["/news", "/news/week", "/broadcast"]).map((link) => (
               <a
                 key={`cms-mobile-news-${link.href}`}
                 className="tile link"
@@ -1518,7 +1755,7 @@ export default function Header() {
                 <RightOutlined aria-hidden="true" />
               </span>
             </a>
-            {cmsDropdownLinks(["appeals"], [
+            {cmsDropdownLinks(getSectionAliases("appeals"), [
               "/appeals",
               "/appeals/letter",
               "/appeals/online",
