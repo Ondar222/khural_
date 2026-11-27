@@ -1,7 +1,8 @@
 import React from "react";
 import { Card, Descriptions, Form, Button, Slider, Select, App, Switch } from "antd";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { A11Y_DEFAULT_SETTINGS, normalizeSettings, useA11y } from "../../context/A11yContext.jsx";
+import { useA11y } from "../../context/A11yContext.jsx";
+import { A11Y_DEFAULT_SETTINGS, normalizeSettings } from "../../utils/a11ySettings.js";
 import CabinetShell from "./CabinetShell.jsx";
 import { AccessibilityApi } from "../../api/client.js";
 
@@ -28,6 +29,7 @@ export default function CabinetAccount() {
   const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [ready, setReady] = React.useState(false);
   const [settings, setSettings] = React.useState(() => ({ ...A11Y_DEFAULT_SETTINGS }));
 
   // Form.useWatch re-renders the label when the slider moves; getFieldValue() does not.
@@ -48,6 +50,8 @@ export default function CabinetAccount() {
           disableAnimations,
         });
         setSettings(next);
+        // Форма уже смонтирована: setFieldsValue применится сразу,
+        // а initialValues не перезапишут загруженные значения.
         form.setFieldsValue(next);
         setAccessibility(next);
       } catch (error) {
@@ -58,8 +62,11 @@ export default function CabinetAccount() {
           contrast,
           disableAnimations,
         });
+        setSettings(fallback);
         form.setFieldsValue(fallback);
+        setAccessibility(fallback);
       } finally {
+        setReady(true);
         setLoading(false);
       }
     };
@@ -104,6 +111,7 @@ export default function CabinetAccount() {
 
   const handleReset = () => {
     form.setFieldsValue(A11Y_DEFAULT_SETTINGS);
+    setAccessibility(A11Y_DEFAULT_SETTINGS);
     persist(A11Y_DEFAULT_SETTINGS, "Настройки сброшены");
   };
 
@@ -121,12 +129,21 @@ export default function CabinetAccount() {
         </div>
       </Card>
 
-      <Card title="Настройки доступности" loading={loading}>
+      <Card
+        title="Настройки доступности"
+        extra={loading ? "Загрузка…" : null}
+      >
         <Form
           form={form}
           layout="vertical"
           name="accessibilitySettings"
-          initialValues={A11Y_DEFAULT_SETTINGS}
+          initialValues={settings}
+          disabled={!ready || saving}
+          onValuesChange={(_, allValues) => {
+            // Применяем сразу, без нажатия «Сохранить»: пользователь видит
+            // результат выбранных настроек прямо на странице.
+            setAccessibility(normalizeSettings(allValues, settings));
+          }}
         >
           <Form.Item
             label="Размер шрифта"
