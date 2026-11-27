@@ -265,7 +265,7 @@ export default function Footer() {
                       rel="noreferrer"
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
-                      {socialIconLabels[social.icon] ? (
+                      {/* {socialIconLabels[social.icon] ? (
                         <span
                           aria-hidden="true"
                           style={{
@@ -284,7 +284,7 @@ export default function Footer() {
                         >
                           {socialIconLabels[social.icon]}
                         </span>
-                      ) : null}
+                      ) : null} */}
                       <span>{localized(social.titleRu, social.titleTyv)}</span>
                     </a>
                   ))}
