@@ -30,6 +30,136 @@ import { normalizeFilesUrl } from "../../utils/filesUrl.js";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { PhotoAlbumApi, UploadApi } from "../../api/client.js";
 
+function hasText(value) {
+  return value !== undefined && value !== null && String(value).trim() !== "";
+}
+
+function pickText(...values) {
+  const found = values.find(hasText);
+  return found === undefined ? "" : String(found);
+}
+
+function pickNumber(...values) {
+  const found = values.find(hasText);
+  if (found === undefined) return 0;
+  const number = Number(found);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function pickBoolean(...values) {
+  const found = values.find((value) => value !== undefined && value !== null);
+  if (found === undefined) return true;
+  if (typeof found === "boolean") return found;
+  if (typeof found === "number") return found !== 0;
+  return ["true", "1", "y", "yes", "published", "active"].includes(
+    String(found).trim().toLowerCase(),
+  );
+}
+
+function stripHtml(value) {
+  return String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeAlbumDate(value) {
+  if (!hasText(value)) return "";
+  if (typeof value === "number") {
+    const date = new Date(value > 1e12 ? value : value * 1000);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+  }
+  const raw = String(value).trim();
+  const iso = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (iso) return iso[1];
+  const ru = raw.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (ru) return `${ru[3]}-${ru[2].padStart(2, "0")}-${ru[1].padStart(2, "0")}`;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? raw : date.toISOString().slice(0, 10);
+}
+
+function normalizeAlbumSlug(value) {
+  let slug = pickText(value).trim().replace(/^\/+|\/+$/g, "");
+  const photoPath = slug.match(/(?:^|\/)photo\/([^/?#]+)/i);
+  if (photoPath) slug = photoPath[1];
+  return slug;
+}
+
+/** Приводит альбом/импортированную медиа-запись к полям формы администратора. */
+function normalizeAlbumForAdmin(album) {
+  if (!album || typeof album !== "object") {
+    return {
+      slug: "",
+      titleRu: "",
+      titleTyv: "",
+      descriptionRu: "",
+      descriptionTyv: "",
+      eventDate: "",
+      order: 0,
+      isPublished: true,
+    };
+  }
+  return {
+    slug: normalizeAlbumSlug(
+      pickText(album.slug, album.code, album.CODE, album.url, album.alias, album.XML_ID),
+    ),
+    titleRu: stripHtml(
+      pickText(
+        album.titleRu,
+        album.title_ru,
+        album.nameRu,
+        album.name_ru,
+        album.title,
+        album.name,
+        album.NAME,
+      ),
+    ),
+    titleTyv: stripHtml(
+      pickText(
+        album.titleTyv,
+        album.titleTy,
+        album.title_tyv,
+        album.title_ty,
+        album.nameTyv,
+        album.nameTy,
+      ),
+    ),
+    descriptionRu: stripHtml(
+      pickText(
+        album.descriptionRu,
+        album.description_ru,
+        album.description,
+        album.excerpt,
+        album.text,
+        album.PREVIEW_TEXT,
+        album.contentHtml,
+      ),
+    ),
+    descriptionTyv: stripHtml(
+      pickText(
+        album.descriptionTyv,
+        album.descriptionTy,
+        album.description_tyv,
+        album.excerptTy,
+        album.excerptTyv,
+        album.textTy,
+      ),
+    ),
+    eventDate: normalizeAlbumDate(
+      pickText(
+        album.eventDate,
+        album.date,
+        album.publishedAt,
+        album.createdAt,
+        album.DATE,
+        album.dateCreate,
+      ),
+    ),
+    order: pickNumber(album.order, album.sortOrder, album.sort, album.position, album.SORT),
+    isPublished: pickBoolean(album.isPublished, album.published, album.ACTIVE, album.status),
+  };
+}
+
 export default function AdminAlbumsPage() {
   const adminData = useAdminData();
   const { message } = App.useApp();
@@ -147,19 +277,14 @@ export default function AdminAlbumsPage() {
   };
 
   const openAlbum = async (album) => {
+    const initial = normalizeAlbumForAdmin(album);
     setEditing(album || null);
     form.resetFields();
     resetModalMedia();
     form.setFieldsValue({
-      slug: album?.slug || "",
-      titleRu: album?.titleRu || "",
-      titleTyv: album?.titleTyv || "",
-      descriptionRu: album?.descriptionRu || "",
-      descriptionTyv: album?.descriptionTyv || "",
-      eventDate: album?.eventDate || null,
+      ...initial,
+      titleTyv: initial.titleTyv || initial.titleRu,
       coverFileId: album?.coverFileId || null,
-      isPublished: album?.isPublished ?? true,
-      order: album?.order ?? 0,
     });
     const initialCover = album?.coverUrl
       ? normalizeFilesUrl(album.coverUrl)
@@ -177,6 +302,12 @@ export default function AdminAlbumsPage() {
       const data = await PhotoAlbumApi.get(album.id);
       const photos = Array.isArray(data?.photos) ? data.photos : [];
       setExistingPhotos(photos);
+      const detailed = normalizeAlbumForAdmin(data);
+      const patch = Object.fromEntries(
+        Object.entries(detailed).filter(([, value]) => value !== "" && value !== 0),
+      );
+      if (!patch.titleTyv) patch.titleTyv = patch.titleRu || form.getFieldValue("titleRu") || "";
+      form.setFieldsValue(patch);
       const coverFileId = data?.coverFileId || album.coverFileId || null;
       const coverUrl = data?.coverUrl || album.coverUrl || "";
       setExistingCoverUrl(
@@ -329,9 +460,9 @@ export default function AdminAlbumsPage() {
     }
   };
 
-  const togglePublished = async (album) => {
+  const togglePublished = async (album, current = album.isPublished) => {
     try {
-      await PhotoAlbumApi.update(album.id, { isPublished: !album.isPublished });
+      await PhotoAlbumApi.update(album.id, { isPublished: !current });
       await load();
       notifySite();
     } catch (error) {
@@ -414,31 +545,46 @@ export default function AdminAlbumsPage() {
     {
       title: "Альбом",
       dataIndex: "titleRu",
-      render: (_, album) => (
-        <Space wrap>
-          <span style={{ fontWeight: 600 }}>{album.titleRu}</span>
-          {album.titleTyv && album.titleTyv !== album.titleRu && (
-            <Tag color="blue">{album.titleTyv}</Tag>
-          )}
-        </Space>
-      ),
+      render: (_, album) => {
+        const normalized = normalizeAlbumForAdmin(album);
+        return (
+          <Space wrap>
+            <span style={{ fontWeight: 600 }}>{normalized.titleRu || album.titleRu}</span>
+            {normalized.titleTyv && normalized.titleTyv !== normalized.titleRu && (
+              <Tag color="blue">{normalized.titleTyv}</Tag>
+            )}
+          </Space>
+        );
+      },
     },
-    { title: "Адрес", dataIndex: "slug", render: (slug) => <code>{slug}</code> },
-    { title: "Дата", dataIndex: "eventDate", width: 120 },
+    {
+      title: "Адрес",
+      dataIndex: "slug",
+      render: (_, album) => <code>{normalizeAlbumForAdmin(album).slug || album.slug}</code>,
+    },
+    {
+      title: "Дата",
+      dataIndex: "eventDate",
+      width: 120,
+      render: (_, album) => normalizeAlbumForAdmin(album).eventDate || album.eventDate || "—",
+    },
     { title: "Фото", dataIndex: "photosCount", width: 80 },
     {
       title: "Статус",
       dataIndex: "isPublished",
       width: 140,
-      render: (value, album) => (
-        <Switch
-          size="small"
-          checked={!!value}
-          checkedChildren="Опубл."
-          unCheckedChildren="Черновик"
-          onChange={() => togglePublished(album)}
-        />
-      ),
+      render: (_, album) => {
+        const normalized = normalizeAlbumForAdmin(album);
+        return (
+          <Switch
+            size="small"
+            checked={normalized.isPublished}
+            checkedChildren="Опубл."
+            unCheckedChildren="Черновик"
+            onChange={() => togglePublished(album, normalized.isPublished)}
+          />
+        );
+      },
     },
     {
       title: "Действия",
@@ -450,11 +596,13 @@ export default function AdminAlbumsPage() {
             Фото
           </Button>
           <Button size="small" icon={<EditOutlined />} onClick={() => openAlbum(album)} />
-          {album.isPublished && (
+          {normalizeAlbumForAdmin(album).isPublished && (
             <Button
               size="small"
               icon={<EyeOutlined />}
-              onClick={() => window.open(`/photo/${album.slug}`, "_blank")}
+              onClick={() =>
+                window.open(`/photo/${normalizeAlbumForAdmin(album).slug || album.slug}`, "_blank")
+              }
             />
           )}
           <Popconfirm title="Удалить альбом и все фотографии?" onConfirm={() => removeAlbum(album.id)}>
@@ -528,6 +676,14 @@ export default function AdminAlbumsPage() {
         confirmLoading={savingModal}
         okButtonProps={{ disabled: savingModal || modalLoading }}
         width={760}
+        centered
+        styles={{
+          body: {
+            maxHeight: "calc(100vh - 170px)",
+            overflowY: "auto",
+            paddingTop: 12,
+          },
+        }}
         destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
