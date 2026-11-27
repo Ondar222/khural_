@@ -147,12 +147,15 @@ export default function Header() {
         if (isAccountPath(href) && !isAuthenticated) return false;
         return true;
       })
-      .map((link, idx) => ({
-        id: String(link?.id || link?._id || link?.key || `top-${idx + 1}`),
-        titleRu: String(link?.titleRu ?? link?.title ?? link?.labelRu ?? link?.label ?? ""),
-        titleTyv: String(link?.titleTyv ?? link?.titleTy ?? link?.labelTyv ?? ""),
-        url: String(link?.url ?? link?.href ?? link?.path ?? link?.link ?? ""),
-      }))
+      .map((link, idx) => {
+        const href = String(link?.url ?? link?.href ?? link?.path ?? link?.link ?? "");
+        return {
+          id: String(link?.id || link?._id || link?.key || `top-${getHrefPath(href) || idx + 1}`),
+          titleRu: String(link?.titleRu ?? link?.title ?? link?.labelRu ?? link?.label ?? ""),
+          titleTyv: String(link?.titleTyv ?? link?.titleTy ?? link?.labelTyv ?? ""),
+          url: href,
+        };
+      })
       .filter((link) => link.url),
     [headerSettings.topLinks, canSeeAdminLink, isAuthenticated],
   );
@@ -161,6 +164,12 @@ export default function Header() {
   const hasAccountTopLink = configuredLinkPaths.some(
     (path) => path === "/cabinet/account" || path.startsWith("/cabinet/account/"),
   );
+  // Скрытая в админке ссылка должна остаться скрытой: не подменяем её
+  // дефолтной кнопкой в другой части шапки.
+  const hasConfiguredAdminLink = configuredTopLinks.some((link) =>
+    isAdminPath(link?.url ?? link?.href ?? link?.path ?? link?.link));
+  const hasConfiguredAccountLink = configuredTopLinks.some((link) =>
+    isAccountPath(link?.url ?? link?.href ?? link?.path ?? link?.link));
 
   const brandLine1 = customName || (lang === "ru" ? "Верховный Хурал" : t("brandTop"));
   const brandLine2 = customName ? "" : (lang === "ru" ? "(парламент)" : t("brandParliament"));
@@ -426,7 +435,7 @@ export default function Header() {
                 <span className="topbar-auth__name">
                   {user?.name || user?.email || t("login")}
                 </span>
-                {!hasAccountTopLink && (
+                {!hasAccountTopLink && !hasConfiguredAccountLink && (
                   <button
                     className="link-like"
                     onClick={() => {
@@ -436,7 +445,7 @@ export default function Header() {
                     {t("personalAccount")}
                   </button>
                 )}
-                {canSeeAdminLink && !hasAdminTopLink ? (
+                {canSeeAdminLink && !hasAdminTopLink && !hasConfiguredAdminLink ? (
                   <button
                     className="link-like"
                     onClick={() => {
@@ -993,17 +1002,19 @@ export default function Header() {
               {isAuthenticated ? (
                 <div className="mobile-auth__panel">
                   <div className="mobile-auth__name">{user?.name || user?.email}</div>
-                  <button
-                    className="btn mobile-auth__btn mobile-auth__btn--primary"
-                    onClick={() => {
-                      navigate("/cabinet/account");
-                      setMobileOpen(false);
-                    }}
-                    style={{ width: "80%" }}
-                  >
-                    {t("personalAccount")}
-                  </button>
-                  {canSeeAdminLink ? (
+                  {!hasConfiguredAccountLink && (
+                    <button
+                      className="btn mobile-auth__btn mobile-auth__btn--primary"
+                      onClick={() => {
+                        navigate("/cabinet/account");
+                        setMobileOpen(false);
+                      }}
+                      style={{ width: "80%" }}
+                    >
+                      {t("personalAccount")}
+                    </button>
+                  )}
+                  {canSeeAdminLink && !hasConfiguredAdminLink ? (
                     <button
                       className="btn mobile-auth__btn mobile-auth__btn--outline"
                       onClick={() => {
