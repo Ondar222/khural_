@@ -3,6 +3,7 @@ import { Button } from "antd";
 import { readAdminAvatar } from "./adminAvatar.js";
 import { MoonIcon, SunIcon } from "../../components/icons/LinearIcons.jsx";
 import { useI18n } from "../../context/I18nContext.jsx";
+import { useAdminTopbarConfig } from "../../hooks/useAdminTopbarConfig.js";
 
 const BRAND_LOGO_SRC =
   "https://upload.wikimedia.org/wikipedia/commons/c/c3/Coat_of_arms_of_Tuva.svg";
@@ -22,6 +23,7 @@ const NAV = [
   { key: "footer", labelKey: "adminNavFooterEditor", label: "Подвал", href: "/admin/footer" },
   { key: "photos", labelKey: "adminNavPhotos", label: "Фотографии", href: "/admin/photos" },
   { key: "settings", labelKey: "adminNavSettings", label: "Настройки", href: "/admin/settings" },
+  { key: "topbar", labelKey: "adminNavTopbar", label: "Кнопки верхней панели", href: "/admin/topbar" },
   { key: "documents", labelKey: "adminNavDocuments", label: "Документы", href: "/admin/documents" },
   { key: "slider", labelKey: "adminNavSlider", label: "Слайдер", href: "/admin/slider" },
   { key: "events", labelKey: "adminNavEvents", label: "События", href: "/admin/events" },
@@ -47,6 +49,7 @@ export default function AdminShell({
   children,
 }) {
   const { lang, setLang, t } = useI18n();
+  const topbarConfig = useAdminTopbarConfig();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [avatarUrl, setAvatarUrl] = React.useState(() => readAdminAvatar());
 
@@ -62,6 +65,7 @@ export default function AdminShell({
   }, [user]);
 
   const isDashboard = activeKey === "dashboard";
+  const topbarLabel = (ru, ty) => (lang === "ty" ? ty : ru);
 
   return (
     <div className="admin-shell">
@@ -137,47 +141,57 @@ export default function AdminShell({
           </div>
 
           <div className="admin-topbar__right">
-            <button
-              className="admin-pillbtn admin-pillbtn--lang"
-              type="button"
-              onClick={() => setLang(lang === "ru" ? "ty" : "ru")}
-              aria-label={t("adminSwitchLang")}
-              title={t("adminSwitchLang")}
-            >
-              {lang === "ru" ? "ТЫ" : "РУ"}
-            </button>
-            {!isDashboard && (
+            {topbarConfig.showLangToggle && (
+              <button
+                className="admin-pillbtn admin-pillbtn--lang"
+                type="button"
+                onClick={() => setLang(lang === "ru" ? "ty" : "ru")}
+                aria-label={topbarLabel(topbarConfig.langLabelRu, topbarConfig.langLabelTy)}
+                title={topbarLabel(topbarConfig.langLabelRu, topbarConfig.langLabelTy)}
+              >
+                {topbarLabel(topbarConfig.langLabelRu, topbarConfig.langLabelTy)}
+              </button>
+            )}
+            {topbarConfig.showBackToDashboard && !isDashboard && (
               <a
                 href="/admin"
                 className="admin-pillbtn admin-pillbtn--back"
                 style={{ textDecoration: "none" }}
-                title={t("adminBackToDashboard")}
+                title={topbarLabel(topbarConfig.backLabelRu, topbarConfig.backLabelTy)}
               >
-                ← {t("adminBackToDashboard")}
+                ← {topbarLabel(topbarConfig.backLabelRu, topbarConfig.backLabelTy)}
               </a>
             )}
-            <a
-              href="/"
-              className="admin-pillbtn admin-pillbtn--site"
-              style={{ textDecoration: "none" }}
-            >
-              {t("adminGoToSite")}
-            </a>
+            {topbarConfig.showGoToSite && (
+              <a
+                href={topbarConfig.siteUrl}
+                className="admin-pillbtn admin-pillbtn--site"
+                style={{ textDecoration: "none" }}
+              >
+                {topbarLabel(topbarConfig.siteLabelRu, topbarConfig.siteLabelTy)}
+              </a>
+            )}
+            {topbarConfig.showThemeSwitch && (
+              <button
+                className="admin-pillbtn admin-pillbtn--theme"
+                type="button"
+                onClick={onToggleTheme}
+                aria-label={topbarLabel(topbarConfig.themeLabelRu, topbarConfig.themeLabelTy)}
+                title={topbarLabel(topbarConfig.themeLabelRu, topbarConfig.themeLabelTy)}
+              >
+                <span style={{ fontSize: 18, lineHeight: 1, display: "inline-block", transform: "translateY(1px)" }}>
+                  {themeMode === "light" ? <MoonIcon size={15} /> : <SunIcon size={15} />}
+                </span>
+              </button>
+            )}
             <button
-              className="admin-pillbtn admin-pillbtn--theme"
+              className={
+                "admin-iconbtn admin-iconbtn--menu" +
+                (topbarConfig.showMenuButton ? "" : " is-hidden-by-settings")
+              }
               type="button"
-              onClick={onToggleTheme}
-              aria-label={themeMode === "light" ? t("adminDarkTheme") : t("adminLightTheme")}
-              title={themeMode === "light" ? t("adminDarkTheme") : t("adminLightTheme")}
-            >
-              <span style={{ fontSize: 18, lineHeight: 1, display: "inline-block", transform: "translateY(1px)" }}>
-                {themeMode === "light" ? <MoonIcon size={15} /> : <SunIcon size={15} />}
-              </span>
-            </button>
-            <button
-              className="admin-iconbtn admin-iconbtn--menu"
-              type="button"
-              aria-label={t("adminMenu")}
+              aria-label={topbarLabel(topbarConfig.menuLabelRu, topbarConfig.menuLabelTy)}
+              title={topbarLabel(topbarConfig.menuLabelRu, topbarConfig.menuLabelTy)}
               onClick={() => setSidebarOpen(true)}
             >
               <span className="admin-burger" />

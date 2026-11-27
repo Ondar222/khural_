@@ -128,6 +128,7 @@ const AdminCommissionsPage = lazy(() => import("./pages/admin/AdminCommissionsPa
 const AdminCommissionsCreatePage = lazy(() => import("./pages/admin/AdminCommissionsCreatePage.jsx"));
 const AdminCommissionsEditPage = lazy(() => import("./pages/admin/AdminCommissionsEditPage.jsx"));
 const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage.jsx"));
+const AdminTopbarPage = lazy(() => import("./pages/admin/AdminTopbarPage.jsx"));
 const AdminPortalsPage = lazy(() => import("./pages/admin/AdminPortalsPage.jsx"));
 const AdminMenuPage = lazy(() => import("./pages/admin/AdminMenuPage.jsx"));
 const AdminHeaderPage = lazy(() => import("./pages/admin/AdminHeaderPage.jsx"));
@@ -353,6 +354,7 @@ export default function App() {
                             "/admin/slider/edit/:id": AdminProtected(AdminSliderEditPage),
                             "/admin/appeals": AdminProtected(AdminRedirectToDashboard),
                             "/admin/settings": AdminProtected(AdminSettingsPage),
+                            "/admin/topbar": AdminProtected(AdminTopbarPage),
                             "/admin/menu": AdminProtected(AdminMenuPage),
                             "/admin/header": AdminProtected(AdminHeaderPage),
                             "/admin/footer": AdminProtected(AdminFooterPage),

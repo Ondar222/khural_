@@ -8800,6 +8800,16 @@ body.admin-mode[data-admin-theme="light"] .admin-iconbtn {
   box-shadow: 0 6px 0 currentColor, 0 -6px 0 currentColor;
   border-radius: 2px;
 }
+/* Кнопку меню можно скрыть в настройках, но на узких экранах она нужна
+   для открытия сайдбара — оставляем её доступной. */
+.admin-iconbtn--menu.is-hidden-by-settings {
+  display: none;
+}
+@media (max-width: 959px) {
+  .admin-iconbtn--menu.is-hidden-by-settings {
+    display: inline-flex;
+  }
+}
 
 .admin-pillbtn {
   height: 38px;
